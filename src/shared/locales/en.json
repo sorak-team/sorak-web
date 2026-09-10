@@ -19,6 +19,9 @@
     "supportHours": "Support Hours",
     "supportHoursValue": "07:30 – 17:30 (Monday – Friday)",
     "backToLogin": "Back to sign in",
-    "tryOtherAccount": "Try another account"
+    "tryOtherAccount": "Try another account",
+    "tryOtherStudent": "Enter another student code",
+    "noTeacherEmailHelp": "No email? Contact admin for support",
+    "noStudentCodeHelp": "Forgot student code? View school contacts"
   }
 }

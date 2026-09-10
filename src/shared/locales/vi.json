@@ -19,6 +19,9 @@
     "supportHours": "Thời gian hỗ trợ",
     "supportHoursValue": "07:30 – 17:30 (Thứ 2 – Thứ 6)",
     "backToLogin": "Quay lại đăng nhập",
-    "tryOtherAccount": "Thử thông tin khác"
+    "tryOtherAccount": "Thử thông tin khác",
+    "tryOtherStudent": "Nhập mã học sinh khác",
+    "noTeacherEmailHelp": "Chưa có email? Liên hệ ban giám hiệu hỗ trợ",
+    "noStudentCodeHelp": "Không nhớ mã học sinh? Xem liên hệ nhà trường"
   }
 }
