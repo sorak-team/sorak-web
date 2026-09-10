@@ -8,6 +8,9 @@
     "contactTeacherTitle": "Contact Homeroom Teacher",
     "contactAdminDesc": "This staff account does not have a linked email for self-service password recovery. Please contact the School Board or System Administrator for assistance.",
     "contactTeacherDesc": "Parents, please contact your child's homeroom teacher at the phone number below to verify and receive a new temporary password.",
-    "teacherLabel": "Teacher"
+    "teacherLabel": "Teacher",
+    "studentLabel": "Student",
+    "accountLabel": "Account",
+    "supportDepartment": "Support Office"
   }
 }
