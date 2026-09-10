@@ -30,6 +30,9 @@
     "identifierLabelParent": "Tên đăng nhập",
     "identifierLabelSchool": "Tên đăng nhập / Mã cán bộ",
     "identifierPlaceholderParent": "Ví dụ: HS26001",
-    "identifierPlaceholderSchool": "Ví dụ: ADMIN01, CB24001"
+    "identifierPlaceholderSchool": "Ví dụ: ADMIN01, CB24001",
+    "password": "Mật khẩu",
+    "passwordPlaceholder": "••••••••",
+    "forgotPassword": "Quên mật khẩu?"
   }
 }

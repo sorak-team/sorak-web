@@ -30,6 +30,9 @@
     "identifierLabelParent": "Username",
     "identifierLabelSchool": "Username / Staff code",
     "identifierPlaceholderParent": "e.g. HS26001",
-    "identifierPlaceholderSchool": "e.g. ADMIN01, CB24001"
+    "identifierPlaceholderSchool": "e.g. ADMIN01, CB24001",
+    "password": "Password",
+    "passwordPlaceholder": "••••••••",
+    "forgotPassword": "Forgot password?"
   }
 }
