@@ -15,6 +15,10 @@
     "adminOffice": "School Board & Sorak Administration",
     "savedPhone": "Account Phone",
     "hotline": "Support Hotline",
-    "supportEmail": "Support Email"
+    "supportEmail": "Support Email",
+    "supportHours": "Support Hours",
+    "supportHoursValue": "07:30 – 17:30 (Monday – Friday)",
+    "backToLogin": "Back to sign in",
+    "tryOtherAccount": "Try another account"
   }
 }
