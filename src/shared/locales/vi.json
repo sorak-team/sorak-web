@@ -11,6 +11,10 @@
     "teacherLabel": "Giáo viên",
     "studentLabel": "Học sinh",
     "accountLabel": "Tài khoản",
-    "supportDepartment": "Bộ phận tiếp nhận"
+    "supportDepartment": "Bộ phận tiếp nhận",
+    "adminOffice": "Ban giám hiệu & Quản trị Sorak",
+    "savedPhone": "SĐT tài khoản",
+    "hotline": "Hotline hỗ trợ",
+    "supportEmail": "Email hỗ trợ"
   }
 }
