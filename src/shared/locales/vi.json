@@ -22,6 +22,10 @@
     "tryOtherAccount": "Thử thông tin khác",
     "tryOtherStudent": "Nhập mã học sinh khác",
     "noTeacherEmailHelp": "Chưa có email? Liên hệ ban giám hiệu hỗ trợ",
-    "noStudentCodeHelp": "Không nhớ mã học sinh? Xem liên hệ nhà trường"
+    "noStudentCodeHelp": "Không nhớ mã học sinh? Xem liên hệ nhà trường",
+    "loginTitle": "Đăng nhập",
+    "loginSubtitle": "Chọn loại tài khoản để tiếp tục",
+    "parentTab": "Phụ huynh",
+    "schoolTab": "Nhà trường"
   }
 }
