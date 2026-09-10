@@ -11,6 +11,10 @@
     "teacherLabel": "Teacher",
     "studentLabel": "Student",
     "accountLabel": "Account",
-    "supportDepartment": "Support Office"
+    "supportDepartment": "Support Office",
+    "adminOffice": "School Board & Sorak Administration",
+    "savedPhone": "Account Phone",
+    "hotline": "Support Hotline",
+    "supportEmail": "Support Email"
   }
 }
