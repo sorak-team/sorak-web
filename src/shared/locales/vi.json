@@ -4,6 +4,10 @@
     "subtitle": "Trường Mầm Non Hòn Tre"
   },
   "auth": {
-    "contactAdminTitle": "Liên hệ quản trị viên nhà trường"
+    "contactAdminTitle": "Liên hệ quản trị viên nhà trường",
+    "contactTeacherTitle": "Liên hệ giáo viên chủ nhiệm",
+    "contactAdminDesc": "Tài khoản giáo viên chưa được liên kết địa chỉ email để nhận mã khôi phục mật khẩu. Thầy/Cô vui lòng liên hệ Ban giám hiệu hoặc Quản trị viên hệ thống để được hỗ trợ cấp lại mật khẩu hoặc cập nhật email.",
+    "contactTeacherDesc": "Phụ huynh vui lòng liên hệ trực tiếp với cô giáo chủ nhiệm theo số điện thoại bên dưới để được kiểm tra và cấp lại mật khẩu cho tài khoản của bé.",
+    "teacherLabel": "Giáo viên"
   }
 }
