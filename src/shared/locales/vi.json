@@ -37,6 +37,10 @@
     "forgotPasswordTitle": "Quên mật khẩu?",
     "forgotPasswordParentTitle": "Quên mật khẩu phụ huynh",
     "forgotPasswordSubtitleParent": "Nhập mã học sinh để xem thông tin giáo viên chủ nhiệm hỗ trợ cấp lại mật khẩu.",
-    "forgotPasswordSubtitleSchool": "Nhập tên đăng nhập hoặc mã cán bộ để khôi phục mật khẩu."
+    "forgotPasswordSubtitleSchool": "Nhập tên đăng nhập hoặc mã cán bộ để khôi phục mật khẩu.",
+    "loginButton": "Đăng nhập",
+    "loggingIn": "Đang đăng nhập...",
+    "schoolProvided": "Tài khoản được nhà trường cung cấp",
+    "agreementPrefix": "Bằng cách tiếp tục, bạn đồng ý với "
   }
 }
