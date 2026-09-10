@@ -15,6 +15,10 @@
     "adminOffice": "Ban giám hiệu & Quản trị Sorak",
     "savedPhone": "SĐT tài khoản",
     "hotline": "Hotline hỗ trợ",
-    "supportEmail": "Email hỗ trợ"
+    "supportEmail": "Email hỗ trợ",
+    "supportHours": "Thời gian hỗ trợ",
+    "supportHoursValue": "07:30 – 17:30 (Thứ 2 – Thứ 6)",
+    "backToLogin": "Quay lại đăng nhập",
+    "tryOtherAccount": "Thử thông tin khác"
   }
 }
