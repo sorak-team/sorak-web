@@ -22,6 +22,10 @@
     "tryOtherAccount": "Try another account",
     "tryOtherStudent": "Enter another student code",
     "noTeacherEmailHelp": "No email? Contact admin for support",
-    "noStudentCodeHelp": "Forgot student code? View school contacts"
+    "noStudentCodeHelp": "Forgot student code? View school contacts",
+    "loginTitle": "Sign in",
+    "loginSubtitle": "Select account type to continue",
+    "parentTab": "Parent",
+    "schoolTab": "School staff"
   }
 }
