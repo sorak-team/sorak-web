@@ -33,6 +33,10 @@
     "identifierPlaceholderSchool": "e.g. ADMIN01, CB24001",
     "password": "Password",
     "passwordPlaceholder": "••••••••",
-    "forgotPassword": "Forgot password?"
+    "forgotPassword": "Forgot password?",
+    "forgotPasswordTitle": "Forgot password?",
+    "forgotPasswordParentTitle": "Forgot Parent Password",
+    "forgotPasswordSubtitleParent": "Enter student code to view homeroom teacher contact for password assistance.",
+    "forgotPasswordSubtitleSchool": "Enter your username or staff code to recover your password."
   }
 }

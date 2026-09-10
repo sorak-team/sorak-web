@@ -33,6 +33,10 @@
     "identifierPlaceholderSchool": "Ví dụ: ADMIN01, CB24001",
     "password": "Mật khẩu",
     "passwordPlaceholder": "••••••••",
-    "forgotPassword": "Quên mật khẩu?"
+    "forgotPassword": "Quên mật khẩu?",
+    "forgotPasswordTitle": "Quên mật khẩu?",
+    "forgotPasswordParentTitle": "Quên mật khẩu phụ huynh",
+    "forgotPasswordSubtitleParent": "Nhập mã học sinh để xem thông tin giáo viên chủ nhiệm hỗ trợ cấp lại mật khẩu.",
+    "forgotPasswordSubtitleSchool": "Nhập tên đăng nhập hoặc mã cán bộ để khôi phục mật khẩu."
   }
 }
