@@ -37,6 +37,10 @@
     "forgotPasswordTitle": "Forgot password?",
     "forgotPasswordParentTitle": "Forgot Parent Password",
     "forgotPasswordSubtitleParent": "Enter student code to view homeroom teacher contact for password assistance.",
-    "forgotPasswordSubtitleSchool": "Enter your username or staff code to recover your password."
+    "forgotPasswordSubtitleSchool": "Enter your username or staff code to recover your password.",
+    "loginButton": "Sign in",
+    "loggingIn": "Signing in...",
+    "schoolProvided": "Account provided by the school",
+    "agreementPrefix": "By continuing, you agree to the "
   }
 }
