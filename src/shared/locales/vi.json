@@ -41,6 +41,9 @@
     "loginButton": "Đăng nhập",
     "loggingIn": "Đang đăng nhập...",
     "schoolProvided": "Tài khoản được nhà trường cung cấp",
-    "agreementPrefix": "Bằng cách tiếp tục, bạn đồng ý với "
+    "agreementPrefix": "Bằng cách tiếp tục, bạn đồng ý với ",
+    "terms": "Điều khoản",
+    "agreementMid": " sử dụng và ",
+    "privacy": "Chính sách"
   }
 }
