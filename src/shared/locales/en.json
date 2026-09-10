@@ -26,6 +26,10 @@
     "loginTitle": "Sign in",
     "loginSubtitle": "Select account type to continue",
     "parentTab": "Parent",
-    "schoolTab": "School staff"
+    "schoolTab": "School staff",
+    "identifierLabelParent": "Username",
+    "identifierLabelSchool": "Username / Staff code",
+    "identifierPlaceholderParent": "e.g. HS26001",
+    "identifierPlaceholderSchool": "e.g. ADMIN01, CB24001"
   }
 }
