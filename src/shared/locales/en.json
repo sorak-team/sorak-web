@@ -41,6 +41,9 @@
     "loginButton": "Sign in",
     "loggingIn": "Signing in...",
     "schoolProvided": "Account provided by the school",
-    "agreementPrefix": "By continuing, you agree to the "
+    "agreementPrefix": "By continuing, you agree to the ",
+    "terms": "Terms of Service",
+    "agreementMid": " and ",
+    "privacy": "Privacy Policy"
   }
 }
