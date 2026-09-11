@@ -55,6 +55,10 @@
     "lostEmailAccess": "Tôi không còn quyền truy cập email này.",
     "accountSupport": "Hỗ trợ tài khoản",
     "contactAdminForEmail": "Vui lòng liên hệ ban giám hiệu hoặc giáo viên phụ trách để cập nhật lại email.",
-    "verifyAndLogin": "Xác nhận & Đăng nhập"
+    "verifyAndLogin": "Xác nhận & Đăng nhập",
+    "verifying": "Đang xác thực...",
+    "troubleLoggingIn": "Gặp sự cố khi đăng nhập?",
+    "contactSupport": "Liên hệ hỗ trợ",
+    "loginSuccess": "Đăng nhập thành công!"
   }
 }
