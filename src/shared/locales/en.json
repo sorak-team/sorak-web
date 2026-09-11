@@ -55,6 +55,10 @@
     "lostEmailAccess": "I no longer have access to this email.",
     "accountSupport": "Account Support",
     "contactAdminForEmail": "Please contact school administration or your homeroom teacher to update your email.",
-    "verifyAndLogin": "Verify & Sign In"
+    "verifyAndLogin": "Verify & Sign In",
+    "verifying": "Verifying...",
+    "troubleLoggingIn": "Trouble signing in?",
+    "contactSupport": "Contact support",
+    "loginSuccess": "Login successful!"
   }
 }
