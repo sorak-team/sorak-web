@@ -52,6 +52,9 @@
     "resendCode": "Gửi lại mã",
     "resendIn": "Gửi lại sau ({{seconds}}s)",
     "resending": "Đang gửi...",
-    "lostEmailAccess": "Tôi không còn quyền truy cập email này."
+    "lostEmailAccess": "Tôi không còn quyền truy cập email này.",
+    "accountSupport": "Hỗ trợ tài khoản",
+    "contactAdminForEmail": "Vui lòng liên hệ ban giám hiệu hoặc giáo viên phụ trách để cập nhật lại email.",
+    "verifyAndLogin": "Xác nhận & Đăng nhập"
   }
 }
