@@ -63,6 +63,9 @@
     "welcomeBack": "Welcome back, {{name}}.",
     "loginFailed": "Login failed",
     "invalidCredentials": "Incorrect username or password.",
-    "twoFactorRequired": "Two-Factor Authentication Required"
+    "twoFactorRequired": "Two-Factor Authentication Required",
+    "twoFactorSent": "A 6-digit OTP code has been sent to your email address.",
+    "otpVerifyTitle": "Verify OTP Code",
+    "otpVerifySubtitle": "Enter the 6-digit code sent to: {{email}}"
   }
 }

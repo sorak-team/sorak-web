@@ -63,6 +63,9 @@
     "welcomeBack": "Chào mừng {{name}} quay trở lại hệ thống Sorak.",
     "loginFailed": "Đăng nhập thất bại",
     "invalidCredentials": "Tài khoản hoặc mật khẩu không chính xác.",
-    "twoFactorRequired": "Yêu cầu xác thực 2 bước (2FA)"
+    "twoFactorRequired": "Yêu cầu xác thực 2 bước (2FA)",
+    "twoFactorSent": "Mã xác thực OTP gồm 6 chữ số đã được gửi tới email của bạn.",
+    "otpVerifyTitle": "Xác thực mã OTP",
+    "otpVerifySubtitle": "Nhập mã gồm 6 chữ số đã được gửi tới địa chỉ email: {{email}}"
   }
 }
