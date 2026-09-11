@@ -59,6 +59,10 @@
     "verifying": "Đang xác thực...",
     "troubleLoggingIn": "Gặp sự cố khi đăng nhập?",
     "contactSupport": "Liên hệ hỗ trợ",
-    "loginSuccess": "Đăng nhập thành công!"
+    "loginSuccess": "Đăng nhập thành công!",
+    "welcomeBack": "Chào mừng {{name}} quay trở lại hệ thống Sorak.",
+    "loginFailed": "Đăng nhập thất bại",
+    "invalidCredentials": "Tài khoản hoặc mật khẩu không chính xác.",
+    "twoFactorRequired": "Yêu cầu xác thực 2 bước (2FA)"
   }
 }

@@ -59,6 +59,10 @@
     "verifying": "Verifying...",
     "troubleLoggingIn": "Trouble signing in?",
     "contactSupport": "Contact support",
-    "loginSuccess": "Login successful!"
+    "loginSuccess": "Login successful!",
+    "welcomeBack": "Welcome back, {{name}}.",
+    "loginFailed": "Login failed",
+    "invalidCredentials": "Incorrect username or password.",
+    "twoFactorRequired": "Two-Factor Authentication Required"
   }
 }
