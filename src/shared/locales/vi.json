@@ -48,6 +48,10 @@
     "agreementSuffix": " quyền riêng tư.",
     "twoFactorTitle": "Xác thực đăng nhập",
     "twoFactorSubtitle": "Nhập mã xác thực chúng tôi đã gửi tới địa chỉ email: {{email}}",
-    "verificationCode": "Mã xác thực"
+    "verificationCode": "Mã xác thực",
+    "resendCode": "Gửi lại mã",
+    "resendIn": "Gửi lại sau ({{seconds}}s)",
+    "resending": "Đang gửi...",
+    "lostEmailAccess": "Tôi không còn quyền truy cập email này."
   }
 }
