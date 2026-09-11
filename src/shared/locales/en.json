@@ -44,6 +44,10 @@
     "agreementPrefix": "By continuing, you agree to the ",
     "terms": "Terms of Service",
     "agreementMid": " and ",
-    "privacy": "Privacy Policy"
+    "privacy": "Privacy Policy",
+    "agreementSuffix": ".",
+    "twoFactorTitle": "Two-Factor Authentication",
+    "twoFactorSubtitle": "Enter the 6-digit verification code sent to: {{email}}",
+    "verificationCode": "Verification code"
   }
 }
