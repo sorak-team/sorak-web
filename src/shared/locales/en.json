@@ -70,6 +70,10 @@
     "resendOtpSuccess": "OTP code resent!",
     "resendOtpFailed": "Failed to resend OTP",
     "cooldownWait": "Please wait {{seconds}} seconds before requesting a new OTP.",
-    "cooldownWaitDesc": "Verification code was recently sent. You can continue entering it on the verification page."
+    "cooldownWaitDesc": "Verification code was recently sent. You can continue entering it on the verification page.",
+    "otpSuccess": "OTP verified successfully!",
+    "otpSuccessDesc": "Please enter a new password for your account.",
+    "otpFailed": "Verification failed",
+    "otpInvalidOrExpired": "OTP code is invalid or has expired."
   }
 }
