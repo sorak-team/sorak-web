@@ -101,6 +101,10 @@
     "hotlineLabel": "Hotline"
   },
   "logout": {
-    "title": "Đăng xuất?"
+    "title": "Đăng xuất?",
+    "description": "Bạn sẽ cần đăng nhập lại để tiếp tục sử dụng Sorak.",
+    "cancel": "Hủy",
+    "confirm": "Đăng xuất",
+    "toastSuccess": "Đã đăng xuất thành công!"
   }
 }
