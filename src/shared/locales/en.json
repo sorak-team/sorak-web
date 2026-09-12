@@ -96,6 +96,11 @@
     "schoolAddress": "Address",
     "schoolAddressVal": "Hon Tre Preschool, Kien Hai, Kien Giang",
     "schoolOfficeHours": "Office Hours",
-    "schoolOfficeHoursVal": "Monday – Friday (07:00 – 17:00)"
+    "schoolOfficeHoursVal": "Monday – Friday (07:00 – 17:00)",
+    "contactSchoolDirect": "Need direct assistance from the school?",
+    "hotlineLabel": "Hotline"
+  },
+  "logout": {
+    "title": "Log out?"
   }
 }
