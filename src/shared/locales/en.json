@@ -88,6 +88,10 @@
     "resetPasswordSuccessDesc": "Your password has been updated. Please sign in with your new password.",
     "resetPasswordFailed": "Password reset failed",
     "rememberPassword": "Remember password?",
-    "checkingAccount": "Checking account..."
+    "checkingAccount": "Checking account...",
+    "lookupTeacherBtn": "Lookup Homeroom Teacher",
+    "continueBtn": "Continue",
+    "classLabel": "Class",
+    "schoolHotline": "School Hotline"
   }
 }
