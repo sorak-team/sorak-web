@@ -70,6 +70,10 @@
     "resendOtpSuccess": "Đã gửi lại mã OTP!",
     "resendOtpFailed": "Gửi lại mã OTP thất bại",
     "cooldownWait": "Vui lòng đợi {{seconds}} giây trước khi gửi lại yêu cầu mã OTP mới.",
-    "cooldownWaitDesc": "Mã xác thực vừa được gửi. Bạn có thể tiếp tục nhập mã trên trang xác thực."
+    "cooldownWaitDesc": "Mã xác thực vừa được gửi. Bạn có thể tiếp tục nhập mã trên trang xác thực.",
+    "otpSuccess": "Xác thực OTP thành công!",
+    "otpSuccessDesc": "Vui lòng nhập mật khẩu mới cho tài khoản của bạn.",
+    "otpFailed": "Xác thực thất bại",
+    "otpInvalidOrExpired": "Mã OTP không hợp lệ hoặc đã hết hạn."
   }
 }
