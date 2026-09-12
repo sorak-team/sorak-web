@@ -92,6 +92,10 @@
     "lookupTeacherBtn": "Lookup Homeroom Teacher",
     "continueBtn": "Continue",
     "classLabel": "Class",
-    "schoolHotline": "School Hotline"
+    "schoolHotline": "School Hotline",
+    "schoolAddress": "Address",
+    "schoolAddressVal": "Hon Tre Preschool, Kien Hai, Kien Giang",
+    "schoolOfficeHours": "Office Hours",
+    "schoolOfficeHoursVal": "Monday – Friday (07:00 – 17:00)"
   }
 }
