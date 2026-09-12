@@ -74,6 +74,9 @@
     "otpSuccess": "OTP verified successfully!",
     "otpSuccessDesc": "Please enter a new password for your account.",
     "otpFailed": "Verification failed",
-    "otpInvalidOrExpired": "OTP code is invalid or has expired."
+    "otpInvalidOrExpired": "OTP code is invalid or has expired.",
+    "continueResetPassword": "Continue to reset password",
+    "resetPasswordTitle": "Create New Password",
+    "resetPasswordSubtitle": "Enter a secure new password for your account"
   }
 }
