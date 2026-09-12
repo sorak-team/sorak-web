@@ -96,6 +96,11 @@
     "schoolAddress": "Địa chỉ",
     "schoolAddressVal": "Trường Mầm Non Hòn Tre, Kiên Hải, Kiên Giang",
     "schoolOfficeHours": "Thời gian làm việc",
-    "schoolOfficeHoursVal": "Thứ 2 – Thứ 6 (07:00 – 17:00)"
+    "schoolOfficeHoursVal": "Thứ 2 – Thứ 6 (07:00 – 17:00)",
+    "contactSchoolDirect": "Cần hỗ trợ trực tiếp từ nhà trường?",
+    "hotlineLabel": "Hotline"
+  },
+  "logout": {
+    "title": "Đăng xuất?"
   }
 }
