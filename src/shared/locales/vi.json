@@ -88,6 +88,10 @@
     "resetPasswordSuccessDesc": "Mật khẩu của bạn đã được cập nhật thành công. Vui lòng đăng nhập bằng mật khẩu mới.",
     "resetPasswordFailed": "Đặt lại mật khẩu thất bại",
     "rememberPassword": "Nhớ mật khẩu?",
-    "checkingAccount": "Đang kiểm tra tài khoản..."
+    "checkingAccount": "Đang kiểm tra tài khoản...",
+    "lookupTeacherBtn": "Tra cứu giáo viên hỗ trợ",
+    "continueBtn": "Tiếp tục",
+    "classLabel": "Lớp",
+    "schoolHotline": "Hotline trường"
   }
 }
