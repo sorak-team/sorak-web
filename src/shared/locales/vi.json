@@ -81,6 +81,10 @@
     "newPassword": "Mật khẩu mới",
     "confirmNewPassword": "Xác nhận mật khẩu mới",
     "newPasswordPlaceholder": "Tối thiểu 6 ký tự",
-    "confirmNewPasswordPlaceholder": "Nhập lại mật khẩu mới"
+    "confirmNewPasswordPlaceholder": "Nhập lại mật khẩu mới",
+    "savePasswordBtn": "Lưu mật khẩu mới & Đăng nhập",
+    "savingPassword": "Đang cập nhật mật khẩu...",
+    "resetPasswordSuccess": "Đặt lại mật khẩu thành công!",
+    "resetPasswordSuccessDesc": "Mật khẩu của bạn đã được cập nhật thành công. Vui lòng đăng nhập bằng mật khẩu mới."
   }
 }
