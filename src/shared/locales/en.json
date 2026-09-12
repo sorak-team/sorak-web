@@ -66,6 +66,10 @@
     "twoFactorRequired": "Two-Factor Authentication Required",
     "twoFactorSent": "A 6-digit OTP code has been sent to your email address.",
     "otpVerifyTitle": "Verify OTP Code",
-    "otpVerifySubtitle": "Enter the 6-digit code sent to: {{email}}"
+    "otpVerifySubtitle": "Enter the 6-digit code sent to: {{email}}",
+    "resendOtpSuccess": "OTP code resent!",
+    "resendOtpFailed": "Failed to resend OTP",
+    "cooldownWait": "Please wait {{seconds}} seconds before requesting a new OTP.",
+    "cooldownWaitDesc": "Verification code was recently sent. You can continue entering it on the verification page."
   }
 }
