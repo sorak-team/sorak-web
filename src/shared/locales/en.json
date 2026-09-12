@@ -101,6 +101,10 @@
     "hotlineLabel": "Hotline"
   },
   "logout": {
-    "title": "Log out?"
+    "title": "Log out?",
+    "description": "You will need to log in again to continue using Sorak.",
+    "cancel": "Cancel",
+    "confirm": "Log out",
+    "toastSuccess": "Logged out successfully!"
   }
 }
