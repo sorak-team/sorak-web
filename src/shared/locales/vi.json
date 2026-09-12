@@ -85,6 +85,9 @@
     "savePasswordBtn": "Lưu mật khẩu mới & Đăng nhập",
     "savingPassword": "Đang cập nhật mật khẩu...",
     "resetPasswordSuccess": "Đặt lại mật khẩu thành công!",
-    "resetPasswordSuccessDesc": "Mật khẩu của bạn đã được cập nhật thành công. Vui lòng đăng nhập bằng mật khẩu mới."
+    "resetPasswordSuccessDesc": "Mật khẩu của bạn đã được cập nhật thành công. Vui lòng đăng nhập bằng mật khẩu mới.",
+    "resetPasswordFailed": "Đặt lại mật khẩu thất bại",
+    "rememberPassword": "Nhớ mật khẩu?",
+    "checkingAccount": "Đang kiểm tra tài khoản..."
   }
 }

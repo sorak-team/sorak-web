@@ -85,6 +85,9 @@
     "savePasswordBtn": "Save New Password & Sign In",
     "savingPassword": "Saving new password...",
     "resetPasswordSuccess": "Password reset successfully!",
-    "resetPasswordSuccessDesc": "Your password has been updated. Please sign in with your new password."
+    "resetPasswordSuccessDesc": "Your password has been updated. Please sign in with your new password.",
+    "resetPasswordFailed": "Password reset failed",
+    "rememberPassword": "Remember password?",
+    "checkingAccount": "Checking account..."
   }
 }
