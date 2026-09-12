@@ -77,6 +77,10 @@
     "otpInvalidOrExpired": "OTP code is invalid or has expired.",
     "continueResetPassword": "Continue to reset password",
     "resetPasswordTitle": "Create New Password",
-    "resetPasswordSubtitle": "Enter a secure new password for your account"
+    "resetPasswordSubtitle": "Enter a secure new password for your account",
+    "newPassword": "New password",
+    "confirmNewPassword": "Confirm new password",
+    "newPasswordPlaceholder": "Minimum 6 characters",
+    "confirmNewPasswordPlaceholder": "Re-enter new password"
   }
 }

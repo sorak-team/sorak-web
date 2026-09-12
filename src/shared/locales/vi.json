@@ -77,6 +77,10 @@
     "otpInvalidOrExpired": "Mã OTP không hợp lệ hoặc đã hết hạn.",
     "continueResetPassword": "Tiếp tục đặt lại mật khẩu",
     "resetPasswordTitle": "Tạo mật khẩu mới",
-    "resetPasswordSubtitle": "Nhập mật khẩu mới an toàn cho tài khoản của bạn"
+    "resetPasswordSubtitle": "Nhập mật khẩu mới an toàn cho tài khoản của bạn",
+    "newPassword": "Mật khẩu mới",
+    "confirmNewPassword": "Xác nhận mật khẩu mới",
+    "newPasswordPlaceholder": "Tối thiểu 6 ký tự",
+    "confirmNewPasswordPlaceholder": "Nhập lại mật khẩu mới"
   }
 }
