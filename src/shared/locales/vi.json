@@ -105,6 +105,12 @@
     "description": "Bạn sẽ cần đăng nhập lại để tiếp tục sử dụng Sorak.",
     "cancel": "Hủy",
     "confirm": "Đăng xuất",
-    "toastSuccess": "Đã đăng xuất thành công!"
+    "toastSuccess": "Đã đăng xuất thành công!",
+    "toastDesc": "Hẹn gặp lại bạn trong các phiên làm việc tiếp theo."
+  },
+  "account": {
+    "pageTitle": "Quản trị Tài khoản",
+    "pageSubtitle": "Quản lý tài khoản nhà trường và phụ huynh",
+    "tabStaff": "Nhà trường"
   }
 }
