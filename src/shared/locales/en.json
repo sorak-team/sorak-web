@@ -105,6 +105,12 @@
     "description": "You will need to log in again to continue using Sorak.",
     "cancel": "Cancel",
     "confirm": "Log out",
-    "toastSuccess": "Logged out successfully!"
+    "toastSuccess": "Logged out successfully!",
+    "toastDesc": "See you again in future sessions."
+  },
+  "account": {
+    "pageTitle": "Account Management",
+    "pageSubtitle": "Manage accounts for school staff and parents",
+    "tabStaff": "School Staff"
   }
 }
