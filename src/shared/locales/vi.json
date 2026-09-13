@@ -114,6 +114,10 @@
     "tabStaff": "Nhà trường",
     "tabParents": "Phụ huynh",
     "tabStudents": "Phụ huynh",
-    "searchStaffPlaceholder": "Tìm theo tên cán bộ, email..."
+    "searchStaffPlaceholder": "Tìm theo tên cán bộ, email...",
+    "searchParentPlaceholder": "Tìm theo tên học sinh, SĐT...",
+    "columns": "Cột",
+    "filter": "Lọc",
+    "viewList": "Dạng danh sách"
   }
 }

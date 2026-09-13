@@ -114,6 +114,10 @@
     "tabStaff": "School Staff",
     "tabParents": "Parents",
     "tabStudents": "Parents",
-    "searchStaffPlaceholder": "Search by staff name, email..."
+    "searchStaffPlaceholder": "Search by staff name, email...",
+    "searchParentPlaceholder": "Search by student name, phone...",
+    "columns": "Columns",
+    "filter": "Filter",
+    "viewList": "List view"
   }
 }
