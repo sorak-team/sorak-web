@@ -111,6 +111,9 @@
   "account": {
     "pageTitle": "Quản trị Tài khoản",
     "pageSubtitle": "Quản lý tài khoản nhà trường và phụ huynh",
-    "tabStaff": "Nhà trường"
+    "tabStaff": "Nhà trường",
+    "tabParents": "Phụ huynh",
+    "tabStudents": "Phụ huynh",
+    "searchStaffPlaceholder": "Tìm theo tên cán bộ, email..."
   }
 }

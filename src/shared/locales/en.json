@@ -111,6 +111,9 @@
   "account": {
     "pageTitle": "Account Management",
     "pageSubtitle": "Manage accounts for school staff and parents",
-    "tabStaff": "School Staff"
+    "tabStaff": "School Staff",
+    "tabParents": "Parents",
+    "tabStudents": "Parents",
+    "searchStaffPlaceholder": "Search by staff name, email..."
   }
 }
