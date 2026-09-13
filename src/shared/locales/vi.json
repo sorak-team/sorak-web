@@ -118,6 +118,10 @@
     "searchParentPlaceholder": "Tìm theo tên học sinh, SĐT...",
     "columns": "Cột",
     "filter": "Lọc",
-    "viewList": "Dạng danh sách"
+    "viewList": "Dạng danh sách",
+    "viewGrid": "Dạng lưới",
+    "addAccount": "Thêm tài khoản",
+    "addStaffAccount": "Thêm tài khoản nhà trường",
+    "addParentAccount": "Thêm tài khoản học sinh"
   }
 }
