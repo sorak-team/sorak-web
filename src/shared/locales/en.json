@@ -133,6 +133,9 @@
     "colRole": "System Role",
     "colWorkStatus": "Employment",
     "colAccountStatus": "Account",
-    "colLastLogin": "Last Login"
+    "colLastLogin": "Last Login",
+    "colActions": "Actions",
+    "roleLeader": "Principal Board",
+    "roleAdmin": "Administrator"
   }
 }
