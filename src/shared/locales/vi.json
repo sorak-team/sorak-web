@@ -144,6 +144,9 @@
     "workRetired": "Đã nghỉ việc",
     "statusActive": "Hoạt động",
     "statusInactive": "Không hoạt động",
-    "statusLocked": "Đã khóa"
+    "statusLocked": "Đã khóa",
+    "filterAll": "Tất cả trạng thái",
+    "actionView": "Xem chi tiết",
+    "actionEdit": "Chỉnh sửa"
   }
 }

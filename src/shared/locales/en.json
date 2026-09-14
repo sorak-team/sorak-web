@@ -144,6 +144,9 @@
     "workRetired": "Resigned",
     "statusActive": "Active",
     "statusInactive": "Inactive",
-    "statusLocked": "Locked"
+    "statusLocked": "Locked",
+    "filterAll": "All statuses",
+    "actionView": "View Details",
+    "actionEdit": "Edit"
   }
 }
