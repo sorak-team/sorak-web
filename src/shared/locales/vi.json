@@ -136,6 +136,10 @@
     "colLastLogin": "Đăng nhập gần nhất",
     "colActions": "Thao tác",
     "roleLeader": "Ban giám hiệu",
-    "roleAdmin": "Quản trị viên"
+    "roleAdmin": "Quản trị viên",
+    "roleTeacher": "Giáo viên",
+    "roleParent": "Học sinh",
+    "roleStudent": "Học sinh",
+    "workWorking": "Đang làm việc"
   }
 }
