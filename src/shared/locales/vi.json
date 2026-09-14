@@ -125,6 +125,10 @@
     "addParentAccount": "Thêm tài khoản học sinh",
     "addStudentAccount": "Thêm tài khoản học sinh",
     "totalStaffCount": "{{count}} cán bộ",
-    "totalParentCount": "{{count}} học sinh"
+    "totalParentCount": "{{count}} học sinh",
+    "totalStudentCount": "{{count}} học sinh",
+    "colPerson": "Cán bộ",
+    "colParent": "Học sinh",
+    "colStudent": "Học sinh"
   }
 }

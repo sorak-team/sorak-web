@@ -125,6 +125,10 @@
     "addParentAccount": "Add student account",
     "addStudentAccount": "Add Student Account",
     "totalStaffCount": "{{count}} staff",
-    "totalParentCount": "{{count}} students"
+    "totalParentCount": "{{count}} students",
+    "totalStudentCount": "{{count}} students",
+    "colPerson": "Staff",
+    "colParent": "Student",
+    "colStudent": "Student"
   }
 }
