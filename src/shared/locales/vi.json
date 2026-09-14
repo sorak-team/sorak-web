@@ -133,6 +133,9 @@
     "colRole": "Vai trò hệ thống",
     "colWorkStatus": "Công tác",
     "colAccountStatus": "Tài khoản",
-    "colLastLogin": "Đăng nhập gần nhất"
+    "colLastLogin": "Đăng nhập gần nhất",
+    "colActions": "Thao tác",
+    "roleLeader": "Ban giám hiệu",
+    "roleAdmin": "Quản trị viên"
   }
 }
