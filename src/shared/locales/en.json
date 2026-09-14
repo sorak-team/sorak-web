@@ -140,6 +140,10 @@
     "roleTeacher": "Teacher",
     "roleParent": "Student",
     "roleStudent": "Student",
-    "workWorking": "Active"
+    "workWorking": "Active",
+    "workRetired": "Resigned",
+    "statusActive": "Active",
+    "statusInactive": "Inactive",
+    "statusLocked": "Locked"
   }
 }
