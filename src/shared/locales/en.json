@@ -136,6 +136,10 @@
     "colLastLogin": "Last Login",
     "colActions": "Actions",
     "roleLeader": "Principal Board",
-    "roleAdmin": "Administrator"
+    "roleAdmin": "Administrator",
+    "roleTeacher": "Teacher",
+    "roleParent": "Student",
+    "roleStudent": "Student",
+    "workWorking": "Active"
   }
 }
