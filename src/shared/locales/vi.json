@@ -129,6 +129,10 @@
     "totalStudentCount": "{{count}} học sinh",
     "colPerson": "Cán bộ",
     "colParent": "Học sinh",
-    "colStudent": "Học sinh"
+    "colStudent": "Học sinh",
+    "colRole": "Vai trò hệ thống",
+    "colWorkStatus": "Công tác",
+    "colAccountStatus": "Tài khoản",
+    "colLastLogin": "Đăng nhập gần nhất"
   }
 }

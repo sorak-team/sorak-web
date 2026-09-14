@@ -129,6 +129,10 @@
     "totalStudentCount": "{{count}} students",
     "colPerson": "Staff",
     "colParent": "Student",
-    "colStudent": "Student"
+    "colStudent": "Student",
+    "colRole": "System Role",
+    "colWorkStatus": "Employment",
+    "colAccountStatus": "Account",
+    "colLastLogin": "Last Login"
   }
 }
