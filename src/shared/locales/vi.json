@@ -140,6 +140,10 @@
     "roleTeacher": "Giáo viên",
     "roleParent": "Học sinh",
     "roleStudent": "Học sinh",
-    "workWorking": "Đang làm việc"
+    "workWorking": "Đang làm việc",
+    "workRetired": "Đã nghỉ việc",
+    "statusActive": "Hoạt động",
+    "statusInactive": "Không hoạt động",
+    "statusLocked": "Đã khóa"
   }
 }
