@@ -122,6 +122,9 @@
     "viewGrid": "Dạng lưới",
     "addAccount": "Thêm tài khoản",
     "addStaffAccount": "Thêm tài khoản nhà trường",
-    "addParentAccount": "Thêm tài khoản học sinh"
+    "addParentAccount": "Thêm tài khoản học sinh",
+    "addStudentAccount": "Thêm tài khoản học sinh",
+    "totalStaffCount": "{{count}} cán bộ",
+    "totalParentCount": "{{count}} học sinh"
   }
 }
