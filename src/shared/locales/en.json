@@ -147,6 +147,10 @@
     "statusLocked": "Locked",
     "filterAll": "All statuses",
     "actionView": "View Details",
-    "actionEdit": "Edit"
+    "actionEdit": "Edit",
+    "actionSettings": "Settings",
+    "actionResetPassword": "Reset Password",
+    "actionDeactivate": "Lock account",
+    "actionActivate": "Activate account"
   }
 }

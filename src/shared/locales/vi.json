@@ -147,6 +147,10 @@
     "statusLocked": "Đã khóa",
     "filterAll": "Tất cả trạng thái",
     "actionView": "Xem chi tiết",
-    "actionEdit": "Chỉnh sửa"
+    "actionEdit": "Chỉnh sửa",
+    "actionSettings": "Cài đặt",
+    "actionResetPassword": "Đặt lại mật khẩu",
+    "actionDeactivate": "Chuyển sang không hoạt động",
+    "actionActivate": "Kích hoạt tài khoản"
   }
 }
