@@ -122,6 +122,9 @@
     "viewGrid": "Grid view",
     "addAccount": "Add Account",
     "addStaffAccount": "Add Staff Account",
-    "addParentAccount": "Add student account"
+    "addParentAccount": "Add student account",
+    "addStudentAccount": "Add Student Account",
+    "totalStaffCount": "{{count}} staff",
+    "totalParentCount": "{{count}} students"
   }
 }
