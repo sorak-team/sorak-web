@@ -195,6 +195,9 @@
     "close": "Close",
     "saveChanges": "Save changes",
     "cancel": "Cancel",
-    "role": "Role"
+    "role": "Role",
+    "accountStatus": "Account Status",
+    "none": "None",
+    "title": "Accounts"
   }
 }

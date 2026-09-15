@@ -195,6 +195,9 @@
     "close": "Đóng",
     "saveChanges": "Lưu thay đổi",
     "cancel": "Hủy",
-    "role": "Vai trò"
+    "role": "Vai trò",
+    "accountStatus": "Trạng thái tài khoản",
+    "none": "Chưa có",
+    "title": "Tài khoản"
   }
 }
