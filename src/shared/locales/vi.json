@@ -191,6 +191,10 @@
     "confirmBtn": "Xác nhận đặt lại",
     "temporaryPasswordTitle": "Mật khẩu tạm thời",
     "temporaryPasswordDesc": "Mật khẩu tạm thời đã được tạo. Hãy gửi cho người dùng. Mật khẩu này chỉ hiển thị một lần duy nhất.",
-    "copied": "Đã sao chép vào bộ nhớ tạm"
+    "copied": "Đã sao chép vào bộ nhớ tạm",
+    "close": "Đóng",
+    "saveChanges": "Lưu thay đổi",
+    "cancel": "Hủy",
+    "role": "Vai trò"
   }
 }
