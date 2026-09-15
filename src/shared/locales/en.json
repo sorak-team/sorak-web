@@ -173,6 +173,9 @@
     "colEmail": "Email",
     "colPhone": "Phone Number",
     "colDepartment": "Department",
-    "colCreatedAt": "Created Date"
+    "colCreatedAt": "Created Date",
+    "colActivatedAt": "Activated Date",
+    "lastPasswordChange": "Last Password Change",
+    "accessStatus": "Access Status"
   }
 }
