@@ -158,6 +158,10 @@
     "pageInfo": "Page {{current}} of {{total}}",
     "notFound": "Account information not found.",
     "backToList": "Back to account list",
-    "settingsTitle": "Account Settings"
+    "settingsTitle": "Account Settings",
+    "staffInfoTitle": "Staff Information",
+    "staffInfoDesc": "Personnel record in Sorak system",
+    "parentInfoTitle": "Student Information",
+    "parentInfoDesc": "Contact and class information"
   }
 }
