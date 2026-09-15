@@ -184,6 +184,9 @@
     "deactivatedSuccess": "Đã chuyển tài khoản sang trạng thái Không hoạt động",
     "activatedSuccess": "Đã kích hoạt tài khoản thành công",
     "resetPasswordTitle": "Đặt lại mật khẩu",
-    "resetPasswordConfirmDesc": "Bạn đang yêu cầu đặt lại mật khẩu cho tài khoản {{name}} ({{email}})."
+    "resetPasswordConfirmDesc": "Bạn đang yêu cầu đặt lại mật khẩu cho tài khoản {{name}} ({{email}}).",
+    "resetPasswordPrompt": "Để xác nhận, vui lòng nhập chính xác cụm từ bên dưới:",
+    "confirmPhrase": "tôi chắc chắn",
+    "confirmPlaceholder": "tôi chắc chắn"
   }
 }

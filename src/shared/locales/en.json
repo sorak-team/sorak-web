@@ -184,6 +184,9 @@
     "deactivatedSuccess": "Account status updated to Locked",
     "activatedSuccess": "Account has been activated",
     "resetPasswordTitle": "Reset Password",
-    "resetPasswordConfirmDesc": "You are requesting a password reset for account {{name}} ({{email}})."
+    "resetPasswordConfirmDesc": "You are requesting a password reset for account {{name}} ({{email}}).",
+    "resetPasswordPrompt": "To confirm, please enter the exact phrase below:",
+    "confirmPhrase": "i am sure",
+    "confirmPlaceholder": "i am sure"
   }
 }
