@@ -187,6 +187,10 @@
     "resetPasswordConfirmDesc": "You are requesting a password reset for account {{name}} ({{email}}).",
     "resetPasswordPrompt": "To confirm, please enter the exact phrase below:",
     "confirmPhrase": "i am sure",
-    "confirmPlaceholder": "i am sure"
+    "confirmPlaceholder": "i am sure",
+    "confirmBtn": "Confirm Reset",
+    "temporaryPasswordTitle": "Temporary Password",
+    "temporaryPasswordDesc": "Temporary password generated. Send to user. This password will only be displayed once.",
+    "copied": "Copied to clipboard"
   }
 }
