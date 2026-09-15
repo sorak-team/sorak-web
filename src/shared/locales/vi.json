@@ -169,6 +169,10 @@
     "accountInfoDesc": "Quyền truy cập và trạng thái tài khoản",
     "activityTitle": "Hoạt động tài khoản",
     "activityDesc": "Dấu mốc truy cập và bảo mật gần đây",
-    "colFullName": "Họ tên"
+    "colFullName": "Họ tên",
+    "colEmail": "Email",
+    "colPhone": "Số điện thoại",
+    "colDepartment": "Đơn vị",
+    "colCreatedAt": "Ngày tạo"
   }
 }

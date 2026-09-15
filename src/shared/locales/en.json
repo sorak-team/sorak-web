@@ -169,6 +169,10 @@
     "accountInfoDesc": "Access permissions and account status",
     "activityTitle": "Account Activity",
     "activityDesc": "Recent access history and security milestones",
-    "colFullName": "Full Name"
+    "colFullName": "Full Name",
+    "colEmail": "Email",
+    "colPhone": "Phone Number",
+    "colDepartment": "Department",
+    "colCreatedAt": "Created Date"
   }
 }
