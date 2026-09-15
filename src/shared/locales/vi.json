@@ -155,6 +155,9 @@
     "neverLoggedIn": "Chưa từng đăng nhập",
     "prevPage": "Trước",
     "nextPage": "Sau",
-    "pageInfo": "Trang {{current}} / {{total}}"
+    "pageInfo": "Trang {{current}} / {{total}}",
+    "notFound": "Không tìm thấy thông tin tài khoản.",
+    "backToList": "Quay lại danh sách tài khoản",
+    "settingsTitle": "Cài đặt tài khoản"
   }
 }

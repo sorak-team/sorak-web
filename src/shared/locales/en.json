@@ -155,6 +155,9 @@
     "neverLoggedIn": "Never logged in",
     "prevPage": "Previous",
     "nextPage": "Next",
-    "pageInfo": "Page {{current}} of {{total}}"
+    "pageInfo": "Page {{current}} of {{total}}",
+    "notFound": "Account information not found.",
+    "backToList": "Back to account list",
+    "settingsTitle": "Account Settings"
   }
 }
