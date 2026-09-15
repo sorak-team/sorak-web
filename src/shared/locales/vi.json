@@ -173,6 +173,9 @@
     "colEmail": "Email",
     "colPhone": "Số điện thoại",
     "colDepartment": "Đơn vị",
-    "colCreatedAt": "Ngày tạo"
+    "colCreatedAt": "Ngày tạo",
+    "colActivatedAt": "Ngày kích hoạt",
+    "lastPasswordChange": "Đổi mật khẩu gần nhất",
+    "accessStatus": "Trạng thái truy cập"
   }
 }
