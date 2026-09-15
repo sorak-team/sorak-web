@@ -180,6 +180,10 @@
     "accessNormal": "Bình thường",
     "accessLocked": "Bị khóa",
     "retiredWarningTitle": "Cán bộ đã nghỉ việc nhưng tài khoản vẫn hoạt động",
-    "retiredWarningDesc": "Nên khóa tài khoản để ngăn đăng nhập."
+    "retiredWarningDesc": "Nên khóa tài khoản để ngăn đăng nhập.",
+    "deactivatedSuccess": "Đã chuyển tài khoản sang trạng thái Không hoạt động",
+    "activatedSuccess": "Đã kích hoạt tài khoản thành công",
+    "resetPasswordTitle": "Đặt lại mật khẩu",
+    "resetPasswordConfirmDesc": "Bạn đang yêu cầu đặt lại mật khẩu cho tài khoản {{name}} ({{email}})."
   }
 }

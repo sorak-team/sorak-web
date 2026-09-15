@@ -180,6 +180,10 @@
     "accessNormal": "Normal",
     "accessLocked": "Locked",
     "retiredWarningTitle": "Staff resigned but account is still active",
-    "retiredWarningDesc": "Locking the account is recommended to prevent unauthorized access."
+    "retiredWarningDesc": "Locking the account is recommended to prevent unauthorized access.",
+    "deactivatedSuccess": "Account status updated to Locked",
+    "activatedSuccess": "Account has been activated",
+    "resetPasswordTitle": "Reset Password",
+    "resetPasswordConfirmDesc": "You are requesting a password reset for account {{name}} ({{email}})."
   }
 }
