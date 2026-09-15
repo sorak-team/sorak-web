@@ -162,6 +162,9 @@
     "staffInfoTitle": "Staff Information",
     "staffInfoDesc": "Personnel record in Sorak system",
     "parentInfoTitle": "Student Information",
-    "parentInfoDesc": "Contact and class information"
+    "parentInfoDesc": "Contact and class information",
+    "studentInfoTitle": "Student Information",
+    "studentInfoDesc": "Student record in Sorak system",
+    "accountInfoTitle": "Account Information"
   }
 }

@@ -162,6 +162,9 @@
     "staffInfoTitle": "Thông tin cán bộ",
     "staffInfoDesc": "Hồ sơ nhân sự trong hệ thống Sorak",
     "parentInfoTitle": "Thông tin học sinh",
-    "parentInfoDesc": "Thông tin liên hệ và lớp học"
+    "parentInfoDesc": "Thông tin liên hệ và lớp học",
+    "studentInfoTitle": "Thông tin học sinh",
+    "studentInfoDesc": "Hồ sơ học sinh trong hệ thống Sorak",
+    "accountInfoTitle": "Thông tin tài khoản"
   }
 }
