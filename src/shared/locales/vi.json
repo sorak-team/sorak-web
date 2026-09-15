@@ -165,6 +165,10 @@
     "parentInfoDesc": "Thông tin liên hệ và lớp học",
     "studentInfoTitle": "Thông tin học sinh",
     "studentInfoDesc": "Hồ sơ học sinh trong hệ thống Sorak",
-    "accountInfoTitle": "Thông tin tài khoản"
+    "accountInfoTitle": "Thông tin tài khoản",
+    "accountInfoDesc": "Quyền truy cập và trạng thái tài khoản",
+    "activityTitle": "Hoạt động tài khoản",
+    "activityDesc": "Dấu mốc truy cập và bảo mật gần đây",
+    "colFullName": "Họ tên"
   }
 }
