@@ -191,6 +191,10 @@
     "confirmBtn": "Confirm Reset",
     "temporaryPasswordTitle": "Temporary Password",
     "temporaryPasswordDesc": "Temporary password generated. Send to user. This password will only be displayed once.",
-    "copied": "Copied to clipboard"
+    "copied": "Copied to clipboard",
+    "close": "Close",
+    "saveChanges": "Save changes",
+    "cancel": "Cancel",
+    "role": "Role"
   }
 }
