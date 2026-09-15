@@ -176,6 +176,10 @@
     "colCreatedAt": "Ngày tạo",
     "colActivatedAt": "Ngày kích hoạt",
     "lastPasswordChange": "Đổi mật khẩu gần nhất",
-    "accessStatus": "Trạng thái truy cập"
+    "accessStatus": "Trạng thái truy cập",
+    "accessNormal": "Bình thường",
+    "accessLocked": "Bị khóa",
+    "retiredWarningTitle": "Cán bộ đã nghỉ việc nhưng tài khoản vẫn hoạt động",
+    "retiredWarningDesc": "Nên khóa tài khoản để ngăn đăng nhập."
   }
 }

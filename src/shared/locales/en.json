@@ -176,6 +176,10 @@
     "colCreatedAt": "Created Date",
     "colActivatedAt": "Activated Date",
     "lastPasswordChange": "Last Password Change",
-    "accessStatus": "Access Status"
+    "accessStatus": "Access Status",
+    "accessNormal": "Normal",
+    "accessLocked": "Locked",
+    "retiredWarningTitle": "Staff resigned but account is still active",
+    "retiredWarningDesc": "Locking the account is recommended to prevent unauthorized access."
   }
 }
