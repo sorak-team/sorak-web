@@ -158,6 +158,10 @@
     "pageInfo": "Trang {{current}} / {{total}}",
     "notFound": "Không tìm thấy thông tin tài khoản.",
     "backToList": "Quay lại danh sách tài khoản",
-    "settingsTitle": "Cài đặt tài khoản"
+    "settingsTitle": "Cài đặt tài khoản",
+    "staffInfoTitle": "Thông tin cán bộ",
+    "staffInfoDesc": "Hồ sơ nhân sự trong hệ thống Sorak",
+    "parentInfoTitle": "Thông tin học sinh",
+    "parentInfoDesc": "Thông tin liên hệ và lớp học"
   }
 }
