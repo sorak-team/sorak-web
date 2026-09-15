@@ -151,6 +151,10 @@
     "actionSettings": "Settings",
     "actionResetPassword": "Reset Password",
     "actionDeactivate": "Lock account",
-    "actionActivate": "Activate account"
+    "actionActivate": "Activate account",
+    "neverLoggedIn": "Never logged in",
+    "prevPage": "Previous",
+    "nextPage": "Next",
+    "pageInfo": "Page {{current}} of {{total}}"
   }
 }

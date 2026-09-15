@@ -151,6 +151,10 @@
     "actionSettings": "Cài đặt",
     "actionResetPassword": "Đặt lại mật khẩu",
     "actionDeactivate": "Chuyển sang không hoạt động",
-    "actionActivate": "Kích hoạt tài khoản"
+    "actionActivate": "Kích hoạt tài khoản",
+    "neverLoggedIn": "Chưa từng đăng nhập",
+    "prevPage": "Trước",
+    "nextPage": "Sau",
+    "pageInfo": "Trang {{current}} / {{total}}"
   }
 }
