@@ -209,6 +209,10 @@
     "columnsDisplay": "Hiển thị cột",
     "deactivate": "Vô hiệu hóa",
     "activate": "Kích hoạt",
-    "toastRoleUpdated": "Cập nhật vai trò thành công cho {{name}}"
+    "toastRoleUpdated": "Cập nhật vai trò thành công cho {{name}}",
+    "toastStatusUpdated": "Tài khoản đã chuyển sang trạng thái {{status}}",
+    "settingsSub": "Quản lý quyền truy cập và bảo mật của {{name}}",
+    "accessRoleTitle": "Quyền truy cập",
+    "accessRoleSub": "Vai trò của tài khoản trong hệ thống nhà trường"
   }
 }

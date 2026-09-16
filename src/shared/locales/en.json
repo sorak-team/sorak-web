@@ -209,6 +209,10 @@
     "columnsDisplay": "Display Columns",
     "deactivate": "Deactivate",
     "activate": "Activate",
-    "toastRoleUpdated": "Role updated successfully for {{name}}"
+    "toastRoleUpdated": "Role updated successfully for {{name}}",
+    "toastStatusUpdated": "Account status updated to {{status}}",
+    "settingsSub": "Manage access permissions and security for {{name}}",
+    "accessRoleTitle": "Access Role",
+    "accessRoleSub": "Account role in the school system"
   }
 }
