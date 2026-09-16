@@ -198,6 +198,10 @@
     "role": "Role",
     "accountStatus": "Account Status",
     "none": "None",
-    "title": "Accounts"
+    "title": "Accounts",
+    "subtitle": "Manage school staff and parent accounts",
+    "searchPlaceholder": "Search...",
+    "listView": "List View",
+    "gridView": "Grid View"
   }
 }
