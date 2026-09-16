@@ -206,6 +206,9 @@
     "staffHeading": "Tài khoản nhà trường",
     "studentsHeading": "Tài khoản phụ huynh",
     "accountCount": "{{count}} tài khoản",
-    "columnsDisplay": "Hiển thị cột"
+    "columnsDisplay": "Hiển thị cột",
+    "deactivate": "Vô hiệu hóa",
+    "activate": "Kích hoạt",
+    "toastRoleUpdated": "Cập nhật vai trò thành công cho {{name}}"
   }
 }
