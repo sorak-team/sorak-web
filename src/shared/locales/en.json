@@ -206,6 +206,9 @@
     "staffHeading": "School Staff Accounts",
     "studentsHeading": "Parent Accounts",
     "accountCount": "{{count}} accounts",
-    "columnsDisplay": "Display Columns"
+    "columnsDisplay": "Display Columns",
+    "deactivate": "Deactivate",
+    "activate": "Activate",
+    "toastRoleUpdated": "Role updated successfully for {{name}}"
   }
 }
