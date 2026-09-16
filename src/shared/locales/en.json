@@ -202,6 +202,10 @@
     "subtitle": "Manage school staff and parent accounts",
     "searchPlaceholder": "Search...",
     "listView": "List View",
-    "gridView": "Grid View"
+    "gridView": "Grid View",
+    "staffHeading": "School Staff Accounts",
+    "studentsHeading": "Parent Accounts",
+    "accountCount": "{{count}} accounts",
+    "columnsDisplay": "Display Columns"
   }
 }
