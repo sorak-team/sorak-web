@@ -217,6 +217,9 @@
     "passwordTitle": "Password",
     "passwordSub": "Current password cannot be viewed",
     "passwordResetNote": "Resetting will generate a new temporary password",
-    "resetPasswordBtn": "Reset Password"
+    "resetPasswordBtn": "Reset Password",
+    "statusTitle": "Account Status",
+    "statusSub": "Control login access for user",
+    "deactivateBtn": "Deactivate Account"
   }
 }
