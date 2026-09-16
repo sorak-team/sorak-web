@@ -213,6 +213,10 @@
     "toastStatusUpdated": "Tài khoản đã chuyển sang trạng thái {{status}}",
     "settingsSub": "Quản lý quyền truy cập và bảo mật của {{name}}",
     "accessRoleTitle": "Quyền truy cập",
-    "accessRoleSub": "Vai trò của tài khoản trong hệ thống nhà trường"
+    "accessRoleSub": "Vai trò của tài khoản trong hệ thống nhà trường",
+    "passwordTitle": "Mật khẩu",
+    "passwordSub": "Mật khẩu hiện tại không thể xem lại",
+    "passwordResetNote": "Reset sẽ tạo mật khẩu tạm mới",
+    "resetPasswordBtn": "Đặt lại mật khẩu"
   }
 }

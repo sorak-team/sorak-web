@@ -213,6 +213,10 @@
     "toastStatusUpdated": "Account status updated to {{status}}",
     "settingsSub": "Manage access permissions and security for {{name}}",
     "accessRoleTitle": "Access Role",
-    "accessRoleSub": "Account role in the school system"
+    "accessRoleSub": "Account role in the school system",
+    "passwordTitle": "Password",
+    "passwordSub": "Current password cannot be viewed",
+    "passwordResetNote": "Resetting will generate a new temporary password",
+    "resetPasswordBtn": "Reset Password"
   }
 }
