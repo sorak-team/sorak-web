@@ -217,6 +217,9 @@
     "passwordTitle": "Mật khẩu",
     "passwordSub": "Mật khẩu hiện tại không thể xem lại",
     "passwordResetNote": "Reset sẽ tạo mật khẩu tạm mới",
-    "resetPasswordBtn": "Đặt lại mật khẩu"
+    "resetPasswordBtn": "Đặt lại mật khẩu",
+    "statusTitle": "Trạng thái tài khoản",
+    "statusSub": "Kiểm soát quyền đăng nhập của người dùng",
+    "deactivateBtn": "Chuyển sang không hoạt động"
   }
 }
