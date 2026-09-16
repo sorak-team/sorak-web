@@ -202,6 +202,10 @@
     "subtitle": "Quản lý tài khoản nhà trường và phụ huynh",
     "searchPlaceholder": "Tìm kiếm...",
     "listView": "Dạng bảng",
-    "gridView": "Dạng lưới"
+    "gridView": "Dạng lưới",
+    "staffHeading": "Tài khoản nhà trường",
+    "studentsHeading": "Tài khoản phụ huynh",
+    "accountCount": "{{count}} tài khoản",
+    "columnsDisplay": "Hiển thị cột"
   }
 }
