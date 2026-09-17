@@ -246,6 +246,10 @@
     "copyPassword": "Sao chép mật khẩu",
     "parentsHeading": "Tài khoản phụ huynh",
     "staffDesc": "Tài khoản cán bộ quản lý và giáo viên nhà trường",
-    "parentsDesc": "Phụ huynh sử dụng tài khoản học sinh để đăng nhập"
+    "parentsDesc": "Phụ huynh sử dụng tài khoản học sinh để đăng nhập",
+    "parentAccountNote": "Sử dụng TK HS",
+    "colClass": "Lớp học",
+    "colUsername": "Tên đăng nhập",
+    "toastBulkStaffCreated": "Đã cấp thành công {{count}} tài khoản giáo viên/cán bộ"
   }
 }

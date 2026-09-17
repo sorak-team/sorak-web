@@ -246,6 +246,10 @@
     "copyPassword": "Copy password",
     "parentsHeading": "Parent Accounts",
     "staffDesc": "Administrative and teacher accounts for school operations",
-    "parentsDesc": "Parents use student accounts to log in"
+    "parentsDesc": "Parents use student accounts to log in",
+    "parentAccountNote": "Uses student acc",
+    "colClass": "Class",
+    "colUsername": "Username",
+    "toastBulkStaffCreated": "Successfully issued {{count}} staff/teacher accounts"
   }
 }
