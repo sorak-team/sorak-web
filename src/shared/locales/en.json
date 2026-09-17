@@ -224,6 +224,10 @@
     "activateBtn": "Activate Account",
     "deactivateNote": "The user will not be able to log in until reactivated.",
     "save": "Save",
-    "enterNameError": "Please enter full name"
+    "enterNameError": "Please enter full name",
+    "toastStaffCreated": "Staff account created successfully",
+    "toastStudentCreated": "Student account created successfully",
+    "addAccountSub": "Enter information to issue system access",
+    "fullName": "Full Name"
   }
 }

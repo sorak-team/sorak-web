@@ -224,6 +224,10 @@
     "activateBtn": "Kích hoạt tài khoản",
     "deactivateNote": "Người dùng sẽ không thể đăng nhập cho đến khi được kích hoạt lại.",
     "save": "Lưu",
-    "enterNameError": "Vui lòng nhập họ tên"
+    "enterNameError": "Vui lòng nhập họ tên",
+    "toastStaffCreated": "Đã tạo tài khoản cán bộ thành công",
+    "toastStudentCreated": "Đã tạo tài khoản học sinh thành công",
+    "addAccountSub": "Điền thông tin để cấp tài khoản truy cập vào hệ thống",
+    "fullName": "Họ tên"
   }
 }
