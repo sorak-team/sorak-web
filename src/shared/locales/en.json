@@ -228,6 +228,9 @@
     "toastStaffCreated": "Staff account created successfully",
     "toastStudentCreated": "Student account created successfully",
     "addAccountSub": "Enter information to issue system access",
-    "fullName": "Full Name"
+    "fullName": "Full Name",
+    "email": "Email",
+    "phone": "Phone Number",
+    "studentName": "Student"
   }
 }
