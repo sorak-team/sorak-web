@@ -242,6 +242,10 @@
     "tempPasswordSub": "Mật khẩu tạm đã được tạo thành công cho tài khoản",
     "tempPasswordLabel": "Mật khẩu tạm thời",
     "copy": "Sao chép",
-    "copyWarning": "Hãy sao chép và gửi cho người dùng. Đóng cửa sổ này sẽ không thể xem lại."
+    "copyWarning": "Hãy sao chép và gửi cho người dùng. Đóng cửa sổ này sẽ không thể xem lại.",
+    "copyPassword": "Sao chép mật khẩu",
+    "parentsHeading": "Tài khoản phụ huynh",
+    "staffDesc": "Tài khoản cán bộ quản lý và giáo viên nhà trường",
+    "parentsDesc": "Phụ huynh sử dụng tài khoản học sinh để đăng nhập"
   }
 }
