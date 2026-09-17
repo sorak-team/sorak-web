@@ -239,6 +239,9 @@
     "tempPasswordNotice": "Sau khi xác nhận, mật khẩu tạm chỉ hiển thị một lần.",
     "copiedToast": "Đã sao chép mật khẩu tạm thời vào clipboard",
     "tempPasswordTitle": "Mật khẩu tạm thời",
-    "tempPasswordSub": "Mật khẩu tạm đã được tạo thành công cho tài khoản"
+    "tempPasswordSub": "Mật khẩu tạm đã được tạo thành công cho tài khoản",
+    "tempPasswordLabel": "Mật khẩu tạm thời",
+    "copy": "Sao chép",
+    "copyWarning": "Hãy sao chép và gửi cho người dùng. Đóng cửa sổ này sẽ không thể xem lại."
   }
 }
