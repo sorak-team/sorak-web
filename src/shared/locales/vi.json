@@ -261,6 +261,9 @@
     "allClasses": "Tất cả các lớp",
     "defaultRole": "Vai trò:",
     "selectAllEligible": "Chọn tất cả",
-    "eligibleTeachers": "hồ sơ chưa có tài khoản"
+    "eligibleTeachers": "hồ sơ chưa có tài khoản",
+    "eligibleStudents": "học sinh chưa có tài khoản",
+    "selectedCount": "Đã chọn: {{count}}",
+    "noTeachersFound": "Không tìm thấy hồ sơ giáo viên nào phù hợp."
   }
 }

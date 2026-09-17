@@ -261,6 +261,9 @@
     "allClasses": "All classes",
     "defaultRole": "Role:",
     "selectAllEligible": "Select all",
-    "eligibleTeachers": "profiles without account"
+    "eligibleTeachers": "profiles without account",
+    "eligibleStudents": "students without account",
+    "selectedCount": "Selected: {{count}}",
+    "noTeachersFound": "No matching teacher profiles found."
   }
 }
