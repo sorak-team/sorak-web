@@ -228,6 +228,9 @@
     "toastStaffCreated": "Đã tạo tài khoản cán bộ thành công",
     "toastStudentCreated": "Đã tạo tài khoản học sinh thành công",
     "addAccountSub": "Điền thông tin để cấp tài khoản truy cập vào hệ thống",
-    "fullName": "Họ tên"
+    "fullName": "Họ tên",
+    "email": "Email",
+    "phone": "Số điện thoại",
+    "studentName": "Học sinh"
   }
 }
