@@ -257,6 +257,10 @@
     "addStaffSub": "Chọn hồ sơ giáo viên/cán bộ và thiết lập vai trò để tạo tài khoản đăng nhập.",
     "addStudentSub": "Chọn học sinh hoặc lọc theo lớp để cấp tài khoản đăng nhập hàng loạt.",
     "searchTeacherPlaceholder": "Tìm theo tên, mã giáo viên...",
-    "searchStudentPlaceholder": "Tìm theo tên, mã học sinh..."
+    "searchStudentPlaceholder": "Tìm theo tên, mã học sinh...",
+    "allClasses": "Tất cả các lớp",
+    "defaultRole": "Vai trò:",
+    "selectAllEligible": "Chọn tất cả",
+    "eligibleTeachers": "hồ sơ chưa có tài khoản"
   }
 }

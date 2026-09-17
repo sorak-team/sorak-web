@@ -257,6 +257,10 @@
     "addStaffSub": "Select teacher/staff profiles and assign roles to issue login accounts.",
     "addStudentSub": "Select student profiles or filter by class to issue login accounts in bulk.",
     "searchTeacherPlaceholder": "Search by name, employee code...",
-    "searchStudentPlaceholder": "Search by name, student code..."
+    "searchStudentPlaceholder": "Search by name, student code...",
+    "allClasses": "All classes",
+    "defaultRole": "Role:",
+    "selectAllEligible": "Select all",
+    "eligibleTeachers": "profiles without account"
   }
 }
