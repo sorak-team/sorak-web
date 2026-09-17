@@ -264,6 +264,10 @@
     "eligibleTeachers": "hồ sơ chưa có tài khoản",
     "eligibleStudents": "học sinh chưa có tài khoản",
     "selectedCount": "Đã chọn: {{count}}",
-    "noTeachersFound": "Không tìm thấy hồ sơ giáo viên nào phù hợp."
+    "noTeachersFound": "Không tìm thấy hồ sơ giáo viên nào phù hợp.",
+    "allTeachersHaveAccount": "Tất cả hồ sơ giáo viên đều đã được cấp tài khoản.",
+    "allStudentsHaveAccount": "Tất cả học sinh trong danh sách đã có tài khoản.",
+    "noProfilesPending": "Không có hồ sơ nào cần cấp tài khoản mới.",
+    "searchAgainPrompt": "Thử tìm kiếm với từ khóa khác."
   }
 }
