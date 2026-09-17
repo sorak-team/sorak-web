@@ -220,6 +220,10 @@
     "resetPasswordBtn": "Đặt lại mật khẩu",
     "statusTitle": "Trạng thái tài khoản",
     "statusSub": "Kiểm soát quyền đăng nhập của người dùng",
-    "deactivateBtn": "Chuyển sang không hoạt động"
+    "deactivateBtn": "Chuyển sang không hoạt động",
+    "activateBtn": "Kích hoạt tài khoản",
+    "deactivateNote": "Người dùng sẽ không thể đăng nhập cho đến khi được kích hoạt lại.",
+    "save": "Lưu",
+    "enterNameError": "Vui lòng nhập họ tên"
   }
 }
