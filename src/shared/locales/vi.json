@@ -275,6 +275,10 @@
     "willCreateAccounts": "Sẽ cấp {{count}} tài khoản (mật khẩu mặc định: 123456)",
     "pleaseSelectPrompt": "Chưa có hồ sơ nào được chọn",
     "createWithCount": "Tạo tài khoản ({{count}})",
-    "actionLock": "Khóa tài khoản"
+    "actionLock": "Khóa tài khoản",
+    "actionUnlock": "Mở khóa tài khoản",
+    "lockBtn": "Khóa tài khoản",
+    "unlockBtn": "Mở khóa tài khoản",
+    "lockNote": "Người dùng sẽ không thể đăng nhập khi tài khoản bị khóa."
   }
 }

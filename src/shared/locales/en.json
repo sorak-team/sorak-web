@@ -275,6 +275,10 @@
     "willCreateAccounts": "Will issue {{count}} accounts (default password: 123456)",
     "pleaseSelectPrompt": "No profiles selected yet",
     "createWithCount": "Create accounts ({{count}})",
-    "actionLock": "Lock account"
+    "actionLock": "Lock account",
+    "actionUnlock": "Unlock account",
+    "lockBtn": "Lock account",
+    "unlockBtn": "Unlock account",
+    "lockNote": "User will not be able to log in when the account is locked."
   }
 }
