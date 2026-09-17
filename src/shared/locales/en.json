@@ -250,6 +250,9 @@
     "parentAccountNote": "Uses student acc",
     "colClass": "Class",
     "colUsername": "Username",
-    "toastBulkStaffCreated": "Successfully issued {{count}} staff/teacher accounts"
+    "toastBulkStaffCreated": "Successfully issued {{count}} staff/teacher accounts",
+    "toastBulkStudentCreated": "Successfully issued {{count}} student accounts",
+    "selectTeacherPrompt": "Please select at least 1 teacher profile",
+    "selectStudentPrompt": "Please select at least 1 student profile"
   }
 }

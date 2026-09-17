@@ -250,6 +250,9 @@
     "parentAccountNote": "Sử dụng TK HS",
     "colClass": "Lớp học",
     "colUsername": "Tên đăng nhập",
-    "toastBulkStaffCreated": "Đã cấp thành công {{count}} tài khoản giáo viên/cán bộ"
+    "toastBulkStaffCreated": "Đã cấp thành công {{count}} tài khoản giáo viên/cán bộ",
+    "toastBulkStudentCreated": "Đã cấp thành công {{count}} tài khoản học sinh",
+    "selectTeacherPrompt": "Vui lòng chọn ít nhất 01 hồ sơ giáo viên",
+    "selectStudentPrompt": "Vui lòng chọn ít nhất 01 hồ sơ học sinh"
   }
 }
