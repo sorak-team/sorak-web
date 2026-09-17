@@ -235,6 +235,10 @@
     "studentClass": "Class",
     "create": "Create Account",
     "resetPasswordSub": "Reset password for account {{name}}",
-    "typeToConfirm": "To confirm, enter “i am sure”"
+    "typeToConfirm": "To confirm, enter “i am sure”",
+    "tempPasswordNotice": "After confirmation, temporary password is only shown once.",
+    "copiedToast": "Copied temporary password to clipboard",
+    "tempPasswordTitle": "Temporary Password",
+    "tempPasswordSub": "Temporary password generated successfully for account"
   }
 }

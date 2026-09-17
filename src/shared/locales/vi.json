@@ -235,6 +235,10 @@
     "studentClass": "Lớp",
     "create": "Tạo tài khoản",
     "resetPasswordSub": "Đặt lại mật khẩu cho tài khoản {{name}}",
-    "typeToConfirm": "Để xác nhận, nhập “tôi chắc chắn”"
+    "typeToConfirm": "Để xác nhận, nhập “tôi chắc chắn”",
+    "tempPasswordNotice": "Sau khi xác nhận, mật khẩu tạm chỉ hiển thị một lần.",
+    "copiedToast": "Đã sao chép mật khẩu tạm thời vào clipboard",
+    "tempPasswordTitle": "Mật khẩu tạm thời",
+    "tempPasswordSub": "Mật khẩu tạm đã được tạo thành công cho tài khoản"
   }
 }
