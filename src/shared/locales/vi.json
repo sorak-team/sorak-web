@@ -272,6 +272,9 @@
     "alreadyHasAccount": "Đã có tài khoản",
     "notIssued": "Chưa cấp",
     "noStudentsFound": "Không tìm thấy hồ sơ học sinh nào phù hợp.",
-    "willCreateAccounts": "Sẽ cấp {{count}} tài khoản (mật khẩu mặc định: 123456)"
+    "willCreateAccounts": "Sẽ cấp {{count}} tài khoản (mật khẩu mặc định: 123456)",
+    "pleaseSelectPrompt": "Chưa có hồ sơ nào được chọn",
+    "createWithCount": "Tạo tài khoản ({{count}})",
+    "actionLock": "Khóa tài khoản"
   }
 }

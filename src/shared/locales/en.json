@@ -272,6 +272,9 @@
     "alreadyHasAccount": "Account exists",
     "notIssued": "Not issued",
     "noStudentsFound": "No matching student profiles found.",
-    "willCreateAccounts": "Will issue {{count}} accounts (default password: 123456)"
+    "willCreateAccounts": "Will issue {{count}} accounts (default password: 123456)",
+    "pleaseSelectPrompt": "No profiles selected yet",
+    "createWithCount": "Create accounts ({{count}})",
+    "actionLock": "Lock account"
   }
 }
