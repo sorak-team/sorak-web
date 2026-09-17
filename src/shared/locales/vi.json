@@ -231,6 +231,10 @@
     "fullName": "Họ tên",
     "email": "Email",
     "phone": "Số điện thoại",
-    "studentName": "Học sinh"
+    "studentName": "Học sinh",
+    "studentClass": "Lớp",
+    "create": "Tạo tài khoản",
+    "resetPasswordSub": "Đặt lại mật khẩu cho tài khoản {{name}}",
+    "typeToConfirm": "Để xác nhận, nhập “tôi chắc chắn”"
   }
 }
