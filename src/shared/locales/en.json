@@ -239,6 +239,9 @@
     "tempPasswordNotice": "After confirmation, temporary password is only shown once.",
     "copiedToast": "Copied temporary password to clipboard",
     "tempPasswordTitle": "Temporary Password",
-    "tempPasswordSub": "Temporary password generated successfully for account"
+    "tempPasswordSub": "Temporary password generated successfully for account",
+    "tempPasswordLabel": "Temporary password",
+    "copy": "Copy",
+    "copyWarning": "Please copy and send to the user. Closing this modal cannot be viewed again."
   }
 }
