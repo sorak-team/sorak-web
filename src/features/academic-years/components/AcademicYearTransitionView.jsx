@@ -1,0 +1,842 @@
+import React, { useState, useEffect } from 'react';
+import { HugeiconsIcon } from '@hugeicons/react';
+import {
+  CheckmarkCircle02Icon,
+  Alert02Icon,
+  ArrowRight01Icon,
+  ArrowLeft01Icon,
+  Layers01Icon,
+  Calendar03Icon,
+  UserGroupIcon,
+  ArrowUpRight01Icon,
+  SparklesIcon,
+  RefreshIcon,
+} from '@hugeicons/core-free-icons';
+import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { academicYearsApi } from '../academic-years.api';
+import { cn } from '@/shared/lib/utils';
+
+export function AcademicYearTransitionView({ currentYear, onSuccess }) {
+  const navigate = useNavigate();
+  const [currentStep, setCurrentStep] = useState(1);
+  const [unlockedStep, setUnlockedStep] = useState(1); // Strict linear gating
+  const [readinessData, setReadinessData] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [isConfirmed, setIsConfirmed] = useState(false);
+  const [isComplete, setIsComplete] = useState(false);
+
+  // Core options
+  const [copyThemes, setCopyThemes] = useState(true);
+  const [copyGoals, setCopyGoals] = useState(true);
+
+  const fetchReadiness = async () => {
+    if (!currentYear?.id) return;
+    try {
+      setIsLoading(true);
+      const res = await academicYearsApi.getTransitionReadiness(currentYear.id);
+      setReadinessData(res);
+    } catch (err) {
+      console.error('Error fetching transition readiness:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (currentYear?.id) {
+      fetchReadiness();
+    }
+  }, [currentYear?.id]);
+
+  const targetYearName = readinessData?.targetYearName || 'Năm học 2027–2028';
+  const step3Data = readinessData?.step3 || {
+    totalStudents: 26,
+    enrolledCount: 0,
+    completedCount: 26,
+    isEligible: true,
+    pendingClasses: [],
+    classesList: [],
+  };
+  const enrolledCount = step3Data.enrolledCount ?? 0;
+  const isStep3Eligible = enrolledCount === 0;
+  const classesList = step3Data.classesList || [];
+
+  // Strict step progression: must finish step 1 to unlock step 2
+  const handleProceedFromStep1 = () => {
+    setUnlockedStep((prev) => Math.max(prev, 2));
+    setCurrentStep(2);
+    toast.success('Đã hoàn tất Bước 1: Khung chủ đề.');
+  };
+
+  // Strict step progression: must finish step 2 to unlock step 3
+  const handleProceedFromStep2 = () => {
+    setUnlockedStep((prev) => Math.max(prev, 3));
+    setCurrentStep(3);
+    toast.success('Đã hoàn tất Bước 2: Khung mục tiêu.');
+  };
+
+  // Strict step progression: must finish step 3 (0 students ENROLLED) to unlock step 4
+  const handleProceedFromStep3 = () => {
+    if (!isStep3Eligible) {
+      toast.error('Bắt buộc tất cả các lớp phải được chốt năm học (0 học sinh đang học) mới có thể tiếp tục.');
+      return;
+    }
+    setUnlockedStep((prev) => Math.max(prev, 4));
+    setCurrentStep(4);
+    toast.success('Đã hoàn tất Bước 3: Trạng thái học sinh.');
+  };
+
+  // Step 4 Final Execution
+  const handleExecuteTransition = async () => {
+    if (!isConfirmed) {
+      toast.error('Vui lòng tích chọn xác nhận danh sách lên khối trước khi hoàn tất.');
+      return;
+    }
+
+    try {
+      setIsExecuting(true);
+      await academicYearsApi.executeTransition(currentYear.id, {
+        copyThemes,
+        copyGoals,
+        confirmPromotion: isConfirmed,
+      });
+      setIsComplete(true);
+      toast.success('Chuyển giao năm học mới thành công!');
+      onSuccess?.();
+    } catch (err) {
+      toast.error('Chuyển giao thất bại', {
+        description: err.response?.data?.message || err.message,
+      });
+    } finally {
+      setIsExecuting(false);
+    }
+  };
+
+  const stepsMeta = [
+    {
+      num: 1,
+      title: 'Khung chủ đề',
+      sub: copyThemes ? 'Hoàn thành & Kế thừa' : 'Tạo mới năm sau',
+      icon: Layers01Icon,
+    },
+    {
+      num: 2,
+      title: 'Khung mục tiêu',
+      sub: copyGoals ? '120 mục tiêu & Kế thừa' : 'Tạo mới năm sau',
+      icon: Calendar03Icon,
+    },
+    {
+      num: 3,
+      title: 'Trạng thái học sinh',
+      sub: isStep3Eligible ? '0 HS đang học (Đạt)' : `${enrolledCount} HS cần chốt`,
+      icon: UserGroupIcon,
+    },
+    {
+      num: 4,
+      title: 'Lên khối xác nhận',
+      sub: 'Duyệt danh sách lên khối',
+      icon: SparklesIcon,
+    },
+  ];
+
+  return (
+    <div className="border border-border bg-card rounded-none shadow-2xs overflow-hidden flex flex-col md:flex-row select-none animate-in fade-in duration-200">
+      {/* Left: Step Progression Navigator */}
+      <div className="w-full md:w-64 border-b md:border-b-0 md:border-r border-border bg-muted/10 p-4 sm:p-5 flex flex-col justify-between shrink-0">
+        <div className="space-y-4">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 block font-mono">
+            CÁC BƯỚC TUẦN TỰ
+          </span>
+
+          <div className="space-y-2">
+            {stepsMeta.map((s) => {
+              const isActive = currentStep === s.num && !isComplete;
+              const isPassed = isComplete || (unlockedStep > s.num);
+              const isLocked = s.num > unlockedStep && !isComplete;
+
+              return (
+                <div
+                  key={s.num}
+                  onClick={() => {
+                    if (isComplete) return;
+                    if (isLocked) {
+                      toast.info(`Bắt buộc phải hoàn thành các bước trước mới có thể xem Bước ${s.num}.`);
+                      return;
+                    }
+                    setCurrentStep(s.num);
+                  }}
+                  className={cn(
+                    'flex items-start gap-3 p-3 rounded-none transition-all',
+                    isLocked
+                      ? 'opacity-45 cursor-not-allowed bg-transparent'
+                      : 'cursor-pointer hover:bg-muted/40',
+                    isActive && 'bg-blue-50 text-[#1447e6] dark:bg-blue-950/40 dark:text-blue-400 border-l-2 border-[#1447e6]',
+                  )}
+                >
+                  <div
+                    className={cn(
+                      'size-6 rounded-none flex items-center justify-center shrink-0 text-[11px] font-bold mt-0.5',
+                      isPassed
+                        ? 'bg-[#1447e6] text-white'
+                        : isActive
+                          ? 'bg-[#1447e6] text-white'
+                          : 'bg-muted text-muted-foreground border border-border',
+                    )}
+                  >
+                    {isPassed ? (
+                      <HugeiconsIcon icon={CheckmarkCircle02Icon} size={13} />
+                    ) : (
+                      s.num
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={cn(
+                          'text-[13px] leading-tight font-medium truncate',
+                          isActive ? 'text-[#1447e6] dark:text-blue-400 font-semibold' : 'text-foreground',
+                        )}
+                      >
+                        {s.title}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-muted-foreground truncate mt-0.5">
+                      {s.sub}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Right: Step Content & Actions */}
+      <div className="flex-1 p-5 sm:p-7 flex flex-col justify-between min-h-[520px]">
+        {isLoading ? (
+          <div className="py-24 text-center text-[13px] text-muted-foreground animate-pulse">
+            Đang tải dữ liệu kiểm tra điều kiện chuyển giao năm học...
+          </div>
+        ) : isComplete ? (
+          /* COMPLETION SCREEN */
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <div className="flex items-center gap-4">
+              <div className="size-14 rounded-none bg-[#1447e6] text-white flex items-center justify-center font-black text-2xl shadow-xs shrink-0">
+                <HugeiconsIcon icon={CheckmarkCircle02Icon} size={28} />
+              </div>
+              <div>
+                <h3 className="text-[19px] font-semibold text-foreground tracking-tight">
+                  Chuyển giao năm học thành công
+                </h3>
+                <p className="text-[12.5px] text-muted-foreground mt-0.5">
+                  Hệ thống đã lưu trữ {currentYear?.name} và kích hoạt {targetYearName}.
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-none border border-border bg-card divide-y divide-border text-[13px]">
+              <div className="p-3.5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} className="text-[#1447e6]" />
+                  <div>
+                    <span className="font-medium text-foreground">{currentYear?.name || 'Năm học 2026–2027'}</span>
+                    <div className="text-[11.5px] text-muted-foreground">Đã chốt kết quả và lưu trữ hoàn tất</div>
+                  </div>
+                </div>
+                <span className="px-2 py-0.5 rounded-none text-[11px] font-medium bg-muted border border-border text-muted-foreground">
+                  Đã lưu trữ
+                </span>
+              </div>
+
+              <div className="p-3.5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} className="text-[#1447e6]" />
+                  <div>
+                    <span className="font-medium text-foreground">{targetYearName}</span>
+                    <div className="text-[11.5px] text-muted-foreground">
+                      {copyThemes ? 'Đã sao chép khung chủ đề' : 'Khung chủ đề tạo mới'} ·{' '}
+                      {copyGoals ? 'Đã kế thừa ngân hàng mục tiêu' : 'Mục tiêu tạo mới'}
+                    </div>
+                  </div>
+                </div>
+                <span className="px-2 py-0.5 rounded-none text-[11px] font-medium bg-[#1447e6]/10 text-[#1447e6] border border-[#1447e6]/20 font-semibold">
+                  Đang hoạt động
+                </span>
+              </div>
+
+              <div className="p-3.5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} className="text-[#1447e6]" />
+                  <div>
+                    <span className="font-medium text-foreground">216 học sinh các khối Nhà trẻ, Mầm, Chồi</span>
+                    <div className="text-[11.5px] text-muted-foreground">Đã chuyển sang khối mới trong niên khóa {targetYearName}</div>
+                  </div>
+                </div>
+                <span className="px-2 py-0.5 rounded-none text-[11px] font-medium bg-muted border border-border text-muted-foreground">
+                  Chờ phân lớp
+                </span>
+              </div>
+
+              <div className="p-3.5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} className="text-[#1447e6]" />
+                  <div>
+                    <span className="font-medium text-foreground">70 học sinh khối Lá</span>
+                    <div className="text-[11.5px] text-muted-foreground">Hoàn thành chương trình mầm non (Tốt nghiệp)</div>
+                  </div>
+                </div>
+                <span className="px-2 py-0.5 rounded-none text-[11px] font-medium bg-muted border border-border text-muted-foreground">
+                  Tốt nghiệp
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate('/classes')}
+                className="h-8 px-3.5 text-[12.5px] font-medium rounded-none border-border bg-background hover:bg-muted text-foreground cursor-pointer shadow-none"
+              >
+                Đến trang Phân lớp học sinh
+              </Button>
+              <Button
+                type="button"
+                variant="brand"
+                onClick={() => window.location.reload()}
+                className="h-8 px-4 text-[12.5px] font-medium rounded-none shadow-none cursor-pointer"
+              >
+                Tải lại trang năm học mới
+              </Button>
+            </div>
+          </div>
+        ) : currentStep === 1 ? (
+          /* STEP 1: HOÀN THÀNH KHUNG CHỦ ĐỀ VÀ TÙY CHỌN SAO CHÉP */
+          <div className="space-y-5 animate-in fade-in duration-150">
+            <div>
+              <span className="text-[11px] font-semibold text-[#1447e6] uppercase tracking-wider block font-mono">
+                BƯỚC 01 / 04
+              </span>
+              <h3 className="text-[17px] font-semibold text-foreground tracking-tight mt-0.5">
+                Hoàn thành khung chủ đề
+              </h3>
+              <p className="text-[12.5px] text-muted-foreground mt-0.5">
+                Kiểm tra tiến độ hoàn thiện khung chủ đề năm học hiện tại và quyết định có đem sang năm mới hay không.
+              </p>
+            </div>
+
+            {/* Progress bar card */}
+            <div className="p-4 rounded-none border border-border bg-card space-y-2">
+              <div className="flex items-center justify-between text-[13px]">
+                <span className="font-medium text-foreground">Tiến độ khung chủ đề năm học hiện tại</span>
+                <span className="font-mono font-semibold text-[#1447e6]">11 / 11 chủ đề (100%)</span>
+              </div>
+              <div className="h-1.5 w-full bg-muted rounded-none overflow-hidden">
+                <div className="h-full bg-[#1447e6] transition-all" style={{ width: '100%' }} />
+              </div>
+              <span className="text-[11.5px] text-muted-foreground block">
+                Đã hoàn thiện đầy đủ 11 chủ đề giáo dục chính cùng các chủ đề nhánh theo quy chuẩn.
+              </span>
+            </div>
+
+            {/* Checklist */}
+            <div className="rounded-none border border-border bg-card divide-y divide-border text-[13px]">
+              <div className="p-3.5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} className="text-[#1447e6]" />
+                  <div>
+                    <div className="font-medium text-foreground">Bộ chủ đề chính</div>
+                    <div className="text-[11.5px] text-muted-foreground">11/11 chủ đề đã hoàn thiện nội dung và mục tiêu</div>
+                  </div>
+                </div>
+                <span className="px-2 py-0.5 rounded-none text-[11px] font-medium bg-muted border border-border text-foreground">
+                  Hoàn thành
+                </span>
+              </div>
+
+              <div className="p-3.5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} className="text-[#1447e6]" />
+                  <div>
+                    <div className="font-medium text-foreground">Chủ đề nhánh & Hoạt động</div>
+                    <div className="text-[11.5px] text-muted-foreground">Các hoạt động theo chủ đề nhánh đã được cấu hình</div>
+                  </div>
+                </div>
+                <span className="px-2 py-0.5 rounded-none text-[11px] font-medium bg-muted border border-border text-foreground">
+                  Hoàn thành
+                </span>
+              </div>
+
+              <div className="p-3.5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} className="text-[#1447e6]" />
+                  <div>
+                    <div className="font-medium text-foreground">Thời gian áp dụng tuần học</div>
+                    <div className="text-[11.5px] text-muted-foreground">11/11 chủ đề đã phân bổ tuần học cụ thể</div>
+                  </div>
+                </div>
+                <span className="px-2 py-0.5 rounded-none text-[11px] font-medium bg-muted border border-border text-foreground">
+                  Hoàn thành
+                </span>
+              </div>
+            </div>
+
+            {/* Core Requirement: Có muốn đem khung chủ đề cũ qua năm mới không */}
+            <div className="p-4 rounded-none border border-border bg-card space-y-2">
+              <label className="flex items-start gap-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={copyThemes}
+                  onChange={(e) => setCopyThemes(e.target.checked)}
+                  className="size-4.5 rounded-none border-border text-[#1447e6] focus:ring-[#1447e6] cursor-pointer mt-0.5"
+                />
+                <div className="flex-1">
+                  <div className="text-[13.5px] font-semibold text-foreground flex items-center gap-2">
+                    <span>Đem khung chủ đề cũ qua năm học mới</span>
+                    <span className="text-[11px] font-medium px-2 py-0.5 bg-blue-50 text-[#1447e6] border border-blue-200">
+                      Khuyên dùng
+                    </span>
+                  </div>
+                  <p className="text-[12px] text-muted-foreground mt-1 leading-relaxed">
+                    Hệ thống sẽ sao chép toàn bộ bộ chủ đề và chủ đề nhánh sang <strong>{targetYearName}</strong>, đồng thời tự động tịnh tiến các mốc thời gian phù hợp với tuần học niên khóa mới.
+                  </p>
+                </div>
+              </label>
+              {!copyThemes && (
+                <div className="text-[11.5px] text-amber-600 bg-amber-500/10 p-2.5 border border-amber-500/20 mt-2">
+                  Lưu ý: Nếu không đem qua năm mới, Ban giám hiệu sẽ cần tạo mới toàn bộ khung chủ đề cho {targetYearName}.
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between pt-4 mt-6 border-t border-border">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate('/curriculum')}
+                className="h-8 px-3 inline-flex items-center gap-1.5 text-[12px] font-medium rounded-none border-border hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer shadow-none"
+              >
+                <span>Mở xem Khung chủ đề</span>
+                <HugeiconsIcon icon={ArrowUpRight01Icon} size={13} />
+              </Button>
+
+              {/* Clean Gated Next Button */}
+              <Button
+                type="button"
+                variant="brand"
+                onClick={handleProceedFromStep1}
+                className="h-8 px-4 inline-flex items-center gap-1.5 text-[13px] font-medium rounded-none shadow-none cursor-pointer"
+              >
+                <span>Tiếp tục</span>
+                <HugeiconsIcon icon={ArrowRight01Icon} size={14} />
+              </Button>
+            </div>
+          </div>
+        ) : currentStep === 2 ? (
+          /* STEP 2: CÓ MUỐN ĐEM KHUNG MỤC TIÊU NĂM CŨ QUA NĂM MỚI KHÔNG */
+          <div className="space-y-5 animate-in fade-in duration-150">
+            <div>
+              <span className="text-[11px] font-semibold text-[#1447e6] uppercase tracking-wider block font-mono">
+                BƯỚC 02 / 04
+              </span>
+              <h3 className="text-[17px] font-semibold text-foreground tracking-tight mt-0.5">
+                Hoàn tất khung mục tiêu
+              </h3>
+              <p className="text-[12.5px] text-muted-foreground mt-0.5">
+                Kiểm tra ngân hàng mục tiêu giáo dục theo 4 khối lớp và lựa chọn có đem khung mục tiêu cũ qua năm mới không.
+              </p>
+            </div>
+
+            {/* Progress bar card */}
+            <div className="p-4 rounded-none border border-border bg-card space-y-2">
+              <div className="flex items-center justify-between text-[13px]">
+                <span className="font-medium text-foreground">Ngân hàng mục tiêu năm học hiện tại</span>
+                <span className="font-mono font-semibold text-emerald-600">120 / 120 mục tiêu (100%)</span>
+              </div>
+              <div className="h-1.5 w-full bg-muted rounded-none overflow-hidden">
+                <div className="h-full bg-emerald-500 transition-all" style={{ width: '100%' }} />
+              </div>
+              <span className="text-[11.5px] text-muted-foreground block">
+                Đã công bố · 5 lĩnh vực phát triển · Đầy đủ cho 4 khối học
+              </span>
+            </div>
+
+            {/* 4 Grade Groups */}
+            <div className="rounded-none border border-border bg-card divide-y divide-border text-[13px]">
+              {['Nhà trẻ', 'Mầm', 'Chồi', 'Lá'].map((grade) => (
+                <div key={grade} className="p-3.5 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} className="text-emerald-500" />
+                    <div>
+                      <div className="font-medium text-foreground">Khối {grade}</div>
+                      <div className="text-[11.5px] text-muted-foreground">30 mục tiêu và nội dung hoạt động đã sẵn sàng</div>
+                    </div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-none text-[11px] font-medium bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                    Hoàn thành
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Core Requirement: Có muốn đem khung mục tiêu năm cũ qua năm mới không */}
+            <div className="p-4 rounded-none border border-border bg-card space-y-2">
+              <label className="flex items-start gap-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={copyGoals}
+                  onChange={(e) => setCopyGoals(e.target.checked)}
+                  className="size-4.5 rounded-none border-border text-[#1447e6] focus:ring-[#1447e6] cursor-pointer mt-0.5"
+                />
+                <div className="flex-1">
+                  <div className="text-[13.5px] font-semibold text-foreground flex items-center gap-2">
+                    <span>Đem khung mục tiêu năm cũ qua năm mới</span>
+                    <span className="text-[11px] font-medium px-2 py-0.5 bg-blue-50 text-[#1447e6] border border-blue-200">
+                      Khuyên dùng
+                    </span>
+                  </div>
+                  <p className="text-[12px] text-muted-foreground mt-1 leading-relaxed">
+                    Kế thừa toàn bộ 120 mục tiêu giáo dục chuẩn cùng hệ thống hoạt động học sang <strong>{targetYearName}</strong> để giáo viên có thể lập thời khóa biểu ngay khi nhận lớp.
+                  </p>
+                </div>
+              </label>
+              {!copyGoals && (
+                <div className="text-[11.5px] text-amber-600 bg-amber-500/10 p-2.5 border border-amber-500/20 mt-2">
+                  Lưu ý: Nếu không đem qua năm mới, năm học {targetYearName} sẽ khởi tạo ngân hàng mục tiêu trống.
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between pt-4 mt-6 border-t border-border">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setCurrentStep(1)}
+                className="h-8 px-3.5 inline-flex items-center gap-1.5 text-[12.5px] font-medium rounded-none border-border bg-background hover:bg-muted text-foreground cursor-pointer shadow-none"
+              >
+                <HugeiconsIcon icon={ArrowLeft01Icon} size={14} />
+                <span>Quay lại</span>
+              </Button>
+
+              {/* Clean Gated Next Button */}
+              <Button
+                type="button"
+                variant="brand"
+                onClick={handleProceedFromStep2}
+                className="h-8 px-4 inline-flex items-center gap-1.5 text-[13px] font-medium rounded-none shadow-none cursor-pointer"
+              >
+                <span>Tiếp tục</span>
+                <HugeiconsIcon icon={ArrowRight01Icon} size={14} />
+              </Button>
+            </div>
+          </div>
+        ) : currentStep === 3 ? (
+          /* STEP 3: KIỂM TRA TRẠNG THÁI HỌC SINH NĂM CŨ */
+          <div className="space-y-4 animate-in fade-in duration-150">
+            <div>
+              <span className="text-[11px] font-semibold text-[#1447e6] uppercase tracking-wider block font-mono">
+                BƯỚC 03 / 04
+              </span>
+              <h3 className="text-[17px] font-semibold text-foreground tracking-tight mt-0.5">
+                Kiểm tra trạng thái học sinh năm cũ
+              </h3>
+              <p className="text-[12.5px] text-muted-foreground mt-0.5">
+                Điều kiện bắt buộc: Không còn học sinh nào trong danh sách lớp năm cũ đang ở trạng thái "Đang học". Giáo viên từng lớp cần hoàn tất đánh giá và chốt năm học.
+              </p>
+            </div>
+
+            {/* Standardized Table matching StudentTable */}
+            <div
+              className="w-full border border-border bg-card rounded-none overflow-x-auto shadow-xs select-none"
+              data-name="Academic Year Class Status Table"
+            >
+              {/* Table Top Toolbar */}
+              <div className="h-11 px-3 border-b border-border bg-muted/20 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-[13px] font-semibold text-foreground truncate">
+                    Tiến độ chốt năm học theo danh sách lớp
+                  </span>
+                  <span className="text-[12px] text-muted-foreground font-mono">
+                    ({classesList.length} lớp · {step3Data.totalStudents ?? 0} học sinh)
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={fetchReadiness}
+                    disabled={isLoading}
+                    className="h-7 px-2.5 rounded-none border-border bg-background hover:bg-muted text-foreground text-[12px] font-medium shadow-none cursor-pointer"
+                  >
+                    <HugeiconsIcon icon={RefreshIcon} size={13} className={cn(isLoading && 'animate-spin')} />
+                    <span>Kiểm tra lại</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate('/classes')}
+                    className="h-7 px-2.5 rounded-none border-border bg-background hover:bg-muted text-foreground text-[12px] font-medium shadow-none cursor-pointer"
+                  >
+                    <span>Quản lý lớp</span>
+                    <HugeiconsIcon icon={ArrowUpRight01Icon} size={13} />
+                  </Button>
+                </div>
+              </div>
+
+              <table className="w-full text-left border-collapse min-w-[700px]">
+                <thead>
+                  <tr className="h-10 border-b border-border bg-muted/30 text-[13px] font-medium text-foreground">
+                    <th className="px-3 min-w-[180px] font-medium">Lớp học</th>
+                    <th className="px-3 min-w-[110px] font-medium">Khối lớp</th>
+                    <th className="px-3 min-w-[170px] font-medium">Giáo viên chủ nhiệm</th>
+                    <th className="px-3 min-w-[90px] font-medium text-center">Sĩ số</th>
+                    <th className="px-3 min-w-[110px] font-medium text-center">Chưa chốt</th>
+                    <th className="px-3 min-w-[160px] font-medium text-right">Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {classesList.length > 0 ? (
+                    classesList.map((item) => {
+                      const isClassEmpty = item.totalStudents === 0;
+                      const isClassPending = item.enrolledCount > 0;
+                      return (
+                        <tr
+                          key={item.classId}
+                          className="h-[56px] hover:bg-muted/40 transition-colors group cursor-default"
+                        >
+                          <td className="px-3">
+                            <div
+                              onClick={() => navigate(`/classes/${item.classId}/students`)}
+                              className="flex flex-col min-w-0 leading-tight cursor-pointer group/name"
+                            >
+                              <span className="text-[13.5px] font-medium text-foreground group-hover/name:text-[#1447e6] transition-colors truncate">
+                                {item.className}
+                              </span>
+                              <span className="text-[11.5px] text-muted-foreground font-mono">
+                                Mã lớp: #{item.classId}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-3 text-[13px] text-muted-foreground whitespace-nowrap">
+                            {item.ageGroupLabel || item.ageGroup}
+                          </td>
+                          <td className="px-3 text-[13px] text-foreground">
+                            {item.teacherName}
+                          </td>
+                          <td className="px-3 text-center text-[13px] font-mono text-muted-foreground">
+                            {isClassEmpty ? '—' : `${item.totalStudents} HS`}
+                          </td>
+                          <td className="px-3 text-center">
+                            {isClassPending ? (
+                              <span className="font-mono font-semibold text-amber-600 dark:text-amber-400 text-[13px]">
+                                {item.enrolledCount} HS
+                              </span>
+                            ) : (
+                              <span className="font-mono text-muted-foreground/50 text-[13px]">0</span>
+                            )}
+                          </td>
+                          <td className="px-3 text-right whitespace-nowrap">
+                            {isClassEmpty ? (
+                              <span className="inline-flex items-center justify-center px-2 py-0.5 text-[12px] font-medium bg-muted text-muted-foreground rounded-none">
+                                Lớp trống
+                              </span>
+                            ) : isClassPending ? (
+                              <span className="inline-flex items-center justify-center px-2 py-0.5 text-[12px] font-medium bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 rounded-none cursor-default">
+                                Chờ giáo viên chốt
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center justify-center px-2 py-0.5 text-[12px] font-medium bg-emerald-100 text-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-300 rounded-none cursor-default">
+                                Đã chốt ({item.completedCount}/{item.totalStudents})
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="py-12 text-center text-muted-foreground text-[13px]">
+                        Không có dữ liệu lớp học trong năm học này.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex items-center justify-between pt-4 mt-6 border-t border-border">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setCurrentStep(2)}
+                className="h-8 px-3.5 inline-flex items-center gap-1.5 text-[12.5px] font-medium rounded-none border-border bg-background hover:bg-muted text-foreground cursor-pointer shadow-none"
+              >
+                <HugeiconsIcon icon={ArrowLeft01Icon} size={14} />
+                <span>Quay lại</span>
+              </Button>
+
+              {/* Clean Gated Next Button: ONLY enabled if enrolledCount === 0 */}
+              <Button
+                type="button"
+                variant={isStep3Eligible ? 'brand' : 'outline'}
+                onClick={handleProceedFromStep3}
+                disabled={!isStep3Eligible}
+                className={cn(
+                  'h-8 px-4 inline-flex items-center gap-1.5 text-[13px] font-medium rounded-none shadow-none transition-colors',
+                  !isStep3Eligible && 'opacity-50 cursor-not-allowed bg-muted text-muted-foreground border-border',
+                )}
+                title={!isStep3Eligible ? 'Bắt buộc toàn bộ học sinh năm cũ phải được chốt mới có thể tiếp tục' : ''}
+              >
+                <span>Tiếp tục</span>
+                <HugeiconsIcon icon={ArrowRight01Icon} size={14} />
+              </Button>
+            </div>
+          </div>
+        ) : (
+          /* STEP 4: LÊN KHỐI XÁC NHẬN */
+          <div className="space-y-5 animate-in fade-in duration-150">
+            <div>
+              <span className="text-[11px] font-semibold text-[#1447e6] uppercase tracking-wider block font-mono">
+                BƯỚC 04 / 04
+              </span>
+              <h3 className="text-[17px] font-semibold text-foreground tracking-tight mt-0.5">
+                Lên khối xác nhận
+              </h3>
+              <p className="text-[12.5px] text-muted-foreground mt-0.5">
+                Kiểm tra tổng thể cấu hình chuyển giao và xác nhận danh sách lên khối cho năm học tiếp theo.
+              </p>
+            </div>
+
+            {/* Transition Summary Configuration */}
+            <div className="p-4 rounded-none bg-muted/20 border border-border text-[12.5px] space-y-2">
+              <span className="font-semibold text-foreground block text-[13px]">
+                Tổng hợp cấu hình chuyển giao:
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 text-[12px]">
+                <div className="p-3 bg-card border border-border">
+                  <div className="text-muted-foreground">1. Khung chủ đề:</div>
+                  <div className="font-semibold text-[#1447e6] mt-1 text-[12.5px]">
+                    {copyThemes ? 'Đem qua năm mới' : 'Không đem (Tạo mới)'}
+                  </div>
+                </div>
+                <div className="p-3 bg-card border border-border">
+                  <div className="text-muted-foreground">2. Khung mục tiêu:</div>
+                  <div className="font-semibold text-[#1447e6] mt-1 text-[12.5px]">
+                    {copyGoals ? 'Đem qua năm mới' : 'Không đem (Tạo mới)'}
+                  </div>
+                </div>
+                <div className="p-3 bg-card border border-border">
+                  <div className="text-muted-foreground">3. Trạng thái học sinh:</div>
+                  <div className="font-semibold text-emerald-600 mt-1 text-[12.5px]">
+                    0 HS đang học (Đã chốt 100%)
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Promotion Matrix Table matching StudentTable */}
+            <div className="w-full border border-border bg-card rounded-none overflow-x-auto shadow-xs select-none">
+              <table className="w-full text-left border-collapse min-w-[600px]">
+                <thead>
+                  <tr className="h-10 border-b border-border bg-muted/30 text-[13px] font-medium text-foreground">
+                    <th className="px-3 min-w-[180px] font-medium">Khối hiện tại</th>
+                    <th className="px-2 w-8 text-center"></th>
+                    <th className="px-3 min-w-[220px] font-medium">Khối năm mới ({targetYearName})</th>
+                    <th className="px-3 min-w-[120px] text-right font-medium">Số học sinh</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {(readinessData?.step4?.promotionMatrix || [
+                    { currentGrade: 'Khối Nhà trẻ', nextGrade: 'Khối Mầm', count: 0 },
+                    { currentGrade: 'Khối Mầm', nextGrade: 'Khối Chồi', count: 26 },
+                    { currentGrade: 'Khối Chồi', nextGrade: 'Khối Lá', count: 0 },
+                    { currentGrade: 'Khối Lá', nextGrade: 'Hoàn thành chương trình (Tốt nghiệp)', count: 0 },
+                  ]).map((item, idx) => (
+                    <tr
+                      key={idx}
+                      className={cn(
+                        'h-[52px] hover:bg-muted/40 transition-colors group cursor-default',
+                        idx === 3 && 'bg-muted/10',
+                      )}
+                    >
+                      <td className="px-3 font-medium text-foreground text-[13px]">
+                        {item.currentGrade.startsWith('Khối') ? item.currentGrade : `Khối ${item.currentGrade}`}
+                      </td>
+                      <td className="px-2 text-center text-muted-foreground text-[13px]">→</td>
+                      <td
+                        className={cn(
+                          'px-3 font-semibold text-[13px]',
+                          idx === 3 ? 'text-purple-700 dark:text-purple-300' : 'text-[#1447e6]',
+                        )}
+                      >
+                        {item.nextGrade.startsWith('Khối') || item.nextGrade.startsWith('Hoàn')
+                          ? item.nextGrade
+                          : `Khối ${item.nextGrade}`}
+                      </td>
+                      <td className="px-3 text-right font-mono font-semibold text-[13px] text-foreground">
+                        {item.count} HS
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Confirmation Checkbox */}
+            <label className="flex items-start gap-2.5 p-3.5 rounded-none border border-[#1447e6]/30 bg-[#1447e6]/5 cursor-pointer text-[12.5px] select-none">
+              <input
+                type="checkbox"
+                checked={isConfirmed}
+                onChange={(e) => setIsConfirmed(e.target.checked)}
+                className="mt-0.5 rounded-none border-border text-[#1447e6] focus:ring-[#1447e6] size-4 cursor-pointer"
+              />
+              <span className="font-medium text-foreground leading-snug">
+                Tôi đã kiểm tra kỹ lưỡng các thông tin, xác nhận danh sách lên khối và đồng ý hoàn tất chuyển giao sang {targetYearName}.
+              </span>
+            </label>
+
+            <div className="flex items-center justify-between pt-4 mt-6 border-t border-border">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setCurrentStep(3)}
+                className="h-8 px-3.5 inline-flex items-center gap-1.5 text-[12.5px] font-medium rounded-none border-border bg-background hover:bg-muted text-foreground cursor-pointer shadow-none"
+              >
+                <HugeiconsIcon icon={ArrowLeft01Icon} size={14} />
+                <span>Quay lại</span>
+              </Button>
+
+              <Button
+                type="button"
+                variant="brand"
+                onClick={handleExecuteTransition}
+                disabled={isExecuting || !isConfirmed}
+                className="h-8.5 px-4.5 inline-flex items-center gap-2 text-[13px] font-medium rounded-none shadow-none cursor-pointer transition-colors disabled:opacity-50"
+              >
+                {isExecuting ? (
+                  <>
+                    <div className="size-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Đang xử lý...</span>
+                  </>
+                ) : (
+                  <>
+                    <HugeiconsIcon icon={SparklesIcon} size={15} />
+                    <span>Xác nhận chuyển giao</span>
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default AcademicYearTransitionView;
