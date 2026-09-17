@@ -231,6 +231,10 @@
     "fullName": "Full Name",
     "email": "Email",
     "phone": "Phone Number",
-    "studentName": "Student"
+    "studentName": "Student",
+    "studentClass": "Class",
+    "create": "Create Account",
+    "resetPasswordSub": "Reset password for account {{name}}",
+    "typeToConfirm": "To confirm, enter “i am sure”"
   }
 }
