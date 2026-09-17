@@ -220,6 +220,10 @@
     "resetPasswordBtn": "Reset Password",
     "statusTitle": "Account Status",
     "statusSub": "Control login access for user",
-    "deactivateBtn": "Deactivate Account"
+    "deactivateBtn": "Deactivate Account",
+    "activateBtn": "Activate Account",
+    "deactivateNote": "The user will not be able to log in until reactivated.",
+    "save": "Save",
+    "enterNameError": "Please enter full name"
   }
 }
