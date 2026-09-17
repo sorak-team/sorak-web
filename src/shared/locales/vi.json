@@ -253,6 +253,10 @@
     "toastBulkStaffCreated": "Đã cấp thành công {{count}} tài khoản giáo viên/cán bộ",
     "toastBulkStudentCreated": "Đã cấp thành công {{count}} tài khoản học sinh",
     "selectTeacherPrompt": "Vui lòng chọn ít nhất 01 hồ sơ giáo viên",
-    "selectStudentPrompt": "Vui lòng chọn ít nhất 01 hồ sơ học sinh"
+    "selectStudentPrompt": "Vui lòng chọn ít nhất 01 hồ sơ học sinh",
+    "addStaffSub": "Chọn hồ sơ giáo viên/cán bộ và thiết lập vai trò để tạo tài khoản đăng nhập.",
+    "addStudentSub": "Chọn học sinh hoặc lọc theo lớp để cấp tài khoản đăng nhập hàng loạt.",
+    "searchTeacherPlaceholder": "Tìm theo tên, mã giáo viên...",
+    "searchStudentPlaceholder": "Tìm theo tên, mã học sinh..."
   }
 }

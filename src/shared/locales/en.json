@@ -253,6 +253,10 @@
     "toastBulkStaffCreated": "Successfully issued {{count}} staff/teacher accounts",
     "toastBulkStudentCreated": "Successfully issued {{count}} student accounts",
     "selectTeacherPrompt": "Please select at least 1 teacher profile",
-    "selectStudentPrompt": "Please select at least 1 student profile"
+    "selectStudentPrompt": "Please select at least 1 student profile",
+    "addStaffSub": "Select teacher/staff profiles and assign roles to issue login accounts.",
+    "addStudentSub": "Select student profiles or filter by class to issue login accounts in bulk.",
+    "searchTeacherPlaceholder": "Search by name, employee code...",
+    "searchStudentPlaceholder": "Search by name, student code..."
   }
 }
