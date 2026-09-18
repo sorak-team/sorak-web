@@ -305,6 +305,10 @@
     "editSubtitle": "Update profile and employment details of {{name}}",
     "createSubtitle": "Create profile and employment details for a new staff member",
     "colTeacher": "Staff",
-    "colAssignedClasses": "Assigned Classes"
+    "colAssignedClasses": "Assigned Classes",
+    "colStatus": "Status",
+    "colEmail": "Email",
+    "colPhone": "Phone",
+    "colCitizenId": "Citizen ID"
   }
 }
