@@ -288,6 +288,12 @@
   },
   "notFound": {
     "title": "Không tìm thấy trang",
-    "description": "Trang bạn đang tìm kiếm không tồn tại hoặc đã được di chuyển."
+    "description": "Trang bạn đang tìm kiếm không tồn tại hoặc đã được di chuyển.",
+    "back": "Quay lại",
+    "home": "Về trang chủ"
+  },
+  "teacher": {
+    "title": "Cán bộ",
+    "subtitle": "Quản lý hồ sơ, thông tin công tác và dữ liệu cán bộ"
   }
 }
