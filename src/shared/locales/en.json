@@ -301,6 +301,10 @@
     "columns": "Columns",
     "filter": "Filter",
     "addTeacher": "Add Staff",
-    "editTeacher": "Edit Staff"
+    "editTeacher": "Edit Staff",
+    "editSubtitle": "Update profile and employment details of {{name}}",
+    "createSubtitle": "Create profile and employment details for a new staff member",
+    "colTeacher": "Staff",
+    "colAssignedClasses": "Assigned Classes"
   }
 }
