@@ -301,6 +301,10 @@
     "columns": "Cột",
     "filter": "Lọc",
     "addTeacher": "Thêm cán bộ",
-    "editTeacher": "Chỉnh sửa cán bộ"
+    "editTeacher": "Chỉnh sửa cán bộ",
+    "editSubtitle": "Cập nhật hồ sơ và thông tin công tác của {{name}}",
+    "createSubtitle": "Tạo hồ sơ và thông tin công tác cán bộ mới",
+    "colTeacher": "Cán bộ",
+    "colAssignedClasses": "Lớp phụ trách"
   }
 }
