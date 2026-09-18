@@ -283,6 +283,11 @@
     "lockedSuccess": "Đã khóa tài khoản thành công",
     "unlockedSuccess": "Đã mở khóa tài khoản thành công",
     "accountUnit": "tài khoản",
-    "createError": "Có lỗi xảy ra khi tạo tài khoản"
+    "createError": "Có lỗi xảy ra khi tạo tài khoản",
+    "creating": "Đang tạo..."
+  },
+  "notFound": {
+    "title": "Không tìm thấy trang",
+    "description": "Trang bạn đang tìm kiếm không tồn tại hoặc đã được di chuyển."
   }
 }
