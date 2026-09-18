@@ -298,6 +298,9 @@
     "searchPlaceholder": "Search staff...",
     "listTitle": "Staff List",
     "teacherCount": "{{count}} staff",
-    "columns": "Columns"
+    "columns": "Columns",
+    "filter": "Filter",
+    "addTeacher": "Add Staff",
+    "editTeacher": "Edit Staff"
   }
 }
