@@ -294,6 +294,10 @@
   },
   "teacher": {
     "title": "Cán bộ",
-    "subtitle": "Quản lý hồ sơ, thông tin công tác và dữ liệu cán bộ"
+    "subtitle": "Quản lý hồ sơ, thông tin công tác và dữ liệu cán bộ",
+    "searchPlaceholder": "Tìm kiếm cán bộ...",
+    "listTitle": "Danh sách cán bộ",
+    "teacherCount": "{{count}} cán bộ",
+    "columns": "Cột"
   }
 }

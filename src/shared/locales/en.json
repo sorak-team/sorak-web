@@ -294,6 +294,10 @@
   },
   "teacher": {
     "title": "Staff",
-    "subtitle": "Manage staff profiles, employment info, and personnel directory"
+    "subtitle": "Manage staff profiles, employment info, and personnel directory",
+    "searchPlaceholder": "Search staff...",
+    "listTitle": "Staff List",
+    "teacherCount": "{{count}} staff",
+    "columns": "Columns"
   }
 }
