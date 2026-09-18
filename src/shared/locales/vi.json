@@ -279,6 +279,10 @@
     "actionUnlock": "Mở khóa tài khoản",
     "lockBtn": "Khóa tài khoản",
     "unlockBtn": "Mở khóa tài khoản",
-    "lockNote": "Người dùng sẽ không thể đăng nhập khi tài khoản bị khóa."
+    "lockNote": "Người dùng sẽ không thể đăng nhập khi tài khoản bị khóa.",
+    "lockedSuccess": "Đã khóa tài khoản thành công",
+    "unlockedSuccess": "Đã mở khóa tài khoản thành công",
+    "accountUnit": "tài khoản",
+    "createError": "Có lỗi xảy ra khi tạo tài khoản"
   }
 }
