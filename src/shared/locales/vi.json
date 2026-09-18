@@ -305,6 +305,10 @@
     "editSubtitle": "Cập nhật hồ sơ và thông tin công tác của {{name}}",
     "createSubtitle": "Tạo hồ sơ và thông tin công tác cán bộ mới",
     "colTeacher": "Cán bộ",
-    "colAssignedClasses": "Lớp phụ trách"
+    "colAssignedClasses": "Lớp phụ trách",
+    "colStatus": "Công tác",
+    "colEmail": "Email",
+    "colPhone": "SĐT",
+    "colCitizenId": "Số CCCD"
   }
 }
