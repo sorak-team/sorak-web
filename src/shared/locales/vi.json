@@ -309,6 +309,9 @@
     "colStatus": "Công tác",
     "colEmail": "Email",
     "colPhone": "SĐT",
-    "colCitizenId": "Số CCCD"
+    "colCitizenId": "Số CCCD",
+    "colGender": "Giới tính",
+    "colDob": "Ngày sinh",
+    "colPosition": "Chức vụ"
   }
 }
