@@ -312,6 +312,10 @@
     "colCitizenId": "Số CCCD",
     "colGender": "Giới tính",
     "colDob": "Ngày sinh",
-    "colPosition": "Chức vụ"
+    "colPosition": "Chức vụ",
+    "colAddress": "Địa chỉ",
+    "colDegree": "Trình độ",
+    "colJoinDate": "Ngày vào làm",
+    "colActions": "Thao tác"
   }
 }

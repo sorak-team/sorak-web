@@ -312,6 +312,10 @@
     "colCitizenId": "Citizen ID",
     "colGender": "Gender",
     "colDob": "Date of Birth",
-    "colPosition": "Position"
+    "colPosition": "Position",
+    "colAddress": "Address",
+    "colDegree": "Degree",
+    "colJoinDate": "Join Date",
+    "colActions": "Actions"
   }
 }
