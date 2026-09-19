@@ -338,6 +338,9 @@
     "dob": "Ngày sinh",
     "status": "Công tác",
     "joinDate": "Ngày vào làm",
-    "degree": "Trình độ"
+    "degree": "Trình độ",
+    "cancel": "Hủy",
+    "save": "Lưu",
+    "deleteTitle": "Xác nhận xóa cán bộ"
   }
 }
