@@ -327,6 +327,9 @@
     "actionDelete": "Delete",
     "personalInfo": "Personal Information",
     "personalInfoSub": "Basic profile information of the staff member",
-    "personalInfoEditSub": "Update contact and personal identity info"
+    "personalInfoEditSub": "Update contact and personal identity info",
+    "workInfo": "Employment Information",
+    "workInfoSub": "Degree and employment timeline at Sorak",
+    "workInfoEditSub": "Update status and professional credentials"
   }
 }
