@@ -352,6 +352,10 @@
     "gridView": "Grid view",
     "position": "Position / Role",
     "employeeCode": "Staff Code",
-    "citizenId": "Citizen ID / Passport"
+    "citizenId": "Citizen ID / Passport",
+    "address": "Address",
+    "assignedClasses": "Assigned Classes",
+    "unassigned": "Unassigned",
+    "primaryTeacher": "Primary"
   }
 }

@@ -352,6 +352,10 @@
     "gridView": "Dạng lưới",
     "position": "Vị trí / Chức vụ",
     "employeeCode": "Mã cán bộ",
-    "citizenId": "Số CCCD/CMND"
+    "citizenId": "Số CCCD/CMND",
+    "address": "Địa chỉ",
+    "assignedClasses": "Lớp phụ trách",
+    "unassigned": "Chưa phân lớp",
+    "primaryTeacher": "Chủ nhiệm"
   }
 }
