@@ -316,6 +316,9 @@
     "colAddress": "Địa chỉ",
     "colDegree": "Trình độ",
     "colJoinDate": "Ngày vào làm",
-    "colActions": "Thao tác"
+    "colActions": "Thao tác",
+    "statusActive": "Đang công tác",
+    "statusOnLeave": "Tạm nghỉ",
+    "statusResigned": "Đã nghỉ việc"
   }
 }
