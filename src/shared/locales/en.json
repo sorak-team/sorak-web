@@ -309,6 +309,9 @@
     "colStatus": "Status",
     "colEmail": "Email",
     "colPhone": "Phone",
-    "colCitizenId": "Citizen ID"
+    "colCitizenId": "Citizen ID",
+    "colGender": "Gender",
+    "colDob": "Date of Birth",
+    "colPosition": "Position"
   }
 }
