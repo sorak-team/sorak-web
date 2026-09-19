@@ -330,6 +330,10 @@
     "personalInfoEditSub": "Cập nhật thông tin liên hệ và nhận diện",
     "workInfo": "Thông tin công tác",
     "workInfoSub": "Trình độ và thời gian làm việc tại Sorak",
-    "workInfoEditSub": "Cập nhật trạng thái và chuyên môn"
+    "workInfoEditSub": "Cập nhật trạng thái và chuyên môn",
+    "fullName": "Họ tên",
+    "email": "Email",
+    "phone": "SĐT",
+    "gender": "Giới tính"
   }
 }
