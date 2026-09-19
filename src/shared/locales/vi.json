@@ -327,6 +327,9 @@
     "actionDelete": "Xóa",
     "personalInfo": "Thông tin cá nhân",
     "personalInfoSub": "Thông tin cơ bản của cán bộ",
-    "personalInfoEditSub": "Cập nhật thông tin liên hệ và nhận diện"
+    "personalInfoEditSub": "Cập nhật thông tin liên hệ và nhận diện",
+    "workInfo": "Thông tin công tác",
+    "workInfoSub": "Trình độ và thời gian làm việc tại Sorak",
+    "workInfoEditSub": "Cập nhật trạng thái và chuyên môn"
   }
 }
