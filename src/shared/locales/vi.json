@@ -349,6 +349,9 @@
     "nextPage": "Sau",
     "roleTeacher": "Giáo viên",
     "listView": "Dạng bảng",
-    "gridView": "Dạng lưới"
+    "gridView": "Dạng lưới",
+    "position": "Vị trí / Chức vụ",
+    "employeeCode": "Mã cán bộ",
+    "citizenId": "Số CCCD/CMND"
   }
 }
