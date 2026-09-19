@@ -330,6 +330,10 @@
     "personalInfoEditSub": "Update contact and personal identity info",
     "workInfo": "Employment Information",
     "workInfoSub": "Degree and employment timeline at Sorak",
-    "workInfoEditSub": "Update status and professional credentials"
+    "workInfoEditSub": "Update status and professional credentials",
+    "fullName": "Full name",
+    "email": "Email",
+    "phone": "Phone",
+    "gender": "Gender"
   }
 }
