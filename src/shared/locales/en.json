@@ -356,6 +356,10 @@
     "address": "Address",
     "assignedClasses": "Assigned Classes",
     "unassigned": "Unassigned",
-    "primaryTeacher": "Primary"
+    "primaryTeacher": "Primary",
+    "assistantTeacher": "Assistant",
+    "actions": "Actions",
+    "staffUnit": "staff",
+    "notFound": "No matching teachers found."
   }
 }
