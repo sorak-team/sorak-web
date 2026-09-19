@@ -323,6 +323,10 @@
     "genderMale": "Male",
     "genderFemale": "Female",
     "actionView": "View details",
-    "actionEdit": "Edit"
+    "actionEdit": "Edit",
+    "actionDelete": "Delete",
+    "personalInfo": "Personal Information",
+    "personalInfoSub": "Basic profile information of the staff member",
+    "personalInfoEditSub": "Update contact and personal identity info"
   }
 }

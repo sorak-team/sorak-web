@@ -323,6 +323,10 @@
     "genderMale": "Nam",
     "genderFemale": "Nữ",
     "actionView": "Xem chi tiết",
-    "actionEdit": "Chỉnh sửa"
+    "actionEdit": "Chỉnh sửa",
+    "actionDelete": "Xóa",
+    "personalInfo": "Thông tin cá nhân",
+    "personalInfoSub": "Thông tin cơ bản của cán bộ",
+    "personalInfoEditSub": "Cập nhật thông tin liên hệ và nhận diện"
   }
 }
