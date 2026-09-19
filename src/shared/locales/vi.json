@@ -334,6 +334,10 @@
     "fullName": "Họ tên",
     "email": "Email",
     "phone": "SĐT",
-    "gender": "Giới tính"
+    "gender": "Giới tính",
+    "dob": "Ngày sinh",
+    "status": "Công tác",
+    "joinDate": "Ngày vào làm",
+    "degree": "Trình độ"
   }
 }

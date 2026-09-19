@@ -334,6 +334,10 @@
     "fullName": "Full name",
     "email": "Email",
     "phone": "Phone",
-    "gender": "Gender"
+    "gender": "Gender",
+    "dob": "Date of birth",
+    "status": "Status",
+    "joinDate": "Join date",
+    "degree": "Degree"
   }
 }
