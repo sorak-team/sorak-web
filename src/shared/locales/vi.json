@@ -341,6 +341,10 @@
     "degree": "Trình độ",
     "cancel": "Hủy",
     "save": "Lưu",
-    "deleteTitle": "Xác nhận xóa cán bộ"
+    "deleteTitle": "Xác nhận xóa cán bộ",
+    "deleteDesc": "Bạn có chắc chắn muốn xóa hồ sơ cán bộ {{name}}? Hành động này không thể hoàn tác.",
+    "toastDeleted": "Đã xóa hồ sơ cán bộ thành công.",
+    "backToList": "Quay lại danh sách cán bộ",
+    "prevPage": "Trước"
   }
 }

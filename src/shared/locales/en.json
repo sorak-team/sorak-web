@@ -341,6 +341,10 @@
     "degree": "Degree",
     "cancel": "Cancel",
     "save": "Save",
-    "deleteTitle": "Confirm delete staff"
+    "deleteTitle": "Confirm delete staff",
+    "deleteDesc": "Are you sure you want to delete the profile for {{name}}? This action cannot be undone.",
+    "toastDeleted": "Staff profile deleted successfully.",
+    "backToList": "Back to staff list",
+    "prevPage": "Previous"
   }
 }
