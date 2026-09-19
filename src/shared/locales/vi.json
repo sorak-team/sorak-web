@@ -319,6 +319,10 @@
     "colActions": "Thao tác",
     "statusActive": "Đang công tác",
     "statusOnLeave": "Tạm nghỉ",
-    "statusResigned": "Đã nghỉ việc"
+    "statusResigned": "Đã nghỉ việc",
+    "genderMale": "Nam",
+    "genderFemale": "Nữ",
+    "actionView": "Xem chi tiết",
+    "actionEdit": "Chỉnh sửa"
   }
 }

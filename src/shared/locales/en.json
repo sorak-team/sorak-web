@@ -319,6 +319,10 @@
     "colActions": "Actions",
     "statusActive": "Active",
     "statusOnLeave": "On Leave",
-    "statusResigned": "Resigned"
+    "statusResigned": "Resigned",
+    "genderMale": "Male",
+    "genderFemale": "Female",
+    "actionView": "View details",
+    "actionEdit": "Edit"
   }
 }
