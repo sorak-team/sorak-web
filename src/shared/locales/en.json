@@ -338,6 +338,9 @@
     "dob": "Date of birth",
     "status": "Status",
     "joinDate": "Join date",
-    "degree": "Degree"
+    "degree": "Degree",
+    "cancel": "Cancel",
+    "save": "Save",
+    "deleteTitle": "Confirm delete staff"
   }
 }
