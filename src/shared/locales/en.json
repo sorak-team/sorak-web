@@ -349,6 +349,9 @@
     "nextPage": "Next",
     "roleTeacher": "Teacher",
     "listView": "Table view",
-    "gridView": "Grid view"
+    "gridView": "Grid view",
+    "position": "Position / Role",
+    "employeeCode": "Staff Code",
+    "citizenId": "Citizen ID / Passport"
   }
 }
