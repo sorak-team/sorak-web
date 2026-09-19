@@ -316,6 +316,9 @@
     "colAddress": "Address",
     "colDegree": "Degree",
     "colJoinDate": "Join Date",
-    "colActions": "Actions"
+    "colActions": "Actions",
+    "statusActive": "Active",
+    "statusOnLeave": "On Leave",
+    "statusResigned": "Resigned"
   }
 }
