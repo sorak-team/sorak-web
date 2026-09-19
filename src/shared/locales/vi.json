@@ -356,6 +356,10 @@
     "address": "Địa chỉ",
     "assignedClasses": "Lớp phụ trách",
     "unassigned": "Chưa phân lớp",
-    "primaryTeacher": "Chủ nhiệm"
+    "primaryTeacher": "Chủ nhiệm",
+    "assistantTeacher": "Phụ tá",
+    "actions": "Thao tác",
+    "staffUnit": "cán bộ",
+    "notFound": "Không tìm thấy giáo viên nào phù hợp."
   }
 }
