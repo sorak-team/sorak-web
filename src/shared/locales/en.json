@@ -373,6 +373,9 @@
     "reports": "Reports",
     "stats": "Reports",
     "management": "Administration",
-    "admin": "Administration"
+    "admin": "Administration",
+    "accounts": "Accounts",
+    "teachers": "Staff",
+    "students": "Students"
   }
 }
