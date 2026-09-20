@@ -385,5 +385,10 @@
     "curriculum": "Khung chương trình",
     "planning": "Kế hoạch giáo dục",
     "dailyRoutine": "Nhật ký ngày"
+  },
+  "schoolYear": {
+    "title": "Năm học",
+    "subtitle": "Quản lý năm học, thời gian hoạt động và tổng quan lớp học",
+    "active": "Đang hoạt động"
   }
 }

@@ -385,5 +385,10 @@
     "curriculum": "Curriculum Framework",
     "planning": "Educational Planning",
     "dailyRoutine": "Daily Routine"
+  },
+  "schoolYear": {
+    "title": "School Year",
+    "subtitle": "Manage school years, operational timeframe, and class overviews",
+    "active": "Active"
   }
 }
