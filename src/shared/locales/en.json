@@ -365,6 +365,10 @@
     "avatarResetNotice": "Reset to default avatar successfully"
   },
   "nav": {
-    "inSchoolYear": "In school year"
+    "inSchoolYear": "In school year",
+    "overview": "Overview",
+    "classes": "Classes",
+    "attendance": "Attendance",
+    "health": "Health"
   }
 }
