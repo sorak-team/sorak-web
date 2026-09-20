@@ -369,6 +369,10 @@
     "overview": "Overview",
     "classes": "Classes",
     "attendance": "Attendance",
-    "health": "Health"
+    "health": "Health",
+    "reports": "Reports",
+    "stats": "Reports",
+    "management": "Administration",
+    "admin": "Administration"
   }
 }
