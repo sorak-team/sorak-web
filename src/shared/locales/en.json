@@ -380,6 +380,10 @@
     "schoolYears": "School Years",
     "support": "Support",
     "transfers": "Transfers",
-    "assessment": "Periodic Assessment"
+    "assessment": "Periodic Assessment",
+    "goodBehavior": "Good Behavior",
+    "curriculum": "Curriculum Framework",
+    "planning": "Educational Planning",
+    "dailyRoutine": "Daily Routine"
   }
 }
