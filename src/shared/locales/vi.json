@@ -369,6 +369,10 @@
     "overview": "Tổng quan",
     "classes": "Lớp học",
     "attendance": "Điểm danh",
-    "health": "Sức khỏe"
+    "health": "Sức khỏe",
+    "reports": "Báo cáo",
+    "stats": "Báo cáo",
+    "management": "Quản trị",
+    "admin": "Quản trị"
   }
 }
