@@ -365,6 +365,10 @@
     "avatarResetNotice": "Đã đặt lại ảnh đại diện mặc định"
   },
   "nav": {
-    "inSchoolYear": "Trong năm học"
+    "inSchoolYear": "Trong năm học",
+    "overview": "Tổng quan",
+    "classes": "Lớp học",
+    "attendance": "Điểm danh",
+    "health": "Sức khỏe"
   }
 }
