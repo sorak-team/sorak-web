@@ -376,6 +376,10 @@
     "admin": "Administration",
     "accounts": "Accounts",
     "teachers": "Staff",
-    "students": "Students"
+    "students": "Students",
+    "schoolYears": "School Years",
+    "support": "Support",
+    "transfers": "Transfers",
+    "assessment": "Periodic Assessment"
   }
 }

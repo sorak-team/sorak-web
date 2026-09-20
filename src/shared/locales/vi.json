@@ -376,6 +376,10 @@
     "admin": "Quản trị",
     "accounts": "Tài khoản",
     "teachers": "Cán bộ",
-    "students": "Học sinh"
+    "students": "Học sinh",
+    "schoolYears": "Năm học",
+    "support": "Hỗ trợ",
+    "transfers": "Chuyển lớp",
+    "assessment": "Đánh giá giai đoạn"
   }
 }
