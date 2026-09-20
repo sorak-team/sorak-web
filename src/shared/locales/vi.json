@@ -360,6 +360,11 @@
     "assistantTeacher": "Phụ tá",
     "actions": "Thao tác",
     "staffUnit": "cán bộ",
-    "notFound": "Không tìm thấy giáo viên nào phù hợp."
+    "notFound": "Không tìm thấy giáo viên nào phù hợp.",
+    "avatarUploadSuccess": "Đã cập nhật ảnh đại diện giáo viên",
+    "avatarResetNotice": "Đã đặt lại ảnh đại diện mặc định"
+  },
+  "nav": {
+    "inSchoolYear": "Trong năm học"
   }
 }

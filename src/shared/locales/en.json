@@ -360,6 +360,11 @@
     "assistantTeacher": "Assistant",
     "actions": "Actions",
     "staffUnit": "staff",
-    "notFound": "No matching teachers found."
+    "notFound": "No matching teachers found.",
+    "avatarUploadSuccess": "Teacher avatar updated successfully",
+    "avatarResetNotice": "Reset to default avatar successfully"
+  },
+  "nav": {
+    "inSchoolYear": "In school year"
   }
 }
