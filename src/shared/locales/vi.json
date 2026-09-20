@@ -373,6 +373,9 @@
     "reports": "Báo cáo",
     "stats": "Báo cáo",
     "management": "Quản trị",
-    "admin": "Quản trị"
+    "admin": "Quản trị",
+    "accounts": "Tài khoản",
+    "teachers": "Cán bộ",
+    "students": "Học sinh"
   }
 }
