@@ -408,6 +408,9 @@
     "sortEndDate": "End Date",
     "sortClassCount": "Class Count",
     "hideEnded": "Hide ended school years",
-    "onlyActive": "Show active school years only"
+    "onlyActive": "Show active school years only",
+    "addYear": "Add school year",
+    "createYear": "Create school year",
+    "manageYears": "Go to academic years management"
   }
 }
