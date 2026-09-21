@@ -419,6 +419,9 @@
     "colEndDate": "Ngày kết thúc",
     "classesSuffix": "lớp",
     "totalStudents": "Tổng học sinh",
-    "teachers": "Cán bộ"
+    "teachers": "Cán bộ",
+    "attendanceRate": "Tỷ lệ điểm danh",
+    "studentDistribution": "Phân bố học sinh theo khối",
+    "studentDistributionSub": "Tổng số học sinh theo từng khối lớp"
   }
 }
