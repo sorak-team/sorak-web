@@ -389,6 +389,10 @@
   "schoolYear": {
     "title": "School Year",
     "subtitle": "Manage school years, operational timeframe, and class overviews",
-    "active": "Active"
+    "active": "Active",
+    "ended": "Ended",
+    "listView": "Table view",
+    "gridView": "Grid view",
+    "searchPlaceholder": "Search"
   }
 }
