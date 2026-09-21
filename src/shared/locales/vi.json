@@ -393,6 +393,10 @@
     "ended": "Đã kết thúc",
     "listView": "Dạng bảng",
     "gridView": "Dạng lưới",
-    "searchPlaceholder": "Tìm kiếm"
+    "searchPlaceholder": "Tìm kiếm",
+    "listTitle": "Danh sách năm học",
+    "yearCount": "{{count}} năm học",
+    "clickToOverview": "Nhấn để xem tổng quan năm học",
+    "filter": "Lọc"
   }
 }

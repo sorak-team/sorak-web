@@ -393,6 +393,10 @@
     "ended": "Ended",
     "listView": "Table view",
     "gridView": "Grid view",
-    "searchPlaceholder": "Search"
+    "searchPlaceholder": "Search",
+    "listTitle": "School Years List",
+    "yearCount": "{{count}} school years",
+    "clickToOverview": "Click to view school year overview",
+    "filter": "Filter"
   }
 }
