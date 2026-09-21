@@ -397,6 +397,9 @@
     "listTitle": "Danh sách năm học",
     "yearCount": "{{count}} năm học",
     "clickToOverview": "Nhấn để xem tổng quan năm học",
-    "filter": "Lọc"
+    "filter": "Lọc",
+    "filterBy": "Lọc theo",
+    "sortBy": "Sắp xếp",
+    "options": "Tùy chọn"
   }
 }
