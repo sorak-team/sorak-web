@@ -441,6 +441,9 @@
     "timeframeLabel": "School year timeframe",
     "timeframeHelp": "Start date must precede end date. Changing dates will not delete class data.",
     "startDate": "Start Date",
-    "endDate": "End Date"
+    "endDate": "End Date",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete"
   }
 }
