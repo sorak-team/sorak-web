@@ -408,6 +408,9 @@
     "sortEndDate": "Ngày kết thúc",
     "sortClassCount": "Số lớp",
     "hideEnded": "Ẩn năm học đã kết thúc",
-    "onlyActive": "Chỉ hiện năm học đang hoạt động"
+    "onlyActive": "Chỉ hiện năm học đang hoạt động",
+    "addYear": "Thêm năm học",
+    "createYear": "Tạo năm học",
+    "manageYears": "Đến trang quản lý năm học"
   }
 }
