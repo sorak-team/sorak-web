@@ -389,6 +389,10 @@
   "schoolYear": {
     "title": "Năm học",
     "subtitle": "Quản lý năm học, thời gian hoạt động và tổng quan lớp học",
-    "active": "Đang hoạt động"
+    "active": "Đang hoạt động",
+    "ended": "Đã kết thúc",
+    "listView": "Dạng bảng",
+    "gridView": "Dạng lưới",
+    "searchPlaceholder": "Tìm kiếm"
   }
 }
