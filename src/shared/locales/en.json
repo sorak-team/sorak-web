@@ -400,6 +400,10 @@
     "filter": "Filter",
     "filterBy": "Filter by",
     "sortBy": "Sort by",
-    "options": "Options"
+    "options": "Options",
+    "sortNewest": "Newest",
+    "sortOldest": "Oldest",
+    "sortName": "Year Name",
+    "sortStartDate": "Start Date"
   }
 }

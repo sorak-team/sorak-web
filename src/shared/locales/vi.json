@@ -400,6 +400,10 @@
     "filter": "Lọc",
     "filterBy": "Lọc theo",
     "sortBy": "Sắp xếp",
-    "options": "Tùy chọn"
+    "options": "Tùy chọn",
+    "sortNewest": "Mới nhất",
+    "sortOldest": "Cũ nhất",
+    "sortName": "Tên năm học",
+    "sortStartDate": "Ngày bắt đầu"
   }
 }
