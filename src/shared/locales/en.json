@@ -404,6 +404,10 @@
     "sortNewest": "Newest",
     "sortOldest": "Oldest",
     "sortName": "Year Name",
-    "sortStartDate": "Start Date"
+    "sortStartDate": "Start Date",
+    "sortEndDate": "End Date",
+    "sortClassCount": "Class Count",
+    "hideEnded": "Hide ended school years",
+    "onlyActive": "Show active school years only"
   }
 }

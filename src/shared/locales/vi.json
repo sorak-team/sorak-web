@@ -404,6 +404,10 @@
     "sortNewest": "Mới nhất",
     "sortOldest": "Cũ nhất",
     "sortName": "Tên năm học",
-    "sortStartDate": "Ngày bắt đầu"
+    "sortStartDate": "Ngày bắt đầu",
+    "sortEndDate": "Ngày kết thúc",
+    "sortClassCount": "Số lớp",
+    "hideEnded": "Ẩn năm học đã kết thúc",
+    "onlyActive": "Chỉ hiện năm học đang hoạt động"
   }
 }
