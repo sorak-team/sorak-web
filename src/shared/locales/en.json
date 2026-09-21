@@ -437,6 +437,10 @@
     "editYearSub": "Update school year information and timeframe.",
     "createYearSub": "Add a new school year to the system.",
     "nameLabel": "School year name",
-    "statusLabel": "Status"
+    "statusLabel": "Status",
+    "timeframeLabel": "School year timeframe",
+    "timeframeHelp": "Start date must precede end date. Changing dates will not delete class data.",
+    "startDate": "Start Date",
+    "endDate": "End Date"
   }
 }
