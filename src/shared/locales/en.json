@@ -419,6 +419,9 @@
     "colEndDate": "End Date",
     "classesSuffix": "classes",
     "totalStudents": "Total Students",
-    "teachers": "Staff"
+    "teachers": "Staff",
+    "attendanceRate": "Attendance Rate",
+    "studentDistribution": "Student Distribution by Grade",
+    "studentDistributionSub": "Total students across grade levels"
   }
 }
