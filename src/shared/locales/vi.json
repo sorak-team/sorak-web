@@ -430,6 +430,9 @@
     "healthComplete": "Hồ sơ đầy đủ",
     "healthMissing": "Cần bổ sung",
     "healthSpecial": "Theo dõi đặc biệt",
-    "yearProgress": "Tiến độ năm học"
+    "yearProgress": "Tiến độ năm học",
+    "yearProgressSub": "Thời gian đã đi qua trong năm học",
+    "completed": "Đã hoàn thành",
+    "editYear": "Chỉnh sửa năm học"
   }
 }
