@@ -430,6 +430,9 @@
     "healthComplete": "Complete records",
     "healthMissing": "Pending updates",
     "healthSpecial": "Special monitoring",
-    "yearProgress": "School Year Progress"
+    "yearProgress": "School Year Progress",
+    "yearProgressSub": "Time elapsed in school year",
+    "completed": "Completed",
+    "editYear": "Edit School Year"
   }
 }
