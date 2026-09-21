@@ -441,6 +441,9 @@
     "timeframeLabel": "Thời gian năm học",
     "timeframeHelp": "Ngày bắt đầu phải trước ngày kết thúc. Thay đổi thời gian không xoá dữ liệu lớp học.",
     "startDate": "Ngày bắt đầu",
-    "endDate": "Ngày kết thúc"
+    "endDate": "Ngày kết thúc",
+    "cancel": "Huỷ",
+    "save": "Lưu",
+    "delete": "Xoá"
   }
 }
