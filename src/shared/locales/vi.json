@@ -444,6 +444,10 @@
     "endDate": "Ngày kết thúc",
     "cancel": "Huỷ",
     "save": "Lưu",
-    "delete": "Xoá"
+    "delete": "Xoá",
+    "deleteConfirmTitle": "Xoá năm học?",
+    "deleteConfirmDesc": "Bạn có chắc chắn muốn xoá {{name}}? Hành động này không thể hoàn tác.",
+    "toastSelected": "Đã chọn năm học",
+    "toastSelectedDesc": "Đang xem dữ liệu của {{name}}."
   }
 }
