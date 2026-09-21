@@ -397,6 +397,9 @@
     "listTitle": "School Years List",
     "yearCount": "{{count}} school years",
     "clickToOverview": "Click to view school year overview",
-    "filter": "Filter"
+    "filter": "Filter",
+    "filterBy": "Filter by",
+    "sortBy": "Sort by",
+    "options": "Options"
   }
 }
