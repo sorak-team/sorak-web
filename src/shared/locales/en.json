@@ -415,6 +415,10 @@
     "colName": "School Year",
     "colStatus": "Status",
     "colTotalClasses": "Total Classes",
-    "colStartDate": "Start Date"
+    "colStartDate": "Start Date",
+    "colEndDate": "End Date",
+    "classesSuffix": "classes",
+    "totalStudents": "Total Students",
+    "teachers": "Staff"
   }
 }
