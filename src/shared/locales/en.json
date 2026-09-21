@@ -422,6 +422,10 @@
     "teachers": "Staff",
     "attendanceRate": "Attendance Rate",
     "studentDistribution": "Student Distribution by Grade",
-    "studentDistributionSub": "Total students across grade levels"
+    "studentDistributionSub": "Total students across grade levels",
+    "recentAttendance": "Attendance in Last 7 Days",
+    "recentAttendanceSub": "Average daily attendance rate",
+    "studentHealth": "Student Health",
+    "studentHealthSub": "Latest summary updates"
   }
 }
