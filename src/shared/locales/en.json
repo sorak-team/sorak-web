@@ -426,6 +426,10 @@
     "recentAttendance": "Attendance in Last 7 Days",
     "recentAttendanceSub": "Average daily attendance rate",
     "studentHealth": "Student Health",
-    "studentHealthSub": "Latest summary updates"
+    "studentHealthSub": "Latest summary updates",
+    "healthComplete": "Complete records",
+    "healthMissing": "Pending updates",
+    "healthSpecial": "Special monitoring",
+    "yearProgress": "School Year Progress"
   }
 }
