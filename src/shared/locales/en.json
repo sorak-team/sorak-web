@@ -444,6 +444,10 @@
     "endDate": "End Date",
     "cancel": "Cancel",
     "save": "Save",
-    "delete": "Delete"
+    "delete": "Delete",
+    "deleteConfirmTitle": "Delete School Year?",
+    "deleteConfirmDesc": "Are you sure you want to delete {{name}}? This action cannot be undone.",
+    "toastSelected": "School year selected",
+    "toastSelectedDesc": "Viewing data for {{name}}."
   }
 }
