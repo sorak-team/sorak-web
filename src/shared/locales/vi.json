@@ -411,6 +411,10 @@
     "onlyActive": "Chỉ hiện năm học đang hoạt động",
     "addYear": "Thêm năm học",
     "createYear": "Tạo năm học",
-    "manageYears": "Đến trang quản lý năm học"
+    "manageYears": "Đến trang quản lý năm học",
+    "colName": "Năm học",
+    "colStatus": "Trạng thái",
+    "colTotalClasses": "Tổng số lớp",
+    "colStartDate": "Ngày bắt đầu"
   }
 }

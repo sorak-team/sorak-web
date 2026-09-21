@@ -411,6 +411,10 @@
     "onlyActive": "Show active school years only",
     "addYear": "Add school year",
     "createYear": "Create school year",
-    "manageYears": "Go to academic years management"
+    "manageYears": "Go to academic years management",
+    "colName": "School Year",
+    "colStatus": "Status",
+    "colTotalClasses": "Total Classes",
+    "colStartDate": "Start Date"
   }
 }
