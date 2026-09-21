@@ -422,6 +422,10 @@
     "teachers": "Cán bộ",
     "attendanceRate": "Tỷ lệ điểm danh",
     "studentDistribution": "Phân bố học sinh theo khối",
-    "studentDistributionSub": "Tổng số học sinh theo từng khối lớp"
+    "studentDistributionSub": "Tổng số học sinh theo từng khối lớp",
+    "recentAttendance": "Điểm danh 7 ngày gần nhất",
+    "recentAttendanceSub": "Tỷ lệ có mặt trung bình theo ngày",
+    "studentHealth": "Sức khỏe học sinh",
+    "studentHealthSub": "Tổng hợp cập nhật gần nhất"
   }
 }
