@@ -415,6 +415,10 @@
     "colName": "Năm học",
     "colStatus": "Trạng thái",
     "colTotalClasses": "Tổng số lớp",
-    "colStartDate": "Ngày bắt đầu"
+    "colStartDate": "Ngày bắt đầu",
+    "colEndDate": "Ngày kết thúc",
+    "classesSuffix": "lớp",
+    "totalStudents": "Tổng học sinh",
+    "teachers": "Cán bộ"
   }
 }
