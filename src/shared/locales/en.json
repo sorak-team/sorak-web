@@ -433,6 +433,10 @@
     "yearProgress": "School Year Progress",
     "yearProgressSub": "Time elapsed in school year",
     "completed": "Completed",
-    "editYear": "Edit School Year"
+    "editYear": "Edit School Year",
+    "editYearSub": "Update school year information and timeframe.",
+    "createYearSub": "Add a new school year to the system.",
+    "nameLabel": "School year name",
+    "statusLabel": "Status"
   }
 }

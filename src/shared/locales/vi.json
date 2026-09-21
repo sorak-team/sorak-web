@@ -433,6 +433,10 @@
     "yearProgress": "Tiến độ năm học",
     "yearProgressSub": "Thời gian đã đi qua trong năm học",
     "completed": "Đã hoàn thành",
-    "editYear": "Chỉnh sửa năm học"
+    "editYear": "Chỉnh sửa năm học",
+    "editYearSub": "Cập nhật thông tin và thời gian của năm học.",
+    "createYearSub": "Thêm năm học mới vào hệ thống.",
+    "nameLabel": "Tên năm học",
+    "statusLabel": "Trạng thái"
   }
 }
