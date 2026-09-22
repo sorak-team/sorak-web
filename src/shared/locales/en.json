@@ -448,6 +448,10 @@
     "deleteConfirmTitle": "Delete School Year?",
     "deleteConfirmDesc": "Are you sure you want to delete {{name}}? This action cannot be undone.",
     "toastSelected": "School year selected",
-    "toastSelectedDesc": "Viewing data for {{name}}."
+    "toastSelectedDesc": "Viewing data for {{name}}.",
+    "toastCreate": "Create school year feature",
+    "toastCreateDesc": "Opening new school year setup form (SY-01).",
+    "toastUpdated": "School year updated successfully!",
+    "toastCreated": "School year created successfully!"
   }
 }
