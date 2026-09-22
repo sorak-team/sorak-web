@@ -448,6 +448,10 @@
     "deleteConfirmTitle": "Xoá năm học?",
     "deleteConfirmDesc": "Bạn có chắc chắn muốn xoá {{name}}? Hành động này không thể hoàn tác.",
     "toastSelected": "Đã chọn năm học",
-    "toastSelectedDesc": "Đang xem dữ liệu của {{name}}."
+    "toastSelectedDesc": "Đang xem dữ liệu của {{name}}.",
+    "toastCreate": "Tính năng tạo năm học",
+    "toastCreateDesc": "Mở form thiết lập năm học mới (SY-01).",
+    "toastUpdated": "Cập nhật năm học thành công!",
+    "toastCreated": "Thêm năm học mới thành công!"
   }
 }
