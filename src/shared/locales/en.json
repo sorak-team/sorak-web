@@ -470,6 +470,10 @@
     "endDateMustBeInYear": "End date must be within year {{year}} of the school year",
     "withinNextYear": "Jan to Dec of year {{year}}",
     "lockedUntilStartEndSet": "Unlocked after choosing Start of HK1 and End of HK2",
-    "middleIntervalHint": "Between:"
+    "middleIntervalHint": "Between:",
+    "chooseSemester1End": "Choose Semester 1 End Date",
+    "chooseSemester1EndAfterStartEnd": "Select HK1 start and HK2 end dates first",
+    "draft": "Draft",
+    "cannotEditInUse": "School year is already in use, start and end dates are fixed."
   }
 }

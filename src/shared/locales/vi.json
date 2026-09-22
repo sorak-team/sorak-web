@@ -470,6 +470,10 @@
     "endDateMustBeInYear": "Ngày kết thúc phải nằm trong năm {{year}} của năm học",
     "withinNextYear": "Tháng 1 đến Tháng 12 năm {{year}}",
     "lockedUntilStartEndSet": "Mở sau khi chọn ngày bắt đầu HK1 và kết thúc HK2",
-    "middleIntervalHint": "Trong khoảng giữa:"
+    "middleIntervalHint": "Trong khoảng giữa:",
+    "chooseSemester1End": "Chọn ngày kết thúc HK1",
+    "chooseSemester1EndAfterStartEnd": "Chọn ngày bắt đầu HK1 và kết thúc HK2 trước",
+    "draft": "Bản nháp",
+    "cannotEditInUse": "Năm học đã có dữ liệu sử dụng, không thể thay đổi ngày bắt đầu và ngày kết thúc năm học."
   }
 }
