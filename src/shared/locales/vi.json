@@ -452,6 +452,9 @@
     "toastCreate": "Tính năng tạo năm học",
     "toastCreateDesc": "Mở form thiết lập năm học mới (SY-01).",
     "toastUpdated": "Cập nhật năm học thành công!",
-    "toastCreated": "Thêm năm học mới thành công!"
+    "toastCreated": "Thêm năm học mới thành công!",
+    "toastDeleted": "Đã xoá năm học thành công!",
+    "all": "Tất cả trạng thái",
+    "changeColor": "Đổi màu"
   }
 }
