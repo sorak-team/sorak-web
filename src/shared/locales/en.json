@@ -452,6 +452,9 @@
     "toastCreate": "Create school year feature",
     "toastCreateDesc": "Opening new school year setup form (SY-01).",
     "toastUpdated": "School year updated successfully!",
-    "toastCreated": "School year created successfully!"
+    "toastCreated": "School year created successfully!",
+    "toastDeleted": "School year deleted successfully!",
+    "all": "All statuses",
+    "changeColor": "Change color"
   }
 }
