@@ -455,6 +455,10 @@
     "toastCreated": "School year created successfully!",
     "toastDeleted": "School year deleted successfully!",
     "all": "All statuses",
-    "changeColor": "Change color"
+    "changeColor": "Change color",
+    "toastColorUpdated": "School year color updated successfully!",
+    "semester1Start": "Semester 1 Start",
+    "semester1End": "Semester 1 End Date",
+    "semester2End": "Semester 2 End"
   }
 }
