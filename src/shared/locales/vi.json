@@ -455,6 +455,10 @@
     "toastCreated": "Thêm năm học mới thành công!",
     "toastDeleted": "Đã xoá năm học thành công!",
     "all": "Tất cả trạng thái",
-    "changeColor": "Đổi màu"
+    "changeColor": "Đổi màu",
+    "toastColorUpdated": "Đã đổi màu năm học thành công!",
+    "semester1Start": "Bắt đầu HK1",
+    "semester1End": "Ngày kết thúc Học kỳ 1",
+    "semester2End": "Kết thúc HK2"
   }
 }
