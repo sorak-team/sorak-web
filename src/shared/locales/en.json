@@ -510,6 +510,10 @@
     "subtitle": "Manage student profiles, guardian information, and academic records",
     "searchPlaceholder": "Search students...",
     "listView": "Table view",
-    "gridView": "Grid view"
+    "gridView": "Grid view",
+    "addStudent": "Add student",
+    "listTitle": "Student List",
+    "studentCount": "{{count}} students",
+    "statusStudying": "Studying"
   }
 }
