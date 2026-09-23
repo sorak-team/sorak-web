@@ -514,6 +514,10 @@
     "addStudent": "Thêm học sinh",
     "listTitle": "Danh sách học sinh",
     "studentCount": "{{count}} học sinh",
-    "statusStudying": "Đang học"
+    "statusStudying": "Đang học",
+    "statusReserved": "Bảo lưu",
+    "statusTransferred": "Chuyển trường",
+    "statusDroppedOut": "Thôi học",
+    "statusGraduated": "Đã tốt nghiệp"
   }
 }
