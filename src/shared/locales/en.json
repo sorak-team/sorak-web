@@ -514,6 +514,10 @@
     "addStudent": "Add student",
     "listTitle": "Student List",
     "studentCount": "{{count}} students",
-    "statusStudying": "Studying"
+    "statusStudying": "Studying",
+    "statusReserved": "Reserved",
+    "statusTransferred": "Transferred",
+    "statusDroppedOut": "Dropped out",
+    "statusGraduated": "Graduated"
   }
 }
