@@ -478,5 +478,11 @@
     "lockedDueToUsageTitle": "School year is in use",
     "lockedDueToUsageDesc": "This school year is already in use. Start and end dates are fixed; you can still adjust Semester 1 end date and status.",
     "inUseNote": "School year in use: Only Semester 1 end date and status can be edited."
+  },
+  "calendar": {
+    "mon": "Mon",
+    "tue": "Tue",
+    "wed": "Wed",
+    "thu": "Thu"
   }
 }

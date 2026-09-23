@@ -478,5 +478,11 @@
     "lockedDueToUsageTitle": "Năm học đã có dữ liệu sử dụng",
     "lockedDueToUsageDesc": "Năm học này đã có dữ liệu sử dụng. Ngày bắt đầu và kết thúc năm học được cố định; bạn vẫn có thể điều chỉnh ngày kết thúc HK1 và trạng thái năm học.",
     "inUseNote": "Năm học đã có dữ liệu: Chỉ có thể điều chỉnh ngày kết thúc HK1 và trạng thái."
+  },
+  "calendar": {
+    "mon": "T2",
+    "tue": "T3",
+    "wed": "T4",
+    "thu": "T5"
   }
 }
