@@ -518,6 +518,9 @@
     "statusReserved": "Reserved",
     "statusTransferred": "Transferred",
     "statusDroppedOut": "Dropped out",
-    "statusGraduated": "Graduated"
+    "statusGraduated": "Graduated",
+    "allGenders": "All genders",
+    "filter": "Filter",
+    "transferClass": "Transfer class"
   }
 }

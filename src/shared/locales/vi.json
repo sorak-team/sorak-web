@@ -518,6 +518,9 @@
     "statusReserved": "Bảo lưu",
     "statusTransferred": "Chuyển trường",
     "statusDroppedOut": "Thôi học",
-    "statusGraduated": "Đã tốt nghiệp"
+    "statusGraduated": "Đã tốt nghiệp",
+    "allGenders": "Tất cả giới tính",
+    "filter": "Lọc",
+    "transferClass": "Chuyển lớp"
   }
 }
