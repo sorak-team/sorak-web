@@ -507,6 +507,9 @@
   },
   "student": {
     "title": "Học sinh",
-    "subtitle": "Quản lý hồ sơ học sinh, thông tin người giám hộ và dữ liệu học vụ"
+    "subtitle": "Quản lý hồ sơ học sinh, thông tin người giám hộ và dữ liệu học vụ",
+    "searchPlaceholder": "Tìm kiếm học sinh...",
+    "listView": "Dạng bảng",
+    "gridView": "Dạng lưới"
   }
 }
