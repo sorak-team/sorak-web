@@ -501,6 +501,12 @@
     "nextMonth": "Tiến 1 tháng",
     "firstMonthReached": "Đã ở tháng đầu năm học",
     "lastMonthReached": "Đã ở tháng cuối năm học",
-    "jumpToToday": "Nhảy về tháng & tuần hiện tại"
+    "jumpToToday": "Nhảy về tháng & tuần hiện tại",
+    "weekUnit": "tuần",
+    "noWeeksFound": "Không có tuần học nào"
+  },
+  "student": {
+    "title": "Học sinh",
+    "subtitle": "Quản lý hồ sơ học sinh, thông tin người giám hộ và dữ liệu học vụ"
   }
 }

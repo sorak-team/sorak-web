@@ -501,6 +501,12 @@
     "nextMonth": "Next month",
     "firstMonthReached": "Already at the first month of the academic year",
     "lastMonthReached": "Already at the last month of the academic year",
-    "jumpToToday": "Jump to current month & week"
+    "jumpToToday": "Jump to current month & week",
+    "weekUnit": "weeks",
+    "noWeeksFound": "No academic weeks found"
+  },
+  "student": {
+    "title": "Students",
+    "subtitle": "Manage student profiles, guardian information, and academic records"
   }
 }
