@@ -521,6 +521,10 @@
     "statusGraduated": "Đã tốt nghiệp",
     "allGenders": "Tất cả giới tính",
     "filter": "Lọc",
-    "transferClass": "Chuyển lớp"
+    "transferClass": "Chuyển lớp",
+    "createTransferRequest": "Tạo yêu cầu chuyển lớp",
+    "transferRequestAction": "Yêu cầu chuyển lớp",
+    "submitTransferRequest": "Gửi yêu cầu chuyển lớp",
+    "confirmTransfer": "Xác nhận chuyển lớp"
   }
 }
