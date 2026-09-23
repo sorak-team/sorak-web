@@ -507,6 +507,9 @@
   },
   "student": {
     "title": "Students",
-    "subtitle": "Manage student profiles, guardian information, and academic records"
+    "subtitle": "Manage student profiles, guardian information, and academic records",
+    "searchPlaceholder": "Search students...",
+    "listView": "Table view",
+    "gridView": "Grid view"
   }
 }
