@@ -525,6 +525,10 @@
     "createTransferRequest": "Create transfer request",
     "transferRequestAction": "Transfer request",
     "submitTransferRequest": "Submit transfer request",
-    "confirmTransfer": "Confirm class transfer"
+    "confirmTransfer": "Confirm class transfer",
+    "colStudent": "Student",
+    "colClass": "Class",
+    "colStatus": "Status",
+    "colGlobalStatus": "School Status"
   }
 }
