@@ -474,6 +474,9 @@
     "chooseSemester1End": "Chọn ngày kết thúc HK1",
     "chooseSemester1EndAfterStartEnd": "Chọn ngày bắt đầu HK1 và kết thúc HK2 trước",
     "draft": "Bản nháp",
-    "cannotEditInUse": "Năm học đã có dữ liệu sử dụng, không thể thay đổi ngày bắt đầu và ngày kết thúc năm học."
+    "cannotEditInUse": "Năm học đã có dữ liệu sử dụng, không thể thay đổi ngày bắt đầu và ngày kết thúc năm học.",
+    "lockedDueToUsageTitle": "Năm học đã có dữ liệu sử dụng",
+    "lockedDueToUsageDesc": "Năm học này đã có dữ liệu sử dụng. Ngày bắt đầu và kết thúc năm học được cố định; bạn vẫn có thể điều chỉnh ngày kết thúc HK1 và trạng thái năm học.",
+    "inUseNote": "Năm học đã có dữ liệu: Chỉ có thể điều chỉnh ngày kết thúc HK1 và trạng thái."
   }
 }
