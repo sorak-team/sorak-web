@@ -497,6 +497,10 @@
     "today": "Hôm nay",
     "week": "Tuần",
     "month": "Tháng",
-    "prevMonth": "Lùi 1 tháng"
+    "prevMonth": "Lùi 1 tháng",
+    "nextMonth": "Tiến 1 tháng",
+    "firstMonthReached": "Đã ở tháng đầu năm học",
+    "lastMonthReached": "Đã ở tháng cuối năm học",
+    "jumpToToday": "Nhảy về tháng & tuần hiện tại"
   }
 }

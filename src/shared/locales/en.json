@@ -497,6 +497,10 @@
     "today": "Today",
     "week": "Week",
     "month": "Month",
-    "prevMonth": "Previous month"
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "firstMonthReached": "Already at the first month of the academic year",
+    "lastMonthReached": "Already at the last month of the academic year",
+    "jumpToToday": "Jump to current month & week"
   }
 }
