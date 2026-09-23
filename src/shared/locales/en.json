@@ -521,6 +521,10 @@
     "statusGraduated": "Graduated",
     "allGenders": "All genders",
     "filter": "Filter",
-    "transferClass": "Transfer class"
+    "transferClass": "Transfer class",
+    "createTransferRequest": "Create transfer request",
+    "transferRequestAction": "Transfer request",
+    "submitTransferRequest": "Submit transfer request",
+    "confirmTransfer": "Confirm class transfer"
   }
 }
