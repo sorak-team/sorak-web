@@ -27,3 +27,8 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+
+# build archives & temporary design pages
+dist.zip
+public/timetable_design_options.html
+.env.production
