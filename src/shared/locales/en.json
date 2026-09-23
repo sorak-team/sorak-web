@@ -474,6 +474,9 @@
     "chooseSemester1End": "Choose Semester 1 End Date",
     "chooseSemester1EndAfterStartEnd": "Select HK1 start and HK2 end dates first",
     "draft": "Draft",
-    "cannotEditInUse": "School year is already in use, start and end dates are fixed."
+    "cannotEditInUse": "School year is already in use, start and end dates are fixed.",
+    "lockedDueToUsageTitle": "School year is in use",
+    "lockedDueToUsageDesc": "This school year is already in use. Start and end dates are fixed; you can still adjust Semester 1 end date and status.",
+    "inUseNote": "School year in use: Only Semester 1 end date and status can be edited."
   }
 }
