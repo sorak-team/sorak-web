@@ -494,6 +494,9 @@
     "friday": "Thứ 6",
     "saturday": "Thứ 7",
     "sunday": "Chủ nhật",
-    "today": "Hôm nay"
+    "today": "Hôm nay",
+    "week": "Tuần",
+    "month": "Tháng",
+    "prevMonth": "Lùi 1 tháng"
   }
 }

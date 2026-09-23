@@ -494,6 +494,9 @@
     "friday": "Friday",
     "saturday": "Saturday",
     "sunday": "Sunday",
-    "today": "Today"
+    "today": "Today",
+    "week": "Week",
+    "month": "Month",
+    "prevMonth": "Previous month"
   }
 }
