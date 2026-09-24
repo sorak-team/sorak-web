@@ -532,6 +532,10 @@
     "colGlobalStatus": "School Status",
     "colClassStatus": "Class Status",
     "filterGlobalStatus": "School Status",
-    "filterClassStatus": "Class Status"
+    "filterClassStatus": "Class Status",
+    "colGender": "Gender",
+    "colDob": "Date of Birth / Age",
+    "colJoinDate": "Enrollment Date",
+    "colClassEnrolledAt": "Class Enrolled Date"
   }
 }
