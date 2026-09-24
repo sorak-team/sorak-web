@@ -536,6 +536,10 @@
     "colGender": "Giới tính",
     "colDob": "Ngày sinh",
     "colJoinDate": "Ngày nhập học",
-    "colClassEnrolledAt": "Ngày vào lớp"
+    "colClassEnrolledAt": "Ngày vào lớp",
+    "colClassLeftAt": "Ngày rời lớp",
+    "colPreviousSchool": "Trường cũ / Chuyển đến",
+    "columns": "Cột",
+    "toggleColumns": "Hiển thị cột"
   }
 }
