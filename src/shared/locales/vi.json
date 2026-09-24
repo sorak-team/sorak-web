@@ -547,6 +547,10 @@
     "personalInfo": "Thông tin cá nhân",
     "personalInfoSub": "Lý lịch cơ bản của học sinh",
     "deleteTitle": "Xác nhận xóa học sinh",
-    "deleteDesc": "Bạn có chắc chắn muốn xóa hồ sơ học sinh {{name}}? Hành động này sẽ chuyển trạng thái học sinh thành thôi học."
+    "deleteDesc": "Bạn có chắc chắn muốn xóa hồ sơ học sinh {{name}}? Hành động này sẽ chuyển trạng thái học sinh thành thôi học.",
+    "toastDeleted": "Đã xóa hồ sơ học sinh",
+    "code": "Mã học sinh",
+    "fullName": "Họ và tên",
+    "dob": "Ngày sinh"
   }
 }
