@@ -536,6 +536,10 @@
     "colGender": "Gender",
     "colDob": "Date of Birth / Age",
     "colJoinDate": "Enrollment Date",
-    "colClassEnrolledAt": "Class Enrolled Date"
+    "colClassEnrolledAt": "Class Enrolled Date",
+    "colClassLeftAt": "Class Left Date",
+    "colPreviousSchool": "Previous School",
+    "columns": "Columns",
+    "toggleColumns": "Display columns"
   }
 }
