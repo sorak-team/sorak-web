@@ -547,6 +547,10 @@
     "personalInfo": "Personal Information",
     "personalInfoSub": "Student basic records",
     "deleteTitle": "Confirm delete student",
-    "deleteDesc": "Are you sure you want to delete student profile for {{name}}? This action will change the student status to dropped out."
+    "deleteDesc": "Are you sure you want to delete student profile for {{name}}? This action will change the student status to dropped out.",
+    "toastDeleted": "Student profile deleted",
+    "code": "Student Code",
+    "fullName": "Full Name",
+    "dob": "Date of Birth"
   }
 }
