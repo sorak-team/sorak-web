@@ -532,6 +532,10 @@
     "colGlobalStatus": "Trạng thái tại trường",
     "colClassStatus": "Trạng thái tại lớp",
     "filterGlobalStatus": "Trạng thái tại trường",
-    "filterClassStatus": "Trạng thái tại lớp"
+    "filterClassStatus": "Trạng thái tại lớp",
+    "colGender": "Giới tính",
+    "colDob": "Ngày sinh",
+    "colJoinDate": "Ngày nhập học",
+    "colClassEnrolledAt": "Ngày vào lớp"
   }
 }
