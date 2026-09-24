@@ -540,6 +540,9 @@
     "colClassLeftAt": "Ngày rời lớp",
     "colPreviousSchool": "Trường cũ / Chuyển đến",
     "columns": "Cột",
-    "toggleColumns": "Hiển thị cột"
+    "toggleColumns": "Hiển thị cột",
+    "editProfile": "Chỉnh sửa hồ sơ học sinh",
+    "newProfile": "Tiếp nhận học sinh mới",
+    "createSubmit": "Thêm học sinh"
   }
 }
