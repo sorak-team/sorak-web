@@ -540,6 +540,9 @@
     "colClassLeftAt": "Class Left Date",
     "colPreviousSchool": "Previous School",
     "columns": "Columns",
-    "toggleColumns": "Display columns"
+    "toggleColumns": "Display columns",
+    "editProfile": "Edit student profile",
+    "newProfile": "Admit new student",
+    "createSubmit": "Add student"
   }
 }
