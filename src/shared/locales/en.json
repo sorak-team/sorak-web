@@ -529,6 +529,9 @@
     "colStudent": "Student",
     "colClass": "Class",
     "colStatus": "Status",
-    "colGlobalStatus": "School Status"
+    "colGlobalStatus": "School Status",
+    "colClassStatus": "Class Status",
+    "filterGlobalStatus": "School Status",
+    "filterClassStatus": "Class Status"
   }
 }

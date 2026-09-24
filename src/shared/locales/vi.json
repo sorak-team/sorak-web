@@ -529,6 +529,9 @@
     "colStudent": "Học sinh",
     "colClass": "Lớp học",
     "colStatus": "Trạng thái",
-    "colGlobalStatus": "Trạng thái tại trường"
+    "colGlobalStatus": "Trạng thái tại trường",
+    "colClassStatus": "Trạng thái tại lớp",
+    "filterGlobalStatus": "Trạng thái tại trường",
+    "filterClassStatus": "Trạng thái tại lớp"
   }
 }
