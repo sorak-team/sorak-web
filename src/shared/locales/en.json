@@ -543,6 +543,10 @@
     "toggleColumns": "Display columns",
     "editProfile": "Edit student profile",
     "newProfile": "Admit new student",
-    "createSubmit": "Add student"
+    "createSubmit": "Add student",
+    "personalInfo": "Personal Information",
+    "personalInfoSub": "Student basic records",
+    "deleteTitle": "Confirm delete student",
+    "deleteDesc": "Are you sure you want to delete student profile for {{name}}? This action will change the student status to dropped out."
   }
 }
