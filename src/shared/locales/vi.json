@@ -551,6 +551,9 @@
     "toastDeleted": "Đã xóa hồ sơ học sinh",
     "code": "Mã học sinh",
     "fullName": "Họ và tên",
-    "dob": "Ngày sinh"
+    "dob": "Ngày sinh",
+    "gender": "Giới tính",
+    "ethnic": "Dân tộc",
+    "nationality": "Quốc tịch"
   }
 }
