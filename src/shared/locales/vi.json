@@ -558,6 +558,10 @@
     "placeOfBirth": "Nơi sinh",
     "permanentResidence": "Thường trú",
     "currentResidence": "Tạm trú",
-    "parentsGuardians": "Phụ huynh & Người giám hộ"
+    "parentsGuardians": "Phụ huynh & Người giám hộ",
+    "parentsGuardiansSub": "Thông tin liên lạc khẩn cấp và bảo mật bàn giao trẻ",
+    "peopleCount": "{{count}} người",
+    "peopleCount_plural": "{{count}} người",
+    "canPickup": "✓ Được phép đón bé"
   }
 }
