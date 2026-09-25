@@ -580,6 +580,10 @@
     "parentPhoneInvalid": "Parent phone number must be between 9 and 15 digits",
     "parentPhoneRequired": "Please provide at least one parent contact phone number",
     "academicHistory": "Class & Academic History",
-    "academicHistorySub": "Current class placement and school year information"
+    "academicHistorySub": "Current class placement and school year information",
+    "currentClass": "Current Class",
+    "notAssigned": "Not assigned",
+    "classroom": "Classroom",
+    "defaultRoom": "Main classroom"
   }
 }
