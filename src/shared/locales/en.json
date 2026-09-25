@@ -573,6 +573,9 @@
     "pickupPermission": "Pickup Permission",
     "relationship": "Relationship",
     "parentFullName": "Full Name",
-    "parentPhone": "Phone Number"
+    "parentPhone": "Phone Number",
+    "noParentsAdded": "No parents or guardians added yet.",
+    "parentItemTitle": "Parent #{{index}}",
+    "parentNameRequired": "Please enter the parent full name"
   }
 }
