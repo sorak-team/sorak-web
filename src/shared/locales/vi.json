@@ -587,6 +587,10 @@
     "defaultRoom": "Phòng học chính",
     "schoolYear": "Năm học",
     "joinDate": "Ngày nhập học",
-    "healthNotes": "Sức khỏe & Ghi chú"
+    "healthNotes": "Sức khỏe & Ghi chú",
+    "healthNotesSub": "Lưu ý dị ứng, bệnh lý và ghi chú của giáo viên",
+    "allergies": "Dị ứng thức ăn / thuốc",
+    "noAllergies": "Không ghi nhận dị ứng.",
+    "medicalHistory": "Tiền sử bệnh lý"
   }
 }
