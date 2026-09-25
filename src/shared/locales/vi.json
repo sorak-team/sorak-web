@@ -576,6 +576,10 @@
     "parentPhone": "Số điện thoại",
     "noParentsAdded": "Chưa có thông tin phụ huynh nào được thêm.",
     "parentItemTitle": "Phụ huynh #{{index}}",
-    "parentNameRequired": "Vui lòng nhập họ và tên phụ huynh"
+    "parentNameRequired": "Vui lòng nhập họ và tên phụ huynh",
+    "parentPhoneInvalid": "Số điện thoại phụ huynh phải từ 9 đến 15 chữ số",
+    "parentPhoneRequired": "Vui lòng nhập ít nhất một số điện thoại phụ huynh liên hệ",
+    "academicHistory": "Lớp học",
+    "academicHistorySub": "Phân lớp hiện tại và thông tin niên khóa"
   }
 }
