@@ -569,6 +569,10 @@
     "addParentBtn": "Add Parent",
     "addAnotherParent": "+ Add another parent / guardian",
     "removeParentBtn": "Remove this parent",
-    "canPickupLabel": "Authorized for pickup"
+    "canPickupLabel": "Authorized for pickup",
+    "pickupPermission": "Pickup Permission",
+    "relationship": "Relationship",
+    "parentFullName": "Full Name",
+    "parentPhone": "Phone Number"
   }
 }

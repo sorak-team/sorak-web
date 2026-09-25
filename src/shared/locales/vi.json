@@ -569,6 +569,10 @@
     "addParentBtn": "Thêm phụ huynh",
     "addAnotherParent": "+ Thêm phụ huynh / người giám hộ khác",
     "removeParentBtn": "Xóa phụ huynh này",
-    "canPickupLabel": "Được phép đón bé"
+    "canPickupLabel": "Được phép đón bé",
+    "pickupPermission": "Quyền đưa đón",
+    "relationship": "Mối quan hệ",
+    "parentFullName": "Họ và tên",
+    "parentPhone": "Số điện thoại"
   }
 }
