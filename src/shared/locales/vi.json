@@ -591,6 +591,10 @@
     "healthNotesSub": "Lưu ý dị ứng, bệnh lý và ghi chú của giáo viên",
     "allergies": "Dị ứng thức ăn / thuốc",
     "noAllergies": "Không ghi nhận dị ứng.",
-    "medicalHistory": "Tiền sử bệnh lý"
+    "medicalHistory": "Tiền sử bệnh lý",
+    "noMedicalHistory": "Không ghi nhận bệnh lý đặc biệt.",
+    "previousSchoolTitle": "Trường mầm non trước đây",
+    "noPreviousSchool": "Chưa có thông tin trường cũ.",
+    "parentLabel": "Phụ huynh"
   }
 }

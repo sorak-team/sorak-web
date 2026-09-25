@@ -591,6 +591,10 @@
     "healthNotesSub": "Allergies, medical history, and teacher care notes",
     "allergies": "Food / Drug Allergies",
     "noAllergies": "No allergies recorded.",
-    "medicalHistory": "Medical History"
+    "medicalHistory": "Medical History",
+    "noMedicalHistory": "No special medical history recorded.",
+    "previousSchoolTitle": "Previous Preschool",
+    "noPreviousSchool": "No previous school recorded.",
+    "parentLabel": "Parent"
   }
 }
