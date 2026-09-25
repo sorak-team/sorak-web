@@ -565,6 +565,10 @@
     "canPickup": "✓ Được phép đón bé",
     "cannotPickup": "Chưa đăng ký đón bé",
     "phone": "SĐT",
-    "noParents": "Chưa có thông tin phụ huynh"
+    "noParents": "Chưa có thông tin phụ huynh",
+    "addParentBtn": "Thêm phụ huynh",
+    "addAnotherParent": "+ Thêm phụ huynh / người giám hộ khác",
+    "removeParentBtn": "Xóa phụ huynh này",
+    "canPickupLabel": "Được phép đón bé"
   }
 }

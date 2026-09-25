@@ -565,6 +565,10 @@
     "canPickup": "✓ Authorized for pickup",
     "cannotPickup": "Not registered for pickup",
     "phone": "Phone",
-    "noParents": "No parent information available"
+    "noParents": "No parent information available",
+    "addParentBtn": "Add Parent",
+    "addAnotherParent": "+ Add another parent / guardian",
+    "removeParentBtn": "Remove this parent",
+    "canPickupLabel": "Authorized for pickup"
   }
 }
