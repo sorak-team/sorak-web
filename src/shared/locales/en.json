@@ -576,6 +576,10 @@
     "parentPhone": "Phone Number",
     "noParentsAdded": "No parents or guardians added yet.",
     "parentItemTitle": "Parent #{{index}}",
-    "parentNameRequired": "Please enter the parent full name"
+    "parentNameRequired": "Please enter the parent full name",
+    "parentPhoneInvalid": "Parent phone number must be between 9 and 15 digits",
+    "parentPhoneRequired": "Please provide at least one parent contact phone number",
+    "academicHistory": "Class & Academic History",
+    "academicHistorySub": "Current class placement and school year information"
   }
 }
