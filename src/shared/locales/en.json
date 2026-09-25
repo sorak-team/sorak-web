@@ -584,6 +584,9 @@
     "currentClass": "Current Class",
     "notAssigned": "Not assigned",
     "classroom": "Classroom",
-    "defaultRoom": "Main classroom"
+    "defaultRoom": "Main classroom",
+    "schoolYear": "School Year",
+    "joinDate": "Enrollment Date",
+    "healthNotes": "Health & Care Notes"
   }
 }
