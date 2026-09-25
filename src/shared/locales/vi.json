@@ -584,6 +584,9 @@
     "currentClass": "Lớp đang học",
     "notAssigned": "Chưa phân lớp",
     "classroom": "Phòng học",
-    "defaultRoom": "Phòng học chính"
+    "defaultRoom": "Phòng học chính",
+    "schoolYear": "Năm học",
+    "joinDate": "Ngày nhập học",
+    "healthNotes": "Sức khỏe & Ghi chú"
   }
 }
