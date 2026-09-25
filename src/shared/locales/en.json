@@ -595,6 +595,9 @@
     "noMedicalHistory": "No special medical history recorded.",
     "previousSchoolTitle": "Previous Preschool",
     "noPreviousSchool": "No previous school recorded.",
-    "parentLabel": "Parent"
+    "parentLabel": "Parent",
+    "studentCodePrefix": "Student ID",
+    "notFound": "Student profile not found.",
+    "backToList": "Back to student list"
   }
 }
