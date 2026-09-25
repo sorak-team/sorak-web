@@ -558,6 +558,10 @@
     "placeOfBirth": "Place of Birth",
     "permanentResidence": "Permanent Residence",
     "currentResidence": "Temporary Residence",
-    "parentsGuardians": "Parents & Guardians"
+    "parentsGuardians": "Parents & Guardians",
+    "parentsGuardiansSub": "Emergency contact and pickup authorization details",
+    "peopleCount": "{{count}} person",
+    "peopleCount_plural": "{{count}} people",
+    "canPickup": "✓ Authorized for pickup"
   }
 }
