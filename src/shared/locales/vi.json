@@ -562,6 +562,9 @@
     "parentsGuardiansSub": "Thông tin liên lạc khẩn cấp và bảo mật bàn giao trẻ",
     "peopleCount": "{{count}} người",
     "peopleCount_plural": "{{count}} người",
-    "canPickup": "✓ Được phép đón bé"
+    "canPickup": "✓ Được phép đón bé",
+    "cannotPickup": "Chưa đăng ký đón bé",
+    "phone": "SĐT",
+    "noParents": "Chưa có thông tin phụ huynh"
   }
 }

@@ -562,6 +562,9 @@
     "parentsGuardiansSub": "Emergency contact and pickup authorization details",
     "peopleCount": "{{count}} person",
     "peopleCount_plural": "{{count}} people",
-    "canPickup": "✓ Authorized for pickup"
+    "canPickup": "✓ Authorized for pickup",
+    "cannotPickup": "Not registered for pickup",
+    "phone": "Phone",
+    "noParents": "No parent information available"
   }
 }
