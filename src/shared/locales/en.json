@@ -554,6 +554,10 @@
     "dob": "Date of Birth",
     "gender": "Gender",
     "ethnic": "Ethnicity",
-    "nationality": "Nationality"
+    "nationality": "Nationality",
+    "placeOfBirth": "Place of Birth",
+    "permanentResidence": "Permanent Residence",
+    "currentResidence": "Temporary Residence",
+    "parentsGuardians": "Parents & Guardians"
   }
 }

@@ -554,6 +554,10 @@
     "dob": "Ngày sinh",
     "gender": "Giới tính",
     "ethnic": "Dân tộc",
-    "nationality": "Quốc tịch"
+    "nationality": "Quốc tịch",
+    "placeOfBirth": "Nơi sinh",
+    "permanentResidence": "Thường trú",
+    "currentResidence": "Tạm trú",
+    "parentsGuardians": "Phụ huynh & Người giám hộ"
   }
 }
