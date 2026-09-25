@@ -580,6 +580,10 @@
     "parentPhoneInvalid": "Số điện thoại phụ huynh phải từ 9 đến 15 chữ số",
     "parentPhoneRequired": "Vui lòng nhập ít nhất một số điện thoại phụ huynh liên hệ",
     "academicHistory": "Lớp học",
-    "academicHistorySub": "Phân lớp hiện tại và thông tin niên khóa"
+    "academicHistorySub": "Phân lớp hiện tại và thông tin niên khóa",
+    "currentClass": "Lớp đang học",
+    "notAssigned": "Chưa phân lớp",
+    "classroom": "Phòng học",
+    "defaultRoom": "Phòng học chính"
   }
 }
