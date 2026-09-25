@@ -595,6 +595,9 @@
     "noMedicalHistory": "Không ghi nhận bệnh lý đặc biệt.",
     "previousSchoolTitle": "Trường mầm non trước đây",
     "noPreviousSchool": "Chưa có thông tin trường cũ.",
-    "parentLabel": "Phụ huynh"
+    "parentLabel": "Phụ huynh",
+    "studentCodePrefix": "Mã HS",
+    "notFound": "Không tìm thấy hồ sơ học sinh.",
+    "backToList": "Quay lại danh sách học sinh"
   }
 }
