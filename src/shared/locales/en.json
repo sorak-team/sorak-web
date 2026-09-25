@@ -587,6 +587,10 @@
     "defaultRoom": "Main classroom",
     "schoolYear": "School Year",
     "joinDate": "Enrollment Date",
-    "healthNotes": "Health & Care Notes"
+    "healthNotes": "Health & Care Notes",
+    "healthNotesSub": "Allergies, medical history, and teacher care notes",
+    "allergies": "Food / Drug Allergies",
+    "noAllergies": "No allergies recorded.",
+    "medicalHistory": "Medical History"
   }
 }
