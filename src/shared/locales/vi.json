@@ -651,6 +651,10 @@
     "allAgeGroups": "Tất cả độ tuổi",
     "allStatuses": "Tất cả trạng thái",
     "selectAll": "Chọn hết",
-    "unselectAll": "Bỏ chọn"
+    "unselectAll": "Bỏ chọn",
+    "studentsUnit": "học sinh",
+    "statStudents": "Học sinh",
+    "statStudentsSub": "Tổng quan lớp hiện tại",
+    "statTeachers": "Giáo viên phụ trách"
   }
 }
