@@ -626,6 +626,10 @@
     "settingsTitle": "Cài đặt lớp",
     "settingsGeneral": "Cấu hình lớp",
     "settingsTeachers": "Phân công giáo viên",
-    "settingsStudents": "Phân lớp học sinh"
+    "settingsStudents": "Phân lớp học sinh",
+    "settingsTransfers": "Chuyển lớp",
+    "settingsExport": "Xuất danh sách",
+    "studentAllocationTitle": "Phân lớp học sinh",
+    "studentAllocationSubtitle": "Chọn học sinh từ pool, lịch sử lớp cũ hoặc import"
   }
 }
