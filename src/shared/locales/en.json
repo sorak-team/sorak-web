@@ -633,6 +633,10 @@
     "studentAllocationSubtitle": "Select students from pool, previous class history, or import",
     "tabPool": "Student Pool",
     "tabHistory": "Class History",
-    "tabImport": "Import"
+    "tabImport": "Import",
+    "searchPoolPlaceholder": "Search students...",
+    "searchRosterPlaceholder": "Search in class...",
+    "addToClass": "Add to class",
+    "adding": "Adding..."
   }
 }

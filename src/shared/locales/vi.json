@@ -633,6 +633,10 @@
     "studentAllocationSubtitle": "Chọn học sinh từ pool, lịch sử lớp cũ hoặc import",
     "tabPool": "Pool học sinh",
     "tabHistory": "Lịch sử lớp cũ",
-    "tabImport": "Import"
+    "tabImport": "Import",
+    "searchPoolPlaceholder": "Tìm học sinh...",
+    "searchRosterPlaceholder": "Tìm trong lớp...",
+    "addToClass": "Thêm vào lớp",
+    "adding": "Đang thêm..."
   }
 }
