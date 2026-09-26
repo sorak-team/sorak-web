@@ -640,6 +640,10 @@
     "adding": "Đang thêm...",
     "removeFromClass": "Gỡ khỏi lớp",
     "removing": "Đang gỡ...",
-    "studentsSelected": "học sinh đã chọn"
+    "studentsSelected": "học sinh đã chọn",
+    "studentCol": "Học sinh",
+    "dobCol": "Ngày sinh",
+    "gradeCol": "Khối phù hợp",
+    "prevClassCol": "Lớp cũ"
   }
 }
