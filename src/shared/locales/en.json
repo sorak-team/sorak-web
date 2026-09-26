@@ -648,6 +648,9 @@
     "statusCol": "Status",
     "unassigned": "Unassigned",
     "assigned": "Assigned",
-    "allAgeGroups": "All Age Groups"
+    "allAgeGroups": "All Age Groups",
+    "allStatuses": "All Statuses",
+    "selectAll": "Select All",
+    "unselectAll": "Deselect All"
   }
 }
