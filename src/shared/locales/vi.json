@@ -659,6 +659,9 @@
     "statTeachersSub": "Tổng quan lớp hiện tại",
     "statTransfers": "Yêu cầu chuyển lớp",
     "statTransfersSub": "Tổng quan lớp hiện tại",
-    "capacitySuffix": "chỗ"
+    "capacitySuffix": "chỗ",
+    "pendingTransfer": "Chờ xử lý",
+    "noPendingTransfer": "Không có yêu cầu",
+    "overviewSectionTitle": "Tổng quan lớp học"
   }
 }
