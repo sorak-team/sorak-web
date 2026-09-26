@@ -615,6 +615,10 @@
     "listHeader": "Danh sách lớp học",
     "classesSuffix": "lớp",
     "studentsSuffix": "học sinh",
-    "allClasses": "Tất cả lớp học"
+    "allClasses": "Tất cả lớp học",
+    "switchClass": "Chuyển lớp học",
+    "detachClass": "Gỡ gắn lớp & về danh sách",
+    "searchClassPlaceholder": "Tìm lớp học...",
+    "noClassFound": "Không tìm thấy lớp học phù hợp."
   }
 }
