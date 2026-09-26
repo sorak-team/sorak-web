@@ -659,6 +659,9 @@
     "statTeachersSub": "Current class overview",
     "statTransfers": "Transfer requests",
     "statTransfersSub": "Current class overview",
-    "capacitySuffix": "capacity"
+    "capacitySuffix": "capacity",
+    "pendingTransfer": "Pending",
+    "noPendingTransfer": "No requests",
+    "overviewSectionTitle": "Classroom Overview"
   }
 }
