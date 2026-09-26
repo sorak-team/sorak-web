@@ -651,6 +651,10 @@
     "allAgeGroups": "All Age Groups",
     "allStatuses": "All Statuses",
     "selectAll": "Select All",
-    "unselectAll": "Deselect All"
+    "unselectAll": "Deselect All",
+    "studentsUnit": "students",
+    "statStudents": "Students",
+    "statStudentsSub": "Current class overview",
+    "statTeachers": "Teachers in charge"
   }
 }
