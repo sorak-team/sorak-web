@@ -598,6 +598,10 @@
     "parentLabel": "Phụ huynh",
     "studentCodePrefix": "Mã HS",
     "notFound": "Không tìm thấy hồ sơ học sinh.",
-    "backToList": "Quay lại danh sách học sinh"
+    "backToList": "Quay lại danh sách học sinh",
+    "studentUnit": "học sinh",
+    "colGuardian": "Người giám hộ / Phụ huynh",
+    "colPreviousClass": "Lớp cũ",
+    "avatarUploadSuccess": "Đã cập nhật ảnh đại diện học sinh"
   }
 }

@@ -598,6 +598,10 @@
     "parentLabel": "Parent",
     "studentCodePrefix": "Student ID",
     "notFound": "Student profile not found.",
-    "backToList": "Back to student list"
+    "backToList": "Back to student list",
+    "studentUnit": "students",
+    "colGuardian": "Guardian / Parents",
+    "colPreviousClass": "Previous Class",
+    "avatarUploadSuccess": "Student avatar updated successfully"
   }
 }
