@@ -622,6 +622,10 @@
     "noClassFound": "No matching class found.",
     "noClassMatch": "No class matches your search query.",
     "createClass": "Create class",
-    "settings": "Class Management"
+    "settings": "Class Management",
+    "settingsTitle": "Class settings",
+    "settingsGeneral": "Class Config",
+    "settingsTeachers": "Teacher Assignment",
+    "settingsStudents": "Student Assignment"
   }
 }
