@@ -619,6 +619,9 @@
     "switchClass": "Switch class",
     "detachClass": "Detach class & back to list",
     "searchClassPlaceholder": "Search class...",
-    "noClassFound": "No matching class found."
+    "noClassFound": "No matching class found.",
+    "noClassMatch": "No class matches your search query.",
+    "createClass": "Create class",
+    "settings": "Class Management"
   }
 }

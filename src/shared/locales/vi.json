@@ -619,6 +619,9 @@
     "switchClass": "Chuyển lớp học",
     "detachClass": "Gỡ gắn lớp & về danh sách",
     "searchClassPlaceholder": "Tìm lớp học...",
-    "noClassFound": "Không tìm thấy lớp học phù hợp."
+    "noClassFound": "Không tìm thấy lớp học phù hợp.",
+    "noClassMatch": "Không tìm thấy lớp học nào phù hợp với từ khóa.",
+    "createClass": "Tạo lớp học",
+    "settings": "Quản lý lớp"
   }
 }
