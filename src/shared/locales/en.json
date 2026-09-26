@@ -666,6 +666,10 @@
     "overviewSectionDesc": "Detailed modules will be added in upcoming screens",
     "moduleAttendance": "Today's Attendance",
     "moduleHealth": "Health & Nutrition",
-    "moduleTeachers": "Teachers & Assignment"
+    "moduleTeachers": "Teachers & Assignment",
+    "goToAttendance": "View attendance",
+    "goToHealth": "View health records",
+    "goToSettings": "Manage configuration",
+    "overview": "Overview"
   }
 }
