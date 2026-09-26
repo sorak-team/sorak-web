@@ -615,6 +615,10 @@
     "listHeader": "Classroom list",
     "classesSuffix": "classes",
     "studentsSuffix": "students",
-    "allClasses": "All classrooms"
+    "allClasses": "All classrooms",
+    "switchClass": "Switch class",
+    "detachClass": "Detach class & back to list",
+    "searchClassPlaceholder": "Search class...",
+    "noClassFound": "No matching class found."
   }
 }
