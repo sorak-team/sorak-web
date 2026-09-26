@@ -611,6 +611,10 @@
     "title": "Lớp học",
     "subtitle": "Quản lý lớp học theo khối",
     "searchPlaceholder": "Tìm kiếm...",
-    "addClass": "Thêm lớp học"
+    "addClass": "Thêm lớp học",
+    "listHeader": "Danh sách lớp học",
+    "classesSuffix": "lớp",
+    "studentsSuffix": "học sinh",
+    "allClasses": "Tất cả lớp học"
   }
 }
