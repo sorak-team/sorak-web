@@ -644,6 +644,10 @@
     "studentCol": "Student",
     "dobCol": "Date of Birth",
     "gradeCol": "Eligible Grade",
-    "prevClassCol": "Previous Class"
+    "prevClassCol": "Previous Class",
+    "statusCol": "Status",
+    "unassigned": "Unassigned",
+    "assigned": "Assigned",
+    "allAgeGroups": "All Age Groups"
   }
 }

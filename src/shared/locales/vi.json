@@ -644,6 +644,10 @@
     "studentCol": "Học sinh",
     "dobCol": "Ngày sinh",
     "gradeCol": "Khối phù hợp",
-    "prevClassCol": "Lớp cũ"
+    "prevClassCol": "Lớp cũ",
+    "statusCol": "Trạng thái",
+    "unassigned": "Chưa phân công",
+    "assigned": "Đã phân lớp",
+    "allAgeGroups": "Tất cả độ tuổi"
   }
 }
