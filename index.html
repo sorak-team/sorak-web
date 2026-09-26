@@ -4,10 +4,42 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet" />
     <title>Sorak | Trường Mầm non Hòn Tre</title>
+    <script>
+      (function() {
+        try {
+          var font = localStorage.getItem('sorak-font') || 'default';
+          document.documentElement.setAttribute('data-font', font);
+          var textSize = localStorage.getItem('sorak-text-size') || (localStorage.getItem('sorak-small-text') === 'true' ? 'small' : 'medium');
+          document.documentElement.setAttribute('data-text-size', textSize);
+          if (textSize === 'small' || localStorage.getItem('sorak-small-text') === 'true') {
+            document.documentElement.classList.add('sorak-small-text');
+          }
+          var auth = localStorage.getItem('sorak-auth');
+          var user = auth ? JSON.parse(auth).state?.user : null;
+          var path = window.location.pathname;
+          var isOutside = !user || path.startsWith('/login') || path.startsWith('/forgot-password') || path.startsWith('/otp-verify');
+          if (isOutside) {
+            document.documentElement.classList.remove('dark');
+            return;
+          }
+          var theme = localStorage.getItem('sorak-theme') || 'light';
+          var isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
