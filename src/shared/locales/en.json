@@ -655,6 +655,10 @@
     "studentsUnit": "students",
     "statStudents": "Students",
     "statStudentsSub": "Current class overview",
-    "statTeachers": "Teachers in charge"
+    "statTeachers": "Teachers in charge",
+    "statTeachersSub": "Current class overview",
+    "statTransfers": "Transfer requests",
+    "statTransfersSub": "Current class overview",
+    "capacitySuffix": "capacity"
   }
 }
