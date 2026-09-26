@@ -611,6 +611,10 @@
     "title": "Classrooms",
     "subtitle": "Manage classrooms by grade",
     "searchPlaceholder": "Search...",
-    "addClass": "Add classroom"
+    "addClass": "Add classroom",
+    "listHeader": "Classroom list",
+    "classesSuffix": "classes",
+    "studentsSuffix": "students",
+    "allClasses": "All classrooms"
   }
 }
