@@ -673,6 +673,10 @@
     "overview": "Tổng quan",
     "overviewTitle": "Tổng quan lớp học",
     "overviewDesc": "Tổng hợp tình hình học tập, chuyên cần, đánh giá và các chỉ số hoạt động của lớp",
-    "reportsDesc": "Tổng hợp tình hình chuyên cần, tỷ lệ đánh giá và các chỉ số hoạt động của lớp"
+    "reportsDesc": "Tổng hợp tình hình chuyên cần, tỷ lệ đánh giá và các chỉ số hoạt động của lớp",
+    "statsDesc": "Tổng hợp tình hình chuyên cần và tỷ lệ đánh giá học sinh của lớp",
+    "upcomingModules": "Hệ thống hoạt động lớp & Thời khóa biểu",
+    "upcomingModulesDesc": "Thời khóa biểu, sổ liên lạc điện tử và kế hoạch giảng dạy tuần sẽ được kích hoạt tại đây.",
+    "classConfigTitle": "Cấu hình lớp"
   }
 }
