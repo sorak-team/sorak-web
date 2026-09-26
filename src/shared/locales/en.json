@@ -630,6 +630,9 @@
     "settingsTransfers": "Transfer Requests",
     "settingsExport": "Export List",
     "studentAllocationTitle": "Student Allocation",
-    "studentAllocationSubtitle": "Select students from pool, previous class history, or import"
+    "studentAllocationSubtitle": "Select students from pool, previous class history, or import",
+    "tabPool": "Student Pool",
+    "tabHistory": "Class History",
+    "tabImport": "Import"
   }
 }
