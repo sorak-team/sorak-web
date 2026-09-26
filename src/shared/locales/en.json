@@ -637,6 +637,9 @@
     "searchPoolPlaceholder": "Search students...",
     "searchRosterPlaceholder": "Search in class...",
     "addToClass": "Add to class",
-    "adding": "Adding..."
+    "adding": "Adding...",
+    "removeFromClass": "Remove from class",
+    "removing": "Removing...",
+    "studentsSelected": "students selected"
   }
 }
