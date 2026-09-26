@@ -602,6 +602,12 @@
     "studentUnit": "học sinh",
     "colGuardian": "Người giám hộ / Phụ huynh",
     "colPreviousClass": "Lớp cũ",
-    "avatarUploadSuccess": "Đã cập nhật ảnh đại diện học sinh"
+    "avatarUploadSuccess": "Đã cập nhật ảnh đại diện học sinh",
+    "avatarResetNotice": "Đã đặt lại linh vật mặc định",
+    "pastClasses": "Lớp cũ đã từng học",
+    "noPastClasses": "Chưa có lịch sử lớp học cũ"
+  },
+  "classes": {
+    "title": "Lớp học"
   }
 }

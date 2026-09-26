@@ -602,6 +602,12 @@
     "studentUnit": "students",
     "colGuardian": "Guardian / Parents",
     "colPreviousClass": "Previous Class",
-    "avatarUploadSuccess": "Student avatar updated successfully"
+    "avatarUploadSuccess": "Student avatar updated successfully",
+    "avatarResetNotice": "Reset to default avatar mascot successfully",
+    "pastClasses": "Previous Enrolled Classes",
+    "noPastClasses": "No past class enrollment history"
+  },
+  "classes": {
+    "title": "Classrooms"
   }
 }
