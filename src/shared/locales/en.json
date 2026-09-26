@@ -670,6 +670,9 @@
     "goToAttendance": "View attendance",
     "goToHealth": "View health records",
     "goToSettings": "Manage configuration",
-    "overview": "Overview"
+    "overview": "Overview",
+    "overviewTitle": "Class Overview",
+    "overviewDesc": "Overview of learning progress, attendance, assessments, and daily class metrics",
+    "reportsDesc": "Summary of attendance, evaluation rates, and key class metrics"
   }
 }
