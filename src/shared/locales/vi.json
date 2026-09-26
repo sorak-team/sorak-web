@@ -608,6 +608,9 @@
     "noPastClasses": "Chưa có lịch sử lớp học cũ"
   },
   "classes": {
-    "title": "Lớp học"
+    "title": "Lớp học",
+    "subtitle": "Quản lý lớp học theo khối",
+    "searchPlaceholder": "Tìm kiếm...",
+    "addClass": "Thêm lớp học"
   }
 }
