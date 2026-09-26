@@ -662,6 +662,10 @@
     "capacitySuffix": "chỗ",
     "pendingTransfer": "Chờ xử lý",
     "noPendingTransfer": "Không có yêu cầu",
-    "overviewSectionTitle": "Tổng quan lớp học"
+    "overviewSectionTitle": "Tổng quan lớp học",
+    "overviewSectionDesc": "Các module chi tiết sẽ được bổ sung ở những màn tiếp theo",
+    "moduleAttendance": "Điểm danh hôm nay",
+    "moduleHealth": "Sức khỏe & Dinh dưỡng",
+    "moduleTeachers": "Giáo viên & Phân công"
   }
 }

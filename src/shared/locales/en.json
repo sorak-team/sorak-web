@@ -662,6 +662,10 @@
     "capacitySuffix": "capacity",
     "pendingTransfer": "Pending",
     "noPendingTransfer": "No requests",
-    "overviewSectionTitle": "Classroom Overview"
+    "overviewSectionTitle": "Classroom Overview",
+    "overviewSectionDesc": "Detailed modules will be added in upcoming screens",
+    "moduleAttendance": "Today's Attendance",
+    "moduleHealth": "Health & Nutrition",
+    "moduleTeachers": "Teachers & Assignment"
   }
 }
