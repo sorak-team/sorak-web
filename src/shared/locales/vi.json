@@ -637,6 +637,9 @@
     "searchPoolPlaceholder": "Tìm học sinh...",
     "searchRosterPlaceholder": "Tìm trong lớp...",
     "addToClass": "Thêm vào lớp",
-    "adding": "Đang thêm..."
+    "adding": "Đang thêm...",
+    "removeFromClass": "Gỡ khỏi lớp",
+    "removing": "Đang gỡ...",
+    "studentsSelected": "học sinh đã chọn"
   }
 }
