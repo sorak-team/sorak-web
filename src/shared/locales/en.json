@@ -608,6 +608,9 @@
     "noPastClasses": "No past class enrollment history"
   },
   "classes": {
-    "title": "Classrooms"
+    "title": "Classrooms",
+    "subtitle": "Manage classrooms by grade",
+    "searchPlaceholder": "Search...",
+    "addClass": "Add classroom"
   }
 }
