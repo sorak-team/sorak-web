@@ -655,6 +655,10 @@
     "studentsUnit": "học sinh",
     "statStudents": "Học sinh",
     "statStudentsSub": "Tổng quan lớp hiện tại",
-    "statTeachers": "Giáo viên phụ trách"
+    "statTeachers": "Giáo viên phụ trách",
+    "statTeachersSub": "Tổng quan lớp hiện tại",
+    "statTransfers": "Yêu cầu chuyển lớp",
+    "statTransfersSub": "Tổng quan lớp hiện tại",
+    "capacitySuffix": "chỗ"
   }
 }
