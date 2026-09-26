@@ -626,6 +626,10 @@
     "settingsTitle": "Class settings",
     "settingsGeneral": "Class Config",
     "settingsTeachers": "Teacher Assignment",
-    "settingsStudents": "Student Assignment"
+    "settingsStudents": "Student Assignment",
+    "settingsTransfers": "Transfer Requests",
+    "settingsExport": "Export List",
+    "studentAllocationTitle": "Student Allocation",
+    "studentAllocationSubtitle": "Select students from pool, previous class history, or import"
   }
 }
