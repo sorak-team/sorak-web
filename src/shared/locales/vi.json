@@ -670,6 +670,9 @@
     "goToAttendance": "Xem điểm danh",
     "goToHealth": "Xem hồ sơ sức khỏe",
     "goToSettings": "Quản lý cấu hình",
-    "overview": "Tổng quan"
+    "overview": "Tổng quan",
+    "overviewTitle": "Tổng quan lớp học",
+    "overviewDesc": "Tổng hợp tình hình học tập, chuyên cần, đánh giá và các chỉ số hoạt động của lớp",
+    "reportsDesc": "Tổng hợp tình hình chuyên cần, tỷ lệ đánh giá và các chỉ số hoạt động của lớp"
   }
 }
