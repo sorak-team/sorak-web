@@ -673,6 +673,10 @@
     "overview": "Overview",
     "overviewTitle": "Class Overview",
     "overviewDesc": "Overview of learning progress, attendance, assessments, and daily class metrics",
-    "reportsDesc": "Summary of attendance, evaluation rates, and key class metrics"
+    "reportsDesc": "Summary of attendance, evaluation rates, and key class metrics",
+    "statsDesc": "Summary of attendance and evaluation rates for the class",
+    "upcomingModules": "Class Activities & Timetable System",
+    "upcomingModulesDesc": "Timetable, electronic contact book and weekly teaching plan will be activated here.",
+    "classConfigTitle": "Class Configuration"
   }
 }
