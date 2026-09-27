@@ -703,6 +703,9 @@
     "fieldRoom": "Phòng học",
     "fieldCapacity": "Sức chứa tối đa",
     "fieldTeacher": "Giáo viên phụ trách",
-    "deleteConfirmTitle": "Xác nhận xóa lớp học"
+    "deleteConfirmTitle": "Xác nhận xóa lớp học",
+    "deleteConfirmDesc": "Bạn có chắc chắn muốn xóa lớp {{name}}? Hành động này sẽ gỡ lớp khỏi năm học và không thể hoàn tác.",
+    "save": "Lưu",
+    "cancel": "Hủy"
   }
 }
