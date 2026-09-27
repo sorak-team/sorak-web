@@ -677,6 +677,10 @@
     "statsDesc": "Summary of attendance and evaluation rates for the class",
     "upcomingModules": "Class Activities & Timetable System",
     "upcomingModulesDesc": "Timetable, electronic contact book and weekly teaching plan will be activated here.",
-    "classConfigTitle": "Class Configuration"
+    "classConfigTitle": "Class Configuration",
+    "classConfigSubtitle": "Configure general information, student capacity, and operational settings",
+    "studentAllocationSubtitleFull": "Manage student roster, intake new students, and coordinate class sizes",
+    "teacherAllocationSubtitle": "Assign homeroom teachers, subject teachers, and child care assistants",
+    "exportSubtitle": "Export and download student rosters, teacher assignments, and class profiles"
   }
 }

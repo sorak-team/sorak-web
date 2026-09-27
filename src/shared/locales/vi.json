@@ -677,6 +677,10 @@
     "statsDesc": "Tổng hợp tình hình chuyên cần và tỷ lệ đánh giá học sinh của lớp",
     "upcomingModules": "Hệ thống hoạt động lớp & Thời khóa biểu",
     "upcomingModulesDesc": "Thời khóa biểu, sổ liên lạc điện tử và kế hoạch giảng dạy tuần sẽ được kích hoạt tại đây.",
-    "classConfigTitle": "Cấu hình lớp"
+    "classConfigTitle": "Cấu hình lớp",
+    "classConfigSubtitle": "Thiết lập thông tin chung, quy mô học sinh và các cài đặt vận hành lớp học",
+    "studentAllocationSubtitleFull": "Quản lý danh sách học sinh chính thức, tiếp nhận học sinh mới và điều phối sĩ số lớp",
+    "teacherAllocationSubtitle": "Phân công giáo viên chủ nhiệm, giáo viên phụ trách và bảo mẫu chăm sóc lớp",
+    "exportSubtitle": "Xuất và tải xuống danh sách học sinh, giáo viên phụ trách và hồ sơ lớp học"
   }
 }
