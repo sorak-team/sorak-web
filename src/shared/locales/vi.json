@@ -743,6 +743,10 @@
     "searchTeacherPlaceholder": "Tìm theo tên hoặc mã CB...",
     "selectTeacherRequired": "Vui lòng chọn ít nhất một giáo viên để phân công.",
     "assignTeacherSuccess": "Đã phân công {{count}} giáo viên vào lớp thành công!",
-    "assignTeacherNote": "Lưu ý: Sau khi thêm giáo viên vào lớp, bạn có thể chỉ định giáo viên làm Chủ nhiệm lớp ngay tại bảng danh sách bên ngoài."
+    "assignTeacherNote": "Lưu ý: Sau khi thêm giáo viên vào lớp, bạn có thể chỉ định giáo viên làm Chủ nhiệm lớp ngay tại bảng danh sách bên ngoài.",
+    "selectedCount": "Đã chọn: {{count}} giáo viên",
+    "saveAssignment": "Lưu phân công ({{count}})",
+    "tabOverview": "Tổng quan",
+    "tabPlanning": "Kế hoạch giáo dục"
   }
 }

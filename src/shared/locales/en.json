@@ -743,6 +743,10 @@
     "searchTeacherPlaceholder": "Search by name or employee code...",
     "selectTeacherRequired": "Please select at least one teacher to assign.",
     "assignTeacherSuccess": "Successfully assigned {{count}} teachers to class!",
-    "assignTeacherNote": "Note: After adding teachers to the class, you can designate a Homeroom Teacher directly on the list outside."
+    "assignTeacherNote": "Note: After adding teachers to the class, you can designate a Homeroom Teacher directly on the list outside.",
+    "selectedCount": "Selected: {{count}} teachers",
+    "saveAssignment": "Save Assignment ({{count}})",
+    "tabOverview": "Overview",
+    "tabPlanning": "Educational Planning"
   }
 }
