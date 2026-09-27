@@ -721,6 +721,10 @@
     "editClassTitle": "Edit Class Information",
     "editClassDesc": "Update classroom, teacher assignments, and capacity",
     "basicInfo": "Basic Information",
-    "basicInfoDesc": "Class name and pedagogical age group"
+    "basicInfoDesc": "Class name and pedagogical age group",
+    "facilityAndStaff": "Facilities & Assignment",
+    "facilityDesc": "Room location and assigned teachers",
+    "fieldDescription": "Description / Notes",
+    "colClass": "Class"
   }
 }
