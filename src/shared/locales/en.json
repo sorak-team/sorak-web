@@ -681,6 +681,9 @@
     "classConfigSubtitle": "Configure general information, student capacity, and operational settings",
     "studentAllocationSubtitleFull": "Manage student roster, intake new students, and coordinate class sizes",
     "teacherAllocationSubtitle": "Assign homeroom teachers, subject teachers, and child care assistants",
-    "exportSubtitle": "Export and download student rosters, teacher assignments, and class profiles"
+    "exportSubtitle": "Export and download student rosters, teacher assignments, and class profiles",
+    "transfersSubtitle": "Track and process incoming and outgoing student transfer requests",
+    "nameCardTitle": "Class Name",
+    "nameCardDesc": "Display name of the class in the academic year."
   }
 }

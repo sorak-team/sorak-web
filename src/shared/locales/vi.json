@@ -681,6 +681,9 @@
     "classConfigSubtitle": "Thiết lập thông tin chung, quy mô học sinh và các cài đặt vận hành lớp học",
     "studentAllocationSubtitleFull": "Quản lý danh sách học sinh chính thức, tiếp nhận học sinh mới và điều phối sĩ số lớp",
     "teacherAllocationSubtitle": "Phân công giáo viên chủ nhiệm, giáo viên phụ trách và bảo mẫu chăm sóc lớp",
-    "exportSubtitle": "Xuất và tải xuống danh sách học sinh, giáo viên phụ trách và hồ sơ lớp học"
+    "exportSubtitle": "Xuất và tải xuống danh sách học sinh, giáo viên phụ trách và hồ sơ lớp học",
+    "transfersSubtitle": "Theo dõi và xử lý các yêu cầu điều chuyển học sinh chuyển đến hoặc chuyển đi khỏi lớp",
+    "nameCardTitle": "Tên lớp",
+    "nameCardDesc": "Tên hiển thị của lớp trong năm học."
   }
 }
