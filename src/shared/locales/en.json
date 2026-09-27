@@ -703,6 +703,9 @@
     "fieldRoom": "Classroom",
     "fieldCapacity": "Maximum capacity",
     "fieldTeacher": "Teacher in charge",
-    "deleteConfirmTitle": "Confirm Delete Class"
+    "deleteConfirmTitle": "Confirm Delete Class",
+    "deleteConfirmDesc": "Are you sure you want to delete class {{name}}? This action will remove the class from the school year and cannot be undone.",
+    "save": "Save",
+    "cancel": "Cancel"
   }
 }
