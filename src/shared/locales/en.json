@@ -739,6 +739,10 @@
     "unassignedTeachersList": "Unassigned Teachers List",
     "selectUnassignedDesc": "Only displaying teachers without an assigned class in this school year",
     "noUnassignedTeachers": "No unassigned teachers found.",
-    "unassignedStatus": "Unassigned"
+    "unassignedStatus": "Unassigned",
+    "searchTeacherPlaceholder": "Search by name or employee code...",
+    "selectTeacherRequired": "Please select at least one teacher to assign.",
+    "assignTeacherSuccess": "Successfully assigned {{count}} teachers to class!",
+    "assignTeacherNote": "Note: After adding teachers to the class, you can designate a Homeroom Teacher directly on the list outside."
   }
 }

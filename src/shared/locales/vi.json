@@ -739,6 +739,10 @@
     "unassignedTeachersList": "Danh sách giáo viên chưa có lớp",
     "selectUnassignedDesc": "Chỉ hiển thị giáo viên chưa được phân công lớp trong năm học",
     "noUnassignedTeachers": "Không có giáo viên nào chưa có lớp.",
-    "unassignedStatus": "Chưa có lớp"
+    "unassignedStatus": "Chưa có lớp",
+    "searchTeacherPlaceholder": "Tìm theo tên hoặc mã CB...",
+    "selectTeacherRequired": "Vui lòng chọn ít nhất một giáo viên để phân công.",
+    "assignTeacherSuccess": "Đã phân công {{count}} giáo viên vào lớp thành công!",
+    "assignTeacherNote": "Lưu ý: Sau khi thêm giáo viên vào lớp, bạn có thể chỉ định giáo viên làm Chủ nhiệm lớp ngay tại bảng danh sách bên ngoài."
   }
 }
