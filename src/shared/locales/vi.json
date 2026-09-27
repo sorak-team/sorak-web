@@ -699,6 +699,10 @@
     "addClassTitle": "Thêm lớp học mới",
     "addClassDesc": "Nhập thông tin cơ bản để khởi tạo lớp học trong năm học 2026–2027.",
     "fieldName": "Tên lớp",
-    "fieldGrade": "Khối"
+    "fieldGrade": "Khối",
+    "fieldRoom": "Phòng học",
+    "fieldCapacity": "Sức chứa tối đa",
+    "fieldTeacher": "Giáo viên phụ trách",
+    "deleteConfirmTitle": "Xác nhận xóa lớp học"
   }
 }
