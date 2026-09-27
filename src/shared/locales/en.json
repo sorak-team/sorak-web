@@ -695,6 +695,10 @@
     "capacityShort": "Capacity",
     "deleteWarningNote": "This action requires confirmation and cannot be undone.",
     "confirmDelete": "Delete class",
-    "subModulePlaceholder": "Module is being prepared and will be integrated with real data in upcoming steps."
+    "subModulePlaceholder": "Module is being prepared and will be integrated with real data in upcoming steps.",
+    "addClassTitle": "Add New Class",
+    "addClassDesc": "Enter basic information to initialize classroom for school year 2026–2027.",
+    "fieldName": "Class name",
+    "fieldGrade": "Grade"
   }
 }
