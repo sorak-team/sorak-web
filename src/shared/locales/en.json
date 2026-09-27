@@ -688,6 +688,10 @@
     "nameHelper": "Used to identify the class in the Sorak system.",
     "infoCardTitle": "Class Information",
     "infoCardDesc": "Update grade, classroom and maximum capacity.",
-    "infoCardCombinedDesc": "Update display name, grade and classroom of the class in the academic year."
+    "infoCardCombinedDesc": "Update display name, grade and classroom of the class in the academic year.",
+    "infoHelper": "Changes only apply to the currently selected class.",
+    "deleteCardTitle": "Delete Class",
+    "deleteCardDesc": "Delete class from school year and unassign all current allocations.",
+    "capacityShort": "Capacity"
   }
 }
