@@ -717,6 +717,10 @@
     "editClass": "Chỉnh sửa lớp học",
     "delete": "Xóa lớp",
     "noRoom": "Chưa có phòng",
-    "updateSuccess": "Đã cập nhật thông tin lớp học thành công!"
+    "updateSuccess": "Đã cập nhật thông tin lớp học thành công!",
+    "editClassTitle": "Chỉnh sửa thông tin lớp",
+    "editClassDesc": "Cập nhật thông tin phòng học, giáo viên và sức chứa của lớp",
+    "basicInfo": "Thông tin cơ bản",
+    "basicInfoDesc": "Tên lớp và khối giảng dạy theo độ tuổi"
   }
 }
