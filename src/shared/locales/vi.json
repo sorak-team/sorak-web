@@ -736,6 +736,9 @@
     "actionDelete": "Xóa lớp",
     "assignTeacherTitle": "Phân công giáo viên",
     "assignTeacherSubtitle": "Chọn giáo viên chưa có lớp để phân công vào lớp {{className}}",
-    "unassignedTeachersList": "Danh sách giáo viên chưa có lớp"
+    "unassignedTeachersList": "Danh sách giáo viên chưa có lớp",
+    "selectUnassignedDesc": "Chỉ hiển thị giáo viên chưa được phân công lớp trong năm học",
+    "noUnassignedTeachers": "Không có giáo viên nào chưa có lớp.",
+    "unassignedStatus": "Chưa có lớp"
   }
 }

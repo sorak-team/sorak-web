@@ -736,6 +736,9 @@
     "actionDelete": "Delete class",
     "assignTeacherTitle": "Assign Teachers",
     "assignTeacherSubtitle": "Select unassigned teachers to assign to class {{className}}",
-    "unassignedTeachersList": "Unassigned Teachers List"
+    "unassignedTeachersList": "Unassigned Teachers List",
+    "selectUnassignedDesc": "Only displaying teachers without an assigned class in this school year",
+    "noUnassignedTeachers": "No unassigned teachers found.",
+    "unassignedStatus": "Unassigned"
   }
 }
