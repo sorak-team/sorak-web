@@ -692,6 +692,9 @@
     "infoHelper": "Changes only apply to the currently selected class.",
     "deleteCardTitle": "Delete Class",
     "deleteCardDesc": "Delete class from school year and unassign all current allocations.",
-    "capacityShort": "Capacity"
+    "capacityShort": "Capacity",
+    "deleteWarningNote": "This action requires confirmation and cannot be undone.",
+    "confirmDelete": "Delete class",
+    "subModulePlaceholder": "Module is being prepared and will be integrated with real data in upcoming steps."
   }
 }
