@@ -714,6 +714,9 @@
     "backToList": "Back to class list",
     "backToOverview": "Back to class overview",
     "notFound": "Class information not found.",
-    "editClass": "Edit class"
+    "editClass": "Edit class",
+    "delete": "Delete class",
+    "noRoom": "No room assigned",
+    "updateSuccess": "Class information updated successfully!"
   }
 }
