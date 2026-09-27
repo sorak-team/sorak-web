@@ -721,6 +721,10 @@
     "editClassTitle": "Chỉnh sửa thông tin lớp",
     "editClassDesc": "Cập nhật thông tin phòng học, giáo viên và sức chứa của lớp",
     "basicInfo": "Thông tin cơ bản",
-    "basicInfoDesc": "Tên lớp và khối giảng dạy theo độ tuổi"
+    "basicInfoDesc": "Tên lớp và khối giảng dạy theo độ tuổi",
+    "facilityAndStaff": "Cơ sở vật chất & Phân công",
+    "facilityDesc": "Vị trí phòng học và phân công giáo viên",
+    "fieldDescription": "Mô tả / Ghi chú",
+    "colClass": "Lớp học"
   }
 }
