@@ -699,6 +699,10 @@
     "addClassTitle": "Add New Class",
     "addClassDesc": "Enter basic information to initialize classroom for school year 2026–2027.",
     "fieldName": "Class name",
-    "fieldGrade": "Grade"
+    "fieldGrade": "Grade",
+    "fieldRoom": "Classroom",
+    "fieldCapacity": "Maximum capacity",
+    "fieldTeacher": "Teacher in charge",
+    "deleteConfirmTitle": "Confirm Delete Class"
   }
 }
