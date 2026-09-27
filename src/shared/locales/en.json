@@ -706,6 +706,10 @@
     "deleteConfirmTitle": "Confirm Delete Class",
     "deleteConfirmDesc": "Are you sure you want to delete class {{name}}? This action will remove the class from the school year and cannot be undone.",
     "save": "Save",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "nameRequired": "Please enter class name.",
+    "createSuccess": "Class created successfully!",
+    "savedSuccess": "Class information saved successfully!",
+    "deleteSuccess": "Class deleted successfully."
   }
 }
