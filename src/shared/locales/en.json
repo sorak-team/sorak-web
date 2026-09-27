@@ -732,6 +732,10 @@
     "colStudents": "Class Size",
     "actionView": "View details",
     "actionEdit": "Edit",
-    "actionSettings": "Class Profile"
+    "actionSettings": "Class Profile",
+    "actionDelete": "Delete class",
+    "assignTeacherTitle": "Assign Teachers",
+    "assignTeacherSubtitle": "Select unassigned teachers to assign to class {{className}}",
+    "unassignedTeachersList": "Unassigned Teachers List"
   }
 }

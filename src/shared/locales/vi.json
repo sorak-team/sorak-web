@@ -732,6 +732,10 @@
     "colStudents": "Sĩ số",
     "actionView": "Xem chi tiết",
     "actionEdit": "Chỉnh sửa",
-    "actionSettings": "Quản lý lớp"
+    "actionSettings": "Quản lý lớp",
+    "actionDelete": "Xóa lớp",
+    "assignTeacherTitle": "Phân công giáo viên",
+    "assignTeacherSubtitle": "Chọn giáo viên chưa có lớp để phân công vào lớp {{className}}",
+    "unassignedTeachersList": "Danh sách giáo viên chưa có lớp"
   }
 }
