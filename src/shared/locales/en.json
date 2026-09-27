@@ -710,6 +710,10 @@
     "nameRequired": "Please enter class name.",
     "createSuccess": "Class created successfully!",
     "savedSuccess": "Class information saved successfully!",
-    "deleteSuccess": "Class deleted successfully."
+    "deleteSuccess": "Class deleted successfully.",
+    "backToList": "Back to class list",
+    "backToOverview": "Back to class overview",
+    "notFound": "Class information not found.",
+    "editClass": "Edit class"
   }
 }

@@ -710,6 +710,10 @@
     "nameRequired": "Vui lòng nhập tên lớp học.",
     "createSuccess": "Đã tạo lớp học thành công!",
     "savedSuccess": "Đã lưu thông tin lớp học thành công!",
-    "deleteSuccess": "Đã xóa lớp học thành công."
+    "deleteSuccess": "Đã xóa lớp học thành công.",
+    "backToList": "Quay lại danh sách lớp học",
+    "backToOverview": "Quay lại tổng quan lớp",
+    "notFound": "Không tìm thấy thông tin lớp học.",
+    "editClass": "Chỉnh sửa lớp học"
   }
 }
