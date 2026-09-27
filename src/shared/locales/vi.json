@@ -728,6 +728,10 @@
     "colClass": "Lớp học",
     "colGrade": "Khối",
     "colTeacher": "Giáo viên phụ trách",
-    "colRoom": "Phòng học"
+    "colRoom": "Phòng học",
+    "colStudents": "Sĩ số",
+    "actionView": "Xem chi tiết",
+    "actionEdit": "Chỉnh sửa",
+    "actionSettings": "Quản lý lớp"
   }
 }

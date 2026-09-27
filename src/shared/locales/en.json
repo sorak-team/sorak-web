@@ -728,6 +728,10 @@
     "colClass": "Class",
     "colGrade": "Grade",
     "colTeacher": "Lead Teacher",
-    "colRoom": "Classroom"
+    "colRoom": "Classroom",
+    "colStudents": "Class Size",
+    "actionView": "View details",
+    "actionEdit": "Edit",
+    "actionSettings": "Class Profile"
   }
 }
