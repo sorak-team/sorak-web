@@ -717,6 +717,10 @@
     "editClass": "Edit class",
     "delete": "Delete class",
     "noRoom": "No room assigned",
-    "updateSuccess": "Class information updated successfully!"
+    "updateSuccess": "Class information updated successfully!",
+    "editClassTitle": "Edit Class Information",
+    "editClassDesc": "Update classroom, teacher assignments, and capacity",
+    "basicInfo": "Basic Information",
+    "basicInfoDesc": "Class name and pedagogical age group"
   }
 }
