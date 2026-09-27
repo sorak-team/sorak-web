@@ -684,6 +684,10 @@
     "exportSubtitle": "Export and download student rosters, teacher assignments, and class profiles",
     "transfersSubtitle": "Track and process incoming and outgoing student transfer requests",
     "nameCardTitle": "Class Name",
-    "nameCardDesc": "Display name of the class in the academic year."
+    "nameCardDesc": "Display name of the class in the academic year.",
+    "nameHelper": "Used to identify the class in the Sorak system.",
+    "infoCardTitle": "Class Information",
+    "infoCardDesc": "Update grade, classroom and maximum capacity.",
+    "infoCardCombinedDesc": "Update display name, grade and classroom of the class in the academic year."
   }
 }
