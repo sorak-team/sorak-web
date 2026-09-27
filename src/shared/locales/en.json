@@ -725,6 +725,9 @@
     "facilityAndStaff": "Facilities & Assignment",
     "facilityDesc": "Room location and assigned teachers",
     "fieldDescription": "Description / Notes",
-    "colClass": "Class"
+    "colClass": "Class",
+    "colGrade": "Grade",
+    "colTeacher": "Lead Teacher",
+    "colRoom": "Classroom"
   }
 }

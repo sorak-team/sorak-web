@@ -725,6 +725,9 @@
     "facilityAndStaff": "Cơ sở vật chất & Phân công",
     "facilityDesc": "Vị trí phòng học và phân công giáo viên",
     "fieldDescription": "Mô tả / Ghi chú",
-    "colClass": "Lớp học"
+    "colClass": "Lớp học",
+    "colGrade": "Khối",
+    "colTeacher": "Giáo viên phụ trách",
+    "colRoom": "Phòng học"
   }
 }
