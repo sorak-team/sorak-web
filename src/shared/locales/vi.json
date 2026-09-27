@@ -688,6 +688,10 @@
     "nameHelper": "Dùng để nhận diện lớp trong hệ thống Sorak.",
     "infoCardTitle": "Thông tin lớp",
     "infoCardDesc": "Cập nhật khối, phòng học và sức chứa của lớp.",
-    "infoCardCombinedDesc": "Cập nhật tên hiển thị, khối học và phòng học của lớp trong năm học."
+    "infoCardCombinedDesc": "Cập nhật tên hiển thị, khối học và phòng học của lớp trong năm học.",
+    "infoHelper": "Các thay đổi chỉ áp dụng cho lớp đang chọn.",
+    "deleteCardTitle": "Xóa lớp",
+    "deleteCardDesc": "Xóa lớp khỏi năm học và gỡ toàn bộ phân công hiện tại.",
+    "capacityShort": "Sức chứa"
   }
 }
