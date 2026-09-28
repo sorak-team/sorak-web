@@ -747,6 +747,9 @@
     "selectedCount": "Đã chọn: {{count}} giáo viên",
     "saveAssignment": "Lưu phân công ({{count}})",
     "tabOverview": "Tổng quan",
-    "tabPlanning": "Kế hoạch giáo dục"
+    "tabPlanning": "Kế hoạch giáo dục",
+    "tabAttendance": "Điểm danh",
+    "tabHealth": "Sức khỏe",
+    "tabAssessment": "Đánh giá giai đoạn"
   }
 }
