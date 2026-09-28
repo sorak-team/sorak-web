@@ -794,6 +794,10 @@
     "loadTeachersError": "Failed to load teacher allocation for this class.",
     "promotedToPrimary": "Set {{name}} as Lead Teacher.",
     "demotedToAssistant": "Changed {{name}} to Subject / Assistant Teacher.",
-    "removedTeacherSuccess": "Teacher removed from class successfully!"
+    "removedTeacherSuccess": "Teacher removed from class successfully!",
+    "teacherAllocationTitle": "Teacher Allocation",
+    "assignedTeachersHeading": "Assigned Teachers",
+    "assignedTeachersSub": "Includes lead teachers and subject teachers responsible for education and childcare.",
+    "searchTeacherInClass": "Search staff..."
   }
 }
