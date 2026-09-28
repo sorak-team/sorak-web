@@ -787,6 +787,10 @@
     "loadRosterError": "Không thể tải danh sách học sinh trong lớp.",
     "rosterCardHeading": "Danh sách học sinh",
     "rosterCardDesc": "Danh sách học sinh chính thức và theo dõi sĩ số thực tế của lớp học",
-    "intakeActionShort": "Tiếp nhận học sinh"
+    "intakeActionShort": "Tiếp nhận học sinh",
+    "noMatchingStudent": "Không tìm thấy học sinh nào phù hợp.",
+    "emptyRosterPrompt": "Lớp học chưa có học sinh nào. Bấm \"+ Tiếp nhận học sinh\" để phân bổ học sinh vào lớp.",
+    "transferRequest": "Yêu cầu chuyển lớp",
+    "loadTeachersError": "Không thể tải danh sách giáo viên của lớp."
   }
 }
