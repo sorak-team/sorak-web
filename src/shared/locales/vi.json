@@ -769,6 +769,9 @@
     "class": "Lớp học",
     "studentRosterDesc": "Quản lý hồ sơ học sinh, thông tin người giám hộ và trạng thái học vụ của lớp",
     "assignTeacherSubtitleGeneric": "Chọn giáo viên chưa có lớp để phân công vào lớp học",
-    "noMatchingTeacher": "Không tìm thấy giáo viên nào phù hợp."
+    "noMatchingTeacher": "Không tìm thấy giáo viên nào phù hợp.",
+    "noPoolTeachers": "Không có giáo viên nào chưa có lớp.",
+    "loadExportDataError": "Không thể tải dữ liệu xuất danh sách của lớp.",
+    "exportSuccess": "Đã tải xuống danh sách lớp {{name}} định dạng Excel thành công!"
   }
 }

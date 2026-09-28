@@ -769,6 +769,9 @@
     "class": "Class",
     "studentRosterDesc": "Manage student profiles, guardian information, and academic status for this class",
     "assignTeacherSubtitleGeneric": "Select an unassigned teacher to assign to this class",
-    "noMatchingTeacher": "No matching teachers found."
+    "noMatchingTeacher": "No matching teachers found.",
+    "noPoolTeachers": "No unassigned teachers available.",
+    "loadExportDataError": "Unable to load export roster data for this class.",
+    "exportSuccess": "Class roster for {{name}} downloaded successfully in Excel format!"
   }
 }
