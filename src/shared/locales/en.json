@@ -747,6 +747,9 @@
     "selectedCount": "Selected: {{count}} teachers",
     "saveAssignment": "Save Assignment ({{count}})",
     "tabOverview": "Overview",
-    "tabPlanning": "Educational Planning"
+    "tabPlanning": "Educational Planning",
+    "tabAttendance": "Attendance",
+    "tabHealth": "Health & Growth",
+    "tabAssessment": "Periodic Assessment"
   }
 }
