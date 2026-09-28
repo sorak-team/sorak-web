@@ -761,6 +761,10 @@
     "hubHealthDesc": "Track height, weight, BMI, and WHO standard developmental percentiles",
     "hubHealthAction": "Open Health Records",
     "hubAssessmentTitle": "Weekly Goal Assessments",
-    "hubAssessmentDesc": "Evaluate achievement of developmental goals scheduled across the weekly timetable"
+    "hubAssessmentDesc": "Evaluate achievement of developmental goals scheduled across the weekly timetable",
+    "hubAssessmentAction": "Open Goal Assessments",
+    "hubGoodBehaviorTitle": "Good Behavior & Monthly Reports",
+    "hubGoodBehaviorDesc": "Award weekly roses, record comprehensive monthly remarks, and collect parent feedback",
+    "hubGoodBehaviorAction": "Open Good Behavior Cards"
   }
 }

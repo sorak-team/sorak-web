@@ -761,6 +761,10 @@
     "hubHealthDesc": "Theo dõi chiều cao, cân nặng, chỉ số BMI và biểu đồ tăng trưởng theo chuẩn WHO",
     "hubHealthAction": "Mở sổ theo dõi sức khỏe",
     "hubAssessmentTitle": "Đánh giá theo kế hoạch tuần",
-    "hubAssessmentDesc": "Đánh giá mức độ đạt được các mục tiêu phát triển theo thời khóa biểu học tập"
+    "hubAssessmentDesc": "Đánh giá mức độ đạt được các mục tiêu phát triển theo thời khóa biểu học tập",
+    "hubAssessmentAction": "Vào đánh giá mục tiêu",
+    "hubGoodBehaviorTitle": "Phiếu bé ngoan & Sổ liên lạc",
+    "hubGoodBehaviorDesc": "Chấm hoa bé ngoan tuần, nhận xét toàn diện hàng tháng và gửi phụ huynh phản hồi",
+    "hubGoodBehaviorAction": "Mở sổ bé ngoan"
   }
 }
