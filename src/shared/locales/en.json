@@ -758,6 +758,9 @@
     "hubAttendanceDesc": "Record attendance, excused / unexcused absences, and verify child dismissal",
     "hubAttendanceAction": "Open Class Attendance",
     "hubHealthTitle": "Health & WHO Growth",
-    "hubHealthDesc": "Track height, weight, BMI, and WHO standard developmental percentiles"
+    "hubHealthDesc": "Track height, weight, BMI, and WHO standard developmental percentiles",
+    "hubHealthAction": "Open Health Records",
+    "hubAssessmentTitle": "Weekly Goal Assessments",
+    "hubAssessmentDesc": "Evaluate achievement of developmental goals scheduled across the weekly timetable"
   }
 }

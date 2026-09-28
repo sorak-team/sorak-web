@@ -758,6 +758,9 @@
     "hubAttendanceDesc": "Ghi nhận có mặt, vắng mặt có phép / không phép và đón trả trẻ an toàn",
     "hubAttendanceAction": "Vào điểm danh lớp",
     "hubHealthTitle": "Sức khỏe & Tăng trưởng WHO",
-    "hubHealthDesc": "Theo dõi chiều cao, cân nặng, chỉ số BMI và biểu đồ tăng trưởng theo chuẩn WHO"
+    "hubHealthDesc": "Theo dõi chiều cao, cân nặng, chỉ số BMI và biểu đồ tăng trưởng theo chuẩn WHO",
+    "hubHealthAction": "Mở sổ theo dõi sức khỏe",
+    "hubAssessmentTitle": "Đánh giá theo kế hoạch tuần",
+    "hubAssessmentDesc": "Đánh giá mức độ đạt được các mục tiêu phát triển theo thời khóa biểu học tập"
   }
 }
