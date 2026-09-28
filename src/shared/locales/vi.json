@@ -798,6 +798,9 @@
     "teacherAllocationTitle": "Phân công giáo viên",
     "assignedTeachersHeading": "Danh sách giáo viên",
     "assignedTeachersSub": "Bao gồm GVCN và GVBM phụ trách giảng dạy và chăm sóc trẻ.",
-    "searchTeacherInClass": "Tìm kiếm cán bộ..."
+    "searchTeacherInClass": "Tìm kiếm cán bộ...",
+    "addTeacherBtn": "Thêm giáo viên",
+    "teacherRoleCol": "Vai trò",
+    "teacherAssignedAtCol": "Ngày phân công"
   }
 }
