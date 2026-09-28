@@ -780,6 +780,9 @@
     "fieldStudentBasic": "Basic Student Profile",
     "fieldHealth": "Health & Dietary Allergies",
     "fieldParents": "Parent Information",
-    "fieldTeachers": "Assigned Class Teachers"
+    "fieldTeachers": "Assigned Class Teachers",
+    "fieldSummary": "Class Summary Statistics",
+    "exporting": "Exporting file...",
+    "headerNavSubtitle": "Manage class information, curriculum planning, and daily activities"
   }
 }

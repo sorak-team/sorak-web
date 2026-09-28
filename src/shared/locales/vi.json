@@ -780,6 +780,9 @@
     "fieldStudentBasic": "Hồ sơ học sinh cơ bản",
     "fieldHealth": "Sức khỏe & Dị ứng ăn uống",
     "fieldParents": "Thông tin phụ huynh",
-    "fieldTeachers": "Giáo viên phụ trách lớp"
+    "fieldTeachers": "Giáo viên phụ trách lớp",
+    "fieldSummary": "Thống kê tổng hợp lớp",
+    "exporting": "Đang xuất tệp...",
+    "headerNavSubtitle": "Quản lý thông tin, kế hoạch giảng dạy và hoạt động của lớp học"
   }
 }
