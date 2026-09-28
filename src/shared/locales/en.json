@@ -801,6 +801,10 @@
     "searchTeacherInClass": "Search staff...",
     "addTeacherBtn": "Add Teacher",
     "teacherRoleCol": "Role",
-    "teacherAssignedAtCol": "Assigned Date"
+    "teacherAssignedAtCol": "Assigned Date",
+    "noTeachersInClass": "No teachers assigned to this class yet.",
+    "confirmRemoveTeacherTitle": "Confirm Teacher Removal",
+    "confirmRemoveTeacherDesc": "Are you sure you want to remove {{name}} ({{code}}) from this class? This can be undone by re-assigning them.",
+    "confirmRemoveBtn": "Confirm Removal"
   }
 }
