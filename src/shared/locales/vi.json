@@ -791,6 +791,9 @@
     "noMatchingStudent": "Không tìm thấy học sinh nào phù hợp.",
     "emptyRosterPrompt": "Lớp học chưa có học sinh nào. Bấm \"+ Tiếp nhận học sinh\" để phân bổ học sinh vào lớp.",
     "transferRequest": "Yêu cầu chuyển lớp",
-    "loadTeachersError": "Không thể tải danh sách giáo viên của lớp."
+    "loadTeachersError": "Không thể tải danh sách giáo viên của lớp.",
+    "promotedToPrimary": "Đã đặt {{name}} làm GVCN.",
+    "demotedToAssistant": "Đã chuyển {{name}} thành GVBM.",
+    "removedTeacherSuccess": "Đã gỡ giáo viên khỏi lớp thành công!"
   }
 }
