@@ -750,6 +750,10 @@
     "tabPlanning": "Kế hoạch giáo dục",
     "tabAttendance": "Điểm danh",
     "tabHealth": "Sức khỏe",
-    "tabAssessment": "Đánh giá giai đoạn"
+    "tabAssessment": "Đánh giá giai đoạn",
+    "tabGoodBehavior": "Phiếu bé ngoan",
+    "tabSettings": "Quản lý lớp",
+    "classProfile": "Quản lý lớp",
+    "hubAttendanceTitle": "Điểm danh chuyên cần"
   }
 }
