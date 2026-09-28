@@ -750,6 +750,10 @@
     "tabPlanning": "Educational Planning",
     "tabAttendance": "Attendance",
     "tabHealth": "Health & Growth",
-    "tabAssessment": "Periodic Assessment"
+    "tabAssessment": "Periodic Assessment",
+    "tabGoodBehavior": "Good Behavior",
+    "tabSettings": "Class Management",
+    "classProfile": "Class Management",
+    "hubAttendanceTitle": "Daily Attendance"
   }
 }
