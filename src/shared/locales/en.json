@@ -772,6 +772,10 @@
     "noMatchingTeacher": "No matching teachers found.",
     "noPoolTeachers": "No unassigned teachers available.",
     "loadExportDataError": "Unable to load export roster data for this class.",
-    "exportSuccess": "Class roster for {{name}} downloaded successfully in Excel format!"
+    "exportSuccess": "Class roster for {{name}} downloaded successfully in Excel format!",
+    "exportFailed": "An error occurred while exporting the roster.",
+    "exportTitle": "Export Roster",
+    "exportFieldsTitle": "1. Data Fields to Export",
+    "exportFieldsSubtitle": "Select field options to include in the Excel spreadsheet."
   }
 }

@@ -772,6 +772,10 @@
     "noMatchingTeacher": "Không tìm thấy giáo viên nào phù hợp.",
     "noPoolTeachers": "Không có giáo viên nào chưa có lớp.",
     "loadExportDataError": "Không thể tải dữ liệu xuất danh sách của lớp.",
-    "exportSuccess": "Đã tải xuống danh sách lớp {{name}} định dạng Excel thành công!"
+    "exportSuccess": "Đã tải xuống danh sách lớp {{name}} định dạng Excel thành công!",
+    "exportFailed": "Có lỗi xảy ra trong quá trình xuất danh sách.",
+    "exportTitle": "Xuất danh sách",
+    "exportFieldsTitle": "1. Dữ liệu cần xuất",
+    "exportFieldsSubtitle": "Tùy chọn các trường thông tin đưa vào tệp Excel."
   }
 }
