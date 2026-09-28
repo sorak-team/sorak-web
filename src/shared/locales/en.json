@@ -798,6 +798,9 @@
     "teacherAllocationTitle": "Teacher Allocation",
     "assignedTeachersHeading": "Assigned Teachers",
     "assignedTeachersSub": "Includes lead teachers and subject teachers responsible for education and childcare.",
-    "searchTeacherInClass": "Search staff..."
+    "searchTeacherInClass": "Search staff...",
+    "addTeacherBtn": "Add Teacher",
+    "teacherRoleCol": "Role",
+    "teacherAssignedAtCol": "Assigned Date"
   }
 }
