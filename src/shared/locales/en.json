@@ -809,6 +809,9 @@
     "loadTransfersError": "Failed to load class transfer requests.",
     "approveTransferSuccess": "Class transfer request approved successfully!",
     "rejectTransferSuccess": "Class transfer request rejected.",
-    "transfersTitle": "Class Transfers"
+    "transfersTitle": "Class Transfers",
+    "transfersCardHeading": "Transfer Requests List",
+    "transfersCardDesc": "Track transfer request status and review approvals.",
+    "newTransferBtn": "New Request"
   }
 }
