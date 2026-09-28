@@ -754,6 +754,10 @@
     "tabGoodBehavior": "Good Behavior",
     "tabSettings": "Class Management",
     "classProfile": "Class Management",
-    "hubAttendanceTitle": "Daily Attendance"
+    "hubAttendanceTitle": "Daily Attendance",
+    "hubAttendanceDesc": "Record attendance, excused / unexcused absences, and verify child dismissal",
+    "hubAttendanceAction": "Open Class Attendance",
+    "hubHealthTitle": "Health & WHO Growth",
+    "hubHealthDesc": "Track height, weight, BMI, and WHO standard developmental percentiles"
   }
 }
