@@ -783,6 +783,10 @@
     "fieldTeachers": "Giáo viên phụ trách lớp",
     "fieldSummary": "Thống kê tổng hợp lớp",
     "exporting": "Đang xuất tệp...",
-    "headerNavSubtitle": "Quản lý thông tin, kế hoạch giảng dạy và hoạt động của lớp học"
+    "headerNavSubtitle": "Quản lý thông tin, kế hoạch giảng dạy và hoạt động của lớp học",
+    "loadRosterError": "Không thể tải danh sách học sinh trong lớp.",
+    "rosterCardHeading": "Danh sách học sinh",
+    "rosterCardDesc": "Danh sách học sinh chính thức và theo dõi sĩ số thực tế của lớp học",
+    "intakeActionShort": "Tiếp nhận học sinh"
   }
 }
