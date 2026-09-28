@@ -776,6 +776,10 @@
     "exportFailed": "Có lỗi xảy ra trong quá trình xuất danh sách.",
     "exportTitle": "Xuất danh sách",
     "exportFieldsTitle": "1. Dữ liệu cần xuất",
-    "exportFieldsSubtitle": "Tùy chọn các trường thông tin đưa vào tệp Excel."
+    "exportFieldsSubtitle": "Tùy chọn các trường thông tin đưa vào tệp Excel.",
+    "fieldStudentBasic": "Hồ sơ học sinh cơ bản",
+    "fieldHealth": "Sức khỏe & Dị ứng ăn uống",
+    "fieldParents": "Thông tin phụ huynh",
+    "fieldTeachers": "Giáo viên phụ trách lớp"
   }
 }

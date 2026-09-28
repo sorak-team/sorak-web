@@ -776,6 +776,10 @@
     "exportFailed": "An error occurred while exporting the roster.",
     "exportTitle": "Export Roster",
     "exportFieldsTitle": "1. Data Fields to Export",
-    "exportFieldsSubtitle": "Select field options to include in the Excel spreadsheet."
+    "exportFieldsSubtitle": "Select field options to include in the Excel spreadsheet.",
+    "fieldStudentBasic": "Basic Student Profile",
+    "fieldHealth": "Health & Dietary Allergies",
+    "fieldParents": "Parent Information",
+    "fieldTeachers": "Assigned Class Teachers"
   }
 }
