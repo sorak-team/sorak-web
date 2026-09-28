@@ -805,6 +805,10 @@
     "noTeachersInClass": "Lớp chưa được phân công giáo viên nào.",
     "confirmRemoveTeacherTitle": "Xác nhận gỡ giáo viên",
     "confirmRemoveTeacherDesc": "Bạn có chắc chắn muốn gỡ giáo viên {{name}} ({{code}}) khỏi lớp? Hành động này có thể hoàn tác bằng cách thêm lại giáo viên.",
-    "confirmRemoveBtn": "Xác nhận gỡ"
+    "confirmRemoveBtn": "Xác nhận gỡ",
+    "loadTransfersError": "Không thể tải danh sách yêu cầu chuyển lớp.",
+    "approveTransferSuccess": "Đã phê duyệt yêu cầu chuyển lớp thành công!",
+    "rejectTransferSuccess": "Đã từ chối yêu cầu chuyển lớp.",
+    "transfersTitle": "Chuyển lớp"
   }
 }
