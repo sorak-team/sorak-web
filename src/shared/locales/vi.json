@@ -809,6 +809,9 @@
     "loadTransfersError": "Không thể tải danh sách yêu cầu chuyển lớp.",
     "approveTransferSuccess": "Đã phê duyệt yêu cầu chuyển lớp thành công!",
     "rejectTransferSuccess": "Đã từ chối yêu cầu chuyển lớp.",
-    "transfersTitle": "Chuyển lớp"
+    "transfersTitle": "Chuyển lớp",
+    "transfersCardHeading": "Danh sách yêu cầu chuyển lớp",
+    "transfersCardDesc": "Theo dõi tình trạng hồ sơ chuyển lớp và thực hiện xét duyệt.",
+    "newTransferBtn": "Tạo yêu cầu"
   }
 }
