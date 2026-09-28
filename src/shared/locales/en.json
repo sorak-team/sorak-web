@@ -765,6 +765,10 @@
     "hubAssessmentAction": "Open Goal Assessments",
     "hubGoodBehaviorTitle": "Good Behavior & Monthly Reports",
     "hubGoodBehaviorDesc": "Award weekly roses, record comprehensive monthly remarks, and collect parent feedback",
-    "hubGoodBehaviorAction": "Open Good Behavior Cards"
+    "hubGoodBehaviorAction": "Open Good Behavior Cards",
+    "class": "Class",
+    "studentRosterDesc": "Manage student profiles, guardian information, and academic status for this class",
+    "assignTeacherSubtitleGeneric": "Select an unassigned teacher to assign to this class",
+    "noMatchingTeacher": "No matching teachers found."
   }
 }

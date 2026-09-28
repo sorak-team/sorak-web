@@ -765,6 +765,10 @@
     "hubAssessmentAction": "Vào đánh giá mục tiêu",
     "hubGoodBehaviorTitle": "Phiếu bé ngoan & Sổ liên lạc",
     "hubGoodBehaviorDesc": "Chấm hoa bé ngoan tuần, nhận xét toàn diện hàng tháng và gửi phụ huynh phản hồi",
-    "hubGoodBehaviorAction": "Mở sổ bé ngoan"
+    "hubGoodBehaviorAction": "Mở sổ bé ngoan",
+    "class": "Lớp học",
+    "studentRosterDesc": "Quản lý hồ sơ học sinh, thông tin người giám hộ và trạng thái học vụ của lớp",
+    "assignTeacherSubtitleGeneric": "Chọn giáo viên chưa có lớp để phân công vào lớp học",
+    "noMatchingTeacher": "Không tìm thấy giáo viên nào phù hợp."
   }
 }
