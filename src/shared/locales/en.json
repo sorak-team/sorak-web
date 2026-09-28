@@ -783,6 +783,10 @@
     "fieldTeachers": "Assigned Class Teachers",
     "fieldSummary": "Class Summary Statistics",
     "exporting": "Exporting file...",
-    "headerNavSubtitle": "Manage class information, curriculum planning, and daily activities"
+    "headerNavSubtitle": "Manage class information, curriculum planning, and daily activities",
+    "loadRosterError": "Failed to load student roster for this class.",
+    "rosterCardHeading": "Student Roster",
+    "rosterCardDesc": "Official student roster and live enrollment monitoring for this class",
+    "intakeActionShort": "Intake Students"
   }
 }
