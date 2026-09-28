@@ -805,6 +805,10 @@
     "noTeachersInClass": "No teachers assigned to this class yet.",
     "confirmRemoveTeacherTitle": "Confirm Teacher Removal",
     "confirmRemoveTeacherDesc": "Are you sure you want to remove {{name}} ({{code}}) from this class? This can be undone by re-assigning them.",
-    "confirmRemoveBtn": "Confirm Removal"
+    "confirmRemoveBtn": "Confirm Removal",
+    "loadTransfersError": "Failed to load class transfer requests.",
+    "approveTransferSuccess": "Class transfer request approved successfully!",
+    "rejectTransferSuccess": "Class transfer request rejected.",
+    "transfersTitle": "Class Transfers"
   }
 }
