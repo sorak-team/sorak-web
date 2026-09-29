@@ -820,6 +820,9 @@
     "approveAction": "Approve",
     "rejectAction": "Reject",
     "transferHelperNote": "Upon approval, the student will automatically be transferred to the new class enrollment.",
-    "createTransferSmallBtn": "Add Request"
+    "createTransferSmallBtn": "Add Request",
+    "confirmRejectTitle": "Reject Transfer Request",
+    "confirmRejectDesc": "Student {{name}} ({{code}}) will remain in their current class.",
+    "rejectReasonPrompt": "Rejection Reason (optional)"
   }
 }
