@@ -823,6 +823,10 @@
     "createTransferSmallBtn": "Add Request",
     "confirmRejectTitle": "Reject Transfer Request",
     "confirmRejectDesc": "Student {{name}} ({{code}}) will remain in their current class.",
-    "rejectReasonPrompt": "Rejection Reason (optional)"
+    "rejectReasonPrompt": "Rejection Reason (optional)",
+    "confirmRejectBtn": "Reject Request",
+    "selectStudentRequired": "Please select a student to transfer.",
+    "selectTargetClassRequired": "Please select the destination class.",
+    "enterTransferReasonRequired": "Please enter the reason for transfer."
   }
 }

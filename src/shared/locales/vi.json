@@ -823,6 +823,10 @@
     "createTransferSmallBtn": "Thêm yêu cầu",
     "confirmRejectTitle": "Từ chối yêu cầu chuyển lớp",
     "confirmRejectDesc": "Học sinh {{name}} ({{code}}) sẽ được giữ nguyên ở lớp hiện tại.",
-    "rejectReasonPrompt": "Lý do từ chối (tùy chọn)"
+    "rejectReasonPrompt": "Lý do từ chối (tùy chọn)",
+    "confirmRejectBtn": "Từ chối yêu cầu",
+    "selectStudentRequired": "Vui lòng chọn học sinh cần chuyển lớp.",
+    "selectTargetClassRequired": "Vui lòng chọn lớp tiếp nhận.",
+    "enterTransferReasonRequired": "Vui lòng nhập lý do chuyển lớp."
   }
 }
