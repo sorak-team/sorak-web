@@ -816,6 +816,10 @@
     "searchTransfersPlaceholder": "Tìm kiếm học sinh...",
     "transferRouteCol": "Lộ trình chuyển",
     "transferDateCol": "Ngày hiệu lực",
-    "noTransfersFound": "Không có yêu cầu chuyển lớp nào."
+    "noTransfersFound": "Không có yêu cầu chuyển lớp nào.",
+    "approveAction": "Duyệt yêu cầu",
+    "rejectAction": "Từ chối",
+    "transferHelperNote": "Khi phê duyệt thành công, học sinh sẽ được tự động chuyển sang sĩ số lớp mới.",
+    "createTransferSmallBtn": "Thêm yêu cầu"
   }
 }
