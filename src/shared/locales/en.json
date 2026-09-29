@@ -834,6 +834,10 @@
     "transferRouteTitle": "Student & Destination Class",
     "transferRouteDesc": "Select student and target class within the same academic year",
     "selectStudentToTransfer": "Student to Transfer",
-    "chooseStudentPlaceholder": "-- Select student from class --"
+    "chooseStudentPlaceholder": "-- Select student from class --",
+    "selectDestinationClass": "Transfer to Class",
+    "chooseTargetClassPlaceholder": "-- Select destination class --",
+    "effectiveDate": "Effective Date",
+    "transferReasonLabel": "Transfer Reason"
   }
 }
