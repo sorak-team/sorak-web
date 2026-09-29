@@ -820,6 +820,9 @@
     "approveAction": "Duyệt yêu cầu",
     "rejectAction": "Từ chối",
     "transferHelperNote": "Khi phê duyệt thành công, học sinh sẽ được tự động chuyển sang sĩ số lớp mới.",
-    "createTransferSmallBtn": "Thêm yêu cầu"
+    "createTransferSmallBtn": "Thêm yêu cầu",
+    "confirmRejectTitle": "Từ chối yêu cầu chuyển lớp",
+    "confirmRejectDesc": "Học sinh {{name}} ({{code}}) sẽ được giữ nguyên ở lớp hiện tại.",
+    "rejectReasonPrompt": "Lý do từ chối (tùy chọn)"
   }
 }
