@@ -812,6 +812,10 @@
     "transfersTitle": "Class Transfers",
     "transfersCardHeading": "Transfer Requests List",
     "transfersCardDesc": "Track transfer request status and review approvals.",
-    "newTransferBtn": "New Request"
+    "newTransferBtn": "New Request",
+    "searchTransfersPlaceholder": "Search students...",
+    "transferRouteCol": "Transfer Route",
+    "transferDateCol": "Effective Date",
+    "noTransfersFound": "No transfer requests found."
   }
 }
