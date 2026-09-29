@@ -827,6 +827,10 @@
     "confirmRejectBtn": "Từ chối yêu cầu",
     "selectStudentRequired": "Vui lòng chọn học sinh cần chuyển lớp.",
     "selectTargetClassRequired": "Vui lòng chọn lớp tiếp nhận.",
-    "enterTransferReasonRequired": "Vui lòng nhập lý do chuyển lớp."
+    "enterTransferReasonRequired": "Vui lòng nhập lý do chuyển lớp.",
+    "createTransferSuccess": "Đã khởi tạo yêu cầu chuyển lớp thành công!",
+    "createTransferTitle": "Tạo yêu cầu chuyển lớp",
+    "createTransferSubtitle": "Khởi tạo hồ sơ chuyển lớp từ {{name}} sang lớp khác",
+    "transferRouteTitle": "Học sinh & Lớp tiếp nhận"
   }
 }

@@ -827,6 +827,10 @@
     "confirmRejectBtn": "Reject Request",
     "selectStudentRequired": "Please select a student to transfer.",
     "selectTargetClassRequired": "Please select the destination class.",
-    "enterTransferReasonRequired": "Please enter the reason for transfer."
+    "enterTransferReasonRequired": "Please enter the reason for transfer.",
+    "createTransferSuccess": "Class transfer request submitted successfully!",
+    "createTransferTitle": "Create Transfer Request",
+    "createTransferSubtitle": "Initiate a student transfer from {{name}} to another class",
+    "transferRouteTitle": "Student & Destination Class"
   }
 }
