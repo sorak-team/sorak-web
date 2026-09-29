@@ -816,6 +816,10 @@
     "searchTransfersPlaceholder": "Search students...",
     "transferRouteCol": "Transfer Route",
     "transferDateCol": "Effective Date",
-    "noTransfersFound": "No transfer requests found."
+    "noTransfersFound": "No transfer requests found.",
+    "approveAction": "Approve",
+    "rejectAction": "Reject",
+    "transferHelperNote": "Upon approval, the student will automatically be transferred to the new class enrollment.",
+    "createTransferSmallBtn": "Add Request"
   }
 }
