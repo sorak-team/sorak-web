@@ -831,6 +831,9 @@
     "createTransferSuccess": "Đã khởi tạo yêu cầu chuyển lớp thành công!",
     "createTransferTitle": "Tạo yêu cầu chuyển lớp",
     "createTransferSubtitle": "Khởi tạo hồ sơ chuyển lớp từ {{name}} sang lớp khác",
-    "transferRouteTitle": "Học sinh & Lớp tiếp nhận"
+    "transferRouteTitle": "Học sinh & Lớp tiếp nhận",
+    "transferRouteDesc": "Chọn học sinh và lớp mới trong cùng năm học",
+    "selectStudentToTransfer": "Học sinh cần chuyển",
+    "chooseStudentPlaceholder": "-- Chọn học sinh trong lớp --"
   }
 }

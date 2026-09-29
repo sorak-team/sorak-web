@@ -831,6 +831,9 @@
     "createTransferSuccess": "Class transfer request submitted successfully!",
     "createTransferTitle": "Create Transfer Request",
     "createTransferSubtitle": "Initiate a student transfer from {{name}} to another class",
-    "transferRouteTitle": "Student & Destination Class"
+    "transferRouteTitle": "Student & Destination Class",
+    "transferRouteDesc": "Select student and target class within the same academic year",
+    "selectStudentToTransfer": "Student to Transfer",
+    "chooseStudentPlaceholder": "-- Select student from class --"
   }
 }
