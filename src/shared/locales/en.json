@@ -853,6 +853,9 @@
     "mapFullName": "Full Name",
     "mapDob": "Date of Birth",
     "mapGender": "Gender",
-    "mapGrade": "Grade"
+    "mapGrade": "Grade",
+    "previewTitle": "Preview",
+    "importing": "Importing...",
+    "confirmImportBtn": "Confirm Import"
   }
 }

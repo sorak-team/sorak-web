@@ -853,6 +853,9 @@
     "mapFullName": "Họ tên",
     "mapDob": "Ngày sinh",
     "mapGender": "Giới tính",
-    "mapGrade": "Khối"
+    "mapGrade": "Khối",
+    "previewTitle": "Xem trước",
+    "importing": "Đang import...",
+    "confirmImportBtn": "Xác nhận Import"
   }
 }
