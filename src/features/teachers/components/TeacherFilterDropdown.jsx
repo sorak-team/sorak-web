@@ -1,0 +1,74 @@
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { HugeiconsIcon } from '@hugeicons/react';
+import {
+  FilterHorizontalIcon,
+  CheckmarkSquare02Icon,
+} from '@hugeicons/core-free-icons';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import { useTeacherStore } from '../teachers.store';
+import { cn } from '@/shared/lib/utils';
+
+export function TeacherFilterDropdown() {
+  const { t } = useTranslation();
+  const statusFilter = useTeacherStore((state) => state.statusFilter);
+  const setStatusFilter = useTeacherStore((state) => state.setStatusFilter);
+
+  const statuses = [
+    { key: 'all', label: t('schoolYear.all', 'Tất cả') },
+    { key: 'active', label: t('teacher.statusActive', 'Đang công tác') },
+    { key: 'on_leave', label: t('teacher.statusOnLeave', 'Tạm nghỉ') },
+    { key: 'resigned', label: t('teacher.statusResigned', 'Đã nghỉ việc') },
+  ];
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            'size-8 bg-background border border-border text-foreground hover:bg-muted/50 rounded-none flex items-center justify-center transition-colors cursor-pointer select-none',
+            statusFilter !== 'all' && 'border-primary text-primary bg-primary/5',
+          )}
+          title={t('teacher.filter', 'Lọc')}
+          data-node-id="4273:5244"
+          data-name="Filter"
+        >
+          <HugeiconsIcon icon={FilterHorizontalIcon} size={16} />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="end"
+        className="w-44 p-1.5 rounded-none border border-border bg-card shadow-xl z-50 text-foreground"
+      >
+        <DropdownMenuLabel className="px-2 py-1 text-[12px] font-medium text-muted-foreground">
+          {t('teacher.colStatus', 'Trạng thái công tác')}
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator className="my-1 border-t border-border" />
+        {statuses.map((item) => (
+          <DropdownMenuItem
+            key={item.key}
+            onClick={() => setStatusFilter(item.key)}
+            className="flex items-center justify-between h-8 px-2 text-[13px] cursor-pointer rounded-none hover:bg-muted/60"
+          >
+            <span>{item.label}</span>
+            {statusFilter === item.key && (
+              <HugeiconsIcon
+                icon={CheckmarkSquare02Icon}
+                size={14}
+                className="text-primary shrink-0"
+              />
+            )}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
