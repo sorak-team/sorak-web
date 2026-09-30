@@ -849,6 +849,10 @@
     "supportedFormats": "Hỗ trợ định dạng .xlsx, .xls, .csv",
     "chooseFileBtn": "Chọn file từ máy tính",
     "mapDataTitle": "Map dữ liệu",
-    "mapCode": "Mã học sinh"
+    "mapCode": "Mã học sinh",
+    "mapFullName": "Họ tên",
+    "mapDob": "Ngày sinh",
+    "mapGender": "Giới tính",
+    "mapGrade": "Khối"
   }
 }
