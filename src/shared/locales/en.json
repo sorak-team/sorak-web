@@ -866,6 +866,9 @@
   },
   "transfers": {
     "title": "Class Transfer Management",
-    "subtitle": "Monitor and approve student class transfer requests across classrooms"
+    "subtitle": "Monitor and approve student class transfer requests across classrooms",
+    "searchPlaceholder": "Search students, student codes...",
+    "listTitle": "Transfer Requests List",
+    "requestCount": "{{count}} requests"
   }
 }
