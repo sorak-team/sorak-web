@@ -838,6 +838,10 @@
     "selectDestinationClass": "Chuyển đến lớp",
     "chooseTargetClassPlaceholder": "-- Chọn lớp tiếp nhận --",
     "effectiveDate": "Ngày có hiệu lực",
-    "transferReasonLabel": "Lý do chuyển lớp"
+    "transferReasonLabel": "Lý do chuyển lớp",
+    "transferReasonSub": "Căn cứ đề xuất để Ban Giám Hiệu xét duyệt",
+    "transferReasonPlaceholder": "Ví dụ: Chuyển theo nguyện vọng phụ huynh, thay đổi ca học, phù hợp lứa tuổi...",
+    "submitTransferBtn": "Gửi yêu cầu",
+    "importSuccess": "Đã import thành công học sinh vào hệ thống!"
   }
 }
