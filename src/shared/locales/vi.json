@@ -845,6 +845,10 @@
     "importSuccess": "Đã import thành công học sinh vào hệ thống!",
     "importDrawerTitle": "Nhập học sinh từ file",
     "importDrawerSubtitle": "Nhập danh sách học sinh từ file Excel hoặc CSV vào pool tuyển sinh",
-    "dragDropText": "Kéo thả hoặc chọn file danh sách học sinh"
+    "dragDropText": "Kéo thả hoặc chọn file danh sách học sinh",
+    "supportedFormats": "Hỗ trợ định dạng .xlsx, .xls, .csv",
+    "chooseFileBtn": "Chọn file từ máy tính",
+    "mapDataTitle": "Map dữ liệu",
+    "mapCode": "Mã học sinh"
   }
 }
