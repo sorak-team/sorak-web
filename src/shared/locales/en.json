@@ -838,6 +838,10 @@
     "selectDestinationClass": "Transfer to Class",
     "chooseTargetClassPlaceholder": "-- Select destination class --",
     "effectiveDate": "Effective Date",
-    "transferReasonLabel": "Transfer Reason"
+    "transferReasonLabel": "Transfer Reason",
+    "transferReasonSub": "Justification for school administration review and approval",
+    "transferReasonPlaceholder": "E.g., Parent request, schedule change, age-appropriate placement...",
+    "submitTransferBtn": "Submit Request",
+    "importSuccess": "Students imported successfully into the system!"
   }
 }
