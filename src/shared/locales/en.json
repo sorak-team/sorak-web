@@ -845,6 +845,10 @@
     "importSuccess": "Students imported successfully into the system!",
     "importDrawerTitle": "Import Students from File",
     "importDrawerSubtitle": "Import student list from Excel or CSV file into the intake pool",
-    "dragDropText": "Drag and drop or select student list file"
+    "dragDropText": "Drag and drop or select student list file",
+    "supportedFormats": "Supports .xlsx, .xls, .csv formats",
+    "chooseFileBtn": "Select file from computer",
+    "mapDataTitle": "Map Data Fields",
+    "mapCode": "Student Code"
   }
 }
