@@ -842,6 +842,9 @@
     "transferReasonSub": "Justification for school administration review and approval",
     "transferReasonPlaceholder": "E.g., Parent request, schedule change, age-appropriate placement...",
     "submitTransferBtn": "Submit Request",
-    "importSuccess": "Students imported successfully into the system!"
+    "importSuccess": "Students imported successfully into the system!",
+    "importDrawerTitle": "Import Students from File",
+    "importDrawerSubtitle": "Import student list from Excel or CSV file into the intake pool",
+    "dragDropText": "Drag and drop or select student list file"
   }
 }
