@@ -842,6 +842,9 @@
     "transferReasonSub": "Căn cứ đề xuất để Ban Giám Hiệu xét duyệt",
     "transferReasonPlaceholder": "Ví dụ: Chuyển theo nguyện vọng phụ huynh, thay đổi ca học, phù hợp lứa tuổi...",
     "submitTransferBtn": "Gửi yêu cầu",
-    "importSuccess": "Đã import thành công học sinh vào hệ thống!"
+    "importSuccess": "Đã import thành công học sinh vào hệ thống!",
+    "importDrawerTitle": "Nhập học sinh từ file",
+    "importDrawerSubtitle": "Nhập danh sách học sinh từ file Excel hoặc CSV vào pool tuyển sinh",
+    "dragDropText": "Kéo thả hoặc chọn file danh sách học sinh"
   }
 }
