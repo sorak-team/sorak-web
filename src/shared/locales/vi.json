@@ -860,6 +860,12 @@
     "allocateSuccess": "Đã tiếp nhận học sinh vào lớp",
     "intakeHeading": "Tiếp nhận học sinh vào lớp",
     "intakeSub": "Chọn học sinh từ danh sách chờ phân lớp hoặc chuyển tiếp để thêm vào lớp",
-    "searchIntakePlaceholder": "Tìm kiếm học sinh theo tên, mã..."
+    "searchIntakePlaceholder": "Tìm kiếm học sinh theo tên, mã...",
+    "noPoolStudents": "Không có học sinh nào chờ tiếp nhận.",
+    "roomPrefix": "Phòng"
+  },
+  "transfers": {
+    "title": "Chuyển lớp",
+    "subtitle": "Theo dõi và phê duyệt các yêu cầu điều chuyển học sinh giữa các lớp"
   }
 }
