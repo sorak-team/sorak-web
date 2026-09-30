@@ -849,6 +849,10 @@
     "supportedFormats": "Supports .xlsx, .xls, .csv formats",
     "chooseFileBtn": "Select file from computer",
     "mapDataTitle": "Map Data Fields",
-    "mapCode": "Student Code"
+    "mapCode": "Student Code",
+    "mapFullName": "Full Name",
+    "mapDob": "Date of Birth",
+    "mapGender": "Gender",
+    "mapGrade": "Grade"
   }
 }
