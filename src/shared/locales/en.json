@@ -856,6 +856,10 @@
     "mapGrade": "Grade",
     "previewTitle": "Preview",
     "importing": "Importing...",
-    "confirmImportBtn": "Confirm Import"
+    "confirmImportBtn": "Confirm Import",
+    "allocateSuccess": "Students successfully allocated to class",
+    "intakeHeading": "Intake Students into Class",
+    "intakeSub": "Select students from pending intake or transitional pool to add to class",
+    "searchIntakePlaceholder": "Search students by name, code..."
   }
 }

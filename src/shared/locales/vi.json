@@ -856,6 +856,10 @@
     "mapGrade": "Khối",
     "previewTitle": "Xem trước",
     "importing": "Đang import...",
-    "confirmImportBtn": "Xác nhận Import"
+    "confirmImportBtn": "Xác nhận Import",
+    "allocateSuccess": "Đã tiếp nhận học sinh vào lớp",
+    "intakeHeading": "Tiếp nhận học sinh vào lớp",
+    "intakeSub": "Chọn học sinh từ danh sách chờ phân lớp hoặc chuyển tiếp để thêm vào lớp",
+    "searchIntakePlaceholder": "Tìm kiếm học sinh theo tên, mã..."
   }
 }
