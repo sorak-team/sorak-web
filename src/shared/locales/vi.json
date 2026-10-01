@@ -884,6 +884,10 @@
     "colTransferDate": "Ngày hiệu lực",
     "colStatus": "Trạng thái",
     "colActions": "Thao tác",
-    "emptyList": "Không tìm thấy yêu cầu chuyển lớp nào phù hợp."
+    "emptyList": "Không tìm thấy yêu cầu chuyển lớp nào phù hợp.",
+    "viewDetail": "Xem chi tiết",
+    "approveAction": "Duyệt yêu cầu",
+    "rejectAction": "Từ chối",
+    "confirmApproveTitle": "Phê duyệt yêu cầu chuyển lớp"
   }
 }

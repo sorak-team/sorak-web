@@ -884,6 +884,10 @@
     "colTransferDate": "Effective Date",
     "colStatus": "Status",
     "colActions": "Actions",
-    "emptyList": "No matching transfer requests found."
+    "emptyList": "No matching transfer requests found.",
+    "viewDetail": "View Details",
+    "approveAction": "Approve Request",
+    "rejectAction": "Reject",
+    "confirmApproveTitle": "Approve Transfer Request"
   }
 }
