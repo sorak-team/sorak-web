@@ -869,6 +869,10 @@
     "subtitle": "Theo dõi và phê duyệt các yêu cầu điều chuyển học sinh giữa các lớp",
     "searchPlaceholder": "Tìm kiếm học sinh, mã HS...",
     "listTitle": "Danh sách chuyển lớp",
-    "requestCount": "{{count}} yêu cầu"
+    "requestCount": "{{count}} yêu cầu",
+    "addRequest": "Thêm yêu cầu",
+    "statusAll": "Tất cả",
+    "statusPending": "Chờ duyệt",
+    "statusApproved": "Đã duyệt"
   }
 }
