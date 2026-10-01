@@ -873,6 +873,10 @@
     "addRequest": "Thêm yêu cầu",
     "statusAll": "Tất cả",
     "statusPending": "Chờ duyệt",
-    "statusApproved": "Đã duyệt"
+    "statusApproved": "Đã duyệt",
+    "statusRejected": "Đã từ chối",
+    "filterStatus": "Trạng thái yêu cầu",
+    "showColumns": "Hiển thị cột",
+    "colStudent": "Học sinh"
   }
 }

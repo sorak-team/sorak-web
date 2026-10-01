@@ -873,6 +873,10 @@
     "addRequest": "Add Request",
     "statusAll": "All",
     "statusPending": "Pending Approval",
-    "statusApproved": "Approved"
+    "statusApproved": "Approved",
+    "statusRejected": "Rejected",
+    "filterStatus": "Request Status",
+    "showColumns": "Show Columns",
+    "colStudent": "Student"
   }
 }
