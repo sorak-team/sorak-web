@@ -888,6 +888,9 @@
     "viewDetail": "Xem chi tiết",
     "approveAction": "Duyệt yêu cầu",
     "rejectAction": "Từ chối",
-    "confirmApproveTitle": "Phê duyệt yêu cầu chuyển lớp"
+    "confirmApproveTitle": "Phê duyệt yêu cầu chuyển lớp",
+    "confirmApproveDesc": "Bạn có chắc chắn muốn phê duyệt chuyển học sinh {{name}} sang lớp {{targetClass}}?",
+    "confirmRejectTitle": "Từ chối yêu cầu chuyển lớp",
+    "confirmRejectDesc": "Học sinh {{name}} ({{code}}) sẽ được giữ nguyên tại lớp hiện tại."
   }
 }

@@ -888,6 +888,9 @@
     "viewDetail": "View Details",
     "approveAction": "Approve Request",
     "rejectAction": "Reject",
-    "confirmApproveTitle": "Approve Transfer Request"
+    "confirmApproveTitle": "Approve Transfer Request",
+    "confirmApproveDesc": "Are you sure you want to approve transferring {{name}} to {{targetClass}}?",
+    "confirmRejectTitle": "Reject Transfer Request",
+    "confirmRejectDesc": "Student {{name}} ({{code}}) will remain in their current class."
   }
 }
