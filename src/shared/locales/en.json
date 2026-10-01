@@ -880,6 +880,10 @@
     "colStudent": "Student",
     "colFromClass": "Current Class",
     "colToClass": "Destination Class",
-    "colReason": "Transfer Reason"
+    "colReason": "Transfer Reason",
+    "colTransferDate": "Effective Date",
+    "colStatus": "Status",
+    "colActions": "Actions",
+    "emptyList": "No matching transfer requests found."
   }
 }

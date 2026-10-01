@@ -880,6 +880,10 @@
     "colStudent": "Học sinh",
     "colFromClass": "Lớp hiện tại",
     "colToClass": "Lớp chuyển đến",
-    "colReason": "Lý do chuyển"
+    "colReason": "Lý do chuyển",
+    "colTransferDate": "Ngày hiệu lực",
+    "colStatus": "Trạng thái",
+    "colActions": "Thao tác",
+    "emptyList": "Không tìm thấy yêu cầu chuyển lớp nào phù hợp."
   }
 }
