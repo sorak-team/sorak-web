@@ -899,6 +899,9 @@
     "studentInfoCard": "Student Information",
     "transferRouteCard": "Transfer Route",
     "reasonAndNotes": "Reason & Notes",
-    "historyCard": "Processing History"
+    "historyCard": "Processing History",
+    "effectiveDate": "Effective From",
+    "createdByName": "Created By",
+    "approvedAt": "Approved At"
   }
 }

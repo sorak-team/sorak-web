@@ -899,6 +899,9 @@
     "studentInfoCard": "Thông tin học sinh",
     "transferRouteCard": "Lộ trình chuyển lớp",
     "reasonAndNotes": "Lý do & Ghi chú",
-    "historyCard": "Lịch sử xử lý"
+    "historyCard": "Lịch sử xử lý",
+    "effectiveDate": "Hiệu lực từ",
+    "createdByName": "Người tạo yêu cầu",
+    "approvedAt": "Thời gian phê duyệt"
   }
 }
