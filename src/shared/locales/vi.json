@@ -891,6 +891,10 @@
     "confirmApproveTitle": "Phê duyệt yêu cầu chuyển lớp",
     "confirmApproveDesc": "Bạn có chắc chắn muốn phê duyệt chuyển học sinh {{name}} sang lớp {{targetClass}}?",
     "confirmRejectTitle": "Từ chối yêu cầu chuyển lớp",
-    "confirmRejectDesc": "Học sinh {{name}} ({{code}}) sẽ được giữ nguyên tại lớp hiện tại."
+    "confirmRejectDesc": "Học sinh {{name}} ({{code}}) sẽ được giữ nguyên tại lớp hiện tại.",
+    "rejectReasonLabel": "Lý do từ chối (tùy chọn)",
+    "rejectReasonPlaceholder": "Ví dụ: Lớp tiếp nhận đã đủ sĩ số quy định...",
+    "detailTitle": "Chi tiết yêu cầu chuyển lớp",
+    "detailSubtitle": "Xem thông tin học sinh, lộ trình chuyển lớp và lịch sử xử lý"
   }
 }

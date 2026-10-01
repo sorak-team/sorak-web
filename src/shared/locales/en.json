@@ -891,6 +891,10 @@
     "confirmApproveTitle": "Approve Transfer Request",
     "confirmApproveDesc": "Are you sure you want to approve transferring {{name}} to {{targetClass}}?",
     "confirmRejectTitle": "Reject Transfer Request",
-    "confirmRejectDesc": "Student {{name}} ({{code}}) will remain in their current class."
+    "confirmRejectDesc": "Student {{name}} ({{code}}) will remain in their current class.",
+    "rejectReasonLabel": "Rejection Reason (optional)",
+    "rejectReasonPlaceholder": "E.g., Destination class reached maximum capacity...",
+    "detailTitle": "Transfer Request Details",
+    "detailSubtitle": "View student information, transfer route, and processing history"
   }
 }
