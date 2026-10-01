@@ -877,6 +877,9 @@
     "statusRejected": "Rejected",
     "filterStatus": "Request Status",
     "showColumns": "Show Columns",
-    "colStudent": "Student"
+    "colStudent": "Student",
+    "colFromClass": "Current Class",
+    "colToClass": "Destination Class",
+    "colReason": "Transfer Reason"
   }
 }

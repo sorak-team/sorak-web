@@ -877,6 +877,9 @@
     "statusRejected": "Đã từ chối",
     "filterStatus": "Trạng thái yêu cầu",
     "showColumns": "Hiển thị cột",
-    "colStudent": "Học sinh"
+    "colStudent": "Học sinh",
+    "colFromClass": "Lớp hiện tại",
+    "colToClass": "Lớp chuyển đến",
+    "colReason": "Lý do chuyển"
   }
 }
