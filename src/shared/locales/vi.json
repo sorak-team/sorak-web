@@ -906,6 +906,10 @@
     "rejectedReason": "Lý do từ chối",
     "createDrawerTitle": "Tạo yêu cầu chuyển lớp",
     "createDrawerSubtitle": "Khởi tạo hồ sơ chuyển lớp từ lớp hiện tại sang lớp tiếp nhận",
-    "selectStudent": "Học sinh cần chuyển"
+    "selectStudent": "Học sinh cần chuyển",
+    "selectTargetClass": "Chuyển đến lớp",
+    "transferDate": "Ngày chuyển lớp",
+    "transferReason": "Lý do chuyển lớp",
+    "autoApprove": "Tự động duyệt (chuyển lớp ngay lập tức)"
   }
 }
