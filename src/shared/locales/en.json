@@ -906,6 +906,10 @@
     "rejectedReason": "Rejection Reason",
     "createDrawerTitle": "Create Transfer Request",
     "createDrawerSubtitle": "Initialize transfer dossier from current class to destination class",
-    "selectStudent": "Student to Transfer"
+    "selectStudent": "Student to Transfer",
+    "selectTargetClass": "Destination Class",
+    "transferDate": "Transfer Date",
+    "transferReason": "Transfer Reason",
+    "autoApprove": "Auto-approve (transfer immediately)"
   }
 }
