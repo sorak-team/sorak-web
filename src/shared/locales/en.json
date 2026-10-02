@@ -910,6 +910,9 @@
     "selectTargetClass": "Destination Class",
     "transferDate": "Transfer Date",
     "transferReason": "Transfer Reason",
-    "autoApprove": "Auto-approve (transfer immediately)"
+    "autoApprove": "Auto-approve (transfer immediately)",
+    "createSuccess": "Transfer request created successfully!",
+    "approveSuccess": "Transfer request approved successfully!",
+    "rejectSuccess": "Transfer request rejected!"
   }
 }
