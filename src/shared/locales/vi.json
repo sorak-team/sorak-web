@@ -910,6 +910,9 @@
     "selectTargetClass": "Chuyển đến lớp",
     "transferDate": "Ngày chuyển lớp",
     "transferReason": "Lý do chuyển lớp",
-    "autoApprove": "Tự động duyệt (chuyển lớp ngay lập tức)"
+    "autoApprove": "Tự động duyệt (chuyển lớp ngay lập tức)",
+    "createSuccess": "Đã tạo yêu cầu chuyển lớp thành công!",
+    "approveSuccess": "Đã phê duyệt yêu cầu chuyển lớp thành công!",
+    "rejectSuccess": "Đã từ chối yêu cầu chuyển lớp!"
   }
 }
