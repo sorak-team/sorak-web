@@ -902,6 +902,10 @@
     "historyCard": "Lịch sử xử lý",
     "effectiveDate": "Hiệu lực từ",
     "createdByName": "Người tạo yêu cầu",
-    "approvedAt": "Thời gian phê duyệt"
+    "approvedAt": "Thời gian phê duyệt",
+    "rejectedReason": "Lý do từ chối",
+    "createDrawerTitle": "Tạo yêu cầu chuyển lớp",
+    "createDrawerSubtitle": "Khởi tạo hồ sơ chuyển lớp từ lớp hiện tại sang lớp tiếp nhận",
+    "selectStudent": "Học sinh cần chuyển"
   }
 }

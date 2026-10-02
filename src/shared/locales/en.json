@@ -902,6 +902,10 @@
     "historyCard": "Processing History",
     "effectiveDate": "Effective From",
     "createdByName": "Created By",
-    "approvedAt": "Approved At"
+    "approvedAt": "Approved At",
+    "rejectedReason": "Rejection Reason",
+    "createDrawerTitle": "Create Transfer Request",
+    "createDrawerSubtitle": "Initialize transfer dossier from current class to destination class",
+    "selectStudent": "Student to Transfer"
   }
 }
