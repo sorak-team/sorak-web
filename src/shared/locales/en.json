@@ -919,6 +919,10 @@
     "genderFemale": "Female"
   },
   "curriculum": {
-    "title": "Curriculum Framework"
+    "title": "Curriculum Framework",
+    "subtitle": "Manage published educational themes and school-wide goal banks",
+    "tabThemes": "Theme Sets",
+    "tabGoals": "Goal Bank",
+    "searchThemes": "Search themes framework..."
   }
 }

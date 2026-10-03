@@ -919,6 +919,10 @@
     "genderFemale": "Nữ"
   },
   "curriculum": {
-    "title": "Khung chương trình"
+    "title": "Khung chương trình",
+    "subtitle": "Quản lý chủ đề công bố và ngân hàng mục tiêu của nhà trường",
+    "tabThemes": "Bộ chủ đề",
+    "tabGoals": "Ngân hàng mục tiêu",
+    "searchThemes": "Tìm khung chủ đề..."
   }
 }
