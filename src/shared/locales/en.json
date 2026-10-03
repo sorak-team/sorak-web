@@ -937,6 +937,10 @@
     "endDate": "End Date",
     "singleTheme": "Theme",
     "subTheme": "Sub-theme",
-    "subThemes": "Sub-themes"
+    "subThemes": "Sub-themes",
+    "addSubTheme": "Add Sub-theme",
+    "note": "Notes",
+    "saveTheme": "Save Theme",
+    "publishTheme": "Publish Theme"
   }
 }
