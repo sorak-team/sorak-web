@@ -941,6 +941,10 @@
     "addSubTheme": "Thêm nhánh",
     "note": "Ghi chú",
     "saveTheme": "Lưu chủ đề",
-    "publishTheme": "Công bố chủ đề"
+    "publishTheme": "Công bố chủ đề",
+    "goalAiAssistant": "Trợ lý AI Mục tiêu",
+    "importGoals": "Nhập mục tiêu",
+    "addGoal": "Thêm mục tiêu",
+    "goalCode": "Mã mục tiêu"
   }
 }
