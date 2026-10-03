@@ -923,6 +923,9 @@
     "subtitle": "Manage published educational themes and school-wide goal banks",
     "tabThemes": "Theme Sets",
     "tabGoals": "Goal Bank",
-    "searchThemes": "Search themes framework..."
+    "searchThemes": "Search themes framework...",
+    "searchGoals": "Search goal banks...",
+    "filter": "Filter",
+    "gridView": "Grid View"
   }
 }

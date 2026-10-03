@@ -923,6 +923,9 @@
     "subtitle": "Quản lý chủ đề công bố và ngân hàng mục tiêu của nhà trường",
     "tabThemes": "Bộ chủ đề",
     "tabGoals": "Ngân hàng mục tiêu",
-    "searchThemes": "Tìm khung chủ đề..."
+    "searchThemes": "Tìm khung chủ đề...",
+    "searchGoals": "Tìm ngân hàng mục tiêu...",
+    "filter": "Bộ lọc",
+    "gridView": "Chế độ lưới"
   }
 }
