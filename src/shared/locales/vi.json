@@ -934,6 +934,9 @@
     "topicName": "Tên chủ đề",
     "durationWeeks": "Số tuần",
     "startDate": "Ngày bắt đầu",
-    "endDate": "Ngày kết thúc"
+    "endDate": "Ngày kết thúc",
+    "singleTheme": "Chủ đề",
+    "subTheme": "Chủ đề nhánh",
+    "subThemes": "Nhánh chủ đề"
   }
 }
