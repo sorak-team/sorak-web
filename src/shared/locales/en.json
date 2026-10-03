@@ -952,6 +952,9 @@
     "gradeMam": "Junior Kindergarten (Mầm)",
     "gradeChoi": "Middle Kindergarten (Chồi)",
     "gradeLa": "Senior Kindergarten (Lá)",
-    "topicList": "Topic List"
+    "topicList": "Topic List",
+    "themeSet": "Theme Set",
+    "published": "Published",
+    "draft": "Draft"
   }
 }

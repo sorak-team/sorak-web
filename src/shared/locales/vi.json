@@ -952,6 +952,9 @@
     "gradeMam": "Mầm",
     "gradeChoi": "Chồi",
     "gradeLa": "Lá",
-    "topicList": "Danh sách chủ đề"
+    "topicList": "Danh sách chủ đề",
+    "themeSet": "Bộ chủ đề",
+    "published": "Đã công bố",
+    "draft": "Bản nháp"
   }
 }
