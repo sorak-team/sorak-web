@@ -955,6 +955,10 @@
     "topicList": "Topic List",
     "themeSet": "Theme Set",
     "published": "Published",
-    "draft": "Draft"
+    "draft": "Draft",
+    "publishAll": "Publish All",
+    "deleteThemeSet": "Delete Theme Set",
+    "themeCalendar": "Theme Calendar",
+    "themeOverview": "Theme Overview"
   }
 }
