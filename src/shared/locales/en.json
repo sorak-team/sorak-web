@@ -913,6 +913,12 @@
     "autoApprove": "Auto-approve (transfer immediately)",
     "createSuccess": "Transfer request created successfully!",
     "approveSuccess": "Transfer request approved successfully!",
-    "rejectSuccess": "Transfer request rejected!"
+    "rejectSuccess": "Transfer request rejected!",
+    "deleteSuccess": "Transfer request deleted successfully!",
+    "genderMale": "Male",
+    "genderFemale": "Female"
+  },
+  "curriculum": {
+    "title": "Curriculum Framework"
   }
 }

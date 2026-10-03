@@ -913,6 +913,12 @@
     "autoApprove": "Tự động duyệt (chuyển lớp ngay lập tức)",
     "createSuccess": "Đã tạo yêu cầu chuyển lớp thành công!",
     "approveSuccess": "Đã phê duyệt yêu cầu chuyển lớp thành công!",
-    "rejectSuccess": "Đã từ chối yêu cầu chuyển lớp!"
+    "rejectSuccess": "Đã từ chối yêu cầu chuyển lớp!",
+    "deleteSuccess": "Đã xóa yêu cầu chuyển lớp thành công!",
+    "genderMale": "Nam",
+    "genderFemale": "Nữ"
+  },
+  "curriculum": {
+    "title": "Khung chương trình"
   }
 }
