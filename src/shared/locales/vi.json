@@ -955,6 +955,10 @@
     "topicList": "Danh sách chủ đề",
     "themeSet": "Bộ chủ đề",
     "published": "Đã công bố",
-    "draft": "Bản nháp"
+    "draft": "Bản nháp",
+    "publishAll": "Công bố tất cả",
+    "deleteThemeSet": "Xóa bộ chủ đề",
+    "themeCalendar": "Lịch chủ đề",
+    "themeOverview": "Tổng quan bộ chủ đề"
   }
 }
