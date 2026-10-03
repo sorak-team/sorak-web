@@ -948,6 +948,10 @@
     "goalCode": "Mã mục tiêu",
     "goalContent": "Nội dung mục tiêu",
     "developmentField": "Lĩnh vực phát triển",
-    "gradeNhaTre": "Nhà Trẻ"
+    "gradeNhaTre": "Nhà Trẻ",
+    "gradeMam": "Mầm",
+    "gradeChoi": "Chồi",
+    "gradeLa": "Lá",
+    "topicList": "Danh sách chủ đề"
   }
 }

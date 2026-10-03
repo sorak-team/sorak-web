@@ -948,6 +948,10 @@
     "goalCode": "Goal Code",
     "goalContent": "Goal Content",
     "developmentField": "Developmental Domain",
-    "gradeNhaTre": "Nursery (Nhà Trẻ)"
+    "gradeNhaTre": "Nursery (Nhà Trẻ)",
+    "gradeMam": "Junior Kindergarten (Mầm)",
+    "gradeChoi": "Middle Kindergarten (Chồi)",
+    "gradeLa": "Senior Kindergarten (Lá)",
+    "topicList": "Topic List"
   }
 }
