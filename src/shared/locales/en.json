@@ -926,6 +926,10 @@
     "searchThemes": "Search themes framework...",
     "searchGoals": "Search goal banks...",
     "filter": "Filter",
-    "gridView": "Grid View"
+    "gridView": "Grid View",
+    "listView": "List View",
+    "createTheme": "Create Theme",
+    "createGoalBank": "Create Goal Bank",
+    "themeSetDetailTitle": "Theme Planning"
   }
 }

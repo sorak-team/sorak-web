@@ -926,6 +926,10 @@
     "searchThemes": "Tìm khung chủ đề...",
     "searchGoals": "Tìm ngân hàng mục tiêu...",
     "filter": "Bộ lọc",
-    "gridView": "Chế độ lưới"
+    "gridView": "Chế độ lưới",
+    "listView": "Chế độ danh sách",
+    "createTheme": "Tạo chủ đề",
+    "createGoalBank": "Tạo ngân hàng",
+    "themeSetDetailTitle": "Kế hoạch chủ đề"
   }
 }
