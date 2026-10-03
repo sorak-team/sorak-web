@@ -937,6 +937,10 @@
     "endDate": "Ngày kết thúc",
     "singleTheme": "Chủ đề",
     "subTheme": "Chủ đề nhánh",
-    "subThemes": "Nhánh chủ đề"
+    "subThemes": "Nhánh chủ đề",
+    "addSubTheme": "Thêm nhánh",
+    "note": "Ghi chú",
+    "saveTheme": "Lưu chủ đề",
+    "publishTheme": "Công bố chủ đề"
   }
 }
