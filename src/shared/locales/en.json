@@ -945,6 +945,9 @@
     "goalAiAssistant": "AI Goal Assistant",
     "importGoals": "Import Goals",
     "addGoal": "Add Goal",
-    "goalCode": "Goal Code"
+    "goalCode": "Goal Code",
+    "goalContent": "Goal Content",
+    "developmentField": "Developmental Domain",
+    "gradeNhaTre": "Nursery (Nhà Trẻ)"
   }
 }

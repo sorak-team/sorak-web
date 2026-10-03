@@ -945,6 +945,9 @@
     "goalAiAssistant": "Trợ lý AI Mục tiêu",
     "importGoals": "Nhập mục tiêu",
     "addGoal": "Thêm mục tiêu",
-    "goalCode": "Mã mục tiêu"
+    "goalCode": "Mã mục tiêu",
+    "goalContent": "Nội dung mục tiêu",
+    "developmentField": "Lĩnh vực phát triển",
+    "gradeNhaTre": "Nhà Trẻ"
   }
 }
