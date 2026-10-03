@@ -934,6 +934,9 @@
     "topicName": "Theme Name",
     "durationWeeks": "Duration (Weeks)",
     "startDate": "Start Date",
-    "endDate": "End Date"
+    "endDate": "End Date",
+    "singleTheme": "Theme",
+    "subTheme": "Sub-theme",
+    "subThemes": "Sub-themes"
   }
 }
