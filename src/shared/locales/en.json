@@ -930,6 +930,10 @@
     "listView": "List View",
     "createTheme": "Create Theme",
     "createGoalBank": "Create Goal Bank",
-    "themeSetDetailTitle": "Theme Planning"
+    "themeSetDetailTitle": "Theme Planning",
+    "topicName": "Theme Name",
+    "durationWeeks": "Duration (Weeks)",
+    "startDate": "Start Date",
+    "endDate": "End Date"
   }
 }

@@ -930,6 +930,10 @@
     "listView": "Chế độ danh sách",
     "createTheme": "Tạo chủ đề",
     "createGoalBank": "Tạo ngân hàng",
-    "themeSetDetailTitle": "Kế hoạch chủ đề"
+    "themeSetDetailTitle": "Kế hoạch chủ đề",
+    "topicName": "Tên chủ đề",
+    "durationWeeks": "Số tuần",
+    "startDate": "Ngày bắt đầu",
+    "endDate": "Ngày kết thúc"
   }
 }
