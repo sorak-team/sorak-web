@@ -941,6 +941,10 @@
     "addSubTheme": "Add Sub-theme",
     "note": "Notes",
     "saveTheme": "Save Theme",
-    "publishTheme": "Publish Theme"
+    "publishTheme": "Publish Theme",
+    "goalAiAssistant": "AI Goal Assistant",
+    "importGoals": "Import Goals",
+    "addGoal": "Add Goal",
+    "goalCode": "Goal Code"
   }
 }
