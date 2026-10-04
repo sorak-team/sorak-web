@@ -970,6 +970,10 @@
     "allDomains": "Tất cả lĩnh vực",
     "allAges": "Tất cả độ tuổi",
     "expandAll": "Mở rộng tất cả",
-    "collapseAll": "Thu gọn tất cả"
+    "collapseAll": "Thu gọn tất cả",
+    "goalStructure": "Cấu trúc mục tiêu",
+    "emptyGoals": "Không tìm thấy mục tiêu nào phù hợp với bộ lọc.",
+    "loadingGoals": "Đang tải cấu trúc mục tiêu...",
+    "domainPhysical": "Phát triển thể chất"
   }
 }

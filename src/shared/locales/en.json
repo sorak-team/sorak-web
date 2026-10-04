@@ -970,6 +970,10 @@
     "allDomains": "All Domains",
     "allAges": "All Ages",
     "expandAll": "Expand All",
-    "collapseAll": "Collapse All"
+    "collapseAll": "Collapse All",
+    "goalStructure": "Goal Structure",
+    "emptyGoals": "No goals match the filter criteria.",
+    "loadingGoals": "Loading goal structure...",
+    "domainPhysical": "Physical Development"
   }
 }
