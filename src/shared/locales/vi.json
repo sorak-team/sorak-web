@@ -974,6 +974,9 @@
     "goalStructure": "Cấu trúc mục tiêu",
     "emptyGoals": "Không tìm thấy mục tiêu nào phù hợp với bộ lọc.",
     "loadingGoals": "Đang tải cấu trúc mục tiêu...",
-    "domainPhysical": "Phát triển thể chất"
+    "domainPhysical": "Phát triển thể chất",
+    "domainCognitive": "Phát triển nhận thức",
+    "domainLanguage": "Phát triển ngôn ngữ",
+    "domainSocioEmotional": "Phát triển tình cảm - kỹ năng xã hội"
   }
 }

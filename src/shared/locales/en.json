@@ -974,6 +974,9 @@
     "goalStructure": "Goal Structure",
     "emptyGoals": "No goals match the filter criteria.",
     "loadingGoals": "Loading goal structure...",
-    "domainPhysical": "Physical Development"
+    "domainPhysical": "Physical Development",
+    "domainCognitive": "Cognitive Development",
+    "domainLanguage": "Language Development",
+    "domainSocioEmotional": "Social & Emotional Development"
   }
 }
