@@ -963,6 +963,9 @@
     "totalThemes": "Total Themes",
     "saveDraft": "Save Draft",
     "unpublish": "Unpublish",
-    "topicInfo": "Topic Information"
+    "topicInfo": "Topic Information",
+    "topicInfoDesc": "End date is automatically calculated from start date and weeks.",
+    "subThemesDesc": "A topic can contain multiple sub-topics.",
+    "noteDesc": "Internal notes for the school."
   }
 }
