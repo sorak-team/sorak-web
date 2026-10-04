@@ -963,6 +963,9 @@
     "totalThemes": "Tổng số chủ đề",
     "saveDraft": "Lưu bản nháp",
     "unpublish": "Gỡ công bố",
-    "topicInfo": "Thông tin chủ đề"
+    "topicInfo": "Thông tin chủ đề",
+    "topicInfoDesc": "Ngày kết thúc được tự động tính từ ngày bắt đầu và số tuần.",
+    "subThemesDesc": "Một chủ đề có thể có nhiều chủ đề nhánh.",
+    "noteDesc": "Thông tin nội bộ cho nhà trường."
   }
 }
