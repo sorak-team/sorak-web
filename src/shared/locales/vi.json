@@ -966,6 +966,10 @@
     "topicInfo": "Thông tin chủ đề",
     "topicInfoDesc": "Ngày kết thúc được tự động tính từ ngày bắt đầu và số tuần.",
     "subThemesDesc": "Một chủ đề có thể có nhiều chủ đề nhánh.",
-    "noteDesc": "Thông tin nội bộ cho nhà trường."
+    "noteDesc": "Thông tin nội bộ cho nhà trường.",
+    "allDomains": "Tất cả lĩnh vực",
+    "allAges": "Tất cả độ tuổi",
+    "expandAll": "Mở rộng tất cả",
+    "collapseAll": "Thu gọn tất cả"
   }
 }
