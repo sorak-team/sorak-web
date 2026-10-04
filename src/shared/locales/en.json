@@ -966,6 +966,10 @@
     "topicInfo": "Topic Information",
     "topicInfoDesc": "End date is automatically calculated from start date and weeks.",
     "subThemesDesc": "A topic can contain multiple sub-topics.",
-    "noteDesc": "Internal notes for the school."
+    "noteDesc": "Internal notes for the school.",
+    "allDomains": "All Domains",
+    "allAges": "All Ages",
+    "expandAll": "Expand All",
+    "collapseAll": "Collapse All"
   }
 }
