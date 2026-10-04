@@ -959,6 +959,10 @@
     "publishAll": "Publish All",
     "deleteThemeSet": "Delete Theme Set",
     "themeCalendar": "Theme Calendar",
-    "themeOverview": "Theme Overview"
+    "themeOverview": "Theme Overview",
+    "totalThemes": "Total Themes",
+    "saveDraft": "Save Draft",
+    "unpublish": "Unpublish",
+    "topicInfo": "Topic Information"
   }
 }

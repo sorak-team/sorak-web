@@ -959,6 +959,10 @@
     "publishAll": "Công bố tất cả",
     "deleteThemeSet": "Xóa bộ chủ đề",
     "themeCalendar": "Lịch chủ đề",
-    "themeOverview": "Tổng quan bộ chủ đề"
+    "themeOverview": "Tổng quan bộ chủ đề",
+    "totalThemes": "Tổng số chủ đề",
+    "saveDraft": "Lưu bản nháp",
+    "unpublish": "Gỡ công bố",
+    "topicInfo": "Thông tin chủ đề"
   }
 }
