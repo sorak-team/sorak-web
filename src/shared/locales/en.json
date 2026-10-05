@@ -1001,6 +1001,10 @@
     "learningArea": "Learning Domain",
     "assignedGoals": "Assigned Goals",
     "aiAllocation": "AI Goal Allocation",
-    "savePlan": "Save Planning"
+    "savePlan": "Save Planning",
+    "planSaved": "Educational plan saved successfully!",
+    "createSlot": "Create Slot",
+    "editSlot": "Edit Slot",
+    "weeklyTimetable": "Weekly Plan"
   }
 }
