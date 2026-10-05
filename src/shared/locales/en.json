@@ -983,6 +983,10 @@
   },
   "planning": {
     "title": "Educational Planning",
-    "subtitle": "Establish educational plans, manage weekly plans, and allocate class developmental goals"
+    "subtitle": "Establish educational plans, manage weekly plans, and allocate class developmental goals",
+    "pageDesc": "Establish educational plans, manage weekly plans, and allocate class developmental goals",
+    "timetableDesc": "Schedule weekly plan and daily learning activities throughout the week",
+    "allocationDesc": "Allocate age-appropriate developmental goals into themes and weekly schedules",
+    "activitiesDesc": "Define educational activities for each content and goal by theme"
   }
 }
