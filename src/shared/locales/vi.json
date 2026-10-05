@@ -1001,6 +1001,10 @@
     "learningArea": "Lĩnh vực học tập",
     "assignedGoals": "Mục tiêu phân bổ",
     "aiAllocation": "Phân bổ tự động bằng AI",
-    "savePlan": "Lưu kế hoạch"
+    "savePlan": "Lưu kế hoạch",
+    "planSaved": "Lưu kế hoạch giáo dục thành công!",
+    "createSlot": "Tạo slot",
+    "editSlot": "Chỉnh sửa slot",
+    "weeklyTimetable": "Kế hoạch tuần"
   }
 }
