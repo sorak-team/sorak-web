@@ -990,6 +990,10 @@
     "activitiesDesc": "Define educational activities for each content and goal by theme",
     "tabTimetable": "Weekly Plan",
     "tabAllocation": "Goal Allocation",
-    "tabActivities": "Activity Planning"
+    "tabActivities": "Activity Planning",
+    "backToClass": "Back",
+    "selectWeek": "Select Academic Week",
+    "activitySlotTitle": "Activity Slot Details",
+    "addSlot": "Add Activity Slot"
   }
 }

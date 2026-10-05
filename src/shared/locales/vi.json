@@ -990,6 +990,10 @@
     "activitiesDesc": "Xác định các hoạt động giáo dục cho từng nội dung và mục tiêu giáo dục theo chủ đề",
     "tabTimetable": "Kế hoạch tuần",
     "tabAllocation": "Phân bổ mục tiêu",
-    "tabActivities": "Xác định hoạt động"
+    "tabActivities": "Xác định hoạt động",
+    "backToClass": "Quay lại",
+    "selectWeek": "Chọn tuần học",
+    "activitySlotTitle": "Chi tiết hoạt động học",
+    "addSlot": "Thêm tiết học"
   }
 }
