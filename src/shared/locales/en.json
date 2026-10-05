@@ -987,6 +987,9 @@
     "pageDesc": "Establish educational plans, manage weekly plans, and allocate class developmental goals",
     "timetableDesc": "Schedule weekly plan and daily learning activities throughout the week",
     "allocationDesc": "Allocate age-appropriate developmental goals into themes and weekly schedules",
-    "activitiesDesc": "Define educational activities for each content and goal by theme"
+    "activitiesDesc": "Define educational activities for each content and goal by theme",
+    "tabTimetable": "Weekly Plan",
+    "tabAllocation": "Goal Allocation",
+    "tabActivities": "Activity Planning"
   }
 }
