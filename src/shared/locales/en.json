@@ -977,6 +977,12 @@
     "domainPhysical": "Physical Development",
     "domainCognitive": "Cognitive Development",
     "domainLanguage": "Language Development",
-    "domainSocioEmotional": "Social & Emotional Development"
+    "domainSocioEmotional": "Social & Emotional Development",
+    "domainAesthetic": "Aesthetic Development",
+    "addEducationalContent": "Add Educational Content"
+  },
+  "planning": {
+    "title": "Educational Planning",
+    "subtitle": "Establish educational plans, manage weekly plans, and allocate class developmental goals"
   }
 }

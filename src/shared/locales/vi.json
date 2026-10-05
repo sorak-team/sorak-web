@@ -977,6 +977,12 @@
     "domainPhysical": "Phát triển thể chất",
     "domainCognitive": "Phát triển nhận thức",
     "domainLanguage": "Phát triển ngôn ngữ",
-    "domainSocioEmotional": "Phát triển tình cảm - kỹ năng xã hội"
+    "domainSocioEmotional": "Phát triển tình cảm - kỹ năng xã hội",
+    "domainAesthetic": "Phát triển thẩm mỹ",
+    "addEducationalContent": "Thêm nội dung giáo dục"
+  },
+  "planning": {
+    "title": "Kế hoạch giáo dục",
+    "subtitle": "Lập kế hoạch giáo dục, quản lý kế hoạch tuần và phân bổ mục tiêu phát triển của lớp"
   }
 }
