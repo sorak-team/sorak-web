@@ -1005,6 +1005,10 @@
     "planSaved": "Lưu kế hoạch giáo dục thành công!",
     "createSlot": "Tạo slot",
     "editSlot": "Chỉnh sửa slot",
-    "weeklyTimetable": "Kế hoạch tuần"
+    "weeklyTimetable": "Kế hoạch tuần",
+    "timeCol": "Giờ",
+    "noSchedule": "Không có lịch",
+    "topicLabel": "Chủ đề",
+    "subTopicLabel": "Chủ đề nhánh"
   }
 }

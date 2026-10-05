@@ -1005,6 +1005,10 @@
     "planSaved": "Educational plan saved successfully!",
     "createSlot": "Create Slot",
     "editSlot": "Edit Slot",
-    "weeklyTimetable": "Weekly Plan"
+    "weeklyTimetable": "Weekly Plan",
+    "timeCol": "Time",
+    "noSchedule": "No schedule",
+    "topicLabel": "Topic",
+    "subTopicLabel": "Sub-topic"
   }
 }
