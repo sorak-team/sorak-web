@@ -994,6 +994,10 @@
     "backToClass": "Back",
     "selectWeek": "Select Academic Week",
     "activitySlotTitle": "Activity Slot Details",
-    "addSlot": "Add Activity Slot"
+    "addSlot": "Add Activity Slot",
+    "activityName": "Activity Name",
+    "startTime": "Start Time",
+    "endTime": "End Time",
+    "learningArea": "Learning Domain"
   }
 }
