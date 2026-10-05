@@ -1012,6 +1012,10 @@
     "subTopicLabel": "Sub-topic",
     "allocatedGoals": "Allocated",
     "slotDirectedStudy": "Directed Learning Activity",
-    "slotCornerPlay": "Corner Play & Exploration"
+    "slotCornerPlay": "Corner Play & Exploration",
+    "slotOutdoorPlay": "Outdoor Play",
+    "slotMorningExercise": "Morning Physical Exercise",
+    "slotArrivalPlay": "Child Arrival & Free Play",
+    "slotAfternoonActivity": "Afternoon Activity & Free Choice"
   }
 }
