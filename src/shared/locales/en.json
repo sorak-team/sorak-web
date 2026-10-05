@@ -1009,6 +1009,9 @@
     "timeCol": "Time",
     "noSchedule": "No schedule",
     "topicLabel": "Topic",
-    "subTopicLabel": "Sub-topic"
+    "subTopicLabel": "Sub-topic",
+    "allocatedGoals": "Allocated",
+    "slotDirectedStudy": "Directed Learning Activity",
+    "slotCornerPlay": "Corner Play & Exploration"
   }
 }
