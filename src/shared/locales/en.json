@@ -1016,6 +1016,10 @@
     "slotOutdoorPlay": "Outdoor Play",
     "slotMorningExercise": "Morning Physical Exercise",
     "slotArrivalPlay": "Child Arrival & Free Play",
-    "slotAfternoonActivity": "Afternoon Activity & Free Choice"
+    "slotAfternoonActivity": "Afternoon Activity & Free Choice",
+    "slotReturnChild": "Dismissal & Pickup",
+    "currentWeekBadge": "Current Week",
+    "backToCurrentWeek": "Back to current week",
+    "prevWeek": "Previous Week (Key ←)"
   }
 }

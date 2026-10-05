@@ -1016,6 +1016,10 @@
     "slotOutdoorPlay": "Chơi ngoài trời",
     "slotMorningExercise": "Thể dục sáng",
     "slotArrivalPlay": "Đón trẻ, chơi",
-    "slotAfternoonActivity": "Chơi, hoạt động theo ý thích (Chiều)"
+    "slotAfternoonActivity": "Chơi, hoạt động theo ý thích (Chiều)",
+    "slotReturnChild": "Trả trẻ",
+    "currentWeekBadge": "Tuần hiện tại",
+    "backToCurrentWeek": "Về tuần hiện tại",
+    "prevWeek": "Tuần trước (Phím ←)"
   }
 }
