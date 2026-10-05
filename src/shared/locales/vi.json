@@ -983,6 +983,10 @@
   },
   "planning": {
     "title": "Kế hoạch giáo dục",
-    "subtitle": "Lập kế hoạch giáo dục, quản lý kế hoạch tuần và phân bổ mục tiêu phát triển của lớp"
+    "subtitle": "Lập kế hoạch giáo dục, quản lý kế hoạch tuần và phân bổ mục tiêu phát triển của lớp",
+    "pageDesc": "Lập kế hoạch giáo dục, quản lý kế hoạch tuần và phân bổ mục tiêu phát triển của lớp",
+    "timetableDesc": "Sắp xếp kế hoạch tuần và các hoạt động học tập, sinh hoạt theo từng ngày trong tuần",
+    "allocationDesc": "Phân bổ mục tiêu giáo dục theo độ tuổi vào từng chủ đề và tuần học",
+    "activitiesDesc": "Xác định các hoạt động giáo dục cho từng nội dung và mục tiêu giáo dục theo chủ đề"
   }
 }
