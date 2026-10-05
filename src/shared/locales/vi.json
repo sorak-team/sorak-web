@@ -1012,6 +1012,10 @@
     "subTopicLabel": "Chủ đề nhánh",
     "allocatedGoals": "Đã phân bổ",
     "slotDirectedStudy": "Học (Hoạt động học có chủ đích)",
-    "slotCornerPlay": "Chơi, hoạt động ở các góc"
+    "slotCornerPlay": "Chơi, hoạt động ở các góc",
+    "slotOutdoorPlay": "Chơi ngoài trời",
+    "slotMorningExercise": "Thể dục sáng",
+    "slotArrivalPlay": "Đón trẻ, chơi",
+    "slotAfternoonActivity": "Chơi, hoạt động theo ý thích (Chiều)"
   }
 }
