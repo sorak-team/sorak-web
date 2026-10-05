@@ -1009,6 +1009,9 @@
     "timeCol": "Giờ",
     "noSchedule": "Không có lịch",
     "topicLabel": "Chủ đề",
-    "subTopicLabel": "Chủ đề nhánh"
+    "subTopicLabel": "Chủ đề nhánh",
+    "allocatedGoals": "Đã phân bổ",
+    "slotDirectedStudy": "Học (Hoạt động học có chủ đích)",
+    "slotCornerPlay": "Chơi, hoạt động ở các góc"
   }
 }
