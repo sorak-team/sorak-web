@@ -994,6 +994,10 @@
     "backToClass": "Quay lại",
     "selectWeek": "Chọn tuần học",
     "activitySlotTitle": "Chi tiết hoạt động học",
-    "addSlot": "Thêm tiết học"
+    "addSlot": "Thêm tiết học",
+    "activityName": "Tên hoạt động",
+    "startTime": "Giờ bắt đầu",
+    "endTime": "Giờ kết thúc",
+    "learningArea": "Lĩnh vực học tập"
   }
 }
