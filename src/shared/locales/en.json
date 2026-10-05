@@ -998,6 +998,9 @@
     "activityName": "Activity Name",
     "startTime": "Start Time",
     "endTime": "End Time",
-    "learningArea": "Learning Domain"
+    "learningArea": "Learning Domain",
+    "assignedGoals": "Assigned Goals",
+    "aiAllocation": "AI Goal Allocation",
+    "savePlan": "Save Planning"
   }
 }

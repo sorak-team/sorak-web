@@ -998,6 +998,9 @@
     "activityName": "Tên hoạt động",
     "startTime": "Giờ bắt đầu",
     "endTime": "Giờ kết thúc",
-    "learningArea": "Lĩnh vực học tập"
+    "learningArea": "Lĩnh vực học tập",
+    "assignedGoals": "Mục tiêu phân bổ",
+    "aiAllocation": "Phân bổ tự động bằng AI",
+    "savePlan": "Lưu kế hoạch"
   }
 }
