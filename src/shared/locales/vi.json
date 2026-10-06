@@ -1031,6 +1031,9 @@
     "activityDrawerTitle": "Kế hoạch hoạt động",
     "activityDrawerSubtitle": "Chi tiết bài học và kế hoạch thực hiện",
     "activityTitleLabel": "Tên hoạt động",
-    "routineSlotLabel": "Chế độ sinh hoạt"
+    "routineSlotLabel": "Chế độ sinh hoạt",
+    "objectiveLabel": "Mục đích yêu cầu",
+    "preparationLabel": "Chuẩn bị",
+    "procedureLabel": "Cách tiến hành"
   }
 }
