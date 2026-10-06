@@ -1020,6 +1020,9 @@
     "slotReturnChild": "Trả trẻ",
     "currentWeekBadge": "Tuần hiện tại",
     "backToCurrentWeek": "Về tuần hiện tại",
-    "prevWeek": "Tuần trước (Phím ←)"
+    "prevWeek": "Tuần trước (Phím ←)",
+    "nextWeek": "Tuần sau (Phím →)",
+    "weekPrefix": "Tuần",
+    "openCalendar": "Mở lịch"
   }
 }
