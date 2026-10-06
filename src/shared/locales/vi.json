@@ -1027,6 +1027,10 @@
     "statusCompleted": "Đã thực hiện",
     "statusRescheduled": "Đổi lịch",
     "statusCancelled": "Đã hủy",
-    "statusPending": "Chưa đánh giá"
+    "statusPending": "Chưa đánh giá",
+    "activityDrawerTitle": "Kế hoạch hoạt động",
+    "activityDrawerSubtitle": "Chi tiết bài học và kế hoạch thực hiện",
+    "activityTitleLabel": "Tên hoạt động",
+    "routineSlotLabel": "Chế độ sinh hoạt"
   }
 }

@@ -1027,6 +1027,10 @@
     "statusCompleted": "Completed",
     "statusRescheduled": "Rescheduled",
     "statusCancelled": "Cancelled",
-    "statusPending": "Pending Assessment"
+    "statusPending": "Pending Assessment",
+    "activityDrawerTitle": "Educational Activity Plan",
+    "activityDrawerSubtitle": "Lesson details and execution procedure",
+    "activityTitleLabel": "Activity Title",
+    "routineSlotLabel": "Daily Routine Slot"
   }
 }
