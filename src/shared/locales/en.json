@@ -1031,6 +1031,9 @@
     "activityDrawerTitle": "Educational Activity Plan",
     "activityDrawerSubtitle": "Lesson details and execution procedure",
     "activityTitleLabel": "Activity Title",
-    "routineSlotLabel": "Daily Routine Slot"
+    "routineSlotLabel": "Daily Routine Slot",
+    "objectiveLabel": "Objectives & Goals",
+    "preparationLabel": "Preparation & Materials",
+    "procedureLabel": "Step-by-step Procedure"
   }
 }
