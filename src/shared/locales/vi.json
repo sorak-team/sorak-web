@@ -1034,6 +1034,10 @@
     "routineSlotLabel": "Chế độ sinh hoạt",
     "objectiveLabel": "Mục đích yêu cầu",
     "preparationLabel": "Chuẩn bị",
-    "procedureLabel": "Cách tiến hành"
+    "procedureLabel": "Cách tiến hành",
+    "evaluationLabel": "Tiêu chí đánh giá",
+    "aiGenerate": "Tạo bằng AI",
+    "slotFixedInWeek": "Cố định theo slot tuần",
+    "saveSuccess": "Đã lưu hoạt động giáo dục thành công!"
   }
 }

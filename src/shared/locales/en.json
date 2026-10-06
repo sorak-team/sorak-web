@@ -1034,6 +1034,10 @@
     "routineSlotLabel": "Daily Routine Slot",
     "objectiveLabel": "Objectives & Goals",
     "preparationLabel": "Preparation & Materials",
-    "procedureLabel": "Step-by-step Procedure"
+    "procedureLabel": "Step-by-step Procedure",
+    "evaluationLabel": "Evaluation Criteria",
+    "aiGenerate": "Generate with AI",
+    "slotFixedInWeek": "Fixed to weekly timetable slot",
+    "saveSuccess": "Educational activity saved successfully!"
   }
 }
