@@ -1023,6 +1023,10 @@
     "prevWeek": "Tuần trước (Phím ←)",
     "nextWeek": "Tuần sau (Phím →)",
     "weekPrefix": "Tuần",
-    "openCalendar": "Mở lịch"
+    "openCalendar": "Mở lịch",
+    "statusCompleted": "Đã thực hiện",
+    "statusRescheduled": "Đổi lịch",
+    "statusCancelled": "Đã hủy",
+    "statusPending": "Chưa đánh giá"
   }
 }

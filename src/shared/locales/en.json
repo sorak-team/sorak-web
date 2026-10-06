@@ -1023,6 +1023,10 @@
     "prevWeek": "Previous Week (Key ←)",
     "nextWeek": "Next Week (Key →)",
     "weekPrefix": "Week",
-    "openCalendar": "Open Calendar"
+    "openCalendar": "Open Calendar",
+    "statusCompleted": "Completed",
+    "statusRescheduled": "Rescheduled",
+    "statusCancelled": "Cancelled",
+    "statusPending": "Pending Assessment"
   }
 }
