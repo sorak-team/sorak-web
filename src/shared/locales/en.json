@@ -1075,6 +1075,9 @@
     "goalInfoSubtitle": "Details of developmental domain and MOET indicator of the goal.",
     "devDomainLabel": "Developmental Domain",
     "moetIndicatorLabel": "MOET Indicator",
-    "noIndicator": "No indicator"
+    "noIndicator": "No indicator",
+    "educationalContentListTitle": "Educational Content List",
+    "educationalContentListSubtitle": "Establish specific educational contents according to Circular 51/BGDĐT standards.",
+    "addActivity": "Add Activity"
   }
 }
