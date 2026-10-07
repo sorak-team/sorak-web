@@ -1071,6 +1071,10 @@
     "pasteNotAvailable": "Not available (paste only into cells of the same routine)",
     "clickToAssignActivity": "Click to assign activity for {{day}} · {{slot}}",
     "singleGoalSubtitle": "Set up goal details and specific educational content list",
-    "goalInfoTitle": "Goal Information"
+    "goalInfoTitle": "Goal Information",
+    "goalInfoSubtitle": "Details of developmental domain and MOET indicator of the goal.",
+    "devDomainLabel": "Developmental Domain",
+    "moetIndicatorLabel": "MOET Indicator",
+    "noIndicator": "No indicator"
   }
 }

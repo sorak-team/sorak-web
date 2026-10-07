@@ -1071,6 +1071,10 @@
     "pasteNotAvailable": "Không khả dụng (chỉ dán vào các ô trong cùng hoạt động)",
     "clickToAssignActivity": "Bấm để chọn hoạt động cho {{day}} · {{slot}}",
     "singleGoalSubtitle": "Thiết lập chi tiết mục tiêu và danh sách nội dung giáo dục cụ thể",
-    "goalInfoTitle": "Thông tin mục tiêu"
+    "goalInfoTitle": "Thông tin mục tiêu",
+    "goalInfoSubtitle": "Chi tiết lĩnh vực phát triển và chỉ số Bộ Giáo dục của mục tiêu.",
+    "devDomainLabel": "Lĩnh vực phát triển",
+    "moetIndicatorLabel": "Chỉ số Bộ Giáo dục",
+    "noIndicator": "Không có chỉ số"
   }
 }
