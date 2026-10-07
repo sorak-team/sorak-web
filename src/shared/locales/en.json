@@ -1049,6 +1049,10 @@
     "activityDetail": "Educational Activity Details",
     "activityEdit": "Edit Educational Activity",
     "activityCreate": "Create New Activity",
-    "activityThemePlan": "Topic Educational Activity Plan"
+    "activityThemePlan": "Topic Educational Activity Plan",
+    "activitySetupPlan": "Define educational activity plan per targeted objectives",
+    "aiSuggestion": "Automated AI activity suggestions",
+    "weekUnit": "weeks",
+    "selectWeekSubtitle": "Select a week to view schedule and daily routine"
   }
 }
