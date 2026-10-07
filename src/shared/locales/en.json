@@ -1060,6 +1060,10 @@
     "switchWeekKeyHint": "Switch week: key",
     "dragActivityTitle": "1. Drag & drop activity",
     "dragActivityDesc": "Drag an activity to another cell to move/add. Hold <strong>Alt / Ctrl</strong> while dragging to duplicate.",
-    "copyActivityTitle": "2. Copy (Ctrl + Click)"
+    "copyActivityTitle": "2. Copy (Ctrl + Click)",
+    "copyActivityDesc": "Hold <strong>Ctrl</strong> and click a lesson to copy. Click cells in the same row to select targets (hold <strong>Shift</strong> to quickly select range).",
+    "pasteActivityTitle": "3. Paste & Cancel selection",
+    "pasteActivityDesc": "Press <strong>Enter</strong> to paste into selected cells. Press <strong>Delete</strong> to delete the activity (while copying or selecting). Press <strong>Esc</strong> to cancel selection.",
+    "locked": "Locked"
   }
 }
