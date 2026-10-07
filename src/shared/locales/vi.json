@@ -1060,6 +1060,10 @@
     "switchWeekKeyHint": "Chuyển tuần: phím",
     "dragActivityTitle": "1. Kéo thả hoạt động",
     "dragActivityDesc": "Kéo hoạt động sang ô khác để chuyển/thêm vào ô đó. Giữ phím <strong>Alt / Ctrl</strong> khi kéo để nhân bản.",
-    "copyActivityTitle": "2. Sao chép (Ctrl + Click)"
+    "copyActivityTitle": "2. Sao chép (Ctrl + Click)",
+    "copyActivityDesc": "Đè phím <strong>Ctrl</strong> và nhấp vào bài học để sao chép. Nhấp các ô trong cùng hàng để chọn đích (giữ <strong>Shift</strong> để chọn nhanh dải ô).",
+    "pasteActivityTitle": "3. Dán & Hủy lựa chọn",
+    "pasteActivityDesc": "Nhấn <strong>Enter</strong> để dán vào các ô đã chọn. Nhấn <strong>Delete</strong> để xoá hoạt động (khi đang sao chép hoặc chọn). Nhấn <strong>Esc</strong> để hủy lựa chọn.",
+    "locked": "Đã khóa"
   }
 }
