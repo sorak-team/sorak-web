@@ -1064,6 +1064,9 @@
     "copyActivityDesc": "Hold <strong>Ctrl</strong> and click a lesson to copy. Click cells in the same row to select targets (hold <strong>Shift</strong> to quickly select range).",
     "pasteActivityTitle": "3. Paste & Cancel selection",
     "pasteActivityDesc": "Press <strong>Enter</strong> to paste into selected cells. Press <strong>Delete</strong> to delete the activity (while copying or selecting). Press <strong>Esc</strong> to cancel selection.",
-    "locked": "Locked"
+    "locked": "Locked",
+    "selectToPaste": "Select paste",
+    "assignActivity": "Assign activity",
+    "clickToSelectPasteCell": "Click to select paste cell for {{day}} · {{slot}}"
   }
 }
