@@ -1053,6 +1053,9 @@
     "activitySetupPlan": "Define educational activity plan per targeted objectives",
     "aiSuggestion": "Automated AI activity suggestions",
     "weekUnit": "weeks",
-    "selectWeekSubtitle": "Select a week to view schedule and daily routine"
+    "selectWeekSubtitle": "Select a week to view schedule and daily routine",
+    "selectWeekPlanningSubtitle": "Select a week to arrange and monitor the activity plan",
+    "selectWeekClassSubtitle": "Select a week to view class statistics",
+    "timetableGuideTitle": "Timetable Quick Guide"
   }
 }
