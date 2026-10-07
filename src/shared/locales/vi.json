@@ -1078,6 +1078,10 @@
     "noIndicator": "Không có chỉ số",
     "educationalContentListTitle": "Danh sách nội dung giáo dục",
     "educationalContentListSubtitle": "Thiết lập các nội dung giáo dục cụ thể theo chuẩn Thông tư 51/BGDĐT.",
-    "addActivity": "Thêm hoạt động"
+    "addActivity": "Thêm hoạt động",
+    "noActivityYet": "Chưa thiết lập hoạt động giáo dục cho nội dung này.",
+    "prevGoal": "Mục tiêu trước",
+    "nextGoal": "Mục tiêu tiếp theo",
+    "firstGoalReached": "Đã ở mục tiêu đầu tiên"
   }
 }

@@ -1078,6 +1078,10 @@
     "noIndicator": "No indicator",
     "educationalContentListTitle": "Educational Content List",
     "educationalContentListSubtitle": "Establish specific educational contents according to Circular 51/BGDĐT standards.",
-    "addActivity": "Add Activity"
+    "addActivity": "Add Activity",
+    "noActivityYet": "No educational activity established for this content yet.",
+    "prevGoal": "Previous Goal",
+    "nextGoal": "Next Goal",
+    "firstGoalReached": "Already at the first goal"
   }
 }
