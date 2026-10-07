@@ -1075,6 +1075,9 @@
     "goalInfoSubtitle": "Chi tiết lĩnh vực phát triển và chỉ số Bộ Giáo dục của mục tiêu.",
     "devDomainLabel": "Lĩnh vực phát triển",
     "moetIndicatorLabel": "Chỉ số Bộ Giáo dục",
-    "noIndicator": "Không có chỉ số"
+    "noIndicator": "Không có chỉ số",
+    "educationalContentListTitle": "Danh sách nội dung giáo dục",
+    "educationalContentListSubtitle": "Thiết lập các nội dung giáo dục cụ thể theo chuẩn Thông tư 51/BGDĐT.",
+    "addActivity": "Thêm hoạt động"
   }
 }
