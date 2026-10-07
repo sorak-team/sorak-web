@@ -1045,6 +1045,10 @@
     "domainLanguage": "Ngôn ngữ",
     "domainSocioEmotional": "Tình cảm - KNXH",
     "domainAesthetic": "Thẩm mỹ",
-    "copying": "Đang sao chép"
+    "copying": "Đang sao chép",
+    "activityDetail": "Chi tiết hoạt động giáo dục",
+    "activityEdit": "Chỉnh sửa hoạt động giáo dục",
+    "activityCreate": "Tạo hoạt động mới",
+    "activityThemePlan": "Kế hoạch hoạt động giáo dục của chủ đề"
   }
 }

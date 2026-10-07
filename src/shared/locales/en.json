@@ -1045,6 +1045,10 @@
     "domainLanguage": "Language",
     "domainSocioEmotional": "Socio-Emotional",
     "domainAesthetic": "Aesthetic",
-    "copying": "Copying"
+    "copying": "Copying",
+    "activityDetail": "Educational Activity Details",
+    "activityEdit": "Edit Educational Activity",
+    "activityCreate": "Create New Activity",
+    "activityThemePlan": "Topic Educational Activity Plan"
   }
 }
