@@ -1056,6 +1056,10 @@
     "selectWeekSubtitle": "Select a week to view schedule and daily routine",
     "selectWeekPlanningSubtitle": "Select a week to arrange and monitor the activity plan",
     "selectWeekClassSubtitle": "Select a week to view class statistics",
-    "timetableGuideTitle": "Timetable Quick Guide"
+    "timetableGuideTitle": "Timetable Quick Guide",
+    "switchWeekKeyHint": "Switch week: key",
+    "dragActivityTitle": "1. Drag & drop activity",
+    "dragActivityDesc": "Drag an activity to another cell to move/add. Hold <strong>Alt / Ctrl</strong> while dragging to duplicate.",
+    "copyActivityTitle": "2. Copy (Ctrl + Click)"
   }
 }
