@@ -1053,6 +1053,9 @@
     "activitySetupPlan": "Thiết lập kế hoạch hoạt động giáo dục theo nội dung mục tiêu",
     "aiSuggestion": "Gợi ý tự động kế hoạch hoạt động",
     "weekUnit": "tuần",
-    "selectWeekSubtitle": "Lựa chọn tuần để xem thời khóa biểu và nhật ký ngày"
+    "selectWeekSubtitle": "Lựa chọn tuần để xem thời khóa biểu và nhật ký ngày",
+    "selectWeekPlanningSubtitle": "Lựa chọn tuần để sắp xếp và theo dõi kế hoạch hoạt động",
+    "selectWeekClassSubtitle": "Lựa chọn tuần để xem số liệu thống kê của lớp",
+    "timetableGuideTitle": "Hướng dẫn thao tác thời khóa biểu"
   }
 }
