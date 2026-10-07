@@ -1067,6 +1067,10 @@
     "locked": "Đã khóa",
     "selectToPaste": "Chọn dán",
     "assignActivity": "Gán hoạt động",
-    "clickToSelectPasteCell": "Bấm để chọn ô dán cho {{day}} · {{slot}}"
+    "clickToSelectPasteCell": "Bấm để chọn ô dán cho {{day}} · {{slot}}",
+    "pasteNotAvailable": "Không khả dụng (chỉ dán vào các ô trong cùng hoạt động)",
+    "clickToAssignActivity": "Bấm để chọn hoạt động cho {{day}} · {{slot}}",
+    "singleGoalSubtitle": "Thiết lập chi tiết mục tiêu và danh sách nội dung giáo dục cụ thể",
+    "goalInfoTitle": "Thông tin mục tiêu"
   }
 }
