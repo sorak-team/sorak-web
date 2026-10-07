@@ -1042,6 +1042,9 @@
     "domainAll": "Tất cả lĩnh vực",
     "domainPhysical": "Thể chất",
     "domainCognitive": "Nhận thức",
-    "domainLanguage": "Ngôn ngữ"
+    "domainLanguage": "Ngôn ngữ",
+    "domainSocioEmotional": "Tình cảm - KNXH",
+    "domainAesthetic": "Thẩm mỹ",
+    "copying": "Đang sao chép"
   }
 }
