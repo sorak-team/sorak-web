@@ -1049,6 +1049,10 @@
     "activityDetail": "Chi tiết hoạt động giáo dục",
     "activityEdit": "Chỉnh sửa hoạt động giáo dục",
     "activityCreate": "Tạo hoạt động mới",
-    "activityThemePlan": "Kế hoạch hoạt động giáo dục của chủ đề"
+    "activityThemePlan": "Kế hoạch hoạt động giáo dục của chủ đề",
+    "activitySetupPlan": "Thiết lập kế hoạch hoạt động giáo dục theo nội dung mục tiêu",
+    "aiSuggestion": "Gợi ý tự động kế hoạch hoạt động",
+    "weekUnit": "tuần",
+    "selectWeekSubtitle": "Lựa chọn tuần để xem thời khóa biểu và nhật ký ngày"
   }
 }
