@@ -1064,6 +1064,9 @@
     "copyActivityDesc": "Đè phím <strong>Ctrl</strong> và nhấp vào bài học để sao chép. Nhấp các ô trong cùng hàng để chọn đích (giữ <strong>Shift</strong> để chọn nhanh dải ô).",
     "pasteActivityTitle": "3. Dán & Hủy lựa chọn",
     "pasteActivityDesc": "Nhấn <strong>Enter</strong> để dán vào các ô đã chọn. Nhấn <strong>Delete</strong> để xoá hoạt động (khi đang sao chép hoặc chọn). Nhấn <strong>Esc</strong> để hủy lựa chọn.",
-    "locked": "Đã khóa"
+    "locked": "Đã khóa",
+    "selectToPaste": "Chọn dán",
+    "assignActivity": "Gán hoạt động",
+    "clickToSelectPasteCell": "Bấm để chọn ô dán cho {{day}} · {{slot}}"
   }
 }
