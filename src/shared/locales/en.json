@@ -1042,6 +1042,9 @@
     "domainAll": "All Domains",
     "domainPhysical": "Physical",
     "domainCognitive": "Cognitive",
-    "domainLanguage": "Language"
+    "domainLanguage": "Language",
+    "domainSocioEmotional": "Socio-Emotional",
+    "domainAesthetic": "Aesthetic",
+    "copying": "Copying"
   }
 }
