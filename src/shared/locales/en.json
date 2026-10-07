@@ -1038,6 +1038,10 @@
     "evaluationLabel": "Evaluation Criteria",
     "aiGenerate": "Generate with AI",
     "slotFixedInWeek": "Fixed to weekly timetable slot",
-    "saveSuccess": "Educational activity saved successfully!"
+    "saveSuccess": "Educational activity saved successfully!",
+    "domainAll": "All Domains",
+    "domainPhysical": "Physical",
+    "domainCognitive": "Cognitive",
+    "domainLanguage": "Language"
   }
 }

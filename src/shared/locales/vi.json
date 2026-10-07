@@ -1038,6 +1038,10 @@
     "evaluationLabel": "Tiêu chí đánh giá",
     "aiGenerate": "Tạo bằng AI",
     "slotFixedInWeek": "Cố định theo slot tuần",
-    "saveSuccess": "Đã lưu hoạt động giáo dục thành công!"
+    "saveSuccess": "Đã lưu hoạt động giáo dục thành công!",
+    "domainAll": "Tất cả lĩnh vực",
+    "domainPhysical": "Thể chất",
+    "domainCognitive": "Nhận thức",
+    "domainLanguage": "Ngôn ngữ"
   }
 }
