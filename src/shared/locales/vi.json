@@ -1202,6 +1202,9 @@
     "toggleCalendar": "Ẩn / Hiện bảng chọn tuần",
     "studentCol": "Học sinh",
     "statusCol": "Trạng thái",
-    "notes": "Ghi chú"
+    "notes": "Ghi chú",
+    "notesPlaceholder": "Nhập lý do vắng / dặn dò...",
+    "temperature": "Thân nhiệt (°C)",
+    "pickupPerson": "Người đón"
   }
 }

@@ -1202,6 +1202,9 @@
     "toggleCalendar": "Toggle Week Picker",
     "studentCol": "Student",
     "statusCol": "Status",
-    "notes": "Notes"
+    "notes": "Notes",
+    "notesPlaceholder": "Enter absence reason / special instructions...",
+    "temperature": "Body Temp (°C)",
+    "pickupPerson": "Pick-up Person"
   }
 }
