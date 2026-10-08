@@ -1180,6 +1180,9 @@
   },
   "attendance": {
     "title": "Attendance",
-    "subtitle": "Track student attendance and record present or absent status for each class period"
+    "subtitle": "Track student attendance and record present or absent status for each class period",
+    "thisWeekSchedule": "This Week Schedule",
+    "checkInTitle": "Student Attendance Check-in",
+    "present": "Present"
   }
 }

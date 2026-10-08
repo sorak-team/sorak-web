@@ -1180,6 +1180,9 @@
   },
   "attendance": {
     "title": "Điểm danh",
-    "subtitle": "Theo dõi chuyên cần, ghi nhận tình trạng có mặt và vắng mặt của học sinh theo từng buổi học"
+    "subtitle": "Theo dõi chuyên cần, ghi nhận tình trạng có mặt và vắng mặt của học sinh theo từng buổi học",
+    "thisWeekSchedule": "Lịch dạy tuần này",
+    "checkInTitle": "Điểm danh học sinh",
+    "present": "Có mặt"
   }
 }
