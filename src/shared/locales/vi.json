@@ -1109,6 +1109,39 @@
       "lines": [
         "Học"
       ]
+    },
+    "CORNER_PLAY": {
+      "name": "Chơi, Hoạt Động Ở Các Góc",
+      "short": "Hoạt động góc",
+      "lines": [
+        "Chơi, Hoạt",
+        "Động Ở Các",
+        "Góc"
+      ]
+    },
+    "OUTDOOR_PLAY": {
+      "name": "Chơi Ngoài Trời",
+      "short": "Ngoài trời",
+      "lines": [
+        "Chơi Ngoài",
+        "Trời"
+      ]
+    },
+    "AFTERNOON_ACTIVITY": {
+      "name": "Chơi, Hoạt Động Theo Ý Thích",
+      "short": "Hoạt động chiều",
+      "lines": [
+        "Chơi, Hoạt",
+        "Động Theo Ý",
+        "Thích"
+      ]
+    },
+    "RETURN_CHILD": {
+      "name": "Trả Trẻ",
+      "short": "Trả trẻ",
+      "lines": [
+        "Trả Trẻ"
+      ]
     }
   }
 }

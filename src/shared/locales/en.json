@@ -1111,6 +1111,37 @@
         "Directed",
         "Learning"
       ]
+    },
+    "CORNER_PLAY": {
+      "name": "Corner Play Activities",
+      "short": "Corner Play",
+      "lines": [
+        "Corner Play",
+        "Activities"
+      ]
+    },
+    "OUTDOOR_PLAY": {
+      "name": "Outdoor Play",
+      "short": "Outdoor Play",
+      "lines": [
+        "Outdoor",
+        "Play"
+      ]
+    },
+    "AFTERNOON_ACTIVITY": {
+      "name": "Afternoon Activity",
+      "short": "Afternoon",
+      "lines": [
+        "Afternoon",
+        "Activity"
+      ]
+    },
+    "RETURN_CHILD": {
+      "name": "Child Pickup",
+      "short": "Pickup",
+      "lines": [
+        "Child Pickup"
+      ]
     }
   }
 }
