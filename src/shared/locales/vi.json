@@ -1082,6 +1082,10 @@
     "noActivityYet": "Chưa thiết lập hoạt động giáo dục cho nội dung này.",
     "prevGoal": "Mục tiêu trước",
     "nextGoal": "Mục tiêu tiếp theo",
-    "firstGoalReached": "Đã ở mục tiêu đầu tiên"
+    "firstGoalReached": "Đã ở mục tiêu đầu tiên",
+    "lastGoalReached": "Đã ở mục tiêu cuối cùng",
+    "clickToEditActivity": "Bấm để xem và sửa chi tiết hoạt động trong Drawer",
+    "prevWeekKeyHint": "Tuần trước (Phím ←)",
+    "nextWeekKeyHint": "Tuần sau (Phím →)"
   }
 }
