@@ -1191,6 +1191,9 @@
     "excusedShort": "CP",
     "unexcusedShort": "KP",
     "absentShort": "V",
-    "presentDesc": "Có — Có mặt · CP — Có phép · KP — Không phép"
+    "presentDesc": "Có — Có mặt · CP — Có phép · KP — Không phép",
+    "studentCount": "{{count}} học sinh",
+    "saveAttendance": "Lưu điểm danh",
+    "saveSuccess": "Lưu điểm danh thành công!"
   }
 }
