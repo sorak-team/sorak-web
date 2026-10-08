@@ -1215,6 +1215,11 @@
     "statusInClass": "Đang ở lớp",
     "statusDismissed": "Đã đón trẻ",
     "statusAbsent": "Vắng mặt",
-    "recordPickup": "Ghi nhận đón trẻ"
+    "recordPickup": "Ghi nhận đón trẻ",
+    "confirmPickup": "Xác nhận đón trẻ",
+    "undoPickup": "Hoàn tác đón"
+  },
+  "common": {
+    "actions": "Thao tác"
   }
 }

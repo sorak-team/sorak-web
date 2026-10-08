@@ -1215,6 +1215,11 @@
     "statusInClass": "In Class",
     "statusDismissed": "Dismissed",
     "statusAbsent": "Absent",
-    "recordPickup": "Record Pickup"
+    "recordPickup": "Record Pickup",
+    "confirmPickup": "Confirm Pickup",
+    "undoPickup": "Undo Dismissal"
+  },
+  "common": {
+    "actions": "Actions"
   }
 }
