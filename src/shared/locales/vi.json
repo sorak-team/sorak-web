@@ -1198,6 +1198,10 @@
     "saveError": "Không thể lưu điểm danh. Vui lòng thử lại.",
     "prevWeek": "Tuần trước",
     "nextWeek": "Tuần sau",
-    "today": "Hôm nay"
+    "today": "Hôm nay",
+    "toggleCalendar": "Ẩn / Hiện bảng chọn tuần",
+    "studentCol": "Học sinh",
+    "statusCol": "Trạng thái",
+    "notes": "Ghi chú"
   }
 }
