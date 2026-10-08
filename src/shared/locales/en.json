@@ -1194,6 +1194,10 @@
     "presentDesc": "P = Present · EA = Excused · UA = Unexcused",
     "studentCount": "{{count}} students",
     "saveAttendance": "Save Attendance",
-    "saveSuccess": "Attendance saved successfully!"
+    "saveSuccess": "Attendance saved successfully!",
+    "saveError": "Failed to save attendance. Please try again.",
+    "prevWeek": "Previous Week",
+    "nextWeek": "Next Week",
+    "today": "Today"
   }
 }
