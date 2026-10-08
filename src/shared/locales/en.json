@@ -1205,6 +1205,12 @@
     "notes": "Notes",
     "notesPlaceholder": "Enter absence reason / special instructions...",
     "temperature": "Body Temp (°C)",
-    "pickupPerson": "Pick-up Person"
+    "pickupPerson": "Pick-up Person",
+    "drawerTitle": "Student Attendance Details"
+  },
+  "dismissal": {
+    "title": "Child Dismissal Management",
+    "subtitle": "Record checkout time, pickup person, and notes for parents upon dismissal",
+    "tabDismissal": "Dismissal"
   }
 }

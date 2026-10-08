@@ -1205,6 +1205,12 @@
     "notes": "Ghi chú",
     "notesPlaceholder": "Nhập lý do vắng / dặn dò...",
     "temperature": "Thân nhiệt (°C)",
-    "pickupPerson": "Người đón"
+    "pickupPerson": "Người đón",
+    "drawerTitle": "Chi tiết chuyên cần học sinh"
+  },
+  "dismissal": {
+    "title": "Quản lý đón trẻ",
+    "subtitle": "Ghi nhận giờ đón, người đón và dặn dò phụ huynh khi trả trẻ",
+    "tabDismissal": "Đón trẻ"
   }
 }
