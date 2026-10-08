@@ -1211,6 +1211,10 @@
   "dismissal": {
     "title": "Quản lý đón trẻ",
     "subtitle": "Ghi nhận giờ đón, người đón và dặn dò phụ huynh khi trả trẻ",
-    "tabDismissal": "Đón trẻ"
+    "tabDismissal": "Đón trẻ",
+    "statusInClass": "Đang ở lớp",
+    "statusDismissed": "Đã đón trẻ",
+    "statusAbsent": "Vắng mặt",
+    "recordPickup": "Ghi nhận đón trẻ"
   }
 }
