@@ -1173,5 +1173,13 @@
       "name": "Sunday",
       "short": "Sun"
     }
+  },
+  "dailyRoutine": {
+    "title": "Daily Routine",
+    "subtitle": "Track activity schedule, attendance, daily evaluation and health records by period"
+  },
+  "attendance": {
+    "title": "Attendance",
+    "subtitle": "Track student attendance and record present or absent status for each class period"
   }
 }
