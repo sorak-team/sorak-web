@@ -1187,6 +1187,10 @@
     "absent": "Vắng",
     "excused": "Có phép",
     "unexcused": "Không phép",
-    "presentShort": "Có"
+    "presentShort": "Có",
+    "excusedShort": "CP",
+    "unexcusedShort": "KP",
+    "absentShort": "V",
+    "presentDesc": "Có — Có mặt · CP — Có phép · KP — Không phép"
   }
 }
