@@ -1198,6 +1198,10 @@
     "saveError": "Failed to save attendance. Please try again.",
     "prevWeek": "Previous Week",
     "nextWeek": "Next Week",
-    "today": "Today"
+    "today": "Today",
+    "toggleCalendar": "Toggle Week Picker",
+    "studentCol": "Student",
+    "statusCol": "Status",
+    "notes": "Notes"
   }
 }
