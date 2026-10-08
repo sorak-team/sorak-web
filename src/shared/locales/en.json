@@ -1211,6 +1211,10 @@
   "dismissal": {
     "title": "Child Dismissal Management",
     "subtitle": "Record checkout time, pickup person, and notes for parents upon dismissal",
-    "tabDismissal": "Dismissal"
+    "tabDismissal": "Dismissal",
+    "statusInClass": "In Class",
+    "statusDismissed": "Dismissed",
+    "statusAbsent": "Absent",
+    "recordPickup": "Record Pickup"
   }
 }
