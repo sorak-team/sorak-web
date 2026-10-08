@@ -1173,5 +1173,13 @@
       "name": "Chủ Nhật",
       "short": "CN"
     }
+  },
+  "dailyRoutine": {
+    "title": "Nhật ký ngày",
+    "subtitle": "Theo dõi lịch hoạt động, điểm danh, đánh giá và sức khỏe học sinh theo từng tiết học"
+  },
+  "attendance": {
+    "title": "Điểm danh",
+    "subtitle": "Theo dõi chuyên cần, ghi nhận tình trạng có mặt và vắng mặt của học sinh theo từng buổi học"
   }
 }
