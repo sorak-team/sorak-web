@@ -1087,5 +1087,28 @@
     "clickToEditActivity": "Bấm để xem và sửa chi tiết hoạt động trong Drawer",
     "prevWeekKeyHint": "Tuần trước (Phím ←)",
     "nextWeekKeyHint": "Tuần sau (Phím →)"
+  },
+  "routineSlots": {
+    "ARRIVAL_PLAY": {
+      "name": "Đón Trẻ, Chơi",
+      "short": "Đón trẻ",
+      "lines": [
+        "Đón Trẻ, Chơi"
+      ]
+    },
+    "MORNING_EXERCISE": {
+      "name": "Thể Dục Sáng",
+      "short": "Thể dục sáng",
+      "lines": [
+        "Thể Dục Sáng"
+      ]
+    },
+    "DIRECTED_STUDY": {
+      "name": "Học",
+      "short": "Học",
+      "lines": [
+        "Học"
+      ]
+    }
   }
 }

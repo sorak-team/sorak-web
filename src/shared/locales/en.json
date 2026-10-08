@@ -1087,5 +1087,30 @@
     "clickToEditActivity": "Click to view and edit activity details in Drawer",
     "prevWeekKeyHint": "Previous Week (Key ←)",
     "nextWeekKeyHint": "Next Week (Key →)"
+  },
+  "routineSlots": {
+    "ARRIVAL_PLAY": {
+      "name": "Arrival & Play",
+      "short": "Arrival",
+      "lines": [
+        "Arrival & Play"
+      ]
+    },
+    "MORNING_EXERCISE": {
+      "name": "Morning Exercise",
+      "short": "Morning Exercise",
+      "lines": [
+        "Morning",
+        "Exercise"
+      ]
+    },
+    "DIRECTED_STUDY": {
+      "name": "Directed Learning",
+      "short": "Learning",
+      "lines": [
+        "Directed",
+        "Learning"
+      ]
+    }
   }
 }
