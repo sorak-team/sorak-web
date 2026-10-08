@@ -1038,6 +1038,148 @@
     "evaluationLabel": "Evaluation Criteria",
     "aiGenerate": "Generate with AI",
     "slotFixedInWeek": "Fixed to weekly timetable slot",
-    "saveSuccess": "Educational activity saved successfully!"
+    "saveSuccess": "Educational activity saved successfully!",
+    "domainAll": "All Domains",
+    "domainPhysical": "Physical",
+    "domainCognitive": "Cognitive",
+    "domainLanguage": "Language",
+    "domainSocioEmotional": "Socio-Emotional",
+    "domainAesthetic": "Aesthetic",
+    "copying": "Copying",
+    "activityDetail": "Educational Activity Details",
+    "activityEdit": "Edit Educational Activity",
+    "activityCreate": "Create New Activity",
+    "activityThemePlan": "Topic Educational Activity Plan",
+    "activitySetupPlan": "Define educational activity plan per targeted objectives",
+    "aiSuggestion": "Automated AI activity suggestions",
+    "weekUnit": "weeks",
+    "selectWeekSubtitle": "Select a week to view schedule and daily routine",
+    "selectWeekPlanningSubtitle": "Select a week to arrange and monitor the activity plan",
+    "selectWeekClassSubtitle": "Select a week to view class statistics",
+    "timetableGuideTitle": "Timetable Quick Guide",
+    "switchWeekKeyHint": "Switch week: key",
+    "dragActivityTitle": "1. Drag & drop activity",
+    "dragActivityDesc": "Drag an activity to another cell to move/add. Hold <strong>Alt / Ctrl</strong> while dragging to duplicate.",
+    "copyActivityTitle": "2. Copy (Ctrl + Click)",
+    "copyActivityDesc": "Hold <strong>Ctrl</strong> and click a lesson to copy. Click cells in the same row to select targets (hold <strong>Shift</strong> to quickly select range).",
+    "pasteActivityTitle": "3. Paste & Cancel selection",
+    "pasteActivityDesc": "Press <strong>Enter</strong> to paste into selected cells. Press <strong>Delete</strong> to delete the activity (while copying or selecting). Press <strong>Esc</strong> to cancel selection.",
+    "locked": "Locked",
+    "selectToPaste": "Select paste",
+    "assignActivity": "Assign activity",
+    "clickToSelectPasteCell": "Click to select paste cell for {{day}} · {{slot}}",
+    "pasteNotAvailable": "Not available (paste only into cells of the same routine)",
+    "clickToAssignActivity": "Click to assign activity for {{day}} · {{slot}}",
+    "singleGoalSubtitle": "Set up goal details and specific educational content list",
+    "goalInfoTitle": "Goal Information",
+    "goalInfoSubtitle": "Details of developmental domain and MOET indicator of the goal.",
+    "devDomainLabel": "Developmental Domain",
+    "moetIndicatorLabel": "MOET Indicator",
+    "noIndicator": "No indicator",
+    "educationalContentListTitle": "Educational Content List",
+    "educationalContentListSubtitle": "Establish specific educational contents according to Circular 51/BGDĐT standards.",
+    "addActivity": "Add Activity",
+    "noActivityYet": "No educational activity established for this content yet.",
+    "prevGoal": "Previous Goal",
+    "nextGoal": "Next Goal",
+    "firstGoalReached": "Already at the first goal",
+    "lastGoalReached": "Already at the last goal",
+    "clickToEditActivity": "Click to view and edit activity details in Drawer",
+    "prevWeekKeyHint": "Previous Week (Key ←)",
+    "nextWeekKeyHint": "Next Week (Key →)"
+  },
+  "routineSlots": {
+    "ARRIVAL_PLAY": {
+      "name": "Arrival & Play",
+      "short": "Arrival",
+      "lines": [
+        "Arrival & Play"
+      ]
+    },
+    "MORNING_EXERCISE": {
+      "name": "Morning Exercise",
+      "short": "Morning Exercise",
+      "lines": [
+        "Morning",
+        "Exercise"
+      ]
+    },
+    "DIRECTED_STUDY": {
+      "name": "Directed Learning",
+      "short": "Learning",
+      "lines": [
+        "Directed",
+        "Learning"
+      ]
+    },
+    "CORNER_PLAY": {
+      "name": "Corner Play Activities",
+      "short": "Corner Play",
+      "lines": [
+        "Corner Play",
+        "Activities"
+      ]
+    },
+    "OUTDOOR_PLAY": {
+      "name": "Outdoor Play",
+      "short": "Outdoor Play",
+      "lines": [
+        "Outdoor",
+        "Play"
+      ]
+    },
+    "AFTERNOON_ACTIVITY": {
+      "name": "Afternoon Activity",
+      "short": "Afternoon",
+      "lines": [
+        "Afternoon",
+        "Activity"
+      ]
+    },
+    "RETURN_CHILD": {
+      "name": "Child Pickup",
+      "short": "Pickup",
+      "lines": [
+        "Child Pickup"
+      ]
+    }
+  },
+  "days": {
+    "T2": {
+      "name": "Monday",
+      "short": "Mon"
+    },
+    "T3": {
+      "name": "Tuesday",
+      "short": "Tue"
+    },
+    "T4": {
+      "name": "Wednesday",
+      "short": "Wed"
+    },
+    "T5": {
+      "name": "Thursday",
+      "short": "Thu"
+    },
+    "T6": {
+      "name": "Friday",
+      "short": "Fri"
+    },
+    "T7": {
+      "name": "Saturday",
+      "short": "Sat"
+    },
+    "CN": {
+      "name": "Sunday",
+      "short": "Sun"
+    }
+  },
+  "dailyRoutine": {
+    "title": "Daily Routine",
+    "subtitle": "Track activity schedule, attendance, daily evaluation and health records by period"
+  },
+  "attendance": {
+    "title": "Attendance",
+    "subtitle": "Track student attendance and record present or absent status for each class period"
   }
 }
