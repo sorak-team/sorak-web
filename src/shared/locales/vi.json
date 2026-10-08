@@ -1143,5 +1143,23 @@
         "Trả Trẻ"
       ]
     }
+  },
+  "days": {
+    "T2": {
+      "name": "Thứ Hai",
+      "short": "T2"
+    },
+    "T3": {
+      "name": "Thứ Ba",
+      "short": "T3"
+    },
+    "T4": {
+      "name": "Thứ Tư",
+      "short": "T4"
+    },
+    "T5": {
+      "name": "Thứ Năm",
+      "short": "T5"
+    }
   }
 }
