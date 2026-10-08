@@ -1160,6 +1160,18 @@
     "T5": {
       "name": "Thứ Năm",
       "short": "T5"
+    },
+    "T6": {
+      "name": "Thứ Sáu",
+      "short": "T6"
+    },
+    "T7": {
+      "name": "Thứ Bảy",
+      "short": "T7"
+    },
+    "CN": {
+      "name": "Chủ Nhật",
+      "short": "CN"
     }
   }
 }
