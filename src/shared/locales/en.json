@@ -1160,6 +1160,18 @@
     "T5": {
       "name": "Thursday",
       "short": "Thu"
+    },
+    "T6": {
+      "name": "Friday",
+      "short": "Fri"
+    },
+    "T7": {
+      "name": "Saturday",
+      "short": "Sat"
+    },
+    "CN": {
+      "name": "Sunday",
+      "short": "Sun"
     }
   }
 }
