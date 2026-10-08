@@ -1191,6 +1191,9 @@
     "excusedShort": "EA",
     "unexcusedShort": "UA",
     "absentShort": "A",
-    "presentDesc": "P = Present · EA = Excused · UA = Unexcused"
+    "presentDesc": "P = Present · EA = Excused · UA = Unexcused",
+    "studentCount": "{{count}} students",
+    "saveAttendance": "Save Attendance",
+    "saveSuccess": "Attendance saved successfully!"
   }
 }
