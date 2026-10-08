@@ -1194,6 +1194,10 @@
     "presentDesc": "Có — Có mặt · CP — Có phép · KP — Không phép",
     "studentCount": "{{count}} học sinh",
     "saveAttendance": "Lưu điểm danh",
-    "saveSuccess": "Lưu điểm danh thành công!"
+    "saveSuccess": "Lưu điểm danh thành công!",
+    "saveError": "Không thể lưu điểm danh. Vui lòng thử lại.",
+    "prevWeek": "Tuần trước",
+    "nextWeek": "Tuần sau",
+    "today": "Hôm nay"
   }
 }
