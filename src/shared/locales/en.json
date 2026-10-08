@@ -1082,6 +1082,10 @@
     "noActivityYet": "No educational activity established for this content yet.",
     "prevGoal": "Previous Goal",
     "nextGoal": "Next Goal",
-    "firstGoalReached": "Already at the first goal"
+    "firstGoalReached": "Already at the first goal",
+    "lastGoalReached": "Already at the last goal",
+    "clickToEditActivity": "Click to view and edit activity details in Drawer",
+    "prevWeekKeyHint": "Previous Week (Key ←)",
+    "nextWeekKeyHint": "Next Week (Key →)"
   }
 }
