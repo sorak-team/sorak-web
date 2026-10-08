@@ -1143,5 +1143,23 @@
         "Child Pickup"
       ]
     }
+  },
+  "days": {
+    "T2": {
+      "name": "Monday",
+      "short": "Mon"
+    },
+    "T3": {
+      "name": "Tuesday",
+      "short": "Tue"
+    },
+    "T4": {
+      "name": "Wednesday",
+      "short": "Wed"
+    },
+    "T5": {
+      "name": "Thursday",
+      "short": "Thu"
+    }
   }
 }
