@@ -1038,6 +1038,148 @@
     "evaluationLabel": "Tiêu chí đánh giá",
     "aiGenerate": "Tạo bằng AI",
     "slotFixedInWeek": "Cố định theo slot tuần",
-    "saveSuccess": "Đã lưu hoạt động giáo dục thành công!"
+    "saveSuccess": "Đã lưu hoạt động giáo dục thành công!",
+    "domainAll": "Tất cả lĩnh vực",
+    "domainPhysical": "Thể chất",
+    "domainCognitive": "Nhận thức",
+    "domainLanguage": "Ngôn ngữ",
+    "domainSocioEmotional": "Tình cảm - KNXH",
+    "domainAesthetic": "Thẩm mỹ",
+    "copying": "Đang sao chép",
+    "activityDetail": "Chi tiết hoạt động giáo dục",
+    "activityEdit": "Chỉnh sửa hoạt động giáo dục",
+    "activityCreate": "Tạo hoạt động mới",
+    "activityThemePlan": "Kế hoạch hoạt động giáo dục của chủ đề",
+    "activitySetupPlan": "Thiết lập kế hoạch hoạt động giáo dục theo nội dung mục tiêu",
+    "aiSuggestion": "Gợi ý tự động kế hoạch hoạt động",
+    "weekUnit": "tuần",
+    "selectWeekSubtitle": "Lựa chọn tuần để xem thời khóa biểu và nhật ký ngày",
+    "selectWeekPlanningSubtitle": "Lựa chọn tuần để sắp xếp và theo dõi kế hoạch hoạt động",
+    "selectWeekClassSubtitle": "Lựa chọn tuần để xem số liệu thống kê của lớp",
+    "timetableGuideTitle": "Hướng dẫn thao tác thời khóa biểu",
+    "switchWeekKeyHint": "Chuyển tuần: phím",
+    "dragActivityTitle": "1. Kéo thả hoạt động",
+    "dragActivityDesc": "Kéo hoạt động sang ô khác để chuyển/thêm vào ô đó. Giữ phím <strong>Alt / Ctrl</strong> khi kéo để nhân bản.",
+    "copyActivityTitle": "2. Sao chép (Ctrl + Click)",
+    "copyActivityDesc": "Đè phím <strong>Ctrl</strong> và nhấp vào bài học để sao chép. Nhấp các ô trong cùng hàng để chọn đích (giữ <strong>Shift</strong> để chọn nhanh dải ô).",
+    "pasteActivityTitle": "3. Dán & Hủy lựa chọn",
+    "pasteActivityDesc": "Nhấn <strong>Enter</strong> để dán vào các ô đã chọn. Nhấn <strong>Delete</strong> để xoá hoạt động (khi đang sao chép hoặc chọn). Nhấn <strong>Esc</strong> để hủy lựa chọn.",
+    "locked": "Đã khóa",
+    "selectToPaste": "Chọn dán",
+    "assignActivity": "Gán hoạt động",
+    "clickToSelectPasteCell": "Bấm để chọn ô dán cho {{day}} · {{slot}}",
+    "pasteNotAvailable": "Không khả dụng (chỉ dán vào các ô trong cùng hoạt động)",
+    "clickToAssignActivity": "Bấm để chọn hoạt động cho {{day}} · {{slot}}",
+    "singleGoalSubtitle": "Thiết lập chi tiết mục tiêu và danh sách nội dung giáo dục cụ thể",
+    "goalInfoTitle": "Thông tin mục tiêu",
+    "goalInfoSubtitle": "Chi tiết lĩnh vực phát triển và chỉ số Bộ Giáo dục của mục tiêu.",
+    "devDomainLabel": "Lĩnh vực phát triển",
+    "moetIndicatorLabel": "Chỉ số Bộ Giáo dục",
+    "noIndicator": "Không có chỉ số",
+    "educationalContentListTitle": "Danh sách nội dung giáo dục",
+    "educationalContentListSubtitle": "Thiết lập các nội dung giáo dục cụ thể theo chuẩn Thông tư 51/BGDĐT.",
+    "addActivity": "Thêm hoạt động",
+    "noActivityYet": "Chưa thiết lập hoạt động giáo dục cho nội dung này.",
+    "prevGoal": "Mục tiêu trước",
+    "nextGoal": "Mục tiêu tiếp theo",
+    "firstGoalReached": "Đã ở mục tiêu đầu tiên",
+    "lastGoalReached": "Đã ở mục tiêu cuối cùng",
+    "clickToEditActivity": "Bấm để xem và sửa chi tiết hoạt động trong Drawer",
+    "prevWeekKeyHint": "Tuần trước (Phím ←)",
+    "nextWeekKeyHint": "Tuần sau (Phím →)"
+  },
+  "routineSlots": {
+    "ARRIVAL_PLAY": {
+      "name": "Đón Trẻ, Chơi",
+      "short": "Đón trẻ",
+      "lines": [
+        "Đón Trẻ, Chơi"
+      ]
+    },
+    "MORNING_EXERCISE": {
+      "name": "Thể Dục Sáng",
+      "short": "Thể dục sáng",
+      "lines": [
+        "Thể Dục Sáng"
+      ]
+    },
+    "DIRECTED_STUDY": {
+      "name": "Học",
+      "short": "Học",
+      "lines": [
+        "Học"
+      ]
+    },
+    "CORNER_PLAY": {
+      "name": "Chơi, Hoạt Động Ở Các Góc",
+      "short": "Hoạt động góc",
+      "lines": [
+        "Chơi, Hoạt",
+        "Động Ở Các",
+        "Góc"
+      ]
+    },
+    "OUTDOOR_PLAY": {
+      "name": "Chơi Ngoài Trời",
+      "short": "Ngoài trời",
+      "lines": [
+        "Chơi Ngoài",
+        "Trời"
+      ]
+    },
+    "AFTERNOON_ACTIVITY": {
+      "name": "Chơi, Hoạt Động Theo Ý Thích",
+      "short": "Hoạt động chiều",
+      "lines": [
+        "Chơi, Hoạt",
+        "Động Theo Ý",
+        "Thích"
+      ]
+    },
+    "RETURN_CHILD": {
+      "name": "Trả Trẻ",
+      "short": "Trả trẻ",
+      "lines": [
+        "Trả Trẻ"
+      ]
+    }
+  },
+  "days": {
+    "T2": {
+      "name": "Thứ Hai",
+      "short": "T2"
+    },
+    "T3": {
+      "name": "Thứ Ba",
+      "short": "T3"
+    },
+    "T4": {
+      "name": "Thứ Tư",
+      "short": "T4"
+    },
+    "T5": {
+      "name": "Thứ Năm",
+      "short": "T5"
+    },
+    "T6": {
+      "name": "Thứ Sáu",
+      "short": "T6"
+    },
+    "T7": {
+      "name": "Thứ Bảy",
+      "short": "T7"
+    },
+    "CN": {
+      "name": "Chủ Nhật",
+      "short": "CN"
+    }
+  },
+  "dailyRoutine": {
+    "title": "Nhật ký ngày",
+    "subtitle": "Theo dõi lịch hoạt động, điểm danh, đánh giá và sức khỏe học sinh theo từng tiết học"
+  },
+  "attendance": {
+    "title": "Điểm danh",
+    "subtitle": "Theo dõi chuyên cần, ghi nhận tình trạng có mặt và vắng mặt của học sinh theo từng buổi học"
   }
 }
