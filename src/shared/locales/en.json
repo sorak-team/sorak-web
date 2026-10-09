@@ -1242,6 +1242,10 @@
     "close": "Close",
     "saving": "Saving...",
     "loading": "Loading...",
-    "processing": "Processing..."
+    "processing": "Processing...",
+    "deleting": "Deleting...",
+    "sending": "Sending...",
+    "duplicate": "Duplicate",
+    "details": "Details"
   }
 }

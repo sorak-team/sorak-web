@@ -1242,6 +1242,10 @@
     "close": "Đóng",
     "saving": "Đang lưu...",
     "loading": "Đang tải...",
-    "processing": "Đang xử lý..."
+    "processing": "Đang xử lý...",
+    "deleting": "Đang gỡ...",
+    "sending": "Đang gửi...",
+    "duplicate": "Nhân bản",
+    "details": "Chi tiết"
   }
 }
