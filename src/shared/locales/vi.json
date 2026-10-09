@@ -1224,6 +1224,10 @@
     "cancel": "Hủy",
     "delete": "Xóa",
     "edit": "Chỉnh sửa",
-    "gridView": "Dạng lưới"
+    "gridView": "Dạng lưới",
+    "listView": "Dạng bảng",
+    "nextPage": "Sau",
+    "prevPage": "Trước",
+    "saveChanges": "Lưu thay đổi"
   }
 }
