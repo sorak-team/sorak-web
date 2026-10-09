@@ -1239,6 +1239,9 @@
     "uploadAvatar": "Upload photo",
     "resetAvatar": "Reset to default",
     "changeAvatar": "Change avatar",
-    "close": "Close"
+    "close": "Close",
+    "saving": "Saving...",
+    "loading": "Loading...",
+    "processing": "Processing..."
   }
 }
