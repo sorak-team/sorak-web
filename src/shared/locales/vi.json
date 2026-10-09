@@ -1231,6 +1231,10 @@
     "saveChanges": "Lưu thay đổi",
     "viewDetails": "Xem chi tiết",
     "selectAll": "Chọn tất cả",
-    "deselectAll": "Bỏ chọn tất cả"
+    "deselectAll": "Bỏ chọn tất cả",
+    "show": "Hiển thị",
+    "itemsPerPage": "/ trang",
+    "selectPageSize": "Chọn số lượng hiển thị trên 1 trang",
+    "items": "mục"
   }
 }

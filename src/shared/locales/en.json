@@ -1231,6 +1231,10 @@
     "saveChanges": "Save changes",
     "viewDetails": "View details",
     "selectAll": "Select all",
-    "deselectAll": "Deselect all"
+    "deselectAll": "Deselect all",
+    "show": "Show",
+    "itemsPerPage": "/ page",
+    "selectPageSize": "Select items per page",
+    "items": "items"
   }
 }
