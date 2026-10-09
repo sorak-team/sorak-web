@@ -1235,6 +1235,10 @@
     "show": "Show",
     "itemsPerPage": "/ page",
     "selectPageSize": "Select items per page",
-    "items": "items"
+    "items": "items",
+    "uploadAvatar": "Upload photo",
+    "resetAvatar": "Reset to default",
+    "changeAvatar": "Change avatar",
+    "close": "Close"
   }
 }
