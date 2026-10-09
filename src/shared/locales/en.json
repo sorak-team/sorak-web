@@ -1224,6 +1224,10 @@
     "cancel": "Cancel",
     "delete": "Delete",
     "edit": "Edit",
-    "gridView": "Grid view"
+    "gridView": "Grid view",
+    "listView": "Table view",
+    "nextPage": "Next",
+    "prevPage": "Previous",
+    "saveChanges": "Save changes"
   }
 }
