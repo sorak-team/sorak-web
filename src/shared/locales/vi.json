@@ -1235,6 +1235,10 @@
     "show": "Hiển thị",
     "itemsPerPage": "/ trang",
     "selectPageSize": "Chọn số lượng hiển thị trên 1 trang",
-    "items": "mục"
+    "items": "mục",
+    "uploadAvatar": "Tải ảnh lên",
+    "resetAvatar": "Đặt lại mặc định",
+    "changeAvatar": "Đổi ảnh đại diện",
+    "close": "Đóng"
   }
 }
