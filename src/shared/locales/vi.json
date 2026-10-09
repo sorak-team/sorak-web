@@ -1228,6 +1228,9 @@
     "listView": "Dạng bảng",
     "nextPage": "Sau",
     "prevPage": "Trước",
-    "saveChanges": "Lưu thay đổi"
+    "saveChanges": "Lưu thay đổi",
+    "viewDetails": "Xem chi tiết",
+    "selectAll": "Chọn tất cả",
+    "deselectAll": "Bỏ chọn tất cả"
   }
 }
