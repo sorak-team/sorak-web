@@ -1220,6 +1220,10 @@
     "undoPickup": "Undo Dismissal"
   },
   "common": {
-    "actions": "Actions"
+    "actions": "Actions",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "gridView": "Grid view"
   }
 }

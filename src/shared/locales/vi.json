@@ -1220,6 +1220,10 @@
     "undoPickup": "Hoàn tác đón"
   },
   "common": {
-    "actions": "Thao tác"
+    "actions": "Thao tác",
+    "cancel": "Hủy",
+    "delete": "Xóa",
+    "edit": "Chỉnh sửa",
+    "gridView": "Dạng lưới"
   }
 }
