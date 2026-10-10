@@ -1250,6 +1250,11 @@
     "noData": "No data available",
     "paste": "Paste",
     "undo": "Undo",
-    "prev": "Previous"
+    "prev": "Previous",
+    "next": "Next"
+  },
+  "health": {
+    "title": "Health",
+    "subtitle": "Monitor student physical growth, height, weight and BMI metrics across checkup periods"
   }
 }
