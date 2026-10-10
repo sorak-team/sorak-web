@@ -1290,6 +1290,12 @@
     "aestheticTitle": "5. Phát triển Thẩm mỹ",
     "aestheticDesc": "Cảm thụ cái đẹp, tích cực tham gia ca hát, vận động theo nhạc và tạo hình",
     "physical": "Thể chất",
-    "cognitive": "Nhận thức"
+    "cognitive": "Nhận thức",
+    "language": "Ngôn ngữ",
+    "socialEmotionalShort": "TC - KNXH",
+    "aesthetic": "Thẩm mỹ"
+  },
+  "settings": {
+    "title": "Cài đặt"
   }
 }
