@@ -1283,6 +1283,10 @@
     "physicalDesc": "Gross motor, fine motor, eating/sleeping habits, and self-care",
     "cognitiveTitle": "2. Cognitive Development",
     "cognitiveDesc": "Science exploration, early math, and understanding surrounding world",
-    "languageTitle": "3. Language Development"
+    "languageTitle": "3. Language Development",
+    "languageDesc": "Listening comprehension, clear pronunciation, confident short sentences",
+    "socialEmotionalTitle": "4. Social-Emotional Development",
+    "socialEmotionalDesc": "Polite to teachers, friendly with peers, shares and cooperates",
+    "aestheticTitle": "5. Aesthetic Development"
   }
 }
