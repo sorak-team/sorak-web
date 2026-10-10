@@ -1250,6 +1250,11 @@
     "noData": "Không có dữ liệu",
     "paste": "Dán",
     "undo": "Hoàn tác",
-    "prev": "Trước"
+    "prev": "Trước",
+    "next": "Tiếp"
+  },
+  "health": {
+    "title": "Sức khỏe",
+    "subtitle": "Theo dõi sự phát triển thể chất, chiều cao, cân nặng và chỉ số BMI của học sinh"
   }
 }
