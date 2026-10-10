@@ -1263,6 +1263,9 @@
     "nutritionalStatus": "Tình trạng dinh dưỡng",
     "normal": "Bình thường",
     "underweight": "Suy dinh dưỡng",
-    "overweight": "Thừa cân / Béo phì"
+    "overweight": "Thừa cân / Béo phì",
+    "stunted": "Thấp còi",
+    "saveHealth": "Lưu chỉ số sức khỏe",
+    "saveSuccess": "Lưu chỉ số sức khỏe thành công!"
   }
 }
