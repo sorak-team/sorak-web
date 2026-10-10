@@ -1287,6 +1287,9 @@
     "languageDesc": "Listening comprehension, clear pronunciation, confident short sentences",
     "socialEmotionalTitle": "4. Social-Emotional Development",
     "socialEmotionalDesc": "Polite to teachers, friendly with peers, shares and cooperates",
-    "aestheticTitle": "5. Aesthetic Development"
+    "aestheticTitle": "5. Aesthetic Development",
+    "aestheticDesc": "Appreciates beauty, actively sings, moves to music, and creates arts",
+    "physical": "Physical",
+    "cognitive": "Cognitive"
   }
 }
