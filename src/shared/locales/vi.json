@@ -1274,6 +1274,11 @@
     "statusNormal": "Bình thường",
     "statusUnderweight": "Theo dõi nhẹ cân",
     "statusOverweight": "Theo dõi thừa cân/béo phì",
-    "statusStunted": "Theo dõi thấp còi"
+    "statusStunted": "Theo dõi thấp còi",
+    "statusMalnutrition": "Theo dõi suy dinh dưỡng",
+    "statusOverweightRisk": "Nguy cơ thừa cân"
+  },
+  "domains": {
+    "physicalTitle": "1. Phát triển Thể chất"
   }
 }

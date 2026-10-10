@@ -1274,6 +1274,11 @@
     "statusNormal": "Normal",
     "statusUnderweight": "Underweight monitoring",
     "statusOverweight": "Overweight/obesity monitoring",
-    "statusStunted": "Stunting monitoring"
+    "statusStunted": "Stunting monitoring",
+    "statusMalnutrition": "Malnutrition monitoring",
+    "statusOverweightRisk": "Risk of overweight"
+  },
+  "domains": {
+    "physicalTitle": "1. Physical Development"
   }
 }
