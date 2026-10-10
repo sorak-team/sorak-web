@@ -1266,6 +1266,10 @@
     "overweight": "Thừa cân / Béo phì",
     "stunted": "Thấp còi",
     "saveHealth": "Lưu chỉ số sức khỏe",
-    "saveSuccess": "Lưu chỉ số sức khỏe thành công!"
+    "saveSuccess": "Lưu chỉ số sức khỏe thành công!",
+    "saveError": "Không thể lưu chỉ số sức khỏe. Vui lòng thử lại.",
+    "checkHistory": "Lịch sử kiểm tra",
+    "notes": "Ghi chú y tế",
+    "allergy": "Dị ứng"
   }
 }
