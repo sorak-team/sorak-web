@@ -1255,6 +1255,10 @@
   },
   "health": {
     "title": "Sức khỏe",
-    "subtitle": "Theo dõi sự phát triển thể chất, chiều cao, cân nặng và chỉ số BMI của học sinh"
+    "subtitle": "Theo dõi sự phát triển thể chất, chiều cao, cân nặng và chỉ số BMI của học sinh",
+    "measurementPanelTitle": "Đo lường thể chất & Sức khỏe",
+    "height": "Chiều cao (cm)",
+    "weight": "Cân nặng (kg)",
+    "bmi": "Chỉ số BMI"
   }
 }

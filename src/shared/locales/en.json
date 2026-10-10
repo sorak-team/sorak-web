@@ -1255,6 +1255,10 @@
   },
   "health": {
     "title": "Health",
-    "subtitle": "Monitor student physical growth, height, weight and BMI metrics across checkup periods"
+    "subtitle": "Monitor student physical growth, height, weight and BMI metrics across checkup periods",
+    "measurementPanelTitle": "Physical Measurement & Health",
+    "height": "Height (cm)",
+    "weight": "Weight (kg)",
+    "bmi": "BMI Index"
   }
 }
