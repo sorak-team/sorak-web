@@ -1259,6 +1259,10 @@
     "measurementPanelTitle": "Đo lường thể chất & Sức khỏe",
     "height": "Chiều cao (cm)",
     "weight": "Cân nặng (kg)",
-    "bmi": "Chỉ số BMI"
+    "bmi": "Chỉ số BMI",
+    "nutritionalStatus": "Tình trạng dinh dưỡng",
+    "normal": "Bình thường",
+    "underweight": "Suy dinh dưỡng",
+    "overweight": "Thừa cân / Béo phì"
   }
 }

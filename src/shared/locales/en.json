@@ -1259,6 +1259,10 @@
     "measurementPanelTitle": "Physical Measurement & Health",
     "height": "Height (cm)",
     "weight": "Weight (kg)",
-    "bmi": "BMI Index"
+    "bmi": "BMI Index",
+    "nutritionalStatus": "Nutritional Status",
+    "normal": "Normal",
+    "underweight": "Underweight",
+    "overweight": "Overweight / Obese"
   }
 }
