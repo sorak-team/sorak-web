@@ -1246,6 +1246,10 @@
     "deleting": "Đang gỡ...",
     "sending": "Đang gửi...",
     "duplicate": "Nhân bản",
-    "details": "Chi tiết"
+    "details": "Chi tiết",
+    "noData": "Không có dữ liệu",
+    "paste": "Dán",
+    "undo": "Hoàn tác",
+    "prev": "Trước"
   }
 }
