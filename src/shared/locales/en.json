@@ -1270,6 +1270,10 @@
     "saveError": "Failed to save health metrics. Please try again.",
     "checkHistory": "Checkup History",
     "notes": "Medical Notes",
-    "allergy": "Allergies"
+    "allergy": "Allergies",
+    "statusNormal": "Normal",
+    "statusUnderweight": "Underweight monitoring",
+    "statusOverweight": "Overweight/obesity monitoring",
+    "statusStunted": "Stunting monitoring"
   }
 }
