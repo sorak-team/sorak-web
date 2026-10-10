@@ -1263,6 +1263,9 @@
     "nutritionalStatus": "Nutritional Status",
     "normal": "Normal",
     "underweight": "Underweight",
-    "overweight": "Overweight / Obese"
+    "overweight": "Overweight / Obese",
+    "stunted": "Stunted",
+    "saveHealth": "Save Health Metrics",
+    "saveSuccess": "Health metrics saved successfully!"
   }
 }
