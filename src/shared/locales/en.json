@@ -1300,6 +1300,9 @@
     "personal": "Personal",
     "systemPreferences": "Preferences",
     "navProfile": "Personal Profile",
-    "navSecurity": "Password & Security"
+    "navSecurity": "Password & Security",
+    "navNotifications": "Notifications",
+    "navAppearance": "Appearance",
+    "navLanguage": "Language"
   }
 }

@@ -1300,6 +1300,9 @@
     "personal": "Cá nhân",
     "systemPreferences": "Tùy chọn",
     "navProfile": "Hồ sơ cá nhân",
-    "navSecurity": "Mật khẩu & Bảo mật"
+    "navSecurity": "Mật khẩu & Bảo mật",
+    "navNotifications": "Cài đặt thông báo",
+    "navAppearance": "Giao diện",
+    "navLanguage": "Ngôn ngữ"
   }
 }
