@@ -1296,6 +1296,10 @@
     "aesthetic": "Thẩm mỹ"
   },
   "settings": {
-    "title": "Cài đặt"
+    "title": "Cài đặt",
+    "personal": "Cá nhân",
+    "systemPreferences": "Tùy chọn",
+    "navProfile": "Hồ sơ cá nhân",
+    "navSecurity": "Mật khẩu & Bảo mật"
   }
 }
