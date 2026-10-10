@@ -1296,6 +1296,10 @@
     "aesthetic": "Aesthetic"
   },
   "settings": {
-    "title": "Settings"
+    "title": "Settings",
+    "personal": "Personal",
+    "systemPreferences": "Preferences",
+    "navProfile": "Personal Profile",
+    "navSecurity": "Password & Security"
   }
 }
