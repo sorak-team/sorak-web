@@ -1266,6 +1266,10 @@
     "overweight": "Overweight / Obese",
     "stunted": "Stunted",
     "saveHealth": "Save Health Metrics",
-    "saveSuccess": "Health metrics saved successfully!"
+    "saveSuccess": "Health metrics saved successfully!",
+    "saveError": "Failed to save health metrics. Please try again.",
+    "checkHistory": "Checkup History",
+    "notes": "Medical Notes",
+    "allergy": "Allergies"
   }
 }
