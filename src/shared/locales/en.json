@@ -1279,6 +1279,10 @@
     "statusOverweightRisk": "Risk of overweight"
   },
   "domains": {
-    "physicalTitle": "1. Physical Development"
+    "physicalTitle": "1. Physical Development",
+    "physicalDesc": "Gross motor, fine motor, eating/sleeping habits, and self-care",
+    "cognitiveTitle": "2. Cognitive Development",
+    "cognitiveDesc": "Science exploration, early math, and understanding surrounding world",
+    "languageTitle": "3. Language Development"
   }
 }

@@ -1279,6 +1279,10 @@
     "statusOverweightRisk": "Nguy cơ thừa cân"
   },
   "domains": {
-    "physicalTitle": "1. Phát triển Thể chất"
+    "physicalTitle": "1. Phát triển Thể chất",
+    "physicalDesc": "Vận động thô, vận động tinh, nề nếp ăn ngủ và vệ sinh tự phục vụ",
+    "cognitiveTitle": "2. Phát triển Nhận thức",
+    "cognitiveDesc": "Khám phá khoa học, làm quen toán học và nhận biết thế giới xung quanh",
+    "languageTitle": "3. Phát triển Ngôn ngữ"
   }
 }
