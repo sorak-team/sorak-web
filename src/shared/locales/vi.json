@@ -1322,6 +1322,9 @@
     "email": "Email",
     "phone": "Số điện thoại",
     "phonePlaceholder": "0901 234 567",
-    "roleLabel": "Vai trò"
+    "roleLabel": "Vai trò",
+    "roleBoard": "Ban giám hiệu",
+    "roleTeacher": "Giáo viên",
+    "addressLabel": "Địa chỉ"
   }
 }

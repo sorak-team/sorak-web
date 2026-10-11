@@ -1322,6 +1322,9 @@
     "email": "Email",
     "phone": "Phone Number",
     "phonePlaceholder": "0901 234 567",
-    "roleLabel": "Role"
+    "roleLabel": "Role",
+    "roleBoard": "School Board",
+    "roleTeacher": "Teacher",
+    "addressLabel": "Address"
   }
 }
