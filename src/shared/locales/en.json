@@ -1325,6 +1325,10 @@
     "roleLabel": "Role",
     "roleBoard": "School Board",
     "roleTeacher": "Teacher",
-    "addressLabel": "Address"
+    "addressLabel": "Address",
+    "addressPlaceholder": "Work address...",
+    "employeeCode": "Teacher Code",
+    "citizenId": "Citizen ID (CCCD)",
+    "citizenIdPlaceholder": "079198005678"
   }
 }
