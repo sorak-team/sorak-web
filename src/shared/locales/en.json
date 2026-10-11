@@ -1307,6 +1307,10 @@
     "account": "Preferences",
     "navAuthSecurity": "Sign-in & security",
     "profileTitle": "Personal Profile",
-    "profileSubtitle": "Update your avatar and account information"
+    "profileSubtitle": "Update your avatar and account information",
+    "avatarTitle": "Profile Avatar",
+    "avatarDesc": "Use an avatar to identify your account across the Sorak system",
+    "uploadPhoto": "Upload photo",
+    "deletePhoto": "Reset to default"
   }
 }

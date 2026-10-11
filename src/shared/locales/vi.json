@@ -1307,6 +1307,10 @@
     "account": "Tùy chọn",
     "navAuthSecurity": "Đăng nhập & bảo mật",
     "profileTitle": "Hồ sơ cá nhân",
-    "profileSubtitle": "Cập nhật ảnh đại diện và thông tin tài khoản của bạn"
+    "profileSubtitle": "Cập nhật ảnh đại diện và thông tin tài khoản của bạn",
+    "avatarTitle": "Ảnh đại diện",
+    "avatarDesc": "Dùng ảnh đại diện để nhận diện tài khoản trong hệ thống Sorak",
+    "uploadPhoto": "Tải ảnh lên",
+    "deletePhoto": "Đặt lại mặc định"
   }
 }
