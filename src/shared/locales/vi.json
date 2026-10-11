@@ -1333,6 +1333,9 @@
     "dob": "Ngày sinh",
     "dobPlaceholder": "11/12/1996",
     "positionLabel": "Chức vụ",
-    "positionPlaceholder": "Giáo viên"
+    "positionPlaceholder": "Giáo viên",
+    "readOnly": "Chỉ xem",
+    "emailVerifiedBadge": "Đã xác thực",
+    "emailUnverifiedBadge": "Chưa xác thực"
   }
 }
