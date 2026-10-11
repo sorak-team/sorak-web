@@ -1311,6 +1311,9 @@
     "avatarTitle": "Profile Avatar",
     "avatarDesc": "Use an avatar to identify your account across the Sorak system",
     "uploadPhoto": "Upload photo",
-    "deletePhoto": "Reset to default"
+    "deletePhoto": "Reset to default",
+    "resetDefaultPhoto": "Reset to default",
+    "personalInfoTitle": "Personal Information",
+    "personalInfoDesc": "Information displayed in the system and admin directory"
   }
 }
