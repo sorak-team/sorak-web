@@ -1318,6 +1318,10 @@
     "fullName": "Họ và tên",
     "fullNamePlaceholder": "Nhập họ và tên",
     "lastName": "Họ",
-    "firstName": "Tên"
+    "firstName": "Tên",
+    "email": "Email",
+    "phone": "Số điện thoại",
+    "phonePlaceholder": "0901 234 567",
+    "roleLabel": "Vai trò"
   }
 }
