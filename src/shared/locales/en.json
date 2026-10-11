@@ -1318,6 +1318,10 @@
     "fullName": "Full Name",
     "fullNamePlaceholder": "Enter full name",
     "lastName": "Last name",
-    "firstName": "First name"
+    "firstName": "First name",
+    "email": "Email",
+    "phone": "Phone Number",
+    "phonePlaceholder": "0901 234 567",
+    "roleLabel": "Role"
   }
 }
