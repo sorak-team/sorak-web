@@ -1311,6 +1311,9 @@
     "avatarTitle": "Ảnh đại diện",
     "avatarDesc": "Dùng ảnh đại diện để nhận diện tài khoản trong hệ thống Sorak",
     "uploadPhoto": "Tải ảnh lên",
-    "deletePhoto": "Đặt lại mặc định"
+    "deletePhoto": "Đặt lại mặc định",
+    "resetDefaultPhoto": "Đặt lại mặc định",
+    "personalInfoTitle": "Thông tin cá nhân",
+    "personalInfoDesc": "Thông tin hiển thị trong hệ thống và danh sách quản trị"
   }
 }
