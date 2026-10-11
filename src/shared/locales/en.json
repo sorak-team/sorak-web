@@ -1340,6 +1340,10 @@
     "verifyEmailBtn": "Verify Email",
     "verifyEmailModalTitle": "Verify New Email Address",
     "verifyEmailModalDesc": "A 6-digit OTP verification code has been sent to:",
-    "verifyEmailOtpPlaceholder": "Enter 6-digit code"
+    "verifyEmailOtpPlaceholder": "Enter 6-digit code",
+    "verifyEmailConfirmBtn": "Confirm & Update",
+    "resendCode": "Resend code",
+    "resendCodeIn": "Resend in {{seconds}}s",
+    "toastEmailVerifiedSuccess": "Email verified and updated successfully!"
   }
 }

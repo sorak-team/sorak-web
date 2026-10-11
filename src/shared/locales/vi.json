@@ -1340,6 +1340,10 @@
     "verifyEmailBtn": "Xác thực email",
     "verifyEmailModalTitle": "Xác thực địa chỉ email mới",
     "verifyEmailModalDesc": "Mã xác thực OTP gồm 6 chữ số đã được gửi tới:",
-    "verifyEmailOtpPlaceholder": "Nhập mã 6 chữ số"
+    "verifyEmailOtpPlaceholder": "Nhập mã 6 chữ số",
+    "verifyEmailConfirmBtn": "Xác nhận & Cập nhật",
+    "resendCode": "Gửi lại mã",
+    "resendCodeIn": "Gửi lại sau {{seconds}}s",
+    "toastEmailVerifiedSuccess": "Xác thực và cập nhật email thành công!"
   }
 }
