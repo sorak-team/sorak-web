@@ -1329,6 +1329,10 @@
     "addressPlaceholder": "Work address...",
     "employeeCode": "Teacher Code",
     "citizenId": "Citizen ID (CCCD)",
-    "citizenIdPlaceholder": "079198005678"
+    "citizenIdPlaceholder": "079198005678",
+    "dob": "Date of Birth",
+    "dobPlaceholder": "11/12/1996",
+    "positionLabel": "Position",
+    "positionPlaceholder": "Teacher"
   }
 }
