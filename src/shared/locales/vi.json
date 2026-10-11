@@ -1325,6 +1325,10 @@
     "roleLabel": "Vai trò",
     "roleBoard": "Ban giám hiệu",
     "roleTeacher": "Giáo viên",
-    "addressLabel": "Địa chỉ"
+    "addressLabel": "Địa chỉ",
+    "addressPlaceholder": "Địa chỉ công tác...",
+    "employeeCode": "Mã giáo viên",
+    "citizenId": "Số CCCD",
+    "citizenIdPlaceholder": "079198005678"
   }
 }
