@@ -1336,6 +1336,10 @@
     "positionPlaceholder": "Giáo viên",
     "readOnly": "Chỉ xem",
     "emailVerifiedBadge": "Đã xác thực",
-    "emailUnverifiedBadge": "Chưa xác thực"
+    "emailUnverifiedBadge": "Chưa xác thực",
+    "verifyEmailBtn": "Xác thực email",
+    "verifyEmailModalTitle": "Xác thực địa chỉ email mới",
+    "verifyEmailModalDesc": "Mã xác thực OTP gồm 6 chữ số đã được gửi tới:",
+    "verifyEmailOtpPlaceholder": "Nhập mã 6 chữ số"
   }
 }
