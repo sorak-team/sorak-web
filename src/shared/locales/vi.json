@@ -1329,6 +1329,10 @@
     "addressPlaceholder": "Địa chỉ công tác...",
     "employeeCode": "Mã giáo viên",
     "citizenId": "Số CCCD",
-    "citizenIdPlaceholder": "079198005678"
+    "citizenIdPlaceholder": "079198005678",
+    "dob": "Ngày sinh",
+    "dobPlaceholder": "11/12/1996",
+    "positionLabel": "Chức vụ",
+    "positionPlaceholder": "Giáo viên"
   }
 }
