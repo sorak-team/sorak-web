@@ -1333,6 +1333,9 @@
     "dob": "Date of Birth",
     "dobPlaceholder": "11/12/1996",
     "positionLabel": "Position",
-    "positionPlaceholder": "Teacher"
+    "positionPlaceholder": "Teacher",
+    "readOnly": "Read-only",
+    "emailVerifiedBadge": "Verified",
+    "emailUnverifiedBadge": "Unverified"
   }
 }
