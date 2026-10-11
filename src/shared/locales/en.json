@@ -1314,6 +1314,10 @@
     "deletePhoto": "Reset to default",
     "resetDefaultPhoto": "Reset to default",
     "personalInfoTitle": "Personal Information",
-    "personalInfoDesc": "Information displayed in the system and admin directory"
+    "personalInfoDesc": "Information displayed in the system and admin directory",
+    "fullName": "Full Name",
+    "fullNamePlaceholder": "Enter full name",
+    "lastName": "Last name",
+    "firstName": "First name"
   }
 }

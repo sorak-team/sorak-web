@@ -1314,6 +1314,10 @@
     "deletePhoto": "Đặt lại mặc định",
     "resetDefaultPhoto": "Đặt lại mặc định",
     "personalInfoTitle": "Thông tin cá nhân",
-    "personalInfoDesc": "Thông tin hiển thị trong hệ thống và danh sách quản trị"
+    "personalInfoDesc": "Thông tin hiển thị trong hệ thống và danh sách quản trị",
+    "fullName": "Họ và tên",
+    "fullNamePlaceholder": "Nhập họ và tên",
+    "lastName": "Họ",
+    "firstName": "Tên"
   }
 }
