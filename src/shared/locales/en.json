@@ -1336,6 +1336,10 @@
     "positionPlaceholder": "Teacher",
     "readOnly": "Read-only",
     "emailVerifiedBadge": "Verified",
-    "emailUnverifiedBadge": "Unverified"
+    "emailUnverifiedBadge": "Unverified",
+    "verifyEmailBtn": "Verify Email",
+    "verifyEmailModalTitle": "Verify New Email Address",
+    "verifyEmailModalDesc": "A 6-digit OTP verification code has been sent to:",
+    "verifyEmailOtpPlaceholder": "Enter 6-digit code"
   }
 }
