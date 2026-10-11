@@ -1303,6 +1303,10 @@
     "navSecurity": "Mật khẩu & Bảo mật",
     "navNotifications": "Cài đặt thông báo",
     "navAppearance": "Giao diện",
-    "navLanguage": "Ngôn ngữ"
+    "navLanguage": "Ngôn ngữ",
+    "account": "Tùy chọn",
+    "navAuthSecurity": "Đăng nhập & bảo mật",
+    "profileTitle": "Hồ sơ cá nhân",
+    "profileSubtitle": "Cập nhật ảnh đại diện và thông tin tài khoản của bạn"
   }
 }

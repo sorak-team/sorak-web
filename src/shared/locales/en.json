@@ -1303,6 +1303,10 @@
     "navSecurity": "Password & Security",
     "navNotifications": "Notifications",
     "navAppearance": "Appearance",
-    "navLanguage": "Language"
+    "navLanguage": "Language",
+    "account": "Preferences",
+    "navAuthSecurity": "Sign-in & security",
+    "profileTitle": "Personal Profile",
+    "profileSubtitle": "Update your avatar and account information"
   }
 }
