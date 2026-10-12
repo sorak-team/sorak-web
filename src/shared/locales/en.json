@@ -1351,6 +1351,9 @@
     "toastEmailNeedVerify": "New email must be verified via OTP before saving.",
     "role": "Role",
     "position": "Position",
-    "address": "Address"
+    "address": "Address",
+    "saveChanges": "Save changes",
+    "principalEditNote": "Principal accounts have permission to edit personal information.",
+    "teacherReadOnlyNotice": "Teacher accounts can only view personal information. Please contact the Principal for adjustments."
   }
 }

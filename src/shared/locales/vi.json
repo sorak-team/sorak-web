@@ -1351,6 +1351,9 @@
     "toastEmailNeedVerify": "Email mới cần được xác thực bằng mã OTP trước khi lưu.",
     "role": "Vai trò",
     "position": "Chức vụ",
-    "address": "Địa chỉ"
+    "address": "Địa chỉ",
+    "saveChanges": "Lưu thay đổi",
+    "principalEditNote": "Tài khoản Ban giám hiệu có quyền chỉnh sửa các thông tin cá nhân.",
+    "teacherReadOnlyNotice": "Tài khoản giáo viên ở chế độ chỉ xem thông tin cá nhân. Vui lòng liên hệ Ban giám hiệu khi cần điều chỉnh."
   }
 }
