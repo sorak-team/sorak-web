@@ -1358,6 +1358,10 @@
     "securitySubtitle": "Quản lý mật khẩu đăng nhập và các lớp bảo vệ an toàn cho tài khoản",
     "changePasswordTitle": "Đổi mật khẩu",
     "changePasswordDesc": "Cập nhật mật khẩu định kỳ để nâng cao tính an toàn",
-    "currentPassword": "Mật khẩu hiện tại"
+    "currentPassword": "Mật khẩu hiện tại",
+    "newPassword": "Mật khẩu mới",
+    "newPasswordPlaceholder": "Tối thiểu 6 ký tự",
+    "confirmPassword": "Xác nhận mật khẩu",
+    "confirmPasswordPlaceholder": "Nhập lại mật khẩu mới"
   }
 }

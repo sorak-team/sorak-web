@@ -1358,6 +1358,10 @@
     "securitySubtitle": "Manage sign-in password and account protection layers",
     "changePasswordTitle": "Change Password",
     "changePasswordDesc": "Periodically update your password to enhance security",
-    "currentPassword": "Current password"
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "newPasswordPlaceholder": "Minimum 6 characters",
+    "confirmPassword": "Confirm password",
+    "confirmPasswordPlaceholder": "Re-enter new password"
   }
 }
