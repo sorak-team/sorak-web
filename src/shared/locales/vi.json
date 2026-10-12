@@ -1347,6 +1347,10 @@
     "toastEmailVerifiedSuccess": "Xác thực và cập nhật email thành công!",
     "toastEmailOtpSent": "Đã gửi mã xác thực tới email mới!",
     "toastEmailInvalid": "Vui lòng nhập định dạng email hợp lệ.",
-    "toastEmailOtpInvalid": "Mã xác thực OTP không chính xác. Vui lòng thử lại."
+    "toastEmailOtpInvalid": "Mã xác thực OTP không chính xác. Vui lòng thử lại.",
+    "toastEmailNeedVerify": "Email mới cần được xác thực bằng mã OTP trước khi lưu.",
+    "role": "Vai trò",
+    "position": "Chức vụ",
+    "address": "Địa chỉ"
   }
 }
