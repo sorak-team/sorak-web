@@ -1354,6 +1354,10 @@
     "address": "Address",
     "saveChanges": "Save changes",
     "principalEditNote": "Principal accounts have permission to edit personal information.",
-    "teacherReadOnlyNotice": "Teacher accounts can only view personal information. Please contact the Principal for adjustments."
+    "teacherReadOnlyNotice": "Teacher accounts can only view personal information. Please contact the Principal for adjustments.",
+    "securitySubtitle": "Manage sign-in password and account protection layers",
+    "changePasswordTitle": "Change Password",
+    "changePasswordDesc": "Periodically update your password to enhance security",
+    "currentPassword": "Current password"
   }
 }

@@ -1354,6 +1354,10 @@
     "address": "Địa chỉ",
     "saveChanges": "Lưu thay đổi",
     "principalEditNote": "Tài khoản Ban giám hiệu có quyền chỉnh sửa các thông tin cá nhân.",
-    "teacherReadOnlyNotice": "Tài khoản giáo viên ở chế độ chỉ xem thông tin cá nhân. Vui lòng liên hệ Ban giám hiệu khi cần điều chỉnh."
+    "teacherReadOnlyNotice": "Tài khoản giáo viên ở chế độ chỉ xem thông tin cá nhân. Vui lòng liên hệ Ban giám hiệu khi cần điều chỉnh.",
+    "securitySubtitle": "Quản lý mật khẩu đăng nhập và các lớp bảo vệ an toàn cho tài khoản",
+    "changePasswordTitle": "Đổi mật khẩu",
+    "changePasswordDesc": "Cập nhật mật khẩu định kỳ để nâng cao tính an toàn",
+    "currentPassword": "Mật khẩu hiện tại"
   }
 }
