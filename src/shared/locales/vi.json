@@ -1344,6 +1344,9 @@
     "verifyEmailConfirmBtn": "Xác nhận & Cập nhật",
     "resendCode": "Gửi lại mã",
     "resendCodeIn": "Gửi lại sau {{seconds}}s",
-    "toastEmailVerifiedSuccess": "Xác thực và cập nhật email thành công!"
+    "toastEmailVerifiedSuccess": "Xác thực và cập nhật email thành công!",
+    "toastEmailOtpSent": "Đã gửi mã xác thực tới email mới!",
+    "toastEmailInvalid": "Vui lòng nhập định dạng email hợp lệ.",
+    "toastEmailOtpInvalid": "Mã xác thực OTP không chính xác. Vui lòng thử lại."
   }
 }

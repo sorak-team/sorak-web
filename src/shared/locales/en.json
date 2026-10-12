@@ -1344,6 +1344,9 @@
     "verifyEmailConfirmBtn": "Confirm & Update",
     "resendCode": "Resend code",
     "resendCodeIn": "Resend in {{seconds}}s",
-    "toastEmailVerifiedSuccess": "Email verified and updated successfully!"
+    "toastEmailVerifiedSuccess": "Email verified and updated successfully!",
+    "toastEmailOtpSent": "Verification code sent to new email!",
+    "toastEmailInvalid": "Please enter a valid email address.",
+    "toastEmailOtpInvalid": "Invalid OTP code. Please try again."
   }
 }
