@@ -1376,6 +1376,10 @@
     "twoFactorConfirming": "Đang xác nhận...",
     "twoFactorConfirmEnableBtn": "Xác nhận kích hoạt",
     "twoFactorDisablePrompt": "Nhập mật khẩu tài khoản hiện tại để xác nhận tắt 2FA:",
-    "twoFactorProcessing": "Đang xử lý..."
+    "twoFactorProcessing": "Đang xử lý...",
+    "twoFactorConfirmDisableBtn": "Xác nhận tắt",
+    "cancel": "Hủy",
+    "currentSessionTitle": "Phiên đăng nhập hiện tại",
+    "currentSessionDesc": "Thông tin thiết bị, mạng truy cập và lần hoạt động gần nhất từ hệ thống"
   }
 }

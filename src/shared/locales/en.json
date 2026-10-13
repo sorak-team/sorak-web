@@ -1376,6 +1376,10 @@
     "twoFactorConfirming": "Verifying...",
     "twoFactorConfirmEnableBtn": "Confirm & Enable",
     "twoFactorDisablePrompt": "Enter your current account password to confirm disabling 2FA:",
-    "twoFactorProcessing": "Processing..."
+    "twoFactorProcessing": "Processing...",
+    "twoFactorConfirmDisableBtn": "Confirm Disable",
+    "cancel": "Cancel",
+    "currentSessionTitle": "Current Active Session",
+    "currentSessionDesc": "Device details, access network, and last activity time recorded by system"
   }
 }
