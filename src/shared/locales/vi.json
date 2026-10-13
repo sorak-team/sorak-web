@@ -1391,6 +1391,10 @@
     "activeHoursAgo": "Hoạt động {{count}} giờ trước",
     "activeDaysAgo": "Hoạt động {{count}} ngày trước",
     "activeAtDate": "Hoạt động lúc {{time}}, {{date}}",
-    "otherActiveSessions": "Các phiên đăng nhập khác"
+    "otherActiveSessions": "Các phiên đăng nhập khác",
+    "revokeSession": "Đăng xuất",
+    "revoking": "Đang thu hồi...",
+    "sessionRevoked": "Đã thu hồi phiên đăng nhập",
+    "sessionRevokeFailed": "Không thể thu hồi phiên đăng nhập"
   }
 }
