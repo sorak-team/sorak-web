@@ -1384,6 +1384,9 @@
     "currentSessionBrowser": "Web Browser · Windows",
     "currentSessionLocation": "Sorak Cao Lanh Campus · Active just now",
     "thisDevice": "This device",
-    "refreshSessions": "Refresh sessions"
+    "refreshSessions": "Refresh sessions",
+    "refresh": "Refresh",
+    "activeNow": "Active just now",
+    "activeMinutesAgo": "Active {{count}}m ago"
   }
 }

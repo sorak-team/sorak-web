@@ -1384,6 +1384,9 @@
     "currentSessionBrowser": "Trình duyệt Web · Windows",
     "currentSessionLocation": "Cơ sở Sorak Cao Lãnh · Hoạt động vừa xong",
     "thisDevice": "Thiết bị này",
-    "refreshSessions": "Làm mới phiên đăng nhập"
+    "refreshSessions": "Làm mới phiên đăng nhập",
+    "refresh": "Làm mới",
+    "activeNow": "Hoạt động vừa xong",
+    "activeMinutesAgo": "Hoạt động {{count}} phút trước"
   }
 }
