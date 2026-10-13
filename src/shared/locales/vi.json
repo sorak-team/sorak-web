@@ -1362,6 +1362,9 @@
     "newPassword": "Mật khẩu mới",
     "newPasswordPlaceholder": "Tối thiểu 6 ký tự",
     "confirmPassword": "Xác nhận mật khẩu",
-    "confirmPasswordPlaceholder": "Nhập lại mật khẩu mới"
+    "confirmPasswordPlaceholder": "Nhập lại mật khẩu mới",
+    "changePasswordBtn": "Cập nhật mật khẩu",
+    "twoFactorTitle": "Xác thực 2 bước (2FA) qua Email",
+    "twoFactorEnabled": "Đang bật"
   }
 }
