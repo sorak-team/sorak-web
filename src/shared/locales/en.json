@@ -1391,6 +1391,10 @@
     "activeHoursAgo": "Active {{count}}h ago",
     "activeDaysAgo": "Active {{count}}d ago",
     "activeAtDate": "Active at {{time}}, {{date}}",
-    "otherActiveSessions": "Other active sessions"
+    "otherActiveSessions": "Other active sessions",
+    "revokeSession": "Sign out",
+    "revoking": "Revoking...",
+    "sessionRevoked": "Session revoked successfully",
+    "sessionRevokeFailed": "Failed to revoke session"
   }
 }
