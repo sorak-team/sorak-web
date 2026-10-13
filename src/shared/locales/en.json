@@ -1362,6 +1362,9 @@
     "newPassword": "New password",
     "newPasswordPlaceholder": "Minimum 6 characters",
     "confirmPassword": "Confirm password",
-    "confirmPasswordPlaceholder": "Re-enter new password"
+    "confirmPasswordPlaceholder": "Re-enter new password",
+    "changePasswordBtn": "Update password",
+    "twoFactorTitle": "Two-factor authentication (2FA) via Email",
+    "twoFactorEnabled": "Enabled"
   }
 }
