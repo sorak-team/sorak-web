@@ -1380,6 +1380,10 @@
     "twoFactorConfirmDisableBtn": "Xác nhận tắt",
     "cancel": "Hủy",
     "currentSessionTitle": "Phiên đăng nhập hiện tại",
-    "currentSessionDesc": "Thông tin thiết bị, mạng truy cập và lần hoạt động gần nhất từ hệ thống"
+    "currentSessionDesc": "Thông tin thiết bị, mạng truy cập và lần hoạt động gần nhất từ hệ thống",
+    "currentSessionBrowser": "Trình duyệt Web · Windows",
+    "currentSessionLocation": "Cơ sở Sorak Cao Lãnh · Hoạt động vừa xong",
+    "thisDevice": "Thiết bị này",
+    "refreshSessions": "Làm mới phiên đăng nhập"
   }
 }

@@ -1380,6 +1380,10 @@
     "twoFactorConfirmDisableBtn": "Confirm Disable",
     "cancel": "Cancel",
     "currentSessionTitle": "Current Active Session",
-    "currentSessionDesc": "Device details, access network, and last activity time recorded by system"
+    "currentSessionDesc": "Device details, access network, and last activity time recorded by system",
+    "currentSessionBrowser": "Web Browser · Windows",
+    "currentSessionLocation": "Sorak Cao Lanh Campus · Active just now",
+    "thisDevice": "This device",
+    "refreshSessions": "Refresh sessions"
   }
 }
