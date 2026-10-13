@@ -1387,6 +1387,10 @@
     "refreshSessions": "Làm mới phiên đăng nhập",
     "refresh": "Làm mới",
     "activeNow": "Hoạt động vừa xong",
-    "activeMinutesAgo": "Hoạt động {{count}} phút trước"
+    "activeMinutesAgo": "Hoạt động {{count}} phút trước",
+    "activeHoursAgo": "Hoạt động {{count}} giờ trước",
+    "activeDaysAgo": "Hoạt động {{count}} ngày trước",
+    "activeAtDate": "Hoạt động lúc {{time}}, {{date}}",
+    "otherActiveSessions": "Các phiên đăng nhập khác"
   }
 }
