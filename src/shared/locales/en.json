@@ -1387,6 +1387,10 @@
     "refreshSessions": "Refresh sessions",
     "refresh": "Refresh",
     "activeNow": "Active just now",
-    "activeMinutesAgo": "Active {{count}}m ago"
+    "activeMinutesAgo": "Active {{count}}m ago",
+    "activeHoursAgo": "Active {{count}}h ago",
+    "activeDaysAgo": "Active {{count}}d ago",
+    "activeAtDate": "Active at {{time}}, {{date}}",
+    "otherActiveSessions": "Other active sessions"
   }
 }
