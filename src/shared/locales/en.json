@@ -1365,6 +1365,10 @@
     "confirmPasswordPlaceholder": "Re-enter new password",
     "changePasswordBtn": "Update password",
     "twoFactorTitle": "Two-factor authentication (2FA) via Email",
-    "twoFactorEnabled": "Enabled"
+    "twoFactorEnabled": "Enabled",
+    "twoFactorDisabled": "Disabled",
+    "twoFactorDesc": "When enabled, you will be required to enter a 6-digit OTP sent to your email whenever you sign in from a new session.",
+    "twoFactorDisableBtn": "Disable 2FA",
+    "twoFactorEnableBtn": "Enable 2FA Now"
   }
 }

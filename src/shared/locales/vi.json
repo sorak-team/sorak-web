@@ -1365,6 +1365,10 @@
     "confirmPasswordPlaceholder": "Nhập lại mật khẩu mới",
     "changePasswordBtn": "Cập nhật mật khẩu",
     "twoFactorTitle": "Xác thực 2 bước (2FA) qua Email",
-    "twoFactorEnabled": "Đang bật"
+    "twoFactorEnabled": "Đang bật",
+    "twoFactorDisabled": "Chưa bật",
+    "twoFactorDesc": "Khi bật, hệ thống sẽ yêu cầu nhập mã OTP gồm 6 chữ số gửi tới email mỗi khi bạn đăng nhập từ phiên làm việc mới.",
+    "twoFactorDisableBtn": "Tắt 2FA",
+    "twoFactorEnableBtn": "Bật 2FA ngay"
   }
 }
