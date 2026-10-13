@@ -1373,6 +1373,9 @@
     "twoFactorSending": "Đang gửi mã...",
     "twoFactorOtpPrompt": "Nhập mã xác thực OTP 6 chữ số gửi tới email của bạn:",
     "twoFactorOtpPlaceholder": "Nhập mã 6 chữ số",
-    "twoFactorConfirming": "Đang xác nhận..."
+    "twoFactorConfirming": "Đang xác nhận...",
+    "twoFactorConfirmEnableBtn": "Xác nhận kích hoạt",
+    "twoFactorDisablePrompt": "Nhập mật khẩu tài khoản hiện tại để xác nhận tắt 2FA:",
+    "twoFactorProcessing": "Đang xử lý..."
   }
 }

@@ -1373,6 +1373,9 @@
     "twoFactorSending": "Sending code...",
     "twoFactorOtpPrompt": "Enter the 6-digit OTP verification code sent to your email:",
     "twoFactorOtpPlaceholder": "Enter 6-digit code",
-    "twoFactorConfirming": "Verifying..."
+    "twoFactorConfirming": "Verifying...",
+    "twoFactorConfirmEnableBtn": "Confirm & Enable",
+    "twoFactorDisablePrompt": "Enter your current account password to confirm disabling 2FA:",
+    "twoFactorProcessing": "Processing..."
   }
 }
