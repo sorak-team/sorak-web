@@ -1395,6 +1395,9 @@
     "revokeSession": "Đăng xuất",
     "revoking": "Đang thu hồi...",
     "sessionRevoked": "Đã thu hồi phiên đăng nhập",
-    "sessionRevokeFailed": "Không thể thu hồi phiên đăng nhập"
+    "sessionRevokeFailed": "Không thể thu hồi phiên đăng nhập",
+    "revokeOtherSessions": "Đăng xuất các thiết bị khác",
+    "revokeOtherSessionsConfirm": "Bạn có chắc chắn muốn đăng xuất tài khoản khỏi tất cả các thiết bị khác?",
+    "otherSessionsRevoked": "Đã đăng xuất khỏi tất cả các thiết bị khác thành công"
   }
 }

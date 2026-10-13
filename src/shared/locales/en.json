@@ -1395,6 +1395,9 @@
     "revokeSession": "Sign out",
     "revoking": "Revoking...",
     "sessionRevoked": "Session revoked successfully",
-    "sessionRevokeFailed": "Failed to revoke session"
+    "sessionRevokeFailed": "Failed to revoke session",
+    "revokeOtherSessions": "Sign out other devices",
+    "revokeOtherSessionsConfirm": "Are you sure you want to sign out of all other devices?",
+    "otherSessionsRevoked": "Signed out of all other devices successfully"
   }
 }
