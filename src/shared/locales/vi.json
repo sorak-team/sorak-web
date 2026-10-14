@@ -1398,6 +1398,10 @@
     "sessionRevokeFailed": "Không thể thu hồi phiên đăng nhập",
     "revokeOtherSessions": "Đăng xuất các thiết bị khác",
     "revokeOtherSessionsConfirm": "Bạn có chắc chắn muốn đăng xuất tài khoản khỏi tất cả các thiết bị khác?",
-    "otherSessionsRevoked": "Đã đăng xuất khỏi tất cả các thiết bị khác thành công"
+    "otherSessionsRevoked": "Đã đăng xuất khỏi tất cả các thiết bị khác thành công",
+    "otherSessionsRevokeFailed": "Không thể đăng xuất các thiết bị khác",
+    "logoutAllTitle": "Đăng xuất khỏi tất cả thiết bị",
+    "logoutAllDesc": "Đăng xuất tài khoản khỏi tất cả thiết bị (bao gồm thiết bị này)",
+    "logoutAllBtn": "Đăng xuất tất cả thiết bị"
   }
 }

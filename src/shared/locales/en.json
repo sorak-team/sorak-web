@@ -1398,6 +1398,10 @@
     "sessionRevokeFailed": "Failed to revoke session",
     "revokeOtherSessions": "Sign out other devices",
     "revokeOtherSessionsConfirm": "Are you sure you want to sign out of all other devices?",
-    "otherSessionsRevoked": "Signed out of all other devices successfully"
+    "otherSessionsRevoked": "Signed out of all other devices successfully",
+    "otherSessionsRevokeFailed": "Failed to sign out other devices",
+    "logoutAllTitle": "Sign out of all devices",
+    "logoutAllDesc": "Sign out of all active devices (including this one)",
+    "logoutAllBtn": "Sign out all devices"
   }
 }
