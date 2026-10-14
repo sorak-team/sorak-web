@@ -1406,6 +1406,9 @@
     "logoutAllConfirm": "Are you sure you want to sign out of all devices? You will need to log back in on this device.",
     "allSessionsRevoked": "Signed out of all devices",
     "allSessionsRevokeFailed": "Failed to sign out of all devices",
-    "notificationsSubtitle": "Customize the notifications you want to receive via Email and on the system"
+    "notificationsSubtitle": "Customize the notifications you want to receive via Email and on the system",
+    "emailNotifTitle": "Email Notifications",
+    "notifAcademic": "Class Activities & Attendance",
+    "notifAcademicDesc": "Receive email when a class has incomplete attendance or updated contact books"
   }
 }
