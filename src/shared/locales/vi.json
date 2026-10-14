@@ -1402,6 +1402,10 @@
     "otherSessionsRevokeFailed": "Không thể đăng xuất các thiết bị khác",
     "logoutAllTitle": "Đăng xuất khỏi tất cả thiết bị",
     "logoutAllDesc": "Đăng xuất tài khoản khỏi tất cả thiết bị (bao gồm thiết bị này)",
-    "logoutAllBtn": "Đăng xuất tất cả thiết bị"
+    "logoutAllBtn": "Đăng xuất tất cả thiết bị",
+    "logoutAllConfirm": "Bạn có chắc chắn muốn đăng xuất khỏi tất cả thiết bị? Bạn sẽ cần đăng nhập lại trên thiết bị này.",
+    "allSessionsRevoked": "Đã đăng xuất khỏi tất cả thiết bị",
+    "allSessionsRevokeFailed": "Không thể đăng xuất tất cả thiết bị",
+    "notificationsSubtitle": "Tùy chỉnh các thông báo bạn muốn nhận qua Email và trên hệ thống"
   }
 }

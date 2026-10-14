@@ -1402,6 +1402,10 @@
     "otherSessionsRevokeFailed": "Failed to sign out other devices",
     "logoutAllTitle": "Sign out of all devices",
     "logoutAllDesc": "Sign out of all active devices (including this one)",
-    "logoutAllBtn": "Sign out all devices"
+    "logoutAllBtn": "Sign out all devices",
+    "logoutAllConfirm": "Are you sure you want to sign out of all devices? You will need to log back in on this device.",
+    "allSessionsRevoked": "Signed out of all devices",
+    "allSessionsRevokeFailed": "Failed to sign out of all devices",
+    "notificationsSubtitle": "Customize the notifications you want to receive via Email and on the system"
   }
 }
