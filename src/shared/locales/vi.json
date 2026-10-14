@@ -1409,6 +1409,10 @@
     "notificationsSubtitle": "Tùy chỉnh các thông báo bạn muốn nhận qua Email và trên hệ thống",
     "emailNotifTitle": "Thông báo qua Email",
     "notifAcademic": "Hoạt động lớp học & Điểm danh",
-    "notifAcademicDesc": "Nhận email khi có lớp chưa hoàn tất điểm danh hoặc cập nhật sổ liên lạc"
+    "notifAcademicDesc": "Nhận email khi có lớp chưa hoàn tất điểm danh hoặc cập nhật sổ liên lạc",
+    "notifTransfers": "Đơn xin nghỉ & Yêu cầu chuyển lớp",
+    "notifTransfersDesc": "Nhận email thông báo ngay khi phụ huynh nộp đơn mới cần phê duyệt",
+    "notifSecurity": "Cảnh báo bảo mật tài khoản",
+    "notifSecurityDesc": "Nhận email khi có đăng nhập từ thiết bị lạ hoặc thay đổi mật khẩu"
   }
 }
