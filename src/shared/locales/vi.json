@@ -1406,6 +1406,9 @@
     "logoutAllConfirm": "Bạn có chắc chắn muốn đăng xuất khỏi tất cả thiết bị? Bạn sẽ cần đăng nhập lại trên thiết bị này.",
     "allSessionsRevoked": "Đã đăng xuất khỏi tất cả thiết bị",
     "allSessionsRevokeFailed": "Không thể đăng xuất tất cả thiết bị",
-    "notificationsSubtitle": "Tùy chỉnh các thông báo bạn muốn nhận qua Email và trên hệ thống"
+    "notificationsSubtitle": "Tùy chỉnh các thông báo bạn muốn nhận qua Email và trên hệ thống",
+    "emailNotifTitle": "Thông báo qua Email",
+    "notifAcademic": "Hoạt động lớp học & Điểm danh",
+    "notifAcademicDesc": "Nhận email khi có lớp chưa hoàn tất điểm danh hoặc cập nhật sổ liên lạc"
   }
 }
