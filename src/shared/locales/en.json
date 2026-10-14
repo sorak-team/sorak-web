@@ -1409,6 +1409,10 @@
     "notificationsSubtitle": "Customize the notifications you want to receive via Email and on the system",
     "emailNotifTitle": "Email Notifications",
     "notifAcademic": "Class Activities & Attendance",
-    "notifAcademicDesc": "Receive email when a class has incomplete attendance or updated contact books"
+    "notifAcademicDesc": "Receive email when a class has incomplete attendance or updated contact books",
+    "notifTransfers": "Leave Requests & Class Transfers",
+    "notifTransfersDesc": "Receive immediate email alerts when parents submit new requests for approval",
+    "notifSecurity": "Account Security Alerts",
+    "notifSecurityDesc": "Receive email on sign-in from unrecognized devices or password changes"
   }
 }
