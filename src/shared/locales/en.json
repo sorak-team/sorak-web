@@ -1452,6 +1452,9 @@
     "ratingGood": "Proficient / Outstanding",
     "comment": "Teacher Feedback",
     "saveAssessment": "Save Assessment",
-    "saveSuccess": "Assessment saved successfully!"
+    "saveSuccess": "Assessment saved successfully!",
+    "saveError": "Failed to save assessment. Please try again.",
+    "ageGroupCriteria": "Criteria by Age Group",
+    "tabDaily": "Daily Assessment"
   }
 }
