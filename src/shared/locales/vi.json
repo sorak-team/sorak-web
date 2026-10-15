@@ -1413,6 +1413,10 @@
     "notifTransfers": "Đơn xin nghỉ & Yêu cầu chuyển lớp",
     "notifTransfersDesc": "Nhận email thông báo ngay khi phụ huynh nộp đơn mới cần phê duyệt",
     "notifSecurity": "Cảnh báo bảo mật tài khoản",
-    "notifSecurityDesc": "Nhận email khi có đăng nhập từ thiết bị lạ hoặc thay đổi mật khẩu"
+    "notifSecurityDesc": "Nhận email khi có đăng nhập từ thiết bị lạ hoặc thay đổi mật khẩu",
+    "systemNotifTitle": "Thông báo trên hệ thống",
+    "notifBrowserPush": "Thông báo đẩy trên trình duyệt",
+    "notifBrowserPushDesc": "Hiển thị pop-up thông báo nhanh ở góc màn hình máy tính",
+    "notifSound": "Âm thanh thông báo"
   }
 }
