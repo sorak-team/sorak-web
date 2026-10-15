@@ -1424,6 +1424,10 @@
     "themeModeDesc": "Choose a color theme that suits your working lighting conditions",
     "themeLight": "Light Theme",
     "themeDark": "Dark Theme",
-    "themeAuto": "Auto"
+    "themeAuto": "Auto",
+    "themeSystem": "System Default",
+    "languageSubtitle": "Choose display language and date/time format for the system",
+    "displayLanguageTitle": "Display Language",
+    "displayLanguageDesc": "Change language for the entire workspace interface"
   }
 }
