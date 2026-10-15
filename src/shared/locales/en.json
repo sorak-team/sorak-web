@@ -1428,6 +1428,9 @@
     "themeSystem": "System Default",
     "languageSubtitle": "Choose display language and date/time format for the system",
     "displayLanguageTitle": "Display Language",
-    "displayLanguageDesc": "Change language for the entire workspace interface"
+    "displayLanguageDesc": "Change language for the entire workspace interface",
+    "defaultLanguage": "Default language",
+    "langEnSub": "International (US)",
+    "regionTitle": "Region & Time Format"
   }
 }

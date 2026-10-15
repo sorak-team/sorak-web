@@ -1428,6 +1428,9 @@
     "themeSystem": "Theo hệ thống",
     "languageSubtitle": "Chọn ngôn ngữ hiển thị và định dạng ngày giờ cho hệ thống",
     "displayLanguageTitle": "Ngôn ngữ hiển thị",
-    "displayLanguageDesc": "Thay đổi ngôn ngữ toàn bộ giao diện làm việc"
+    "displayLanguageDesc": "Thay đổi ngôn ngữ toàn bộ giao diện làm việc",
+    "defaultLanguage": "Ngôn ngữ mặc định",
+    "langEnSub": "Quốc tế (US)",
+    "regionTitle": "Khu vực & Định dạng thời gian"
   }
 }
