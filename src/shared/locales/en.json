@@ -1455,6 +1455,10 @@
     "saveSuccess": "Assessment saved successfully!",
     "saveError": "Failed to save assessment. Please try again.",
     "ageGroupCriteria": "Criteria by Age Group",
-    "tabDaily": "Daily Assessment"
+    "tabDaily": "Daily Assessment",
+    "tabMonthly": "Monthly Assessment",
+    "tabSemester": "Semester Assessment",
+    "dailyTitle": "Daily Routine Activities & Objectives Evaluation",
+    "monthlyTitle": "Monthly Evaluation — Digital Good Behavior Booklet"
   }
 }
