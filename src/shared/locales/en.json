@@ -1420,6 +1420,10 @@
     "notifSound": "Notification Sound",
     "notifSoundDesc": "Play a subtle sound when a new notification arrives",
     "appearanceSubtitle": "Customize light and dark display modes and system styling",
-    "themeModeTitle": "Theme Color Mode"
+    "themeModeTitle": "Theme Color Mode",
+    "themeModeDesc": "Choose a color theme that suits your working lighting conditions",
+    "themeLight": "Light Theme",
+    "themeDark": "Dark Theme",
+    "themeAuto": "Auto"
   }
 }

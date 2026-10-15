@@ -1420,6 +1420,10 @@
     "notifSound": "Âm thanh thông báo",
     "notifSoundDesc": "Phát âm thanh nhẹ khi có thông báo mới gửi đến",
     "appearanceSubtitle": "Tùy chỉnh chế độ hiển thị sáng, tối và kiểu dáng hệ thống",
-    "themeModeTitle": "Chế độ màu giao diện"
+    "themeModeTitle": "Chế độ màu giao diện",
+    "themeModeDesc": "Chọn chủ đề màu phù hợp với điều kiện ánh sáng làm việc của bạn",
+    "themeLight": "Giao diện Sáng",
+    "themeDark": "Giao diện Tối",
+    "themeAuto": "Tự động"
   }
 }
