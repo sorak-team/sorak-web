@@ -1435,6 +1435,10 @@
     "regionDesc": "Chuẩn hiển thị ngày giờ trong hồ sơ học sinh và báo cáo",
     "dateFormatLabel": "Định dạng ngày tháng",
     "dateFormatExample": "DD/MM/YYYY (Ví dụ: 15/10/2026)",
-    "timezoneLabel": "Múi giờ hệ thống"
+    "timezoneLabel": "Múi giờ hệ thống",
+    "timezoneValue": "(GMT+07:00) Giờ Đông Dương (Hà Nội, TP.HCM)",
+    "toastSaveSuccess": "Đã lưu thay đổi hồ sơ thành công!",
+    "toastPasswordSuccess": "Đã đổi mật khẩu thành công!",
+    "toastAvatarReset": "Đã đặt lại ảnh đại diện theo tên"
   }
 }

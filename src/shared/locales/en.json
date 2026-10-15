@@ -1435,6 +1435,10 @@
     "regionDesc": "Standard date/time display in student records and reports",
     "dateFormatLabel": "Date Format",
     "dateFormatExample": "DD/MM/YYYY (e.g. 15/10/2026)",
-    "timezoneLabel": "System Timezone"
+    "timezoneLabel": "System Timezone",
+    "timezoneValue": "(GMT+07:00) Indochina Time (Hanoi, Ho Chi Minh)",
+    "toastSaveSuccess": "Profile changes saved successfully!",
+    "toastPasswordSuccess": "Password updated successfully!",
+    "toastAvatarReset": "Reset avatar to initials successfully"
   }
 }
