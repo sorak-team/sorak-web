@@ -1455,6 +1455,10 @@
     "saveSuccess": "Lưu đánh giá thành công!",
     "saveError": "Không thể lưu đánh giá. Vui lòng thử lại.",
     "ageGroupCriteria": "Tiêu chí theo độ tuổi",
-    "tabDaily": "Đánh giá ngày"
+    "tabDaily": "Đánh giá ngày",
+    "tabMonthly": "Sổ bé ngoan",
+    "tabSemester": "Đánh giá học kỳ",
+    "dailyTitle": "Đánh giá hoạt động & mục tiêu trong ngày",
+    "monthlyTitle": "Sổ bé ngoan"
   }
 }
