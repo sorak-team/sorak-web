@@ -1417,6 +1417,9 @@
     "systemNotifTitle": "System Notifications",
     "notifBrowserPush": "Browser Push Notifications",
     "notifBrowserPushDesc": "Show quick notification pop-ups in the corner of your screen",
-    "notifSound": "Notification Sound"
+    "notifSound": "Notification Sound",
+    "notifSoundDesc": "Play a subtle sound when a new notification arrives",
+    "appearanceSubtitle": "Customize light and dark display modes and system styling",
+    "themeModeTitle": "Theme Color Mode"
   }
 }
