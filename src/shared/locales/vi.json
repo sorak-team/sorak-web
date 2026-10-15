@@ -1417,6 +1417,9 @@
     "systemNotifTitle": "Thông báo trên hệ thống",
     "notifBrowserPush": "Thông báo đẩy trên trình duyệt",
     "notifBrowserPushDesc": "Hiển thị pop-up thông báo nhanh ở góc màn hình máy tính",
-    "notifSound": "Âm thanh thông báo"
+    "notifSound": "Âm thanh thông báo",
+    "notifSoundDesc": "Phát âm thanh nhẹ khi có thông báo mới gửi đến",
+    "appearanceSubtitle": "Tùy chỉnh chế độ hiển thị sáng, tối và kiểu dáng hệ thống",
+    "themeModeTitle": "Chế độ màu giao diện"
   }
 }
