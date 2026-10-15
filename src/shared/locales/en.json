@@ -1440,5 +1440,10 @@
     "toastSaveSuccess": "Profile changes saved successfully!",
     "toastPasswordSuccess": "Password updated successfully!",
     "toastAvatarReset": "Reset avatar to initials successfully"
+  },
+  "assessment": {
+    "title": "Periodic Assessment",
+    "subtitle": "Track and evaluate student developmental milestones across monthly and semester criteria",
+    "panelTitle": "Weekly Assessment"
   }
 }

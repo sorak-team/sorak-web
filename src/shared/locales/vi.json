@@ -1440,5 +1440,10 @@
     "toastSaveSuccess": "Đã lưu thay đổi hồ sơ thành công!",
     "toastPasswordSuccess": "Đã đổi mật khẩu thành công!",
     "toastAvatarReset": "Đã đặt lại ảnh đại diện theo tên"
+  },
+  "assessment": {
+    "title": "Đánh giá giai đoạn",
+    "subtitle": "Theo dõi và đánh giá sự phát triển của trẻ theo các tiêu chuẩn tháng và học kỳ",
+    "panelTitle": "Đánh giá tuần"
   }
 }
