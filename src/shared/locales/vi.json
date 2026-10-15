@@ -1452,6 +1452,9 @@
     "ratingGood": "Tốt / Vượt trội",
     "comment": "Nhận xét của giáo viên",
     "saveAssessment": "Lưu đánh giá",
-    "saveSuccess": "Lưu đánh giá thành công!"
+    "saveSuccess": "Lưu đánh giá thành công!",
+    "saveError": "Không thể lưu đánh giá. Vui lòng thử lại.",
+    "ageGroupCriteria": "Tiêu chí theo độ tuổi",
+    "tabDaily": "Đánh giá ngày"
   }
 }
