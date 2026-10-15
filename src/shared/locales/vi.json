@@ -1431,6 +1431,10 @@
     "displayLanguageDesc": "Thay đổi ngôn ngữ toàn bộ giao diện làm việc",
     "defaultLanguage": "Ngôn ngữ mặc định",
     "langEnSub": "Quốc tế (US)",
-    "regionTitle": "Khu vực & Định dạng thời gian"
+    "regionTitle": "Khu vực & Định dạng thời gian",
+    "regionDesc": "Chuẩn hiển thị ngày giờ trong hồ sơ học sinh và báo cáo",
+    "dateFormatLabel": "Định dạng ngày tháng",
+    "dateFormatExample": "DD/MM/YYYY (Ví dụ: 15/10/2026)",
+    "timezoneLabel": "Múi giờ hệ thống"
   }
 }
