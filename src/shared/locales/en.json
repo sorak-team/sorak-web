@@ -1431,6 +1431,10 @@
     "displayLanguageDesc": "Change language for the entire workspace interface",
     "defaultLanguage": "Default language",
     "langEnSub": "International (US)",
-    "regionTitle": "Region & Time Format"
+    "regionTitle": "Region & Time Format",
+    "regionDesc": "Standard date/time display in student records and reports",
+    "dateFormatLabel": "Date Format",
+    "dateFormatExample": "DD/MM/YYYY (e.g. 15/10/2026)",
+    "timezoneLabel": "System Timezone"
   }
 }
