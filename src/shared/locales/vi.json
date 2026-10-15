@@ -1444,6 +1444,10 @@
   "assessment": {
     "title": "Đánh giá giai đoạn",
     "subtitle": "Theo dõi và đánh giá sự phát triển của trẻ theo các tiêu chuẩn tháng và học kỳ",
-    "panelTitle": "Đánh giá tuần"
+    "panelTitle": "Đánh giá tuần",
+    "criteria": "Tiêu chí đánh giá",
+    "rating": "Mức độ đạt được",
+    "ratingPass": "Đạt",
+    "ratingFail": "Chưa đạt"
   }
 }

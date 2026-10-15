@@ -1444,6 +1444,10 @@
   "assessment": {
     "title": "Periodic Assessment",
     "subtitle": "Track and evaluate student developmental milestones across monthly and semester criteria",
-    "panelTitle": "Weekly Assessment"
+    "panelTitle": "Weekly Assessment",
+    "criteria": "Assessment Criteria",
+    "rating": "Attainment Level",
+    "ratingPass": "Passed",
+    "ratingFail": "Not Yet Passed"
   }
 }
