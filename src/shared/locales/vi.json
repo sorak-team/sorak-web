@@ -1424,6 +1424,10 @@
     "themeModeDesc": "Chọn chủ đề màu phù hợp với điều kiện ánh sáng làm việc của bạn",
     "themeLight": "Giao diện Sáng",
     "themeDark": "Giao diện Tối",
-    "themeAuto": "Tự động"
+    "themeAuto": "Tự động",
+    "themeSystem": "Theo hệ thống",
+    "languageSubtitle": "Chọn ngôn ngữ hiển thị và định dạng ngày giờ cho hệ thống",
+    "displayLanguageTitle": "Ngôn ngữ hiển thị",
+    "displayLanguageDesc": "Thay đổi ngôn ngữ toàn bộ giao diện làm việc"
   }
 }
