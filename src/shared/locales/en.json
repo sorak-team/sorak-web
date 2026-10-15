@@ -1413,6 +1413,10 @@
     "notifTransfers": "Leave Requests & Class Transfers",
     "notifTransfersDesc": "Receive immediate email alerts when parents submit new requests for approval",
     "notifSecurity": "Account Security Alerts",
-    "notifSecurityDesc": "Receive email on sign-in from unrecognized devices or password changes"
+    "notifSecurityDesc": "Receive email on sign-in from unrecognized devices or password changes",
+    "systemNotifTitle": "System Notifications",
+    "notifBrowserPush": "Browser Push Notifications",
+    "notifBrowserPushDesc": "Show quick notification pop-ups in the corner of your screen",
+    "notifSound": "Notification Sound"
   }
 }
