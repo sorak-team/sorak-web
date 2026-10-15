@@ -1448,6 +1448,10 @@
     "criteria": "Tiêu chí đánh giá",
     "rating": "Mức độ đạt được",
     "ratingPass": "Đạt",
-    "ratingFail": "Chưa đạt"
+    "ratingFail": "Chưa đạt",
+    "ratingGood": "Tốt / Vượt trội",
+    "comment": "Nhận xét của giáo viên",
+    "saveAssessment": "Lưu đánh giá",
+    "saveSuccess": "Lưu đánh giá thành công!"
   }
 }
