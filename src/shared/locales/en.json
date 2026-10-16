@@ -1477,6 +1477,10 @@
     "evaluationStatus": "Evaluation status",
     "monthlySummary": "Monthly summary",
     "flowerSuggest": "Suggest roses",
-    "autoSuggestTooltip": "Automatically evaluate and award roses for all 5 weeks based on configured criteria"
+    "autoSuggestTooltip": "Automatically evaluate and award roses for all 5 weeks based on configured criteria",
+    "configSuggestTooltip": "Configure flower suggestion criteria",
+    "roseCount": "Rose count",
+    "lotusFlower": "Lotus",
+    "teacherNotes": "Teacher comments"
   }
 }

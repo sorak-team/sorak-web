@@ -1477,6 +1477,10 @@
     "evaluationStatus": "Trạng thái đánh giá",
     "monthlySummary": "Tổng kết tháng",
     "flowerSuggest": "Gợi ý tặng hoa",
-    "autoSuggestTooltip": "Tự động xét và trao hoa cả 5 tuần theo tiêu chí đã cấu hình"
+    "autoSuggestTooltip": "Tự động xét và trao hoa cả 5 tuần theo tiêu chí đã cấu hình",
+    "configSuggestTooltip": "Cấu hình tiêu chí gợi ý tặng hoa",
+    "roseCount": "Số lượng hoa hồng",
+    "lotusFlower": "Hoa sen",
+    "teacherNotes": "Nhận xét của giáo viên"
   }
 }
