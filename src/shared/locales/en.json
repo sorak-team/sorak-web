@@ -1503,6 +1503,9 @@
     "healthStandardLabel": "3. Health standard (latest examination)",
     "unlimited": "Unlimited",
     "statusCount": "{{count}} statuses",
-    "healthStandardDesc": "Select health statuses eligible for receiving flowers:"
+    "healthStandardDesc": "Select health statuses eligible for receiving flowers:",
+    "healthNormalDesc": "Normal growth according to standards",
+    "healthUnderweightDesc": "Underweight but good daily routine",
+    "healthOverweightDesc": "Child needs portion control"
   }
 }
