@@ -1485,6 +1485,9 @@
     "parentFeedback": "Ý kiến phụ huynh",
     "weeklyAttendance": "Chuyên cần tuần",
     "lessonGoals": "Mục tiêu bài học",
-    "weeklyHealth": "Sức khỏe tuần"
+    "weeklyHealth": "Sức khỏe tuần",
+    "roseFlower": "Hoa hồng",
+    "flowersUnit": "hoa",
+    "sessionsUnit": "buổi"
   }
 }

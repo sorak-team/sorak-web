@@ -1485,6 +1485,9 @@
     "parentFeedback": "Parent feedback",
     "weeklyAttendance": "Weekly attendance",
     "lessonGoals": "Lesson goals",
-    "weeklyHealth": "Weekly health"
+    "weeklyHealth": "Weekly health",
+    "roseFlower": "Rose",
+    "flowersUnit": "roses",
+    "sessionsUnit": "sessions"
   }
 }
