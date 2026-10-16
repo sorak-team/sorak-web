@@ -1466,6 +1466,10 @@
     "dailyDesc": "Theo dõi và đánh giá kết quả đạt hay chưa đạt mục tiêu theo từng tiết học trong ngày",
     "tabSemester1": "Học kỳ 1",
     "tabSemester2": "Học kỳ 2",
-    "monthlyBookTitle": "Sổ bé ngoan tháng {{month}}"
+    "monthlyBookTitle": "Sổ bé ngoan tháng {{month}}",
+    "monthlyBookDesc": "Theo dõi hoa bé ngoan hằng tuần, xét tặng Bông Sen Cháu ngoan Bác Hồ và phản hồi phụ huynh",
+    "filterAllStatus": "Tất cả trạng thái",
+    "filterLotus": "Đạt Bông Sen Cháu ngoan Bác Hồ",
+    "filterNotLotus": "Đang rèn luyện"
   }
 }
