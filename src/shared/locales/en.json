@@ -1459,6 +1459,10 @@
     "tabMonthly": "Monthly Assessment",
     "tabSemester": "Semester Assessment",
     "dailyTitle": "Daily Routine Activities & Objectives Evaluation",
-    "monthlyTitle": "Monthly Evaluation — Digital Good Behavior Booklet"
+    "monthlyTitle": "Monthly Evaluation — Digital Good Behavior Booklet",
+    "semesterTitle": "Semester Assessment — 5 MOET Developmental Domains",
+    "monthlyDesc": "Evaluate emulation rankings, award good behavior certificates, and record monthly reviews",
+    "semesterDesc": "Assess student developmental milestone attainment across 5 MOET domains at semester end",
+    "dailyDesc": "Track and evaluate student objective attainment for daily routine activities and periods"
   }
 }

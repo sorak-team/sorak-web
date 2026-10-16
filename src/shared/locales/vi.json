@@ -1459,6 +1459,10 @@
     "tabMonthly": "Sổ bé ngoan",
     "tabSemester": "Đánh giá học kỳ",
     "dailyTitle": "Đánh giá hoạt động & mục tiêu trong ngày",
-    "monthlyTitle": "Sổ bé ngoan"
+    "monthlyTitle": "Sổ bé ngoan",
+    "semesterTitle": "Đánh giá học kỳ — 5 Lĩnh vực phát triển (Bộ GD&ĐT)",
+    "monthlyDesc": "Đánh giá xếp loại thi đua, trao hoa bé ngoan và ghi nhận nhận xét định kỳ hằng tháng",
+    "semesterDesc": "Đánh giá mức độ đạt chuẩn phát triển của trẻ theo 5 lĩnh vực giáo dục cuối học kỳ",
+    "dailyDesc": "Theo dõi và đánh giá kết quả đạt hay chưa đạt mục tiêu theo từng tiết học trong ngày"
   }
 }
