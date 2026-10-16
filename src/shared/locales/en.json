@@ -1470,6 +1470,10 @@
     "monthlyBookDesc": "Track weekly behavior roses, award Uncle Ho's Good Grandchild Lotus, and monitor parent feedback",
     "filterAllStatus": "All statuses",
     "filterLotus": "Awarded Uncle Ho's Good Grandchild Lotus",
-    "filterNotLotus": "In training"
+    "filterNotLotus": "In training",
+    "filterEvaluated": "Evaluated",
+    "filterNotEvaluated": "Not evaluated",
+    "filterFeedback": "Has parent feedback",
+    "evaluationStatus": "Evaluation status"
   }
 }
