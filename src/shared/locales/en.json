@@ -1510,6 +1510,10 @@
     "healthStuntedDesc": "Slow height growth",
     "onlyNormal": "Normal only",
     "normalAndUnderweight": "Normal & Underweight",
-    "allHealthStatuses": "All health conditions"
+    "allHealthStatuses": "All health conditions",
+    "saveAndApply": "Save & Apply",
+    "parentFeedbackTitle": "Feedback from Parents",
+    "feedbackCountInMonth": "{{current}} / {{total}} feedback entries this month",
+    "classPrefix": "Class {{className}}"
   }
 }

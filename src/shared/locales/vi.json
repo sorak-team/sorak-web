@@ -1510,6 +1510,10 @@
     "healthStuntedDesc": "Trẻ chậm phát triển chiều cao",
     "onlyNormal": "Chỉ Bình thường",
     "normalAndUnderweight": "Bình thường & Nhẹ cân",
-    "allHealthStatuses": "Tất cả tình trạng"
+    "allHealthStatuses": "Tất cả tình trạng",
+    "saveAndApply": "Lưu & Áp dụng",
+    "parentFeedbackTitle": "Ý kiến phản hồi từ phụ huynh",
+    "feedbackCountInMonth": "{{current}} / {{total}} phản hồi trong tháng",
+    "classPrefix": "Lớp {{className}}"
   }
 }
