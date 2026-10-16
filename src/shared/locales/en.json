@@ -1488,6 +1488,10 @@
     "weeklyHealth": "Weekly health",
     "roseFlower": "Rose",
     "flowersUnit": "roses",
-    "sessionsUnit": "sessions"
+    "sessionsUnit": "sessions",
+    "goalsUnit": "goals",
+    "lotusTitle": "Uncle Ho's Good Grandchild Lotus",
+    "monthlyNotePlaceholder": "Enter overall monthly comments for the child...",
+    "configDrawerTitle": "Configure Flower Suggestion"
   }
 }
