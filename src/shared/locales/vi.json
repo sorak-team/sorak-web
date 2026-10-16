@@ -1496,6 +1496,9 @@
     "configDrawerDesc": "Thiết lập tiêu chuẩn tự động đề xuất hoa bé ngoan hằng tuần",
     "minAttendanceLabel": "1. Chuyên cần tuần tối thiểu",
     "minAttendanceDesc": "Tỷ lệ số ngày bé đi học đủ trong tuần",
-    "attendanceRateUnit": "% chuyên cần"
+    "attendanceRateUnit": "% chuyên cần",
+    "minGoalsLabel": "2. Mục tiêu bài học tối thiểu",
+    "minGoalsDesc": "Tỷ lệ mục tiêu hoạt động giáo dục trong tuần đạt yêu cầu",
+    "goalsRateUnit": "% bài học đạt"
   }
 }
