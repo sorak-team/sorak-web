@@ -1499,6 +1499,10 @@
     "attendanceRateUnit": "% chuyên cần",
     "minGoalsLabel": "2. Mục tiêu bài học tối thiểu",
     "minGoalsDesc": "Tỷ lệ mục tiêu hoạt động giáo dục trong tuần đạt yêu cầu",
-    "goalsRateUnit": "% bài học đạt"
+    "goalsRateUnit": "% bài học đạt",
+    "healthStandardLabel": "3. Tiêu chuẩn sức khỏe (lần khám gần nhất)",
+    "unlimited": "Không giới hạn",
+    "statusCount": "{{count}} trạng thái",
+    "healthStandardDesc": "Chọn các trạng thái sức khỏe đủ điều kiện nhận hoa:"
   }
 }
