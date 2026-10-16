@@ -1492,6 +1492,10 @@
     "goalsUnit": "goals",
     "lotusTitle": "Uncle Ho's Good Grandchild Lotus",
     "monthlyNotePlaceholder": "Enter overall monthly comments for the child...",
-    "configDrawerTitle": "Configure Flower Suggestion"
+    "configDrawerTitle": "Configure Flower Suggestion",
+    "configDrawerDesc": "Set automatic weekly good behavior flower recommendation criteria",
+    "minAttendanceLabel": "1. Minimum weekly attendance",
+    "minAttendanceDesc": "Percentage of full attendance days in the week",
+    "attendanceRateUnit": "% attendance"
   }
 }

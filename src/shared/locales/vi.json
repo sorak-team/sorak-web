@@ -1492,6 +1492,10 @@
     "goalsUnit": "mục tiêu",
     "lotusTitle": "Bông Sen Cháu ngoan Bác Hồ",
     "monthlyNotePlaceholder": "Nhập nhận xét tổng kết cả tháng của bé...",
-    "configDrawerTitle": "Cấu hình gợi ý tặng hoa"
+    "configDrawerTitle": "Cấu hình gợi ý tặng hoa",
+    "configDrawerDesc": "Thiết lập tiêu chuẩn tự động đề xuất hoa bé ngoan hằng tuần",
+    "minAttendanceLabel": "1. Chuyên cần tuần tối thiểu",
+    "minAttendanceDesc": "Tỷ lệ số ngày bé đi học đủ trong tuần",
+    "attendanceRateUnit": "% chuyên cần"
   }
 }
