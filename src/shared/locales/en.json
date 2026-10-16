@@ -1499,6 +1499,10 @@
     "attendanceRateUnit": "% attendance",
     "minGoalsLabel": "2. Minimum lesson goals",
     "minGoalsDesc": "Percentage of required educational activity goals met in the week",
-    "goalsRateUnit": "% goals achieved"
+    "goalsRateUnit": "% goals achieved",
+    "healthStandardLabel": "3. Health standard (latest examination)",
+    "unlimited": "Unlimited",
+    "statusCount": "{{count}} statuses",
+    "healthStandardDesc": "Select health statuses eligible for receiving flowers:"
   }
 }
