@@ -1470,6 +1470,10 @@
     "monthlyBookDesc": "Theo dõi hoa bé ngoan hằng tuần, xét tặng Bông Sen Cháu ngoan Bác Hồ và phản hồi phụ huynh",
     "filterAllStatus": "Tất cả trạng thái",
     "filterLotus": "Đạt Bông Sen Cháu ngoan Bác Hồ",
-    "filterNotLotus": "Đang rèn luyện"
+    "filterNotLotus": "Đang rèn luyện",
+    "filterEvaluated": "Đã nhận xét",
+    "filterNotEvaluated": "Chưa nhận xét",
+    "filterFeedback": "Có phản hồi phụ huynh",
+    "evaluationStatus": "Trạng thái đánh giá"
   }
 }
