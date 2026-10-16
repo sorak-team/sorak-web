@@ -1496,6 +1496,9 @@
     "configDrawerDesc": "Set automatic weekly good behavior flower recommendation criteria",
     "minAttendanceLabel": "1. Minimum weekly attendance",
     "minAttendanceDesc": "Percentage of full attendance days in the week",
-    "attendanceRateUnit": "% attendance"
+    "attendanceRateUnit": "% attendance",
+    "minGoalsLabel": "2. Minimum lesson goals",
+    "minGoalsDesc": "Percentage of required educational activity goals met in the week",
+    "goalsRateUnit": "% goals achieved"
   }
 }
