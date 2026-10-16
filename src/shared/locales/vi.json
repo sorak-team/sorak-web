@@ -1474,6 +1474,9 @@
     "filterEvaluated": "Đã nhận xét",
     "filterNotEvaluated": "Chưa nhận xét",
     "filterFeedback": "Có phản hồi phụ huynh",
-    "evaluationStatus": "Trạng thái đánh giá"
+    "evaluationStatus": "Trạng thái đánh giá",
+    "monthlySummary": "Tổng kết tháng",
+    "flowerSuggest": "Gợi ý tặng hoa",
+    "autoSuggestTooltip": "Tự động xét và trao hoa cả 5 tuần theo tiêu chí đã cấu hình"
   }
 }
