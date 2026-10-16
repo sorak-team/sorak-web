@@ -1481,6 +1481,10 @@
     "configSuggestTooltip": "Cấu hình tiêu chí gợi ý tặng hoa",
     "roseCount": "Số lượng hoa hồng",
     "lotusFlower": "Hoa sen",
-    "teacherNotes": "Nhận xét của giáo viên"
+    "teacherNotes": "Nhận xét của giáo viên",
+    "parentFeedback": "Ý kiến phụ huynh",
+    "weeklyAttendance": "Chuyên cần tuần",
+    "lessonGoals": "Mục tiêu bài học",
+    "weeklyHealth": "Sức khỏe tuần"
   }
 }

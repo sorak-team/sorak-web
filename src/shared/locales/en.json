@@ -1481,6 +1481,10 @@
     "configSuggestTooltip": "Configure flower suggestion criteria",
     "roseCount": "Rose count",
     "lotusFlower": "Lotus",
-    "teacherNotes": "Teacher comments"
+    "teacherNotes": "Teacher comments",
+    "parentFeedback": "Parent feedback",
+    "weeklyAttendance": "Weekly attendance",
+    "lessonGoals": "Lesson goals",
+    "weeklyHealth": "Weekly health"
   }
 }
