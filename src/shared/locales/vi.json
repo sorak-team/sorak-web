@@ -1506,6 +1506,10 @@
     "healthStandardDesc": "Chọn các trạng thái sức khỏe đủ điều kiện nhận hoa:",
     "healthNormalDesc": "Thể trạng phát triển bình thường theo chuẩn",
     "healthUnderweightDesc": "Trẻ nhẹ cân nhưng sinh hoạt tốt",
-    "healthOverweightDesc": "Trẻ cần kiểm soát khẩu phần"
+    "healthOverweightDesc": "Trẻ cần kiểm soát khẩu phần",
+    "healthStuntedDesc": "Trẻ chậm phát triển chiều cao",
+    "onlyNormal": "Chỉ Bình thường",
+    "normalAndUnderweight": "Bình thường & Nhẹ cân",
+    "allHealthStatuses": "Tất cả tình trạng"
   }
 }

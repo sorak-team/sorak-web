@@ -1506,6 +1506,10 @@
     "healthStandardDesc": "Select health statuses eligible for receiving flowers:",
     "healthNormalDesc": "Normal growth according to standards",
     "healthUnderweightDesc": "Underweight but good daily routine",
-    "healthOverweightDesc": "Child needs portion control"
+    "healthOverweightDesc": "Child needs portion control",
+    "healthStuntedDesc": "Slow height growth",
+    "onlyNormal": "Normal only",
+    "normalAndUnderweight": "Normal & Underweight",
+    "allHealthStatuses": "All health conditions"
   }
 }
