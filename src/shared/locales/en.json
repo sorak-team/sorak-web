@@ -1517,6 +1517,10 @@
     "classPrefix": "Class {{className}}",
     "sender": "Sender:",
     "defaultSender": "Child's parent",
-    "prevFeedback": "Previous"
+    "prevFeedback": "Previous",
+    "nextFeedback": "Next",
+    "semester1": "Semester 1",
+    "semester2": "Semester 2",
+    "period": "Period:"
   }
 }
