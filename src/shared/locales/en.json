@@ -1536,6 +1536,9 @@
     "electronicRecord": "Recorded in electronic student record",
     "semesterCommentPlaceholder": "Enter detailed comments on the child's development at semester end...",
     "daysUnit": "days",
-    "curriculumCriteria": "Curriculum Criteria"
+    "curriculumCriteria": "Curriculum Criteria",
+    "activityType": "Activity Type:",
+    "domain": "Domain:",
+    "goal": "Goal:"
   }
 }
