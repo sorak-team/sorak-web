@@ -1528,6 +1528,10 @@
     "deleteNotes": "Xóa nhận xét",
     "semesterDrawerTitle1": "Đánh giá học kỳ 1",
     "semesterDrawerTitle2": "Đánh giá học kỳ 2",
-    "semesterDrawerDesc": "Xem tổng hợp kết quả rèn luyện và ghi nhận nhận xét đánh giá cuối kỳ của học sinh"
+    "semesterDrawerDesc": "Xem tổng hợp kết quả rèn luyện và ghi nhận nhận xét đánh giá cuối kỳ của học sinh",
+    "evaluatedBadge": "Đã có nhận xét",
+    "notEvaluatedBadge": "Chưa nhận xét",
+    "examDate": "Ngày khám:",
+    "semesterCommentTitle": "Nhận xét của giáo viên cuối {{semester}}"
   }
 }
