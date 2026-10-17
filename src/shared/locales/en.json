@@ -1525,6 +1525,9 @@
     "fiveDomainsTitle": "Goals achieved across 5 developmental domains",
     "attendanceFull": "Full attendance",
     "semesterNotePlaceholder": "Enter final semester assessment comments...",
-    "deleteNotes": "Delete comments"
+    "deleteNotes": "Delete comments",
+    "semesterDrawerTitle1": "Semester 1 Assessment",
+    "semesterDrawerTitle2": "Semester 2 Assessment",
+    "semesterDrawerDesc": "View summary of development results and record final semester student comments"
   }
 }

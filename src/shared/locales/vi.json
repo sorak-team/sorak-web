@@ -1525,6 +1525,9 @@
     "fiveDomainsTitle": "Mục tiêu đạt được theo 5 lĩnh vực phát triển",
     "attendanceFull": "Đi học đủ",
     "semesterNotePlaceholder": "Ghi nhận xét đánh giá cuối kỳ...",
-    "deleteNotes": "Xóa nhận xét"
+    "deleteNotes": "Xóa nhận xét",
+    "semesterDrawerTitle1": "Đánh giá học kỳ 1",
+    "semesterDrawerTitle2": "Đánh giá học kỳ 2",
+    "semesterDrawerDesc": "Xem tổng hợp kết quả rèn luyện và ghi nhận nhận xét đánh giá cuối kỳ của học sinh"
   }
 }
