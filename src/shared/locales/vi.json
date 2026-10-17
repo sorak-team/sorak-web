@@ -1532,6 +1532,10 @@
     "evaluatedBadge": "Đã có nhận xét",
     "notEvaluatedBadge": "Chưa nhận xét",
     "examDate": "Ngày khám:",
-    "semesterCommentTitle": "Nhận xét của giáo viên cuối {{semester}}"
+    "semesterCommentTitle": "Nhận xét của giáo viên cuối {{semester}}",
+    "electronicRecord": "Ghi nhận vào học bạ điện tử",
+    "semesterCommentPlaceholder": "Nhập nhận xét chi tiết về các mặt phát triển của bé cuối học kỳ...",
+    "daysUnit": "ngày",
+    "curriculumCriteria": "Tiêu chí từ kế hoạch giáo dục"
   }
 }
