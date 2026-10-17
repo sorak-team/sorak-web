@@ -1532,6 +1532,10 @@
     "evaluatedBadge": "Commented",
     "notEvaluatedBadge": "No comment",
     "examDate": "Exam date:",
-    "semesterCommentTitle": "Teacher comments at the end of {{semester}}"
+    "semesterCommentTitle": "Teacher comments at the end of {{semester}}",
+    "electronicRecord": "Recorded in electronic student record",
+    "semesterCommentPlaceholder": "Enter detailed comments on the child's development at semester end...",
+    "daysUnit": "days",
+    "curriculumCriteria": "Curriculum Criteria"
   }
 }
