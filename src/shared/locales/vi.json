@@ -1521,6 +1521,10 @@
     "nextFeedback": "Sau",
     "semester1": "Học kỳ 1",
     "semester2": "Học kỳ 2",
-    "period": "Thời gian:"
+    "period": "Thời gian:",
+    "fiveDomainsTitle": "Mục tiêu đạt được theo 5 lĩnh vực phát triển",
+    "attendanceFull": "Đi học đủ",
+    "semesterNotePlaceholder": "Ghi nhận xét đánh giá cuối kỳ...",
+    "deleteNotes": "Xóa nhận xét"
   }
 }

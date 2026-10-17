@@ -1521,6 +1521,10 @@
     "nextFeedback": "Next",
     "semester1": "Semester 1",
     "semester2": "Semester 2",
-    "period": "Period:"
+    "period": "Period:",
+    "fiveDomainsTitle": "Goals achieved across 5 developmental domains",
+    "attendanceFull": "Full attendance",
+    "semesterNotePlaceholder": "Enter final semester assessment comments...",
+    "deleteNotes": "Delete comments"
   }
 }
