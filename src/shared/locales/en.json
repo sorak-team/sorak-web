@@ -1514,6 +1514,9 @@
     "saveAndApply": "Save & Apply",
     "parentFeedbackTitle": "Feedback from Parents",
     "feedbackCountInMonth": "{{current}} / {{total}} feedback entries this month",
-    "classPrefix": "Class {{className}}"
+    "classPrefix": "Class {{className}}",
+    "sender": "Sender:",
+    "defaultSender": "Child's parent",
+    "prevFeedback": "Previous"
   }
 }

@@ -1514,6 +1514,9 @@
     "saveAndApply": "Lưu & Áp dụng",
     "parentFeedbackTitle": "Ý kiến phản hồi từ phụ huynh",
     "feedbackCountInMonth": "{{current}} / {{total}} phản hồi trong tháng",
-    "classPrefix": "Lớp {{className}}"
+    "classPrefix": "Lớp {{className}}",
+    "sender": "Người gửi:",
+    "defaultSender": "Phụ huynh bé",
+    "prevFeedback": "Trước"
   }
 }
