@@ -1528,6 +1528,10 @@
     "deleteNotes": "Delete comments",
     "semesterDrawerTitle1": "Semester 1 Assessment",
     "semesterDrawerTitle2": "Semester 2 Assessment",
-    "semesterDrawerDesc": "View summary of development results and record final semester student comments"
+    "semesterDrawerDesc": "View summary of development results and record final semester student comments",
+    "evaluatedBadge": "Commented",
+    "notEvaluatedBadge": "No comment",
+    "examDate": "Exam date:",
+    "semesterCommentTitle": "Teacher comments at the end of {{semester}}"
   }
 }
