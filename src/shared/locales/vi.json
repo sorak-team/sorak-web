@@ -1582,6 +1582,11 @@
     "stars1": "Còn cần cố gắng hơn",
     "stars2": "Con thể hiện ở mức cơ bản",
     "stars3": "Con đạt yêu cầu",
-    "stars4": "Con thể hiện tốt"
+    "stars4": "Con thể hiện tốt",
+    "stars5": "Con thể hiện rất tốt"
+  },
+  "profile": {
+    "role": "Ban giám hiệu",
+    "roleTeacher": "Giáo viên"
   }
 }

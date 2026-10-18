@@ -1582,6 +1582,11 @@
     "stars1": "Needs More Effort",
     "stars2": "Basic Demonstration",
     "stars3": "Meets Expectations",
-    "stars4": "Good Demonstration"
+    "stars4": "Good Demonstration",
+    "stars5": "Excellent Demonstration"
+  },
+  "profile": {
+    "role": "School Board",
+    "roleTeacher": "Teacher"
   }
 }
