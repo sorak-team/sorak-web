@@ -1571,6 +1571,9 @@
     "statusEvaluating": "Đang đánh giá",
     "statusNotEvaluated": "Chưa đánh giá",
     "searchStudent": "Tìm học sinh...",
-    "ratingLevel": "Mức đánh giá"
+    "ratingLevel": "Mức đánh giá",
+    "comment": "Nhận xét",
+    "saveAll": "Lưu tất cả",
+    "saveSuccess": "Đã lưu phiếu cho {{name}}"
   }
 }
