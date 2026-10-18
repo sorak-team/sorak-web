@@ -1574,6 +1574,10 @@
     "ratingLevel": "Rating Level",
     "comment": "Teacher Feedback",
     "saveAll": "Save All",
-    "saveSuccess": "Certificate saved for {{name}}"
+    "saveSuccess": "Certificate saved for {{name}}",
+    "saveAllSuccess": "All certificates saved successfully!",
+    "saveError": "Failed to save certificates.",
+    "drawerTitle": "Good Behavior Certificate Details",
+    "criteriaList": "Evaluation Standards"
   }
 }

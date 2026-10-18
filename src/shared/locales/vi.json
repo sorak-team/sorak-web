@@ -1574,6 +1574,10 @@
     "ratingLevel": "Mức đánh giá",
     "comment": "Nhận xét",
     "saveAll": "Lưu tất cả",
-    "saveSuccess": "Đã lưu phiếu cho {{name}}"
+    "saveSuccess": "Đã lưu phiếu cho {{name}}",
+    "saveAllSuccess": "Đã lưu tất cả phiếu bé ngoan!",
+    "saveError": "Không thể lưu phiếu bé ngoan.",
+    "drawerTitle": "Chi tiết phiếu bé ngoan",
+    "criteriaList": "Tiêu chuẩn đánh giá"
   }
 }
