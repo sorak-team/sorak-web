@@ -1554,6 +1554,10 @@
     "prevSlot": "← Previous Slot",
     "nextSlot": "Next Slot →",
     "viewContent": "← View Content",
-    "switchToAssessment": "Switch to Assessment →"
+    "switchToAssessment": "Switch to Assessment →",
+    "evaluation": "Evaluation",
+    "notesCol": "Note",
+    "noteLegend": "Legend:",
+    "searchStudentMini": "Search student..."
   }
 }

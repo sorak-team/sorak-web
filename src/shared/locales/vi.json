@@ -1554,6 +1554,10 @@
     "prevSlot": "← Tiết trước",
     "nextSlot": "Tiết sau →",
     "viewContent": "← Xem nội dung",
-    "switchToAssessment": "Chuyển sang chấm điểm →"
+    "switchToAssessment": "Chuyển sang chấm điểm →",
+    "evaluation": "Đánh giá",
+    "notesCol": "Ghi chú",
+    "noteLegend": "Chú thích:",
+    "searchStudentMini": "Tìm học sinh..."
   }
 }
