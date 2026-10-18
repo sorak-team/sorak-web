@@ -1562,5 +1562,11 @@
     "noStudentFound": "Không tìm thấy học sinh phù hợp",
     "evaluated": "Đã đánh giá",
     "notEvaluated": "Chưa đánh giá"
+  },
+  "goodBehavior": {
+    "title": "Phiếu bé ngoan",
+    "subtitle": "Đánh giá hành vi tích cực và khen thưởng học sinh theo tuần",
+    "allStatus": "Tất cả trạng thái",
+    "statusCompleted": "Hoàn thành"
   }
 }
