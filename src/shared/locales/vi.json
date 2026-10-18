@@ -1578,6 +1578,10 @@
     "saveAllSuccess": "Đã lưu tất cả phiếu bé ngoan!",
     "saveError": "Không thể lưu phiếu bé ngoan.",
     "drawerTitle": "Chi tiết phiếu bé ngoan",
-    "criteriaList": "Tiêu chuẩn đánh giá"
+    "criteriaList": "Tiêu chuẩn đánh giá",
+    "stars1": "Còn cần cố gắng hơn",
+    "stars2": "Con thể hiện ở mức cơ bản",
+    "stars3": "Con đạt yêu cầu",
+    "stars4": "Con thể hiện tốt"
   }
 }

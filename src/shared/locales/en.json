@@ -1578,6 +1578,10 @@
     "saveAllSuccess": "All certificates saved successfully!",
     "saveError": "Failed to save certificates.",
     "drawerTitle": "Good Behavior Certificate Details",
-    "criteriaList": "Evaluation Standards"
+    "criteriaList": "Evaluation Standards",
+    "stars1": "Needs More Effort",
+    "stars2": "Basic Demonstration",
+    "stars3": "Meets Expectations",
+    "stars4": "Good Demonstration"
   }
 }
