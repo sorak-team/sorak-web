@@ -1558,6 +1558,9 @@
     "evaluation": "Evaluation",
     "notesCol": "Note",
     "noteLegend": "Legend:",
-    "searchStudentMini": "Search student..."
+    "searchStudentMini": "Search student...",
+    "noStudentFound": "No matching student found",
+    "evaluated": "Evaluated",
+    "notEvaluated": "Not evaluated"
   }
 }
