@@ -1539,6 +1539,10 @@
     "curriculumCriteria": "Curriculum Criteria",
     "activityType": "Activity Type:",
     "domain": "Domain:",
-    "goal": "Goal:"
+    "goal": "Goal:",
+    "moetIndicator": "MOET Indicator:",
+    "content": "Content:",
+    "educationalActivityContent": "Educational Activity Content",
+    "objectivesAndRequirements": "Objectives & Requirements"
   }
 }
