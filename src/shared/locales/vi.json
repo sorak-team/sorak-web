@@ -1550,6 +1550,10 @@
     "notAchieved": "Chưa đạt",
     "achieved": "Đạt",
     "outstanding": "Vượt trội",
-    "notePlaceholder": "Ghi chú đánh giá..."
+    "notePlaceholder": "Ghi chú đánh giá...",
+    "prevSlot": "← Tiết trước",
+    "nextSlot": "Tiết sau →",
+    "viewContent": "← Xem nội dung",
+    "switchToAssessment": "Chuyển sang chấm điểm →"
   }
 }

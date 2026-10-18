@@ -1550,6 +1550,10 @@
     "notAchieved": "Not achieved",
     "achieved": "Achieved",
     "outstanding": "Outstanding",
-    "notePlaceholder": "Assessment note..."
+    "notePlaceholder": "Assessment note...",
+    "prevSlot": "← Previous Slot",
+    "nextSlot": "Next Slot →",
+    "viewContent": "← View Content",
+    "switchToAssessment": "Switch to Assessment →"
   }
 }
