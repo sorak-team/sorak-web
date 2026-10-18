@@ -1539,6 +1539,10 @@
     "curriculumCriteria": "Tiêu chí từ kế hoạch giáo dục",
     "activityType": "Loại hoạt động:",
     "domain": "Lĩnh vực:",
-    "goal": "Mục tiêu:"
+    "goal": "Mục tiêu:",
+    "moetIndicator": "Chỉ số Bộ Giáo dục:",
+    "content": "Nội dung:",
+    "educationalActivityContent": "Nội dung hoạt động giáo dục",
+    "objectivesAndRequirements": "Mục đích yêu cầu"
   }
 }
