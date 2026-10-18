@@ -1562,5 +1562,11 @@
     "noStudentFound": "No matching student found",
     "evaluated": "Evaluated",
     "notEvaluated": "Not evaluated"
+  },
+  "goodBehavior": {
+    "title": "Good Behavior Certificates",
+    "subtitle": "Evaluate positive behaviors and reward students weekly",
+    "allStatus": "All Statuses",
+    "statusCompleted": "Completed"
   }
 }
