@@ -1543,6 +1543,10 @@
     "moetIndicator": "MOET Indicator:",
     "content": "Content:",
     "educationalActivityContent": "Educational Activity Content",
-    "objectivesAndRequirements": "Objectives & Requirements"
+    "objectivesAndRequirements": "Objectives & Requirements",
+    "teachingPreparation": "Teaching Aids & Preparation",
+    "activityOrganization": "Activity Organization",
+    "expectedAssessment": "Expected Assessment",
+    "notAchieved": "Not achieved"
   }
 }

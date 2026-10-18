@@ -1543,6 +1543,10 @@
     "moetIndicator": "Chỉ số Bộ Giáo dục:",
     "content": "Nội dung:",
     "educationalActivityContent": "Nội dung hoạt động giáo dục",
-    "objectivesAndRequirements": "Mục đích yêu cầu"
+    "objectivesAndRequirements": "Mục đích yêu cầu",
+    "teachingPreparation": "Chuẩn bị học cụ & giáo cụ",
+    "activityOrganization": "Tổ chức hoạt động",
+    "expectedAssessment": "Đánh giá dự kiến",
+    "notAchieved": "Chưa đạt"
   }
 }
