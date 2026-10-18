@@ -1547,6 +1547,9 @@
     "teachingPreparation": "Chuẩn bị học cụ & giáo cụ",
     "activityOrganization": "Tổ chức hoạt động",
     "expectedAssessment": "Đánh giá dự kiến",
-    "notAchieved": "Chưa đạt"
+    "notAchieved": "Chưa đạt",
+    "achieved": "Đạt",
+    "outstanding": "Vượt trội",
+    "notePlaceholder": "Ghi chú đánh giá..."
   }
 }

@@ -1547,6 +1547,9 @@
     "teachingPreparation": "Teaching Aids & Preparation",
     "activityOrganization": "Activity Organization",
     "expectedAssessment": "Expected Assessment",
-    "notAchieved": "Not achieved"
+    "notAchieved": "Not achieved",
+    "achieved": "Achieved",
+    "outstanding": "Outstanding",
+    "notePlaceholder": "Assessment note..."
   }
 }
