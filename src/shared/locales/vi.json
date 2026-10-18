@@ -1558,6 +1558,9 @@
     "evaluation": "Đánh giá",
     "notesCol": "Ghi chú",
     "noteLegend": "Chú thích:",
-    "searchStudentMini": "Tìm học sinh..."
+    "searchStudentMini": "Tìm học sinh...",
+    "noStudentFound": "Không tìm thấy học sinh phù hợp",
+    "evaluated": "Đã đánh giá",
+    "notEvaluated": "Chưa đánh giá"
   }
 }
