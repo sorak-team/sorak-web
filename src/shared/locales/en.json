@@ -1567,6 +1567,10 @@
     "title": "Good Behavior Certificates",
     "subtitle": "Evaluate positive behaviors and reward students weekly",
     "allStatus": "All Statuses",
-    "statusCompleted": "Completed"
+    "statusCompleted": "Completed",
+    "statusEvaluating": "In Progress",
+    "statusNotEvaluated": "Not Evaluated",
+    "searchStudent": "Search students...",
+    "ratingLevel": "Rating Level"
   }
 }
