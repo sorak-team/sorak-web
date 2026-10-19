@@ -1598,6 +1598,12 @@
     "langVi": "Tiếng Việt",
     "langEn": "English",
     "settings": "Settings",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "logout": "Log out"
+  },
+  "pageMore": {
+    "fontStyle": "Typography",
+    "fontDefault": "Default",
+    "fontSerif": "Serif"
   }
 }
