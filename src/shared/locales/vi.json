@@ -1604,6 +1604,10 @@
   "pageMore": {
     "fontStyle": "Kiểu chữ",
     "fontDefault": "Default",
-    "fontSerif": "Serif"
+    "fontSerif": "Serif",
+    "fontMono": "Mono",
+    "fontVietnam": "Vietnam",
+    "fontJakarta": "Jakarta",
+    "textSize": "Cỡ chữ"
   }
 }
