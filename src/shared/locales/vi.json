@@ -1608,6 +1608,9 @@
     "fontMono": "Mono",
     "fontVietnam": "Vietnam",
     "fontJakarta": "Jakarta",
-    "textSize": "Cỡ chữ"
+    "textSize": "Cỡ chữ",
+    "sizeSmall": "Nhỏ",
+    "sizeMedium": "Vừa",
+    "sizeLarge": "Lớn"
   }
 }
