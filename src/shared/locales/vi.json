@@ -1595,6 +1595,9 @@
     "themeDark": "Tối",
     "themeSystem": "Hệ thống",
     "language": "Ngôn ngữ",
-    "langVi": "Tiếng Việt"
+    "langVi": "Tiếng Việt",
+    "langEn": "English",
+    "settings": "Cài đặt",
+    "notifications": "Thông báo"
   }
 }
