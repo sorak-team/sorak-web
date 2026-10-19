@@ -1587,6 +1587,10 @@
   },
   "profile": {
     "role": "Ban giám hiệu",
-    "roleTeacher": "Giáo viên"
+    "roleTeacher": "Giáo viên",
+    "prefixTeacher": "GV. ",
+    "prefixPrincipal": "BGH. ",
+    "theme": "Giao diện",
+    "themeLight": "Sáng"
   }
 }

@@ -1587,6 +1587,10 @@
   },
   "profile": {
     "role": "School Board",
-    "roleTeacher": "Teacher"
+    "roleTeacher": "Teacher",
+    "prefixTeacher": "Tchr. ",
+    "prefixPrincipal": "Admin. ",
+    "theme": "Appearance",
+    "themeLight": "Light"
   }
 }
