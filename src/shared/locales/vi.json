@@ -1591,6 +1591,10 @@
     "prefixTeacher": "GV. ",
     "prefixPrincipal": "BGH. ",
     "theme": "Giao diện",
-    "themeLight": "Sáng"
+    "themeLight": "Sáng",
+    "themeDark": "Tối",
+    "themeSystem": "Hệ thống",
+    "language": "Ngôn ngữ",
+    "langVi": "Tiếng Việt"
   }
 }
