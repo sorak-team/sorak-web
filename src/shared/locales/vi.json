@@ -1644,5 +1644,10 @@
     "toastPushEnabled": "Đã bật thông báo đẩy thành công!"
   },
   "reportsPlaceholder": "Trang Báo cáo thống kê đang được xây dựng...",
-  "supportCenter": "Trung tâm Hỗ trợ Sorak"
+  "supportCenter": "Trung tâm Hỗ trợ Sorak",
+  "daily": {
+    "guideTitle": "Hướng dẫn thao tác & Chú thích trạng thái nhật ký ngày",
+    "attendanceHealthColTitle": "1. Điểm danh, Sức khỏe & Đón trẻ (Cột Thứ)",
+    "attendanceHealthColDesc": "Nhấp tiêu đề cột Thứ (T2 – T6) hoặc ô tiết Trả trẻ để mở sổ điểm danh, sức khỏe và đón trẻ:"
+  }
 }

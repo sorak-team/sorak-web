@@ -1644,5 +1644,10 @@
     "toastPushEnabled": "Push notifications enabled successfully!"
   },
   "reportsPlaceholder": "Statistical reports page is under construction...",
-  "supportCenter": "Sorak Support Center"
+  "supportCenter": "Sorak Support Center",
+  "daily": {
+    "guideTitle": "Daily Routine Guide & Status Legend",
+    "attendanceHealthColTitle": "1. Attendance, Health & Dismissal (Day Column)",
+    "attendanceHealthColDesc": "Click the Day column header (Mon – Fri) or Dismissal slot to manage attendance, health and child dismissal:"
+  }
 }
