@@ -1624,6 +1624,10 @@
     "tabArchived": "Đã lưu trữ",
     "tabTasks": "Nhắc việc",
     "item1Title": "Điểm danh lớp Lá A1 chưa hoàn tất",
-    "item1Desc": "Cô Lan chưa chốt điểm danh buổi sáng"
+    "item1Desc": "Cô Lan chưa chốt điểm danh buổi sáng",
+    "item1Time": "5 phút trước",
+    "item2Title": "Phụ huynh gửi đơn xin nghỉ",
+    "item2Desc": "Bé Minh · lớp Chồi B1",
+    "item2Time": "18 phút trước"
   }
 }
