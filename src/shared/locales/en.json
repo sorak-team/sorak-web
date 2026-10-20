@@ -1624,6 +1624,10 @@
     "tabArchived": "Archived",
     "tabTasks": "Tasks",
     "item1Title": "Attendance for class La A1 incomplete",
-    "item1Desc": "Ms. Lan has not submitted morning attendance"
+    "item1Desc": "Ms. Lan has not submitted morning attendance",
+    "item1Time": "5 min ago",
+    "item2Title": "Parent submitted leave request",
+    "item2Desc": "Minh · Class Choi B1",
+    "item2Time": "18 min ago"
   }
 }
