@@ -1639,6 +1639,10 @@
     "pushDesc": "Nhận thông báo về lớp học và phụ huynh",
     "later": "Để sau",
     "enablePush": "Bật thông báo",
-    "markAllRead": "Đánh dấu đã đọc tất cả"
-  }
+    "markAllRead": "Đánh dấu đã đọc tất cả",
+    "toastMarkRead": "Đã đánh dấu đọc tất cả thông báo.",
+    "toastPushEnabled": "Đã bật thông báo đẩy thành công!"
+  },
+  "reportsPlaceholder": "Trang Báo cáo thống kê đang được xây dựng...",
+  "supportCenter": "Trung tâm Hỗ trợ Sorak"
 }
