@@ -1621,6 +1621,9 @@
   },
   "notifications": {
     "tabInbox": "Inbox",
-    "tabArchived": "Archived"
+    "tabArchived": "Archived",
+    "tabTasks": "Tasks",
+    "item1Title": "Attendance for class La A1 incomplete",
+    "item1Desc": "Ms. Lan has not submitted morning attendance"
   }
 }
