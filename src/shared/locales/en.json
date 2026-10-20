@@ -1635,6 +1635,10 @@
     "item4Title": "Weekly report is ready",
     "item4Desc": "Summary of attendance and health records",
     "item4Time": "1 hour ago",
-    "pushTitle": "Enable notifications for new updates"
+    "pushTitle": "Enable notifications for new updates",
+    "pushDesc": "Receive updates regarding classes and parents",
+    "later": "Maybe later",
+    "enablePush": "Enable notifications",
+    "markAllRead": "Mark all as read"
   }
 }
