@@ -1648,6 +1648,10 @@
   "daily": {
     "guideTitle": "Hướng dẫn thao tác & Chú thích trạng thái nhật ký ngày",
     "attendanceHealthColTitle": "1. Điểm danh, Sức khỏe & Đón trẻ (Cột Thứ)",
-    "attendanceHealthColDesc": "Nhấp tiêu đề cột Thứ (T2 – T6) hoặc ô tiết Trả trẻ để mở sổ điểm danh, sức khỏe và đón trẻ:"
+    "attendanceHealthColDesc": "Nhấp tiêu đề cột Thứ (T2 – T6) hoặc ô tiết Trả trẻ để mở sổ điểm danh, sức khỏe và đón trẻ:",
+    "badgeToday": "Hôm nay",
+    "badgeAttendanceDone": "Đã điểm danh",
+    "badgeDismissalDone": "Đã đón trẻ",
+    "badgeNotStarted": "Chưa bắt đầu"
   }
 }
