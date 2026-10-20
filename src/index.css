@@ -10,20 +10,20 @@
     --card-foreground: 220 45% 19%;
     --popover: 0 0% 100%;
     --popover-foreground: 220 45% 19%;
-    --primary: 38 91% 55%; /* amber #f5a623 */
+    --primary: 225.4 84% 49%; /* Figma Blue #1447e6 */
     --primary-foreground: 0 0% 100%;
-    --secondary: 38 80% 94%;
-    --secondary-foreground: 38 60% 20%;
-    --muted: 38 30% 95%;
+    --secondary: 225 80% 96%;
+    --secondary-foreground: 225 70% 30%;
+    --muted: 220 14.3% 95.9%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 38 60% 92%;
-    --accent-foreground: 38 60% 20%;
+    --accent: 225 70% 94%;
+    --accent-foreground: 225 70% 25%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 38 91% 55%;
-    --radius: 0.5rem;
+    --ring: 215 16% 65%; /* Neutral Gray / Slate #94a3b8 / #a1a1a1 */
+    --radius: 0rem;
   }
   .dark {
     --background: 222.2 84% 4.9%;
@@ -32,7 +32,7 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 38 91% 55%;
+    --primary: 225.4 84% 58%;
     --primary-foreground: 0 0% 100%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -40,11 +40,11 @@
     --muted-foreground: 215 20.2% 65.1%;
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 38 91% 55%;
+    --ring: 215 20.2% 65.1%; /* Neutral Slate */
   }
 }
 
@@ -65,4 +65,164 @@
     -webkit-text-fill-color: inherit !important;
     transition: background-color 9999s ease-in-out 0s;
   }
+
+  /* Sonner Toast compact padding */
+  [data-sonner-toast][data-styled='true'] {
+    padding-top: 14px !important;
+    padding-bottom: 14px !important;
+    border-radius: 0px !important;
+  }
+
+  /* Dynamic font styles */
+  html[data-font='default'],
+  html[data-font='default'] body,
+  html[data-font='default'] button,
+  html[data-font='default'] input,
+  html[data-font='default'] select,
+  html[data-font='default'] textarea,
+  html[data-font='inter'],
+  html[data-font='inter'] body,
+  html[data-font='inter'] button,
+  html[data-font='inter'] input,
+  html[data-font='inter'] select,
+  html[data-font='inter'] textarea {
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif !important;
+  }
+
+  html[data-font='serif'],
+  html[data-font='serif'] body,
+  html[data-font='serif'] button,
+  html[data-font='serif'] input,
+  html[data-font='serif'] select,
+  html[data-font='serif'] textarea,
+  html[data-font='serif'] .font-sans {
+    font-family: 'Lora', Georgia, 'Times New Roman', serif !important;
+  }
+
+  html[data-font='mono'],
+  html[data-font='mono'] body,
+  html[data-font='mono'] button,
+  html[data-font='mono'] input,
+  html[data-font='mono'] select,
+  html[data-font='mono'] textarea,
+  html[data-font='mono'] .font-sans {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  }
+
+  /* Backward compatibility for previous choices */
+  html[data-font='vietnam'],
+  html[data-font='vietnam'] body,
+  html[data-font='vietnam'] button,
+  html[data-font='vietnam'] input,
+  html[data-font='vietnam'] select,
+  html[data-font='vietnam'] textarea,
+  html[data-font='vietnam'] .font-sans {
+    font-family: 'Be Vietnam Pro', 'Inter', sans-serif !important;
+  }
+
+  html[data-font='jakarta'],
+  html[data-font='jakarta'] body,
+  html[data-font='jakarta'] button,
+  html[data-font='jakarta'] input,
+  html[data-font='jakarta'] select,
+  html[data-font='jakarta'] textarea,
+  html[data-font='jakarta'] .font-sans {
+    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif !important;
+  }
+
+  /* Dynamic text sizes - pure typography scaling without CSS zoom so Radix Popovers/Dialogs remain perfectly positioned */
+  html.sorak-small-text,
+  html[data-text-size='small'] {
+    font-size: 13.5px !important;
+  }
+  html.sorak-small-text .text-\[10px\], html[data-text-size='small'] .text-\[10px\] { font-size: 9px !important; }
+  html.sorak-small-text .text-\[11px\], html[data-text-size='small'] .text-\[11px\] { font-size: 9.5px !important; }
+  html.sorak-small-text .text-\[12px\], html[data-text-size='small'] .text-\[12px\] { font-size: 10.5px !important; }
+  html.sorak-small-text .text-\[13px\], html[data-text-size='small'] .text-\[13px\] { font-size: 11.5px !important; }
+  html.sorak-small-text .text-\[14px\], html[data-text-size='small'] .text-\[14px\] { font-size: 12.5px !important; }
+  html.sorak-small-text .text-\[15px\], html[data-text-size='small'] .text-\[15px\] { font-size: 13.5px !important; }
+  html.sorak-small-text .text-\[16px\], html[data-text-size='small'] .text-\[16px\] { font-size: 14.5px !important; }
+  html.sorak-small-text .text-\[17px\], html[data-text-size='small'] .text-\[17px\] { font-size: 15px !important; }
+  html.sorak-small-text .text-\[18px\], html[data-text-size='small'] .text-\[18px\] { font-size: 16px !important; }
+  html.sorak-small-text .text-\[19px\], html[data-text-size='small'] .text-\[19px\] { font-size: 17px !important; }
+  html.sorak-small-text .text-\[20px\], html[data-text-size='small'] .text-\[20px\] { font-size: 18px !important; }
+  html.sorak-small-text .text-\[22px\], html[data-text-size='small'] .text-\[22px\] { font-size: 19.5px !important; }
+  html.sorak-small-text .text-\[24px\], html[data-text-size='small'] .text-\[24px\] { font-size: 21px !important; }
+  html.sorak-small-text .text-\[26px\], html[data-text-size='small'] .text-\[26px\] { font-size: 23px !important; }
+  html.sorak-small-text .text-xs, html[data-text-size='small'] .text-xs { font-size: 10.5px !important; }
+  html.sorak-small-text .text-sm, html[data-text-size='small'] .text-sm { font-size: 12px !important; }
+  html.sorak-small-text .text-base, html[data-text-size='small'] .text-base { font-size: 14px !important; }
+  html.sorak-small-text .text-lg, html[data-text-size='small'] .text-lg { font-size: 16px !important; }
+  html.sorak-small-text .text-xl, html[data-text-size='small'] .text-xl { font-size: 18px !important; }
+
+  html[data-text-size='medium'] {
+    font-size: 16px !important;
+  }
+
+  html[data-text-size='large'] {
+    font-size: 18px !important;
+  }
+  html[data-text-size='large'] .text-\[10px\] { font-size: 11.5px !important; }
+  html[data-text-size='large'] .text-\[11px\] { font-size: 12.5px !important; }
+  html[data-text-size='large'] .text-\[12px\] { font-size: 13.5px !important; }
+  html[data-text-size='large'] .text-\[13px\] { font-size: 15px !important; }
+  html[data-text-size='large'] .text-\[14px\] { font-size: 16px !important; }
+  html[data-text-size='large'] .text-\[15px\] { font-size: 17px !important; }
+  html[data-text-size='large'] .text-\[16px\] { font-size: 18px !important; }
+  html[data-text-size='large'] .text-\[17px\] { font-size: 19px !important; }
+  html[data-text-size='large'] .text-\[18px\] { font-size: 20px !important; }
+  html[data-text-size='large'] .text-\[19px\] { font-size: 21px !important; }
+  html[data-text-size='large'] .text-\[20px\] { font-size: 22.5px !important; }
+  html[data-text-size='large'] .text-\[22px\] { font-size: 25px !important; }
+  html[data-text-size='large'] .text-\[24px\] { font-size: 27px !important; }
+  html[data-text-size='large'] .text-\[26px\] { font-size: 29px !important; }
+  html[data-text-size='large'] .text-xs { font-size: 13.5px !important; }
+  html[data-text-size='large'] .text-sm { font-size: 16px !important; }
+  html[data-text-size='large'] .text-base { font-size: 18px !important; }
+  html[data-text-size='large'] .text-lg { font-size: 20px !important; }
+  html[data-text-size='large'] .text-xl { font-size: 22.5px !important; }
 }
+
+@keyframes otp-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-5px); }
+  40%, 80% { transform: translateX(5px); }
+}
+
+.animate-otp-shake {
+  animation: otp-shake 0.35s ease-in-out;
+}
+
+/* Lightweight CSS Grid Pattern for Hero Backgrounds */
+.grid-pattern {
+  display: grid;
+  grid-template-columns: repeat(45, 45px);
+  grid-template-rows: repeat(8, 45px);
+  width: 2025px;
+  height: 360px;
+  mask-image: radial-gradient(ellipse 65% 97% at 50% 0%, black 17%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 65% 97% at 50% 0%, black 17%, transparent 100%);
+}
+
+.grid-cell {
+  width: 45px;
+  height: 45px;
+  border-right: 1px solid #d7e4ed;
+  border-bottom: 1px solid #d7e4ed;
+}
+
+.grid-cell.is-accent {
+  background: #efffff;
+  border: 1px solid #cbeaf6;
+}
+
+.dark .grid-cell {
+  border-right: 1px solid rgba(215, 228, 237, 0.08);
+  border-bottom: 1px solid rgba(215, 228, 237, 0.08);
+}
+
+.dark .grid-cell.is-accent {
+  background: rgba(20, 71, 230, 0.12);
+  border: 1px solid rgba(20, 71, 230, 0.25);
+}
+

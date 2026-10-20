@@ -1,6 +1,9 @@
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-export function cn(...inputs) {
-  return twMerge(clsx(inputs));
-}
+// Re-export cn and maskEmail from centralized shared/utils location
+export {
+  cn,
+  maskEmail,
+  getOtpCooldown,
+  setOtpCooldown,
+  clearOtpCooldown,
+  useOtpCooldown,
+} from '@/shared/utils';
