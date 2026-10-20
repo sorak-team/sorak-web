@@ -1656,6 +1656,9 @@
     "lessonEvalColTitle": "2. Bài dạy & Đánh giá tiết học (Thẻ hoạt động)",
     "lessonEvalColDesc": "Nhấp vào thẻ tiết học để xem giáo án chi tiết và đánh giá trẻ. Viền màu bên trái thể hiện:",
     "badgeEvaluated": "Đã đánh giá",
-    "badgeRescheduled": "Đổi lịch"
+    "badgeRescheduled": "Đổi lịch",
+    "badgeCancelled": "Đã hủy",
+    "badgeNotEvaluated": "Chưa đánh giá",
+    "attendanceHealthDrawerTitle": "Điểm danh & Sức khỏe"
   }
 }
