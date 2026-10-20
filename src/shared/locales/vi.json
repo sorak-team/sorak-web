@@ -1621,6 +1621,9 @@
   },
   "notifications": {
     "tabInbox": "Hộp thư",
-    "tabArchived": "Đã lưu trữ"
+    "tabArchived": "Đã lưu trữ",
+    "tabTasks": "Nhắc việc",
+    "item1Title": "Điểm danh lớp Lá A1 chưa hoàn tất",
+    "item1Desc": "Cô Lan chưa chốt điểm danh buổi sáng"
   }
 }
