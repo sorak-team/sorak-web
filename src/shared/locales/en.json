@@ -1652,6 +1652,10 @@
     "badgeToday": "Today",
     "badgeAttendanceDone": "Attendance taken",
     "badgeDismissalDone": "Children dismissed",
-    "badgeNotStarted": "Not started"
+    "badgeNotStarted": "Not started",
+    "lessonEvalColTitle": "2. Lessons & Activity Evaluation (Activity Card)",
+    "lessonEvalColDesc": "Click an activity card to view lesson plan and evaluate students. Left border color indicates:",
+    "badgeEvaluated": "Evaluated",
+    "badgeRescheduled": "Rescheduled"
   }
 }

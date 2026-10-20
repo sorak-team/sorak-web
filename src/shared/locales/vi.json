@@ -1652,6 +1652,10 @@
     "badgeToday": "Hôm nay",
     "badgeAttendanceDone": "Đã điểm danh",
     "badgeDismissalDone": "Đã đón trẻ",
-    "badgeNotStarted": "Chưa bắt đầu"
+    "badgeNotStarted": "Chưa bắt đầu",
+    "lessonEvalColTitle": "2. Bài dạy & Đánh giá tiết học (Thẻ hoạt động)",
+    "lessonEvalColDesc": "Nhấp vào thẻ tiết học để xem giáo án chi tiết và đánh giá trẻ. Viền màu bên trái thể hiện:",
+    "badgeEvaluated": "Đã đánh giá",
+    "badgeRescheduled": "Đổi lịch"
   }
 }
