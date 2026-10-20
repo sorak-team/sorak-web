@@ -1632,6 +1632,9 @@
     "item3Title": "Health profile updated",
     "item3Desc": "An · Class Mam C1",
     "item3Time": "36 min ago",
-    "item4Title": "Weekly report is ready"
+    "item4Title": "Weekly report is ready",
+    "item4Desc": "Summary of attendance and health records",
+    "item4Time": "1 hour ago",
+    "pushTitle": "Enable notifications for new updates"
   }
 }
