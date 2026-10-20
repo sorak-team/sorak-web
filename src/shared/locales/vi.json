@@ -1659,6 +1659,10 @@
     "badgeRescheduled": "Đổi lịch",
     "badgeCancelled": "Đã hủy",
     "badgeNotEvaluated": "Chưa đánh giá",
-    "attendanceHealthDrawerTitle": "Điểm danh & Sức khỏe"
+    "attendanceHealthDrawerTitle": "Điểm danh & Sức khỏe",
+    "attendanceHealthDrawerDesc": "Ghi nhận điểm danh và theo dõi chỉ số sức khỏe của học sinh",
+    "activitySlotDrawerDesc": "Kế hoạch hoạt động và đánh giá kết quả học sinh",
+    "activityContentTab": "Nội dung hoạt động",
+    "studentAssessmentTab": "Đánh giá học sinh"
   }
 }

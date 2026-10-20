@@ -1659,6 +1659,10 @@
     "badgeRescheduled": "Rescheduled",
     "badgeCancelled": "Cancelled",
     "badgeNotEvaluated": "Not evaluated",
-    "attendanceHealthDrawerTitle": "Attendance & Health"
+    "attendanceHealthDrawerTitle": "Attendance & Health",
+    "attendanceHealthDrawerDesc": "Record attendance and track student health metrics",
+    "activitySlotDrawerDesc": "Activity plan and student assessment",
+    "activityContentTab": "Activity Content",
+    "studentAssessmentTab": "Student Assessment"
   }
 }
