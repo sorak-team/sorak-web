@@ -1635,6 +1635,10 @@
     "item4Title": "Báo cáo tuần đã sẵn sàng",
     "item4Desc": "Tổng hợp chuyên cần và sức khỏe",
     "item4Time": "1 giờ trước",
-    "pushTitle": "Bật thông báo để nhận cập nhật mới"
+    "pushTitle": "Bật thông báo để nhận cập nhật mới",
+    "pushDesc": "Nhận thông báo về lớp học và phụ huynh",
+    "later": "Để sau",
+    "enablePush": "Bật thông báo",
+    "markAllRead": "Đánh dấu đã đọc tất cả"
   }
 }
