@@ -1648,6 +1648,10 @@
   "daily": {
     "guideTitle": "Daily Routine Guide & Status Legend",
     "attendanceHealthColTitle": "1. Attendance, Health & Dismissal (Day Column)",
-    "attendanceHealthColDesc": "Click the Day column header (Mon – Fri) or Dismissal slot to manage attendance, health and child dismissal:"
+    "attendanceHealthColDesc": "Click the Day column header (Mon – Fri) or Dismissal slot to manage attendance, health and child dismissal:",
+    "badgeToday": "Today",
+    "badgeAttendanceDone": "Attendance taken",
+    "badgeDismissalDone": "Children dismissed",
+    "badgeNotStarted": "Not started"
   }
 }
