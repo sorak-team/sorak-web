@@ -11,6 +11,14 @@ export default {
       screens: { '2xl': '1400px' },
     },
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        inter: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        serif: ['Lora', 'Georgia', 'Cambria', 'serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+        vietnam: ['"Be Vietnam Pro"', 'Inter', 'sans-serif'],
+        jakarta: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
+      },
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
@@ -45,6 +53,13 @@ export default {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+      },
+      zIndex: {
+        '60': '60',
+        '70': '70',
+        '80': '80',
+        '90': '90',
+        '100': '100',
       },
       borderRadius: {
         lg: 'var(--radius)',
