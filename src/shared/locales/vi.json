@@ -1611,6 +1611,10 @@
     "textSize": "Cỡ chữ",
     "sizeSmall": "Nhỏ",
     "sizeMedium": "Vừa",
-    "sizeLarge": "Lớn"
+    "sizeLarge": "Lớn",
+    "smallText": "Chữ nhỏ",
+    "fullScreen": "Mở toàn trang",
+    "exitFullScreen": "Thoát toàn trang",
+    "resetDefault": "Đặt lại mặc định"
   }
 }

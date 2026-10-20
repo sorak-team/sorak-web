@@ -1611,6 +1611,10 @@
     "textSize": "Text size",
     "sizeSmall": "Small",
     "sizeMedium": "Medium",
-    "sizeLarge": "Large"
+    "sizeLarge": "Large",
+    "smallText": "Small text",
+    "fullScreen": "Full page",
+    "exitFullScreen": "Exit full page",
+    "resetDefault": "Reset to default"
   }
 }
