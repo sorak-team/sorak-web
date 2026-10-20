@@ -1615,6 +1615,12 @@
     "smallText": "Small text",
     "fullScreen": "Full page",
     "exitFullScreen": "Exit full page",
-    "resetDefault": "Reset to default"
+    "resetDefault": "Reset to default",
+    "toastResetSuccess": "Appearance settings reset to default",
+    "moreOptions": "Page options"
+  },
+  "notifications": {
+    "tabInbox": "Inbox",
+    "tabArchived": "Archived"
   }
 }

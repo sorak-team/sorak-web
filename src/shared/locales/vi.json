@@ -1615,6 +1615,12 @@
     "smallText": "Chữ nhỏ",
     "fullScreen": "Mở toàn trang",
     "exitFullScreen": "Thoát toàn trang",
-    "resetDefault": "Đặt lại mặc định"
+    "resetDefault": "Đặt lại mặc định",
+    "toastResetSuccess": "Đã đặt lại kiểu chữ và cỡ chữ mặc định",
+    "moreOptions": "Tùy chọn trang"
+  },
+  "notifications": {
+    "tabInbox": "Hộp thư",
+    "tabArchived": "Đã lưu trữ"
   }
 }
