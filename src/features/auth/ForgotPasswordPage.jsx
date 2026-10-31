@@ -62,8 +62,10 @@ export default function ForgotPasswordPage() {
           ),
         },
       );
-      navigate(`/otp-verify?email=${encodeURIComponent(trimmedId)}`, {
-        state: { email: trimmedId },
+      const cachedEmail = localStorage.getItem(`forgot_email_${trimmedId}`) || (trimmedId.includes('@') ? trimmedId : '');
+      const navEmail = cachedEmail || trimmedId;
+      navigate(`/otp-verify?email=${encodeURIComponent(navEmail)}`, {
+        state: { email: navEmail },
       });
       return;
     }
@@ -103,6 +105,7 @@ export default function ForgotPasswordPage() {
       setOtpCooldown(`forgot_${trimmedId}`, 60);
       if (targetEmail) {
         setOtpCooldown(`forgot_${targetEmail.toLowerCase().trim()}`, 60);
+        localStorage.setItem(`forgot_email_${trimmedId}`, targetEmail);
       }
 
       toast.success('Đã gửi mã xác thực!', {
@@ -343,7 +346,7 @@ export default function ForgotPasswordPage() {
                     )}
                     {contactTeacherData.teacherName && (
                       <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Giáo viên chủ nhiệm:</span>
+                        <span className="text-muted-foreground">Giáo viên phụ trách:</span>
                         <span className="font-semibold text-foreground">
                           {contactTeacherData.teacherName}
                         </span>
@@ -441,7 +444,7 @@ export default function ForgotPasswordPage() {
                     placeholder={
                       isParent
                         ? 'Ví dụ: HS26001, HS25001...'
-                        : 'Ví dụ: CB24001, ADMIN01...'
+                        : 'Ví dụ: CB20001, CB24001...'
                     }
                     autoComplete="username"
                     disabled={isSubmitting}

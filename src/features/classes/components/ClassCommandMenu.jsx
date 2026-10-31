@@ -107,6 +107,8 @@ export function ClassCommandMenu() {
       navigate(`/classes/${cls.id}/planning${location.search}`);
     } else if (location.pathname.includes('/reports')) {
       navigate(`/classes/${cls.id}/reports`);
+    } else if (location.pathname.includes('/students')) {
+      navigate(`/classes/${cls.id}/students`);
     } else if (location.pathname.includes('/attendance')) {
       navigate(`/classes/${cls.id}/attendance`);
     } else if (location.pathname.includes('/health')) {

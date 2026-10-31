@@ -168,7 +168,6 @@ export function AssignTeacherDrawer({
       const ids = Array.from(selectedTeacherIds);
       await classesApi.assignTeacher(targetClassId, {
         teacherIds: ids,
-        isPrimary: false,
       });
 
       toast.success(

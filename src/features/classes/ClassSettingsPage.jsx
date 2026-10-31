@@ -103,6 +103,27 @@ export function ClassSettingsPage() {
       toast.error(t('classes.nameRequired', 'Vui lòng nhập tên lớp học.'));
       return;
     }
+
+    const isNameDuplicate = classes.some((c) => {
+      if (c.id === currentClass.id || c.publicId === currentClass.id) return false;
+      return sanitizeClassName(c.name).toLowerCase() === cleanName.toLowerCase();
+    });
+    if (isNameDuplicate) {
+      toast.error(t('classes.duplicateName', `Tên lớp '${cleanName}' đã tồn tại trong năm học này!`));
+      return;
+    }
+
+    if (roomInput.trim()) {
+      const isRoomDuplicate = classes.some((c) => {
+        if (c.id === currentClass.id || c.publicId === currentClass.id) return false;
+        const cRoom = (c.room || c.roomNumber || '').trim();
+        return cRoom.toLowerCase() === roomInput.trim().toLowerCase();
+      });
+      if (isRoomDuplicate) {
+        toast.error(`Phòng '${roomInput.trim()}' đã được xếp cho lớp khác trong năm học này!`);
+        return;
+      }
+    }
     const gradeLabels = {
       nhatre: 'Khối Nhà trẻ',
       mam: 'Khối Mầm',
@@ -208,19 +229,19 @@ export function ClassSettingsPage() {
                         {t('classes.fieldGrade', 'Khối')}
                       </label>
                       <select
-                        disabled={isTeacher}
+                        disabled={true}
                         value={gradeInput}
                         onChange={(e) => setGradeInput(e.target.value)}
-                        className={cn(
-                          'w-full h-9 px-3 bg-background border border-border rounded-none text-[13px] text-foreground outline-none focus:outline-none focus:border-primary cursor-pointer',
-                          isTeacher && 'bg-muted/40 text-muted-foreground cursor-not-allowed border-border/70',
-                        )}
+                        className="w-full h-9 px-3 bg-muted/40 border border-border/70 rounded-none text-[13px] text-muted-foreground outline-none cursor-not-allowed select-none"
                       >
                         <option value="nhatre">Khối Nhà trẻ (12–36 tháng)</option>
                         <option value="mam">Khối Mầm (3–4 tuổi)</option>
                         <option value="choi">Khối Chồi (4–5 tuổi)</option>
                         <option value="la">Khối Lá (5–6 tuổi)</option>
                       </select>
+                      <p className="text-[11.5px] text-muted-foreground italic">
+                        * Khối lớp được cố định khi tạo lớp, không thể thay đổi
+                      </p>
                     </div>
 
                     <div className="space-y-1.5">

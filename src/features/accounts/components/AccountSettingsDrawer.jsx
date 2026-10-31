@@ -5,10 +5,12 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { Cancel01Icon, Key01Icon } from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
 import { useAccountStore } from '../accounts.store';
+import { useAuthStore } from '@/features/auth';
 import { cn } from '@/shared/lib/utils';
 
 export function AccountSettingsDrawer() {
   const { t } = useTranslation();
+  const currentUser = useAuthStore((state) => state.user);
   const isSettingsDrawerOpen = useAccountStore(
     (state) => state.isSettingsDrawerOpen,
   );
@@ -29,11 +31,25 @@ export function AccountSettingsDrawer() {
   const openResetPasswordConfirm = useAccountStore(
     (state) => state.openResetPasswordConfirm,
   );
+  const openLockConfirm = useAccountStore(
+    (state) => state.openLockConfirm,
+  );
 
   const isStaff = staffAccounts.some((item) => item.id === selectedAccountId);
   const account =
     staffAccounts.find((item) => item.id === selectedAccountId) ||
     parentAccounts.find((item) => item.id === selectedAccountId);
+
+  const isSelf = Boolean(
+    currentUser &&
+    account &&
+    (
+      String(currentUser.id) === String(account.id) ||
+      (currentUser.accountId && String(currentUser.accountId) === String(account.id)) ||
+      (currentUser.username && account.username && currentUser.username.toLowerCase() === account.username.toLowerCase()) ||
+      (currentUser.identifier && account.username && currentUser.identifier.toLowerCase() === account.username.toLowerCase())
+    )
+  );
 
   const [role, setRole] = useState('teacher');
 
@@ -45,26 +61,43 @@ export function AccountSettingsDrawer() {
 
   if (!isSettingsDrawerOpen || !account) return null;
 
-  const handleSave = () => {
-    if (isStaff) {
-      updateAccountRole(account.id, role);
-      toast.success(
-        t('account.toastRoleUpdated', 'Cập nhật vai trò thành công', {
-          name: account.fullName,
-        }),
-      );
+  const handleSave = async () => {
+    if (isStaff && role !== account.role) {
+      if (isSelf) {
+        toast.error('Không được tự đổi role cho chính tài khoản của mình');
+        return;
+      }
+      try {
+        await updateAccountRole(account.id, role);
+        toast.success(
+          t('account.toastRoleUpdated', 'Cập nhật vai trò thành công', {
+            name: account.fullName,
+          }),
+        );
+        closeSettingsDrawer();
+      } catch (err) {
+        toast.error(err.message || 'Cập nhật vai trò thất bại');
+      }
+    } else {
+      closeSettingsDrawer();
     }
-    closeSettingsDrawer();
   };
 
-  const handleToggleStatus = () => {
-    toggleAccountStatus(account.id);
-    const nextStatus = account.accountStatus === 'active' ? 'đã khóa' : 'hoạt động';
-    toast.success(
-      t('account.toastStatusUpdated', 'Tài khoản đã chuyển sang trạng thái {{status}}', {
-        status: nextStatus,
-      }),
-    );
+  const handleToggleStatus = async () => {
+    if (isSelf) {
+      toast.error('Không thể tự khóa tài khoản của chính mình');
+      return;
+    }
+    if (account.accountStatus === 'active') {
+      openLockConfirm(account);
+    } else {
+      try {
+        await toggleAccountStatus(account.id);
+        toast.success('Đã mở khóa tài khoản thành công');
+      } catch (err) {
+        toast.error(err.message || 'Thao tác thất bại');
+      }
+    }
   };
 
   const getStatusBadge = (status) => {
@@ -144,11 +177,12 @@ export function AccountSettingsDrawer() {
                 </p>
               </div>
 
-              <div className="p-4">
+              <div className="p-4 space-y-2">
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
-                  className="h-9 w-full px-3 text-[13px] bg-background border border-border rounded-none text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+                  disabled={isSelf}
+                  className="h-9 w-full px-3 text-[13px] bg-background border border-border rounded-none text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="teacher">
                     {t('account.roleTeacher', 'Giáo viên')}
@@ -157,6 +191,11 @@ export function AccountSettingsDrawer() {
                     {t('account.roleLeader', 'Ban giám hiệu')}
                   </option>
                 </select>
+                {isSelf && (
+                  <p className="text-[11px] text-destructive font-medium">
+                    * Không được tự đổi vai trò cho chính tài khoản của mình.
+                  </p>
+                )}
               </div>
             </div>
           )}
@@ -233,7 +272,8 @@ export function AccountSettingsDrawer() {
                   variant="outline"
                   size="sm"
                   onClick={handleToggleStatus}
-                  className="h-8 px-3 text-[13px] rounded-none border-border hover:bg-muted cursor-pointer"
+                  disabled={isSelf}
+                  className="h-8 px-3 text-[13px] rounded-none border-border hover:bg-muted cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   data-node-id="4221:5717"
                 >
                   {account.accountStatus === 'active'
@@ -241,6 +281,12 @@ export function AccountSettingsDrawer() {
                     : t('account.unlockBtn', 'Mở khóa tài khoản')}
                 </Button>
               </div>
+
+              {isSelf && (
+                <p className="text-[11px] text-destructive font-medium">
+                  * Không thể tự khóa tài khoản của chính mình.
+                </p>
+              )}
 
               <p className="text-[12px] text-muted-foreground leading-normal">
                 {t(

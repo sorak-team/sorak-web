@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useTeacherStore } from '../teachers.store';
+import { useAuthStore } from '@/features/auth';
 
 export function DeleteTeacherDialog({ onSuccess }) {
   const { t } = useTranslation();
@@ -27,12 +28,34 @@ export function DeleteTeacherDialog({ onSuccess }) {
   const teachers = useTeacherStore((state) => state.teachers);
 
   const teacher = teachers.find((item) => item.id === deletingTeacherId);
+  const currentUser = useAuthStore((state) => state.user);
 
-  const handleConfirm = () => {
+  const isSelf = Boolean(
+    teacher &&
+      currentUser &&
+      ((currentUser.teacherId && String(teacher.id) === String(currentUser.teacherId)) ||
+        (currentUser.teacher?.id && String(teacher.id) === String(currentUser.teacher.id)) ||
+        (currentUser.employeeCode && teacher.employeeCode?.toLowerCase() === currentUser.employeeCode?.toLowerCase()) ||
+        (currentUser.email && teacher.email?.toLowerCase() === currentUser.email?.toLowerCase()) ||
+        (currentUser.id && teacher.accountId && String(teacher.accountId) === String(currentUser.id)))
+  );
+
+  const handleConfirm = async () => {
+    if (isSelf) {
+      toast.error('Không thể xóa chính tài khoản/hồ sơ của bạn');
+      closeDeleteDialog();
+      return;
+    }
     if (deletingTeacherId) {
-      deleteTeacher(deletingTeacherId);
-      toast.success(t('teacher.toastDeleted', 'Đã xóa hồ sơ giáo viên'));
-      if (onSuccess) onSuccess();
+      try {
+        await deleteTeacher(deletingTeacherId);
+        toast.success(t('teacher.toastDeleted', 'Đã xóa hồ sơ giáo viên'));
+        if (onSuccess) onSuccess();
+      } catch (err) {
+        console.error('Delete teacher failed:', err);
+        const msg = err.response?.data?.message || err.message || 'Xóa giáo viên không thành công';
+        toast.error(msg);
+      }
     }
   };
 

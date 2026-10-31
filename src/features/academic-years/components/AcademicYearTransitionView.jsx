@@ -15,6 +15,7 @@ import {
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { triggerConfetti, Confetti } from '@/components/magicui/confetti';
 import { academicYearsApi } from '../academic-years.api';
 import { cn } from '@/shared/lib/utils';
 
@@ -52,7 +53,7 @@ export function AcademicYearTransitionView({ currentYear, onSuccess }) {
   }, [currentYear?.id]);
 
   const targetYearName = readinessData?.targetYearName || 'Năm học 2027–2028';
-  const step3Data = readinessData?.step3 || {
+  const studentStatusData = readinessData?.step1 || readinessData?.step3 || {
     totalStudents: 26,
     enrolledCount: 0,
     completedCount: 26,
@@ -60,33 +61,33 @@ export function AcademicYearTransitionView({ currentYear, onSuccess }) {
     pendingClasses: [],
     classesList: [],
   };
-  const enrolledCount = step3Data.enrolledCount ?? 0;
-  const isStep3Eligible = enrolledCount === 0;
-  const classesList = step3Data.classesList || [];
+  const enrolledCount = studentStatusData.enrolledCount ?? 0;
+  const isStudentStatusEligible = enrolledCount === 0;
+  const classesList = studentStatusData.classesList || [];
 
-  // Strict step progression: must finish step 1 to unlock step 2
+  // Strict step progression: must finish step 1 (0 students ENROLLED) to unlock step 2
   const handleProceedFromStep1 = () => {
+    if (!isStudentStatusEligible) {
+      toast.error('Bắt buộc tất cả các lớp phải được chốt năm học (0 học sinh đang học) mới có thể tiếp tục.');
+      return;
+    }
     setUnlockedStep((prev) => Math.max(prev, 2));
     setCurrentStep(2);
-    toast.success('Đã hoàn tất Bước 1: Khung chủ đề.');
+    toast.success('Đã hoàn tất Bước 1: Trạng thái học sinh.');
   };
 
   // Strict step progression: must finish step 2 to unlock step 3
   const handleProceedFromStep2 = () => {
     setUnlockedStep((prev) => Math.max(prev, 3));
     setCurrentStep(3);
-    toast.success('Đã hoàn tất Bước 2: Khung mục tiêu.');
+    toast.success('Đã hoàn tất Bước 2: Khung chủ đề.');
   };
 
-  // Strict step progression: must finish step 3 (0 students ENROLLED) to unlock step 4
+  // Strict step progression: must finish step 3 to unlock step 4
   const handleProceedFromStep3 = () => {
-    if (!isStep3Eligible) {
-      toast.error('Bắt buộc tất cả các lớp phải được chốt năm học (0 học sinh đang học) mới có thể tiếp tục.');
-      return;
-    }
     setUnlockedStep((prev) => Math.max(prev, 4));
     setCurrentStep(4);
-    toast.success('Đã hoàn tất Bước 3: Trạng thái học sinh.');
+    toast.success('Đã hoàn tất Bước 3: Khung mục tiêu.');
   };
 
   // Step 4 Final Execution
@@ -104,6 +105,7 @@ export function AcademicYearTransitionView({ currentYear, onSuccess }) {
         confirmPromotion: isConfirmed,
       });
       setIsComplete(true);
+      triggerConfetti();
       toast.success('Chuyển giao năm học mới thành công!');
       onSuccess?.();
     } catch (err) {
@@ -118,21 +120,21 @@ export function AcademicYearTransitionView({ currentYear, onSuccess }) {
   const stepsMeta = [
     {
       num: 1,
-      title: 'Khung chủ đề',
-      sub: copyThemes ? 'Hoàn thành & Kế thừa' : 'Tạo mới năm sau',
-      icon: Layers01Icon,
+      title: 'Trạng thái học sinh',
+      sub: 'Đánh giá & chốt năm học',
+      icon: UserGroupIcon,
     },
     {
       num: 2,
-      title: 'Khung mục tiêu',
-      sub: copyGoals ? '120 mục tiêu & Kế thừa' : 'Tạo mới năm sau',
-      icon: Calendar03Icon,
+      title: 'Khung chủ đề',
+      sub: 'Kế thừa khung chủ đề',
+      icon: Layers01Icon,
     },
     {
       num: 3,
-      title: 'Trạng thái học sinh',
-      sub: isStep3Eligible ? '0 HS đang học (Đạt)' : `${enrolledCount} HS cần chốt`,
-      icon: UserGroupIcon,
+      title: 'Khung mục tiêu',
+      sub: 'Kế thừa ngân hàng mục tiêu',
+      icon: Calendar03Icon,
     },
     {
       num: 4,
@@ -143,15 +145,15 @@ export function AcademicYearTransitionView({ currentYear, onSuccess }) {
   ];
 
   return (
-    <div className="border border-border bg-card rounded-none shadow-2xs overflow-hidden flex flex-col md:flex-row select-none animate-in fade-in duration-200">
-      {/* Left: Step Progression Navigator */}
-      <div className="w-full md:w-64 border-b md:border-b-0 md:border-r border-border bg-muted/10 p-4 sm:p-5 flex flex-col justify-between shrink-0">
-        <div className="space-y-4">
+    <div className="border border-border bg-card rounded-none shadow-2xs overflow-hidden flex flex-col lg:flex-row select-none animate-in fade-in duration-200">
+      {/* Left: Step Progression Navigator - responsive grid on small screens, vertical column on desktop */}
+      <div className="w-full lg:w-64 border-b lg:border-b-0 lg:border-r border-border bg-muted/10 p-3 sm:p-4 lg:p-5 flex flex-col justify-between shrink-0">
+        <div className="space-y-3 lg:space-y-4">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 block font-mono">
             CÁC BƯỚC TUẦN TỰ
           </span>
 
-          <div className="space-y-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:flex lg:flex-col gap-1.5 sm:gap-2">
             {stepsMeta.map((s) => {
               const isActive = currentStep === s.num && !isComplete;
               const isPassed = isComplete || (unlockedStep > s.num);
@@ -169,7 +171,7 @@ export function AcademicYearTransitionView({ currentYear, onSuccess }) {
                     setCurrentStep(s.num);
                   }}
                   className={cn(
-                    'flex items-start gap-3 p-3 rounded-none transition-all',
+                    'flex items-start gap-2.5 p-2.5 sm:p-3 rounded-none transition-all',
                     isLocked
                       ? 'opacity-45 cursor-not-allowed bg-transparent'
                       : 'cursor-pointer hover:bg-muted/40',
@@ -193,17 +195,15 @@ export function AcademicYearTransitionView({ currentYear, onSuccess }) {
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between">
-                      <span
-                        className={cn(
-                          'text-[13px] leading-tight font-medium truncate',
-                          isActive ? 'text-[#1447e6] dark:text-blue-400 font-semibold' : 'text-foreground',
-                        )}
-                      >
-                        {s.title}
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-muted-foreground truncate mt-0.5">
+                    <span
+                      className={cn(
+                        'text-[12px] sm:text-[13px] leading-tight font-medium truncate block',
+                        isActive ? 'text-[#1447e6] dark:text-blue-400 font-semibold' : 'text-foreground',
+                      )}
+                    >
+                      {s.title}
+                    </span>
+                    <div className="text-[10.5px] sm:text-[11px] text-muted-foreground truncate mt-0.5">
                       {s.sub}
                     </div>
                   </div>
@@ -215,14 +215,15 @@ export function AcademicYearTransitionView({ currentYear, onSuccess }) {
       </div>
 
       {/* Right: Step Content & Actions */}
-      <div className="flex-1 p-5 sm:p-7 flex flex-col justify-between min-h-[520px]">
+      <div className="flex-1 p-3 sm:p-5 lg:p-7 flex flex-col justify-between min-h-[520px]">
         {isLoading ? (
           <div className="py-24 text-center text-[13px] text-muted-foreground animate-pulse">
             Đang tải dữ liệu kiểm tra điều kiện chuyển giao năm học...
           </div>
         ) : isComplete ? (
           /* COMPLETION SCREEN */
-          <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="relative space-y-6 animate-in fade-in duration-200">
+            <Confetti className="absolute inset-0 pointer-events-none z-50 w-full h-full" manualstart={false} />
             <div className="flex items-center gap-4">
               <div className="size-14 rounded-none bg-[#1447e6] text-white flex items-center justify-center font-black text-2xl shadow-xs shrink-0">
                 <HugeiconsIcon icon={CheckmarkCircle02Icon} size={28} />
@@ -294,12 +295,12 @@ export function AcademicYearTransitionView({ currentYear, onSuccess }) {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 pt-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 pt-2">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => navigate('/classes')}
-                className="h-8 px-3.5 text-[12.5px] font-medium rounded-none border-border bg-background hover:bg-muted text-foreground cursor-pointer shadow-none"
+                className="w-full sm:w-auto h-8 px-3.5 inline-flex items-center justify-center text-[12.5px] font-medium rounded-none border-border bg-background hover:bg-muted text-foreground cursor-pointer shadow-none"
               >
                 Đến trang Phân lớp học sinh
               </Button>
@@ -307,18 +308,193 @@ export function AcademicYearTransitionView({ currentYear, onSuccess }) {
                 type="button"
                 variant="brand"
                 onClick={() => window.location.reload()}
-                className="h-8 px-4 text-[12.5px] font-medium rounded-none shadow-none cursor-pointer"
+                className="w-full sm:w-auto h-8 px-4 inline-flex items-center justify-center text-[12.5px] font-medium rounded-none shadow-none cursor-pointer"
               >
                 Tải lại trang năm học mới
               </Button>
             </div>
           </div>
         ) : currentStep === 1 ? (
-          /* STEP 1: HOÀN THÀNH KHUNG CHỦ ĐỀ VÀ TÙY CHỌN SAO CHÉP */
-          <div className="space-y-5 animate-in fade-in duration-150">
+          /* STEP 1: KIỂM TRA TRẠNG THÁI HỌC SINH NĂM CŨ */
+          <div className="space-y-4 animate-in fade-in duration-150">
             <div>
               <span className="text-[11px] font-semibold text-[#1447e6] uppercase tracking-wider block font-mono">
                 BƯỚC 01 / 04
+              </span>
+              <h3 className="text-[17px] font-semibold text-foreground tracking-tight mt-0.5">
+                Kiểm tra trạng thái học sinh năm cũ
+              </h3>
+              <p className="text-[12.5px] text-muted-foreground mt-0.5">
+                Điều kiện bắt buộc: Không còn học sinh nào trong danh sách lớp năm cũ đang ở trạng thái "Đang học". Giáo viên từng lớp cần hoàn tất đánh giá và chốt năm học.
+              </p>
+            </div>
+
+            {/* Standardized Table matching StudentTable */}
+            <div
+              className="w-full border border-border bg-card rounded-none overflow-x-auto shadow-xs select-none"
+              data-name="Academic Year Class Status Table"
+            >
+              {/* Table Top Toolbar */}
+              <div className="min-h-11 px-3 py-2 border-b border-border bg-muted/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                  <span className="text-[13px] font-semibold text-foreground truncate">
+                    Tiến độ chốt năm học theo danh sách lớp
+                  </span>
+                  <span className="text-[12px] text-muted-foreground font-mono whitespace-nowrap">
+                    ({classesList.length} lớp · {studentStatusData.totalStudents ?? 0} học sinh)
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={fetchReadiness}
+                    disabled={isLoading}
+                    className="h-7 px-2.5 rounded-none border-border bg-background hover:bg-muted text-foreground text-[12px] font-medium shadow-none cursor-pointer"
+                  >
+                    <HugeiconsIcon icon={RefreshIcon} size={13} className={cn(isLoading && 'animate-spin')} />
+                    <span>Kiểm tra lại</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate('/classes')}
+                    className="h-7 px-2.5 rounded-none border-border bg-background hover:bg-muted text-foreground text-[12px] font-medium shadow-none cursor-pointer"
+                  >
+                    <span>Quản lý lớp</span>
+                    <HugeiconsIcon icon={ArrowUpRight01Icon} size={13} />
+                  </Button>
+                </div>
+              </div>
+
+              <table className="w-full text-left border-collapse min-w-[620px]">
+                <thead>
+                  <tr className="h-10 border-b border-border bg-muted/30 text-[13px] font-medium text-foreground">
+                    <th className="px-3 min-w-[170px] font-medium">Lớp học</th>
+                    <th className="px-3 min-w-[110px] font-medium">Khối lớp</th>
+                    <th className="px-3 min-w-[160px] font-medium">Giáo viên phụ trách</th>
+                    <th className="px-3 min-w-[130px] font-medium text-center">Đã chốt / Sĩ số</th>
+                    <th className="px-3 min-w-[150px] font-medium text-right">Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {classesList.length > 0 ? (
+                    classesList.map((item) => {
+                      const isClassEmpty = item.totalStudents === 0;
+                      const isClassPending = item.enrolledCount > 0;
+                      return (
+                        <tr
+                          key={item.classId}
+                          className="hover:bg-muted/40 transition-colors group cursor-default"
+                        >
+                          <td className="px-3 py-2.5">
+                            <span
+                              onClick={() => navigate(`/classes/${item.classId}/students`)}
+                              className="text-[13.5px] font-medium text-foreground hover:text-[#1447e6] transition-colors cursor-pointer truncate block"
+                            >
+                              {item.className}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2.5 text-[13px] text-muted-foreground whitespace-nowrap">
+                            {item.ageGroupLabel || item.ageGroup}
+                          </td>
+                          <td className="px-3 py-2.5 text-[13px]">
+                            {item.teacherName && item.teacherName !== 'Chưa phân công' ? (
+                              <div className="flex flex-col gap-1">
+                                {item.teacherName
+                                  .split(/[,;\n/]+/)
+                                  .map((n) => n.trim())
+                                  .filter(Boolean)
+                                  .map((name, idx) => (
+                                    <span
+                                      key={idx}
+                                      className="text-[13px] text-foreground leading-tight whitespace-nowrap"
+                                    >
+                                      {name}
+                                    </span>
+                                  ))}
+                              </div>
+                            ) : (
+                              <span className="text-[13px] text-muted-foreground whitespace-nowrap">
+                                Chưa phân công
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-3 text-center">
+                            {isClassEmpty ? (
+                              <span className="font-mono text-muted-foreground text-[13px]">—</span>
+                            ) : (
+                              <span className="font-mono font-medium text-foreground text-[13px]">
+                                {item.completedCount} / {item.totalStudents}
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-3 text-right whitespace-nowrap">
+                            {isClassEmpty ? (
+                              <span className="inline-flex items-center justify-center px-2 py-0.5 text-[12px] font-medium bg-muted text-muted-foreground rounded-none">
+                                Lớp trống
+                              </span>
+                            ) : isClassPending ? (
+                              <span className="inline-flex items-center justify-center px-2 py-0.5 text-[12px] font-medium bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 rounded-none cursor-default">
+                                Chờ giáo viên chốt
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center justify-center px-2 py-0.5 text-[12px] font-medium bg-emerald-100 text-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-300 rounded-none cursor-default">
+                                Đã chốt ({item.completedCount}/{item.totalStudents})
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="py-12 text-center text-muted-foreground text-[13px]">
+                        Không có dữ liệu lớp học trong năm học này.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-4 mt-6 border-t border-border">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate('/classes')}
+                className="w-full sm:w-auto h-8 px-3 inline-flex items-center justify-center gap-1.5 text-[12px] font-medium rounded-none border-border hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer shadow-none"
+              >
+                <span>Mở quản lý lớp học</span>
+                <HugeiconsIcon icon={ArrowUpRight01Icon} size={13} />
+              </Button>
+
+              {/* Clean Gated Next Button: ONLY enabled if enrolledCount === 0 */}
+              <Button
+                type="button"
+                variant={isStudentStatusEligible ? 'brand' : 'outline'}
+                onClick={handleProceedFromStep1}
+                disabled={!isStudentStatusEligible}
+                className={cn(
+                  'w-full sm:w-auto h-8 px-4 inline-flex items-center justify-center gap-1.5 text-[13px] font-medium rounded-none shadow-none transition-colors',
+                  !isStudentStatusEligible && 'opacity-50 cursor-not-allowed bg-muted text-muted-foreground border-border',
+                )}
+                title={!isStudentStatusEligible ? 'Bắt buộc toàn bộ học sinh năm cũ phải được chốt mới có thể tiếp tục' : ''}
+              >
+                <span>Tiếp tục</span>
+                <HugeiconsIcon icon={ArrowRight01Icon} size={14} />
+              </Button>
+            </div>
+          </div>
+        ) : currentStep === 2 ? (
+          /* STEP 2: HOÀN THÀNH KHUNG CHỦ ĐỀ VÀ TÙY CHỌN SAO CHÉP */
+          <div className="space-y-5 animate-in fade-in duration-150">
+            <div>
+              <span className="text-[11px] font-semibold text-[#1447e6] uppercase tracking-wider block font-mono">
+                BƯỚC 02 / 04
               </span>
               <h3 className="text-[17px] font-semibold text-foreground tracking-tight mt-0.5">
                 Hoàn thành khung chủ đề
@@ -412,35 +588,35 @@ export function AcademicYearTransitionView({ currentYear, onSuccess }) {
               )}
             </div>
 
-            <div className="flex items-center justify-between pt-4 mt-6 border-t border-border">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-4 mt-6 border-t border-border">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate('/curriculum')}
-                className="h-8 px-3 inline-flex items-center gap-1.5 text-[12px] font-medium rounded-none border-border hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer shadow-none"
+                onClick={() => setCurrentStep(1)}
+                className="w-full sm:w-auto h-8 px-3.5 inline-flex items-center justify-center gap-1.5 text-[12.5px] font-medium rounded-none border-border bg-background hover:bg-muted text-foreground cursor-pointer shadow-none"
               >
-                <span>Mở xem Khung chủ đề</span>
-                <HugeiconsIcon icon={ArrowUpRight01Icon} size={13} />
+                <HugeiconsIcon icon={ArrowLeft01Icon} size={14} />
+                <span>Quay lại</span>
               </Button>
 
               {/* Clean Gated Next Button */}
               <Button
                 type="button"
                 variant="brand"
-                onClick={handleProceedFromStep1}
-                className="h-8 px-4 inline-flex items-center gap-1.5 text-[13px] font-medium rounded-none shadow-none cursor-pointer"
+                onClick={handleProceedFromStep2}
+                className="w-full sm:w-auto h-8 px-4 inline-flex items-center justify-center gap-1.5 text-[13px] font-medium rounded-none shadow-none cursor-pointer"
               >
                 <span>Tiếp tục</span>
                 <HugeiconsIcon icon={ArrowRight01Icon} size={14} />
               </Button>
             </div>
           </div>
-        ) : currentStep === 2 ? (
-          /* STEP 2: CÓ MUỐN ĐEM KHUNG MỤC TIÊU NĂM CŨ QUA NĂM MỚI KHÔNG */
+        ) : currentStep === 3 ? (
+          /* STEP 3: CÓ MUỐN ĐEM KHUNG MỤC TIÊU NĂM CŨ QUA NĂM MỚI KHÔNG */
           <div className="space-y-5 animate-in fade-in duration-150">
             <div>
               <span className="text-[11px] font-semibold text-[#1447e6] uppercase tracking-wider block font-mono">
-                BƯỚC 02 / 04
+                BƯỚC 03 / 04
               </span>
               <h3 className="text-[17px] font-semibold text-foreground tracking-tight mt-0.5">
                 Hoàn tất khung mục tiêu
@@ -510,12 +686,12 @@ export function AcademicYearTransitionView({ currentYear, onSuccess }) {
               )}
             </div>
 
-            <div className="flex items-center justify-between pt-4 mt-6 border-t border-border">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-4 mt-6 border-t border-border">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setCurrentStep(1)}
-                className="h-8 px-3.5 inline-flex items-center gap-1.5 text-[12.5px] font-medium rounded-none border-border bg-background hover:bg-muted text-foreground cursor-pointer shadow-none"
+                onClick={() => setCurrentStep(2)}
+                className="w-full sm:w-auto h-8 px-3.5 inline-flex items-center justify-center gap-1.5 text-[12.5px] font-medium rounded-none border-border bg-background hover:bg-muted text-foreground cursor-pointer shadow-none"
               >
                 <HugeiconsIcon icon={ArrowLeft01Icon} size={14} />
                 <span>Quay lại</span>
@@ -525,173 +701,8 @@ export function AcademicYearTransitionView({ currentYear, onSuccess }) {
               <Button
                 type="button"
                 variant="brand"
-                onClick={handleProceedFromStep2}
-                className="h-8 px-4 inline-flex items-center gap-1.5 text-[13px] font-medium rounded-none shadow-none cursor-pointer"
-              >
-                <span>Tiếp tục</span>
-                <HugeiconsIcon icon={ArrowRight01Icon} size={14} />
-              </Button>
-            </div>
-          </div>
-        ) : currentStep === 3 ? (
-          /* STEP 3: KIỂM TRA TRẠNG THÁI HỌC SINH NĂM CŨ */
-          <div className="space-y-4 animate-in fade-in duration-150">
-            <div>
-              <span className="text-[11px] font-semibold text-[#1447e6] uppercase tracking-wider block font-mono">
-                BƯỚC 03 / 04
-              </span>
-              <h3 className="text-[17px] font-semibold text-foreground tracking-tight mt-0.5">
-                Kiểm tra trạng thái học sinh năm cũ
-              </h3>
-              <p className="text-[12.5px] text-muted-foreground mt-0.5">
-                Điều kiện bắt buộc: Không còn học sinh nào trong danh sách lớp năm cũ đang ở trạng thái "Đang học". Giáo viên từng lớp cần hoàn tất đánh giá và chốt năm học.
-              </p>
-            </div>
-
-            {/* Standardized Table matching StudentTable */}
-            <div
-              className="w-full border border-border bg-card rounded-none overflow-x-auto shadow-xs select-none"
-              data-name="Academic Year Class Status Table"
-            >
-              {/* Table Top Toolbar */}
-              <div className="h-11 px-3 border-b border-border bg-muted/20 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-[13px] font-semibold text-foreground truncate">
-                    Tiến độ chốt năm học theo danh sách lớp
-                  </span>
-                  <span className="text-[12px] text-muted-foreground font-mono">
-                    ({classesList.length} lớp · {step3Data.totalStudents ?? 0} học sinh)
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={fetchReadiness}
-                    disabled={isLoading}
-                    className="h-7 px-2.5 rounded-none border-border bg-background hover:bg-muted text-foreground text-[12px] font-medium shadow-none cursor-pointer"
-                  >
-                    <HugeiconsIcon icon={RefreshIcon} size={13} className={cn(isLoading && 'animate-spin')} />
-                    <span>Kiểm tra lại</span>
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigate('/classes')}
-                    className="h-7 px-2.5 rounded-none border-border bg-background hover:bg-muted text-foreground text-[12px] font-medium shadow-none cursor-pointer"
-                  >
-                    <span>Quản lý lớp</span>
-                    <HugeiconsIcon icon={ArrowUpRight01Icon} size={13} />
-                  </Button>
-                </div>
-              </div>
-
-              <table className="w-full text-left border-collapse min-w-[700px]">
-                <thead>
-                  <tr className="h-10 border-b border-border bg-muted/30 text-[13px] font-medium text-foreground">
-                    <th className="px-3 min-w-[180px] font-medium">Lớp học</th>
-                    <th className="px-3 min-w-[110px] font-medium">Khối lớp</th>
-                    <th className="px-3 min-w-[170px] font-medium">Giáo viên chủ nhiệm</th>
-                    <th className="px-3 min-w-[90px] font-medium text-center">Sĩ số</th>
-                    <th className="px-3 min-w-[110px] font-medium text-center">Chưa chốt</th>
-                    <th className="px-3 min-w-[160px] font-medium text-right">Trạng thái</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/60">
-                  {classesList.length > 0 ? (
-                    classesList.map((item) => {
-                      const isClassEmpty = item.totalStudents === 0;
-                      const isClassPending = item.enrolledCount > 0;
-                      return (
-                        <tr
-                          key={item.classId}
-                          className="h-[56px] hover:bg-muted/40 transition-colors group cursor-default"
-                        >
-                          <td className="px-3">
-                            <div
-                              onClick={() => navigate(`/classes/${item.classId}/students`)}
-                              className="flex flex-col min-w-0 leading-tight cursor-pointer group/name"
-                            >
-                              <span className="text-[13.5px] font-medium text-foreground group-hover/name:text-[#1447e6] transition-colors truncate">
-                                {item.className}
-                              </span>
-                              <span className="text-[11.5px] text-muted-foreground font-mono">
-                                Mã lớp: #{item.classId}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-3 text-[13px] text-muted-foreground whitespace-nowrap">
-                            {item.ageGroupLabel || item.ageGroup}
-                          </td>
-                          <td className="px-3 text-[13px] text-foreground">
-                            {item.teacherName}
-                          </td>
-                          <td className="px-3 text-center text-[13px] font-mono text-muted-foreground">
-                            {isClassEmpty ? '—' : `${item.totalStudents} HS`}
-                          </td>
-                          <td className="px-3 text-center">
-                            {isClassPending ? (
-                              <span className="font-mono font-semibold text-amber-600 dark:text-amber-400 text-[13px]">
-                                {item.enrolledCount} HS
-                              </span>
-                            ) : (
-                              <span className="font-mono text-muted-foreground/50 text-[13px]">0</span>
-                            )}
-                          </td>
-                          <td className="px-3 text-right whitespace-nowrap">
-                            {isClassEmpty ? (
-                              <span className="inline-flex items-center justify-center px-2 py-0.5 text-[12px] font-medium bg-muted text-muted-foreground rounded-none">
-                                Lớp trống
-                              </span>
-                            ) : isClassPending ? (
-                              <span className="inline-flex items-center justify-center px-2 py-0.5 text-[12px] font-medium bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 rounded-none cursor-default">
-                                Chờ giáo viên chốt
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center justify-center px-2 py-0.5 text-[12px] font-medium bg-emerald-100 text-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-300 rounded-none cursor-default">
-                                Đã chốt ({item.completedCount}/{item.totalStudents})
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })
-                  ) : (
-                    <tr>
-                      <td colSpan={6} className="py-12 text-center text-muted-foreground text-[13px]">
-                        Không có dữ liệu lớp học trong năm học này.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="flex items-center justify-between pt-4 mt-6 border-t border-border">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setCurrentStep(2)}
-                className="h-8 px-3.5 inline-flex items-center gap-1.5 text-[12.5px] font-medium rounded-none border-border bg-background hover:bg-muted text-foreground cursor-pointer shadow-none"
-              >
-                <HugeiconsIcon icon={ArrowLeft01Icon} size={14} />
-                <span>Quay lại</span>
-              </Button>
-
-              {/* Clean Gated Next Button: ONLY enabled if enrolledCount === 0 */}
-              <Button
-                type="button"
-                variant={isStep3Eligible ? 'brand' : 'outline'}
                 onClick={handleProceedFromStep3}
-                disabled={!isStep3Eligible}
-                className={cn(
-                  'h-8 px-4 inline-flex items-center gap-1.5 text-[13px] font-medium rounded-none shadow-none transition-colors',
-                  !isStep3Eligible && 'opacity-50 cursor-not-allowed bg-muted text-muted-foreground border-border',
-                )}
-                title={!isStep3Eligible ? 'Bắt buộc toàn bộ học sinh năm cũ phải được chốt mới có thể tiếp tục' : ''}
+                className="w-full sm:w-auto h-8 px-4 inline-flex items-center justify-center gap-1.5 text-[13px] font-medium rounded-none shadow-none cursor-pointer"
               >
                 <span>Tiếp tục</span>
                 <HugeiconsIcon icon={ArrowRight01Icon} size={14} />
@@ -720,21 +731,21 @@ export function AcademicYearTransitionView({ currentYear, onSuccess }) {
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 text-[12px]">
                 <div className="p-3 bg-card border border-border">
-                  <div className="text-muted-foreground">1. Khung chủ đề:</div>
-                  <div className="font-semibold text-[#1447e6] mt-1 text-[12.5px]">
-                    {copyThemes ? 'Đem qua năm mới' : 'Không đem (Tạo mới)'}
-                  </div>
-                </div>
-                <div className="p-3 bg-card border border-border">
-                  <div className="text-muted-foreground">2. Khung mục tiêu:</div>
-                  <div className="font-semibold text-[#1447e6] mt-1 text-[12.5px]">
-                    {copyGoals ? 'Đem qua năm mới' : 'Không đem (Tạo mới)'}
-                  </div>
-                </div>
-                <div className="p-3 bg-card border border-border">
-                  <div className="text-muted-foreground">3. Trạng thái học sinh:</div>
+                  <div className="text-muted-foreground">1. Trạng thái học sinh:</div>
                   <div className="font-semibold text-emerald-600 mt-1 text-[12.5px]">
-                    0 HS đang học (Đã chốt 100%)
+                    {isStudentStatusEligible ? 'Đã hoàn tất đánh giá' : 'Chưa hoàn tất đánh giá'}
+                  </div>
+                </div>
+                <div className="p-3 bg-card border border-border">
+                  <div className="text-muted-foreground">2. Khung chủ đề:</div>
+                  <div className="font-semibold text-[#1447e6] mt-1 text-[12.5px]">
+                    {copyThemes ? 'Kế thừa sang năm mới' : 'Khởi tạo mới'}
+                  </div>
+                </div>
+                <div className="p-3 bg-card border border-border">
+                  <div className="text-muted-foreground">3. Khung mục tiêu:</div>
+                  <div className="font-semibold text-[#1447e6] mt-1 text-[12.5px]">
+                    {copyGoals ? 'Kế thừa sang năm mới' : 'Khởi tạo mới'}
                   </div>
                 </div>
               </div>
@@ -801,12 +812,12 @@ export function AcademicYearTransitionView({ currentYear, onSuccess }) {
               </span>
             </label>
 
-            <div className="flex items-center justify-between pt-4 mt-6 border-t border-border">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-4 mt-6 border-t border-border">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setCurrentStep(3)}
-                className="h-8 px-3.5 inline-flex items-center gap-1.5 text-[12.5px] font-medium rounded-none border-border bg-background hover:bg-muted text-foreground cursor-pointer shadow-none"
+                className="w-full sm:w-auto h-8 px-3.5 inline-flex items-center justify-center gap-1.5 text-[12.5px] font-medium rounded-none border-border bg-background hover:bg-muted text-foreground cursor-pointer shadow-none"
               >
                 <HugeiconsIcon icon={ArrowLeft01Icon} size={14} />
                 <span>Quay lại</span>
@@ -817,7 +828,7 @@ export function AcademicYearTransitionView({ currentYear, onSuccess }) {
                 variant="brand"
                 onClick={handleExecuteTransition}
                 disabled={isExecuting || !isConfirmed}
-                className="h-8.5 px-4.5 inline-flex items-center gap-2 text-[13px] font-medium rounded-none shadow-none cursor-pointer transition-colors disabled:opacity-50"
+                className="w-full sm:w-auto h-8.5 px-4.5 inline-flex items-center justify-center gap-2 text-[13px] font-medium rounded-none shadow-none cursor-pointer transition-colors disabled:opacity-50"
               >
                 {isExecuting ? (
                   <>

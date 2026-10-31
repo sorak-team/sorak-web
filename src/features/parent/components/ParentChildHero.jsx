@@ -64,21 +64,15 @@ export function ParentChildHero({
   const cleanSchoolYear = (schoolYear || '').replace(/^Năm học\s*/i, '');
 
   // Dữ liệu thật từ database:
-  // Trong mầm non phân công lớp chỉ có 2 vai trò dựa trên isPrimary:
-  // - isPrimary = true: Chủ nhiệm
-  // - isPrimary = false: Bảo mẫu
-  // Tuyệt đối không tự suy diễn 'Phụ giảng' và không dùng dữ liệu giả.
+  // Toàn bộ giáo viên trong lớp đều là Giáo viên phụ trách (co-teachers).
   const staffList = React.useMemo(() => {
     if (Array.isArray(teachers) && teachers.length > 0) {
-      return [...teachers]
-        .sort((a, b) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0))
-        .map((t, idx) => ({
-          id: t.id || `teacher-${idx}`,
-          name: t.fullName || t.name,
-          roleBadge: t.isPrimary ? 'Chủ nhiệm' : 'Bảo mẫu',
-          roleType: t.isPrimary ? 'primary' : 'caregiver',
-          phone: t.phone || null,
-        }));
+      return teachers.map((t, idx) => ({
+        id: t.id || `teacher-${idx}`,
+        name: t.fullName || t.name,
+        roleBadge: 'Giáo viên phụ trách',
+        phone: t.phone || null,
+      }));
     }
 
     if (primaryTeacher?.fullName) {
@@ -86,8 +80,7 @@ export function ParentChildHero({
         {
           id: primaryTeacher.id || 'primary-teacher',
           name: primaryTeacher.fullName,
-          roleBadge: 'Chủ nhiệm',
-          roleType: 'primary',
+          roleBadge: 'Giáo viên phụ trách',
           phone: primaryTeacher.phone || null,
         },
       ];
@@ -96,11 +89,10 @@ export function ParentChildHero({
     return [];
   }, [primaryTeacher, teachers]);
 
-  const homeroomTeacher =
-    primaryTeacher?.fullName
-      ? primaryTeacher
-      : staffList.find((s) => s.roleType === 'primary') || staffList[0];
-  const teacherName = homeroomTeacher?.name || homeroomTeacher?.fullName || 'Chưa phân công';
+  const teacherName =
+    staffList.length > 0
+      ? staffList.map((s) => s.name).join(', ')
+      : 'Chưa phân công';
 
   const avatarUrl = getStudentAvatarUrl(
     student?.avatarUrl || student?.avatar,
@@ -360,7 +352,7 @@ export function ParentChildHero({
             {/* Homeroom Teacher */}
             <div className="flex flex-col gap-1">
               <span className="text-[11px] text-muted-foreground font-normal">
-                Giáo viên lớp
+                Giáo viên
               </span>
               <div className="h-8 flex items-center">
                 <button
@@ -611,12 +603,10 @@ export function ParentChildHero({
               </button>
             </div>
 
-            {/* Body Modal: Danh sách giáo viên & bảo mẫu */}
+            {/* Body Modal: Danh sách giáo viên phụ trách */}
             <div className="p-4 sm:p-5 flex flex-col gap-2.5 overflow-y-auto max-h-[70vh]">
               {staffList.length > 0 ? (
                 staffList.map((staff) => {
-                  const isPrimary = staff.roleType === 'primary';
-
                   return (
                     <div
                       key={staff.id}
@@ -626,16 +616,6 @@ export function ParentChildHero({
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-semibold text-foreground text-[14px]">
                             {staff.name}
-                          </span>
-                          <span
-                            className={cn(
-                              'inline-flex items-center px-2 py-0.5 text-[11px] font-semibold border select-none',
-                              isPrimary
-                                ? 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20'
-                                : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20'
-                            )}
-                          >
-                            {staff.roleBadge}
                           </span>
                         </div>
 

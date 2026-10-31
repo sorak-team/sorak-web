@@ -50,6 +50,16 @@ export function ClassroomsPage() {
   const openAddModal = useClassesStore((state) => state.openAddModal);
   const fetchClasses = useClassesStore((state) => state.fetchClasses);
 
+  const currentYearObj =
+    academicYears.find(
+      (y) =>
+        String(y.id) === String(selectedYearId) ||
+        (selectedYearId === '2026-2027' && (String(y.id) === '1' || y.name?.includes('2026'))),
+    ) ||
+    academicYears.find((y) => y.active) ||
+    {};
+  const isYearCompleted = currentYearObj?.status === 'COMPLETED';
+
   useEffect(() => {
     if (selectedYearId) {
       fetchClasses(selectedYearId);
@@ -249,16 +259,22 @@ export function ClassroomsPage() {
           </div>
 
           {/* Add Class Button */}
-          <Button
-            type="button"
-            onClick={openAddModal}
-            className="h-8 px-3 text-[13px] font-medium bg-[#1447e6] hover:bg-[#1447e6]/90 text-white rounded-none shadow-none cursor-pointer flex items-center gap-1.5"
-            data-node-id="4607:7602"
-            data-name="Button · Thêm lớp học"
-          >
-            <HugeiconsIcon icon={PlusSignIcon} size={15} />
-            <span>{t('classes.addClass', 'Thêm lớp học')}</span>
-          </Button>
+          {!isYearCompleted ? (
+            <Button
+              type="button"
+              onClick={openAddModal}
+              className="h-8 px-3 text-[13px] font-medium bg-[#1447e6] hover:bg-[#1447e6]/90 text-white rounded-none shadow-none cursor-pointer flex items-center gap-1.5"
+              data-node-id="4607:7602"
+              data-name="Button · Thêm lớp học"
+            >
+              <HugeiconsIcon icon={PlusSignIcon} size={15} />
+              <span>{t('classes.addClass', 'Thêm lớp học')}</span>
+            </Button>
+          ) : (
+            <div className="h-8 px-2.5 text-[12px] font-medium bg-muted text-muted-foreground border border-border flex items-center gap-1.5">
+              <span>Năm học đã kết thúc (Chỉ xem)</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -278,7 +294,7 @@ export function ClassroomsPage() {
 
       {/* Content View: Table View or Grid View */}
       {viewMode === 'table' ? (
-        <ClassTable classes={filteredClasses} />
+        <ClassTable classes={filteredClasses} isYearCompleted={isYearCompleted} />
       ) : (
         /* Grade Groups Container (Figma FE-05 Grid View) */
       <div className="flex flex-col gap-6">

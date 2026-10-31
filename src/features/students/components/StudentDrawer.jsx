@@ -1,19 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useParams, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Cancel01Icon, Add01Icon } from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useStudentStore, getStudentAvatarUrl, generateStudentCode, transformBackendStudent } from '../students.store';
+import {
+  useStudentStore,
+  getStudentAvatarUrl,
+  generateStudentCode,
+  transformBackendStudent,
+  toDisplayDate,
+} from '../students.store';
 import { studentsApi } from '../students.api';
 import { useClassesStore, findTeacherClassForYear } from '@/features/classes/classes.store';
 import { useAuthStore } from '@/features/auth';
 import { useAcademicYearStore } from '@/features/academic-years';
 import { cn } from '@/shared/lib/utils';
 
-export function StudentDrawer() {
+export function StudentDrawer({
+  currentClassId: propClassId,
+  classEnrollment: propClassEnrollment,
+  contextualStatus: propContextualStatus,
+  onSuccess,
+}) {
   const { t } = useTranslation();
   const {
     isDrawerOpen,
@@ -33,14 +45,25 @@ export function StudentDrawer() {
     user?.role?.toLowerCase()?.includes('teacher');
 
   const classes = useClassesStore((state) => state.classes);
+  const hasLoadedClasses = useClassesStore((state) => state.hasLoaded);
+  const lastFetchedYearId = useClassesStore((state) => state.lastFetchedYearId);
   const fetchClasses = useClassesStore((state) => state.fetchClasses);
   const teacherClass = isTeacher ? findTeacherClassForYear(user, classes, selectedYearId) : null;
 
   useEffect(() => {
-    if (!classes || classes.length === 0) {
-      fetchClasses();
+    const isLoadedForYear = hasLoadedClasses && String(lastFetchedYearId) === String(selectedYearId);
+    if (isDrawerOpen && !isLoadedForYear) {
+      fetchClasses(selectedYearId);
     }
-  }, [classes, fetchClasses]);
+  }, [isDrawerOpen, hasLoadedClasses, lastFetchedYearId, selectedYearId, fetchClasses]);
+
+  const { classId: routeClassId, id: routeId } = useParams();
+  const location = useLocation();
+  const isUnderClassesRoute = location.pathname.startsWith('/classes/');
+  const activeClassId = propClassId || routeClassId || (isUnderClassesRoute ? routeId : null);
+  const isInClassContext = Boolean(activeClassId);
+
+  const [detailStudent, setDetailStudent] = useState(null);
 
   const currentStudent = students.find(
     (item) =>
@@ -74,6 +97,79 @@ export function StudentDrawer() {
   const [medicalNotes, setMedicalNotes] = useState('');
   const [previousSchool, setPreviousSchool] = useState('');
 
+  const activeClassEnrollment = useMemo(() => {
+    if (!activeClassId) return null;
+    if (propClassEnrollment) return propClassEnrollment;
+    const history = detailStudent?.enrollmentHistory || currentStudent?.enrollmentHistory || [];
+    const found = history.find((e) => String(e.classId) === String(activeClassId));
+    if (found) return found;
+    if (
+      currentStudent?.currentClass &&
+      String(currentStudent.currentClass.classId) === String(activeClassId)
+    ) {
+      return {
+        classId: activeClassId,
+        className: currentStudent.currentClass.className,
+        enrolledAt: currentStudent.currentClass.enrolledAt || currentStudent.enrollmentDate || currentStudent.joinDate,
+        leftAt: null,
+        status: 'ENROLLED',
+      };
+    }
+    return null;
+  }, [activeClassId, propClassEnrollment, detailStudent, currentStudent]);
+
+  const enrollmentStatusLabel = useMemo(() => {
+    if (!isInClassContext) return '';
+
+    const rawStatus = activeClassEnrollment?.status || propContextualStatus?.status;
+    if (rawStatus) {
+      const key = String(rawStatus).toUpperCase();
+      switch (key) {
+        case 'ENROLLED':
+        case 'STUDYING':
+          return t('student.statusStudying', 'Đang học');
+        case 'TRANSFERRED_CLASS':
+          return t('student.statusTransferredClass', 'Đã chuyển lớp');
+        case 'TRANSFERRED':
+        case 'TRANSFERRED_SCHOOL':
+          return t('student.statusTransferred', 'Chuyển trường');
+        case 'COMPLETED':
+          return t('student.statusCompleted', 'Hoàn thành');
+        case 'GRADUATED':
+          return t('student.statusGraduated', 'Đã tốt nghiệp');
+        case 'RESERVED':
+          return t('student.statusReserved', 'Bảo lưu');
+        case 'DROPPED_OUT':
+          return t('student.statusDroppedOut', 'Thôi học');
+        default:
+          break;
+      }
+    }
+
+    if (activeClassEnrollment?.leftAt) {
+      return t('student.statusCompleted', 'Hoàn thành');
+    }
+
+    return t('student.statusStudying', 'Đang học');
+  }, [isInClassContext, activeClassEnrollment, propContextualStatus, t]);
+
+  const classEnrolledAtStr = useMemo(() => {
+    if (!isInClassContext) return '';
+    const dateVal = activeClassEnrollment?.enrolledAt || (activeClassEnrollment ? currentStudent?.joinDate : null);
+    return dateVal ? toDisplayDate(dateVal) : (joinDate || '—');
+  }, [isInClassContext, activeClassEnrollment, currentStudent?.joinDate, joinDate]);
+
+  const classLeftAtStr = useMemo(() => {
+    if (!isInClassContext || !activeClassEnrollment?.leftAt) return '';
+    return toDisplayDate(activeClassEnrollment.leftAt);
+  }, [isInClassContext, activeClassEnrollment?.leftAt]);
+
+  const isStudentGraduated = useMemo(() => {
+    if (drawerMode !== 'edit') return false;
+    const st = detailStudent?.status || currentStudent?.status;
+    return (st || '').toLowerCase() === 'graduated';
+  }, [drawerMode, detailStudent?.status, currentStudent?.status]);
+
   // Sync state when drawer opens or student changes
   useEffect(() => {
     let isMounted = true;
@@ -84,7 +180,7 @@ export function StudentDrawer() {
         setFullName(currentStudent.fullName || '');
         setDob(currentStudent.dob || '');
         setGender(currentStudent.gender || 'Nam');
-        setClassId(currentStudent.currentClass?.classId || '');
+        setClassId(activeClassId || currentStudent.currentClass?.classId || '');
         setStatus(currentStudent.status || 'studying');
         setJoinDate(currentStudent.joinDate || '');
         setEthnic(currentStudent.ethnic || 'Kinh');
@@ -100,7 +196,6 @@ export function StudentDrawer() {
               fullName: p.fullName || '',
               relationship: p.relationship || '',
               phone: p.phone || '',
-              canPickup: p.canPickup !== false,
             })),
           );
         } else {
@@ -121,11 +216,12 @@ export function StudentDrawer() {
             const transformed = transformBackendStudent(fullData);
             if (!transformed) return;
 
+            setDetailStudent(transformed);
             setStudentCode((prev) => prev || transformed.studentCode || '');
             setFullName((prev) => prev || transformed.fullName || '');
             setDob((prev) => prev || transformed.dob || '');
             setGender((prev) => prev || transformed.gender || 'Nam');
-            setClassId((prev) => prev || transformed.currentClass?.classId || '');
+            setClassId(activeClassId || transformed.currentClass?.classId || '');
             setStatus((prev) => prev || transformed.status || 'studying');
             setJoinDate((prev) => prev || transformed.joinDate || '');
             setEthnic((prev) => prev || transformed.ethnic || 'Kinh');
@@ -144,7 +240,6 @@ export function StudentDrawer() {
                   fullName: p.fullName || '',
                   relationship: p.relationship || '',
                   phone: p.phone || '',
-                  canPickup: p.canPickup !== false,
                 })),
               );
             }
@@ -154,6 +249,7 @@ export function StudentDrawer() {
           });
       }
     } else {
+      setDetailStudent(null);
       setFullName('');
       setDob('15/05/2023');
       setGender('Nam');
@@ -165,7 +261,14 @@ export function StudentDrawer() {
       setPlaceOfBirth('Hà Nội');
       setPermanentResidence('');
       setCurrentResidence('');
-      setParents([]);
+      setParents([
+        {
+          id: `p_init_${Date.now()}`,
+          fullName: '',
+          relationship: 'Bố',
+          phone: '',
+        },
+      ]);
 
       setAllergyNotes('');
       setMedicalNotes('');
@@ -176,7 +279,7 @@ export function StudentDrawer() {
     return () => {
       isMounted = false;
     };
-  }, [drawerMode, currentStudent, editingStudentId, isDrawerOpen, isTeacher, teacherClass]);
+  }, [drawerMode, currentStudent, editingStudentId, isDrawerOpen, isTeacher, teacherClass, activeClassId]);
 
   // Helper to derive suitable grade from date of birth
   const getDobInfo = (dobStr) => {
@@ -223,7 +326,6 @@ export function StudentDrawer() {
         fullName: '',
         relationship: '',
         phone: '',
-        canPickup: true,
       },
     ]);
   };
@@ -240,8 +342,16 @@ export function StudentDrawer() {
 
   if (!isDrawerOpen) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isTeacher && drawerMode === 'edit') {
+      toast.error('Giáo viên không có quyền chỉnh sửa hồ sơ học sinh hoặc thông tin phụ huynh.');
+      return;
+    }
+    if (isStudentGraduated) {
+      toast.error('Học sinh đã tốt nghiệp, không thể chỉnh sửa thông tin hồ sơ.');
+      return;
+    }
     if (!fullName.trim()) {
       toast.error('Vui lòng nhập họ và tên học sinh');
       setActiveTab('basic');
@@ -283,7 +393,6 @@ export function StudentDrawer() {
         fullName: p.fullName.trim(),
         relationship: p.relationship.trim() || 'Người giám hộ',
         phone: p.phone.trim(),
-        canPickup: Boolean(p.canPickup),
       }))
       .filter((p) => p.fullName || p.phone);
 
@@ -336,12 +445,27 @@ export function StudentDrawer() {
       avatar: currentStudent?.avatar || getStudentAvatarUrl(null, studentCode.trim() || fullName.trim()),
     };
 
-    if (drawerMode === 'edit' && editingStudentId) {
-      updateStudent(editingStudentId, payload);
-      toast.success('Đã cập nhật hồ sơ học sinh thành công');
-    } else {
-      createStudent(payload);
-      toast.success('Đã thêm hồ sơ học sinh mới thành công');
+    try {
+      if (drawerMode === 'edit' && editingStudentId) {
+        const editPayload = {
+          ...payload,
+          status: isInClassContext ? undefined : payload.status,
+          classId: isInClassContext ? (currentStudent?.currentClass?.classId || classId || null) : (classId || null),
+        };
+        await updateStudent(editingStudentId, editPayload);
+        if (onSuccess) {
+          await onSuccess();
+        }
+        toast.success('Đã cập nhật hồ sơ học sinh thành công');
+      } else {
+        await createStudent(payload);
+        if (onSuccess) {
+          await onSuccess();
+        }
+        toast.success('Đã thêm hồ sơ học sinh mới thành công');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Lưu hồ sơ học sinh thất bại');
     }
   };
 
@@ -392,6 +516,12 @@ export function StudentDrawer() {
           </button>
         </div>
 
+        {isStudentGraduated && (
+          <div className="mx-6 my-2.5 px-3.5 py-2 bg-purple-500/10 border border-purple-500/30 text-purple-800 dark:text-purple-300 text-[12px] flex items-center gap-2">
+            <span>Học sinh đã tốt nghiệp ra trường. Không thể chỉnh sửa thông tin hồ sơ hoặc trạng thái.</span>
+          </div>
+        )}
+
         {/* Section Tabs */}
         <div className="flex border-b border-border bg-muted/20 px-6 shrink-0">
           <button
@@ -416,7 +546,7 @@ export function StudentDrawer() {
                 : 'border-transparent text-muted-foreground hover:text-foreground'
             )}
           >
-            2. Phụ huynh & Đón trẻ
+            2. Phụ huynh & Giám hộ
           </button>
           <button
             type="button"
@@ -539,10 +669,10 @@ export function StudentDrawer() {
                       <select
                         value={classId}
                         onChange={(e) => setClassId(e.target.value)}
-                        disabled={isTeacher}
+                        disabled={isTeacher || isInClassContext}
                         className={cn(
                           'w-full h-9 px-3 bg-background border border-border rounded-none text-[13px] text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer',
-                          isTeacher && 'bg-muted cursor-not-allowed opacity-80'
+                          (isTeacher || isInClassContext) && 'bg-muted cursor-not-allowed opacity-90'
                         )}
                       >
                         <option value="">-- Chưa phân lớp --</option>
@@ -558,45 +688,157 @@ export function StudentDrawer() {
                       <Label className="text-[12px] font-medium text-foreground">
                         Trạng thái học vụ
                       </Label>
-                      <select
-                        value={status}
-                        onChange={(e) => setStatus(e.target.value)}
-                        className="w-full h-9 px-3 bg-background border border-border rounded-none text-[13px] text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer"
-                      >
-                        <option value="studying">Đang học</option>
-                        <option value="reserved">Bảo lưu</option>
-                        <option value="transferred">Chuyển trường</option>
-                        <option value="dropped_out">Thôi học</option>
-                        <option value="graduated">Đã tốt nghiệp</option>
-                      </select>
+                      {isInClassContext ? (
+                        <Input
+                          value={enrollmentStatusLabel}
+                          disabled
+                          readOnly
+                          className="h-9 text-[13px] rounded-none border-border bg-muted cursor-not-allowed opacity-90 text-foreground font-medium"
+                        />
+                      ) : (
+                        <select
+                          value={status}
+                          onChange={(e) => setStatus(e.target.value)}
+                          className="w-full h-9 px-3 bg-background border border-border rounded-none text-[13px] text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer"
+                        >
+                          <option value="studying">Đang học</option>
+                          <option value="reserved">Bảo lưu</option>
+                          <option value="transferred">Chuyển trường</option>
+                          <option value="dropped_out">Thôi học</option>
+                          <option value="graduated">Đã tốt nghiệp</option>
+                        </select>
+                      )}
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <Label className="text-[12px] font-medium text-foreground">
-                        Ngày nhập học
-                      </Label>
-                      <Input
-                        value={joinDate}
-                        onChange={(e) => setJoinDate(e.target.value)}
-                        placeholder="01/09/2026"
-                        className="h-9 text-[13px] rounded-none border-border"
-                      />
-                    </div>
+                  {isInClassContext ? (
+                    classLeftAtStr ? (
+                      <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <Label className="text-[12px] font-medium text-foreground">
+                              Ngày vào lớp
+                            </Label>
+                            <Input
+                              value={classEnrolledAtStr || '—'}
+                              disabled
+                              readOnly
+                              className="h-9 text-[13px] rounded-none border-border bg-muted cursor-not-allowed opacity-90 text-foreground"
+                            />
+                          </div>
 
-                    <div className="space-y-1.5">
-                      <Label className="text-[12px] font-medium text-foreground">
-                        Nơi sinh
-                      </Label>
-                      <Input
-                        value={placeOfBirth}
-                        onChange={(e) => setPlaceOfBirth(e.target.value)}
-                        placeholder="Hà Nội"
-                        className="h-9 text-[13px] rounded-none border-border"
-                      />
+                          <div className="space-y-1.5">
+                            <Label className="text-[12px] font-medium text-foreground">
+                              Ngày rời lớp
+                            </Label>
+                            <Input
+                              value={classLeftAtStr}
+                              disabled
+                              readOnly
+                              className="h-9 text-[13px] rounded-none border-border bg-muted cursor-not-allowed opacity-90 text-foreground"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <Label className="text-[12px] font-medium text-foreground">
+                              Ngày nhập học
+                            </Label>
+                            <Input
+                              value={joinDate || '—'}
+                              disabled
+                              readOnly
+                              className="h-9 text-[13px] rounded-none border-border bg-muted cursor-not-allowed opacity-90 text-foreground"
+                            />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <Label className="text-[12px] font-medium text-foreground">
+                              Nơi sinh
+                            </Label>
+                            <Input
+                              value={placeOfBirth}
+                              onChange={(e) => setPlaceOfBirth(e.target.value)}
+                              placeholder="Hà Nội"
+                              className="h-9 text-[13px] rounded-none border-border"
+                            />
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <Label className="text-[12px] font-medium text-foreground">
+                              Ngày vào lớp
+                            </Label>
+                            <Input
+                              value={classEnrolledAtStr || '—'}
+                              disabled
+                              readOnly
+                              className="h-9 text-[13px] rounded-none border-border bg-muted cursor-not-allowed opacity-90 text-foreground"
+                            />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <Label className="text-[12px] font-medium text-foreground">
+                              Ngày nhập học
+                            </Label>
+                            <Input
+                              value={joinDate || '—'}
+                              disabled
+                              readOnly
+                              className="h-9 text-[13px] rounded-none border-border bg-muted cursor-not-allowed opacity-90 text-foreground"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <Label className="text-[12px] font-medium text-foreground">
+                            Nơi sinh
+                          </Label>
+                          <Input
+                            value={placeOfBirth}
+                            onChange={(e) => setPlaceOfBirth(e.target.value)}
+                            placeholder="Hà Nội"
+                            className="h-9 text-[13px] rounded-none border-border"
+                          />
+                        </div>
+                      </>
+                    )
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label className="text-[12px] font-medium text-foreground">
+                          Ngày nhập học
+                        </Label>
+                        <Input
+                          value={joinDate}
+                          disabled={drawerMode === 'edit'}
+                          readOnly={drawerMode === 'edit'}
+                          onChange={(e) => setJoinDate(e.target.value)}
+                          placeholder="01/09/2026"
+                          className={cn(
+                            'h-9 text-[13px] rounded-none border-border',
+                            drawerMode === 'edit' && 'bg-muted cursor-not-allowed opacity-90 text-foreground'
+                          )}
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-[12px] font-medium text-foreground">
+                          Nơi sinh
+                        </Label>
+                        <Input
+                          value={placeOfBirth}
+                          onChange={(e) => setPlaceOfBirth(e.target.value)}
+                          placeholder="Hà Nội"
+                          className="h-9 text-[13px] rounded-none border-border"
+                        />
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <div className="space-y-1.5">
                     <Label className="text-[12px] font-medium text-foreground">
@@ -667,22 +909,8 @@ export function StudentDrawer() {
                         </button>
                       </div>
 
-                      <div className="p-4 space-y-4">
-                        {/* Row 1: Mối quan hệ & Họ và tên */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          {/* Relationship - Free Typing Input */}
-                          <div className="space-y-1.5">
-                            <Label className="text-[12px] font-medium text-foreground">
-                              {t('student.relationship', 'Mối quan hệ')}
-                            </Label>
-                            <Input
-                              value={p.relationship}
-                              onChange={(e) => handleUpdateParent(idx, 'relationship', e.target.value)}
-                              placeholder="VD: Bố, Mẹ, Ông, Bà, Giám hộ..."
-                              className="h-9 text-[13px] rounded-none border-border"
-                            />
-                          </div>
-
+                      <div className="p-4 space-y-3.5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                           <div className="space-y-1.5">
                             <Label className="text-[12px] font-medium text-foreground">
                               {t('student.parentFullName', 'Họ và tên')} <span className="text-destructive">*</span>
@@ -690,42 +918,34 @@ export function StudentDrawer() {
                             <Input
                               value={p.fullName}
                               onChange={(e) => handleUpdateParent(idx, 'fullName', e.target.value)}
-                              placeholder="Họ và tên"
+                              placeholder="Ví dụ: Nguyễn Văn A"
+                              className="h-9 text-[13px] rounded-none border-border"
+                            />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <Label className="text-[12px] font-medium text-foreground">
+                              {t('student.relationship', 'Mối quan hệ')} <span className="text-destructive">*</span>
+                            </Label>
+                            <Input
+                              value={p.relationship}
+                              onChange={(e) => handleUpdateParent(idx, 'relationship', e.target.value)}
+                              placeholder="VD: Bố, Mẹ, Ông, Bà..."
                               className="h-9 text-[13px] rounded-none border-border"
                             />
                           </div>
                         </div>
 
-                        {/* Row 2: Số điện thoại & Quyền đưa đón */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
-                          <div className="space-y-1.5">
-                            <Label className="text-[12px] font-medium text-foreground">
-                              {t('student.parentPhone', 'Số điện thoại')} <span className="text-destructive">*</span>
-                            </Label>
-                            <Input
-                              value={p.phone}
-                              onChange={(e) => handleUpdateParent(idx, 'phone', e.target.value)}
-                              placeholder="0901234567"
-                              className="h-9 text-[13px] rounded-none border-border font-mono"
-                            />
-                          </div>
-
-                          <div className="space-y-1.5">
-                            <Label className="text-[12px] font-medium text-foreground">
-                              {t('student.pickupPermission', 'Quyền đưa đón')}
-                            </Label>
-                            <label className="h-9 px-3 border border-border bg-background flex items-center gap-2 text-[13px] cursor-pointer select-none">
-                              <input
-                                type="checkbox"
-                                checked={p.canPickup}
-                                onChange={(e) => handleUpdateParent(idx, 'canPickup', e.target.checked)}
-                                className="accent-primary size-4 rounded-none cursor-pointer"
-                              />
-                              <span className="text-foreground text-[13px]">
-                                {t('student.canPickupLabel', 'Được phép đón bé')}
-                              </span>
-                            </label>
-                          </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-[12px] font-medium text-foreground">
+                            {t('student.parentPhone', 'Số điện thoại')} <span className="text-destructive">*</span>
+                          </Label>
+                          <Input
+                            value={p.phone}
+                            onChange={(e) => handleUpdateParent(idx, 'phone', e.target.value)}
+                            placeholder="Ví dụ: 0901234567"
+                            className="h-9 text-[13px] rounded-none border-border font-mono"
+                          />
                         </div>
                       </div>
                     </div>
@@ -852,15 +1072,22 @@ export function StudentDrawer() {
             >
               {t('common.cancel', 'Hủy')}
             </Button>
-            <Button
-              type="button"
-              onClick={handleSubmit}
-              className="h-8 px-4 text-[13px] rounded-none bg-[#1447e6] hover:bg-[#1447e6]/90 text-white cursor-pointer"
-            >
-              {drawerMode === 'edit'
-                ? t('common.saveChanges', 'Lưu thay đổi')
-                : t('student.createSubmit', 'Thêm học sinh')}
-            </Button>
+            {!(isTeacher && drawerMode === 'edit') && (
+              <Button
+                type="button"
+                disabled={isStudentGraduated}
+                onClick={handleSubmit}
+                className={cn(
+                  'h-8 px-4 text-[13px] rounded-none bg-[#1447e6] hover:bg-[#1447e6]/90 text-white cursor-pointer',
+                  isStudentGraduated && 'opacity-40 cursor-not-allowed hover:bg-[#1447e6]'
+                )}
+                title={isStudentGraduated ? 'Học sinh đã tốt nghiệp, không thể chỉnh sửa' : undefined}
+              >
+                {drawerMode === 'edit'
+                  ? t('common.saveChanges', 'Lưu thay đổi')
+                  : t('student.createSubmit', 'Thêm học sinh')}
+              </Button>
+            )}
           </div>
         </div>
       </div>

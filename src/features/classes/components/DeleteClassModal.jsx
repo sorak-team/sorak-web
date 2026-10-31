@@ -24,12 +24,18 @@ export function DeleteClassModal() {
 
   if (!classToDelete) return null;
 
-  const handleDelete = () => {
-    deleteClass(classToDelete.id);
-    toast.success(
-      t('classes.deleteSuccess', `Đã xóa lớp ${classToDelete.name} thành công.`),
-    );
-    navigate('/classes');
+  const handleDelete = async () => {
+    try {
+      await deleteClass(classToDelete.id);
+      toast.success(
+        t('classes.deleteSuccess', `Đã xóa lớp ${classToDelete.name} thành công.`),
+      );
+      navigate('/classes');
+    } catch (err) {
+      console.error('Delete class failed:', err);
+      const msg = err.response?.data?.message || err.message || 'Xóa lớp học không thành công';
+      toast.error(msg);
+    }
   };
 
   return (
@@ -45,7 +51,7 @@ export function DeleteClassModal() {
           <DialogDescription className="text-[13px] text-muted-foreground leading-relaxed">
             {t(
               'classes.deleteConfirmDesc',
-              'Bạn có chắc chắn muốn xóa lớp {{name}}? Hành động này sẽ gỡ lớp khỏi năm học và không thể hoàn tác.',
+              'Bạn có chắc chắn muốn xóa lớp {{name}}? Hành động này không thể hoàn tác và chỉ có thể thực hiện khi lớp học chưa có dữ liệu liên quan.',
               { name: classToDelete.name },
             )}
           </DialogDescription>

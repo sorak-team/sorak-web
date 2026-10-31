@@ -559,20 +559,33 @@ export function CurriculumThemeDetailPage() {
 
   // Khung thời gian năm học (để phân biệt ngày trong năm học vs ngoài năm học)
   const academicYearBounds = useMemo(() => {
-    // 1. Ưu tiên ngày bắt đầu/kết thúc năm học từ API themeSetInfo
-    if (themeSetInfo?.startDate && themeSetInfo?.endDate) {
+    // 1. Ưu tiên ngày bắt đầu/kết thúc năm học từ API themeSetInfo (nếu hợp lệ YYYY-MM-DD với năm >= 2000)
+    if (
+      themeSetInfo?.startDate &&
+      themeSetInfo?.endDate &&
+      /^\d{4}-\d{2}-\d{2}$/.test(themeSetInfo.startDate) &&
+      /^\d{4}-\d{2}-\d{2}$/.test(themeSetInfo.endDate)
+    ) {
       return {
         start: themeSetInfo.startDate,
         end: themeSetInfo.endDate,
       };
     }
 
-    // 2. Fallback theo chuỗi năm học (mặc định khai giảng 05/09 đến 31/05)
-    const parts = (yearId || '').split(/[-–]/).map(Number);
-    const startYear = parts[0] || 2026;
-    const endYear = parts[1] || startYear + 1;
+    // 2. Fallback theo chuỗi năm học (phân tích năm 4 chữ số, mặc định 05/09 đến 31/05)
+    const yearMatch = (yearId || '').match(/\d{4}/g);
+    let startYear = 2026;
+    let endYear = 2027;
+    if (yearMatch && yearMatch.length >= 2) {
+      startYear = parseInt(yearMatch[0], 10);
+      endYear = parseInt(yearMatch[1], 10);
+    } else if (yearMatch && yearMatch.length === 1) {
+      startYear = parseInt(yearMatch[0], 10);
+      endYear = startYear + 1;
+    }
+
     return {
-      start: `${startYear}-09-05`,
+      start: `${startYear}-09-01`,
       end: `${endYear}-05-31`,
     };
   }, [yearId, themeSetInfo]);
@@ -580,14 +593,16 @@ export function CurriculumThemeDetailPage() {
   // Kiểm tra đã phủ kín toàn bộ năm học (chủ đề cuối cùng đã chạm hoặc vượt ngày kết thúc năm học)
   const isAcademicYearFull = useMemo(() => {
     if (!themes || themes.length === 0) return false;
+    // Tối đa 15 chủ đề lớn trong một năm học
+    if (themes.length >= 15) return true;
+
     const lastTheme = themes[themes.length - 1];
     const yearEnd = academicYearBounds.end || '2027-05-31';
     if (!lastTheme?.endDate) return false;
 
-    // Nếu chủ đề cuối cùng kết thúc từ ngày kết thúc năm học trở đi
+    // Chỉ coi là phủ kín khi chủ đề cuối cùng chạm hoặc vượt ngày kết thúc năm học thực sự (cuối tháng 5)
     if (lastTheme.endDate >= yearEnd) return true;
 
-    // Hoặc ngày bắt đầu của chủ đề tiếp theo vượt quá ngày kết thúc năm học
     const nextStart = addDaysToDate(lastTheme.endDate, 1);
     if (nextStart > yearEnd) return true;
 
@@ -596,7 +611,7 @@ export function CurriculumThemeDetailPage() {
 
   // Giới hạn các ngày hữu dụng cho chủ đề đang chọn (themeDateBounds)
   const themeDateBounds = useMemo(() => {
-    const academicYearStart = academicYearBounds.start || '2026-09-05';
+    const academicYearStart = academicYearBounds.start || '2026-09-01';
     const academicYearEnd = academicYearBounds.end || '2027-05-31';
 
     const prevTopic = selectedTopicIndex > 0 ? themes[selectedTopicIndex - 1] : null;
@@ -641,6 +656,11 @@ export function CurriculumThemeDetailPage() {
     }
     if (lastSubEnd && minAllowedEnd < lastSubEnd) {
       minAllowedEnd = lastSubEnd;
+    }
+
+    // Đảm bảo không bao giờ minAllowedEnd > maxAllowedEnd do lỗi dữ liệu
+    if (minAllowedEnd && maxAllowedEnd && minAllowedEnd > maxAllowedEnd) {
+      maxAllowedEnd = academicYearEnd;
     }
 
     return {
@@ -765,10 +785,10 @@ export function CurriculumThemeDetailPage() {
     setEndDate(val);
   };
 
-  // Kiểm tra chủ đề còn ngày nào chưa được xếp nhánh hay không
+  // Kiểm tra chủ đề còn ngày nào chưa được xếp nhánh hay không (chỉ áp dụng khi đã có chủ đề nhánh)
   const hasUnassignedDaysInTheme = useMemo(() => {
-    if (!startDate || !endDate) return true;
-    if (!Array.isArray(subThemes) || subThemes.length === 0) return true;
+    if (!startDate || !endDate) return false;
+    if (!Array.isArray(subThemes) || subThemes.length === 0) return false;
     for (let i = 0; i < subThemes.length; i++) {
       const cur = subThemes[i];
       if (!cur.name?.trim() || !cur.startDate || !cur.endDate) return true;
@@ -785,12 +805,12 @@ export function CurriculumThemeDetailPage() {
   }, [startDate, endDate, subThemes]);
 
   // Nút lưu thay đổi chỉ bấm được khi còn là bản nháp, có thay đổi, và không còn ngày nào chưa được xếp
-  const canSave = !isAllPublished && hasChanges && !hasUnassignedDaysInTheme;
+  const canSave = !isAllPublished && hasChanges && (subThemes.length === 0 || !hasUnassignedDaysInTheme);
 
   // Save changes to current topic
   const handleSaveTopic = async () => {
     if (!canSave) return;
-    if (hasUnassignedDaysInTheme) {
+    if (subThemes.length > 0 && hasUnassignedDaysInTheme) {
       toast.error(
         `Vui lòng phân bổ đầy đủ tất cả các ngày trong chủ đề (từ ${formatDateVn(startDate)} đến ${formatDateVn(endDate)}) cho các nhánh trước khi lưu.`,
       );
@@ -880,11 +900,21 @@ export function CurriculumThemeDetailPage() {
       setUpdatedAt(new Date().toLocaleDateString('vi-VN'));
 
       try {
-        await curriculumApi.updateThemeSetDetail({
+        const res = await curriculumApi.updateThemeSetDetail({
           year: yearId.replace('-', '–'),
           ageGroup,
           themes: updatedThemes,
         });
+        if (res?.themes && Array.isArray(res.themes)) {
+          setThemes(res.themes);
+          const curName = topicName.trim();
+          const targetTheme = res.themes.find((t) => t.name === curName) || res.themes[selectedTopicIndex] || res.themes[0];
+          const newIdx = res.themes.indexOf(targetTheme);
+          if (newIdx !== -1) {
+            setSelectedTopicIndex(newIdx);
+            loadTopicIntoForm(targetTheme);
+          }
+        }
       } catch (err) {
         console.warn('Failed to save themes on server:', err);
       }
@@ -1234,7 +1264,7 @@ export function CurriculumThemeDetailPage() {
                       {topic.name}
                     </span>
                     <span className="text-[11.5px] text-muted-foreground font-normal mt-0.5">
-                      {formatDateVn(topic.startDate)?.slice(0, 5)} – {formatDateVn(topic.endDate)?.slice(0, 5)}
+                      {formatDateVn(isSelected ? (startDate || topic.startDate) : topic.startDate)?.slice(0, 5)} – {formatDateVn(isSelected ? (endDate || topic.endDate) : topic.endDate)?.slice(0, 5)}
                     </span>
                   </div>
                 </div>
@@ -1387,28 +1417,85 @@ export function CurriculumThemeDetailPage() {
                   </p>
                 </div>
 
-                {/* Nút cài đặt chủ đề nhánh (icon bánh răng) */}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={() =>
-                    navigate(
-                      `/curriculum/themes/${yearId}/${ageGroup}/${activeTopic.id || activeTopic.code || selectedTopicIndex + 1}`,
-                    )
-                  }
-                  title="Cài đặt chủ đề nhánh"
-                  className="size-8 border-border hover:bg-muted text-foreground rounded-none cursor-pointer shadow-none shrink-0"
-                >
-                  <HugeiconsIcon icon={Settings02Icon} size={15} />
-                </Button>
+                {/* Nút cài đặt chủ đề nhánh (icon bánh răng) & Nút Thêm nhánh */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddSubTheme}
+                    disabled={isAllPublished}
+                    className="h-8 px-2.5 text-[12.5px] font-medium border-border hover:bg-muted text-foreground rounded-none cursor-pointer shadow-none flex items-center gap-1.5"
+                    title="Thêm chủ đề nhánh mới"
+                  >
+                    <HugeiconsIcon icon={PlusSignIcon} size={14} />
+                    <span>Thêm chủ đề nhánh</span>
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() =>
+                      navigate(
+                        `/curriculum/themes/${yearId}/${ageGroup}/${activeTopic.id || activeTopic.code || selectedTopicIndex + 1}`,
+                        {
+                          state: {
+                            theme: {
+                              ...activeTopic,
+                              id: activeTopic.id || activeTopic.code || String(selectedTopicIndex + 1),
+                              code: activeTopic.code || String(selectedTopicIndex + 1).padStart(2, '0'),
+                              name: topicName || activeTopic.name,
+                              startDate: startDate || activeTopic.startDate,
+                              endDate: endDate || activeTopic.endDate,
+                              subThemes: subThemes || activeTopic.subThemes || [],
+                              note,
+                              status,
+                            },
+                            themes: themes.map((t, idx) =>
+                              idx === selectedTopicIndex
+                                ? {
+                                    ...t,
+                                    id: t.id || t.code || String(idx + 1),
+                                    code: t.code || String(idx + 1).padStart(2, '0'),
+                                    name: topicName || t.name,
+                                    startDate: startDate || t.startDate,
+                                    endDate: endDate || t.endDate,
+                                    subThemes: subThemes || t.subThemes || [],
+                                    note,
+                                    status,
+                                  }
+                                : t,
+                            ),
+                            selectedTopicIndex,
+                          },
+                        },
+                      )
+                    }
+                    title="Cài đặt chi tiết chủ đề nhánh"
+                    className="size-8 border-border hover:bg-muted text-foreground rounded-none cursor-pointer shadow-none shrink-0"
+                  >
+                    <HugeiconsIcon icon={Settings02Icon} size={15} />
+                  </Button>
+                </div>
               </div>
 
               {/* Danh sách các nhánh hiển thị clean, phẳng theo Figma */}
               <div className="space-y-2 pt-1">
                 {subThemes.length === 0 ? (
-                  <div className="py-6 text-center border border-dashed border-border/80 text-[12.5px] text-muted-foreground bg-muted/10">
+                  <div className="py-7 px-4 text-center border border-dashed border-border/80 text-[12.5px] text-muted-foreground bg-muted/10 space-y-3">
                     <p className="italic">Chủ đề này chưa có chủ đề nhánh nào.</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAddSubTheme}
+                      disabled={isAllPublished}
+                      className="h-8 px-3 text-[12.5px] font-medium border-border hover:bg-muted text-foreground rounded-none cursor-pointer shadow-none inline-flex items-center gap-1.5"
+                    >
+                      <HugeiconsIcon icon={PlusSignIcon} size={14} />
+                      <span>Thêm chủ đề nhánh đầu tiên</span>
+                    </Button>
                   </div>
                 ) : (
                   <div className="divide-y divide-border/60 border border-border bg-background">
@@ -1480,6 +1567,21 @@ export function CurriculumThemeDetailPage() {
                         </div>
                       );
                     })}
+                    {subThemes.length > 0 && (
+                      <div className="p-2 border-t border-border/40 bg-muted/20 flex justify-end">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleAddSubTheme}
+                          disabled={isAllPublished}
+                          className="h-7 px-2.5 text-[12px] font-medium text-foreground hover:bg-muted rounded-none cursor-pointer flex items-center gap-1"
+                        >
+                          <HugeiconsIcon icon={PlusSignIcon} size={13} />
+                          <span>Thêm nhánh tiếp theo</span>
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

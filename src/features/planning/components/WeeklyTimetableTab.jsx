@@ -33,6 +33,7 @@ import { ActivitySlotPopover } from './ActivitySlotPopover';
 import { ActivitySlotDrawer } from './ActivitySlotDrawer';
 import { HierarchicalActivityPickerModal } from './HierarchicalActivityPickerModal';
 import { useAcademicYearStore } from '@/features/academic-years';
+import { useAuthStore } from '@/features/auth';
 
 const ROUTINE_SLOT_SHORT_LABELS = {
   ARRIVAL_PLAY: 'Đón trẻ',
@@ -48,6 +49,14 @@ const ROUTINE_SLOT_SHORT_LABELS = {
 export function WeeklyTimetableTab({ classId = '1' }) {
   const { t } = useTranslation();
 
+  const user = useAuthStore((state) => state.user);
+  const isPrincipal = Boolean(
+    user?.role === 'PRINCIPAL_BGH' ||
+    user?.role === 'PRINCIPAL' ||
+    user?.role?.toLowerCase()?.includes('principal') ||
+    user?.role?.toLowerCase()?.includes('bgh')
+  );
+
   // Lấy năm học đang chọn từ store
   const academicYears = useAcademicYearStore((state) => state.academicYears);
   const selectedYearId = useAcademicYearStore((state) => state.selectedYearId);
@@ -59,6 +68,8 @@ export function WeeklyTimetableTab({ classId = '1' }) {
       null
     );
   }, [academicYears, selectedYearId]);
+
+  const isReadOnly = isPrincipal || Boolean(currentAcademicYear?.status === 'COMPLETED');
 
   const { academicStartCutoff, academicEndCutoff, academicStartDate } = useMemo(() => {
     let startDate = new Date(2026, 8, 7); // Default: Thứ 2, 07/09/2026
@@ -145,44 +156,85 @@ export function WeeklyTimetableTab({ classId = '1' }) {
     }
   };
 
-  // Format dynamic dates for timetable header according to active week (T2 - CN)
-  const currentDays = useMemo(() => {
-    const baseDays = DEFAULT_DAYS; // T2 to CN (All 7 days)
-    const currentWeekIdx = CALENDAR_WEEKS.findIndex((w) => w.isCurrentWeek);
-    const selectedWeekIdx = CALENDAR_WEEKS.findIndex((w) => w.id === selectedWeekId);
-
-    return baseDays.map((day, idx) => {
-      const dayDetail = activeWeekObj?.dayDetails?.[idx];
-      let formattedDate = day.date;
-      let isOutsideAcademicYear = false;
-
-      if (dayDetail) {
-        formattedDate = `${String(dayDetail.day).padStart(2, '0')}/${String(dayDetail.month + 1).padStart(2, '0')}`;
-        const dt = new Date(dayDetail.year, dayDetail.month, dayDetail.day);
-        isOutsideAcademicYear = dt < academicStartCutoff || dt > academicEndCutoff;
-      }
-
-      const isCurrentWeek = Boolean(activeWeekObj?.isCurrentWeek);
-      const isToday = !isOutsideAcademicYear && Boolean(dayDetail?.isToday || (isCurrentWeek && day.key === 'T2'));
-      let isFuture = selectedWeekIdx > currentWeekIdx;
-
-      return {
-        ...day,
-        date: formattedDate,
-        dateStr: dayDetail?.dateStr,
-        isToday,
-        isFuture,
-        isLocked: isOutsideAcademicYear,
-      };
-    });
-  }, [activeWeekObj, selectedWeekId, academicStartCutoff, academicEndCutoff]);
-
   // 2. Data State
   const [timetableData, setTimetableData] = useState(null);
   const [slots, setSlots] = useState([]);
   const [availableActivities, setAvailableActivities] = useState([]);
   const [hierarchicalGoals, setHierarchicalGoals] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Format dynamic dates for timetable header according to active week (T2 - CN)
+  const currentDays = useMemo(() => {
+    const baseDays = DEFAULT_DAYS; // T2 to CN (All 7 days)
+    const currentWeekIdx = CALENDAR_WEEKS.findIndex((w) => w.isCurrentWeek);
+    const selectedWeekIdx = CALENDAR_WEEKS.findIndex((w) => w.id === selectedWeekId);
+    const holidays = timetableData?.holidays || [];
+    const classAgeGroup = timetableData?.classInfo?.ageGroup || 'NHA_TRE';
+
+    return baseDays.map((day, idx) => {
+      const dayDetail = activeWeekObj?.dayDetails?.[idx];
+      let formattedDate = day.date;
+      let dateIsoStr = dayDetail?.dateStr || '';
+      let isOutsideAcademicYear = false;
+
+      if (dayDetail) {
+        formattedDate = `${String(dayDetail.day).padStart(2, '0')}/${String(dayDetail.month + 1).padStart(2, '0')}`;
+        const dt = new Date(dayDetail.year, dayDetail.month, dayDetail.day);
+        isOutsideAcademicYear = dt < academicStartCutoff || dt > academicEndCutoff;
+        if (!dateIsoStr && dayDetail.year && dayDetail.month !== undefined && dayDetail.day) {
+          dateIsoStr = `${dayDetail.year}-${String(dayDetail.month + 1).padStart(2, '0')}-${String(dayDetail.day).padStart(2, '0')}`;
+        }
+      }
+
+      // Check if this date is locked by a SchoolHoliday where isTeachingAllowed is false
+      let isHolidayLocked = false;
+      let lockReason = '';
+      let lockLabel = '';
+      let activeHoliday = null;
+
+      if (dateIsoStr && holidays.length > 0) {
+        for (const h of holidays) {
+          if (!h.isTeachingAllowed) {
+            const appliesToGrade = !h.targetGrades?.length || h.targetGrades.includes(classAgeGroup);
+            if (appliesToGrade) {
+              if (dateIsoStr >= h.startDate && dateIsoStr <= h.endDate) {
+                isHolidayLocked = true;
+                lockReason = h.name;
+                lockLabel = h.name;
+                activeHoliday = h;
+                break;
+              }
+            }
+          }
+        }
+      }
+
+      const isCurrentWeek = Boolean(activeWeekObj?.isCurrentWeek);
+      const isToday = !isOutsideAcademicYear && Boolean(dayDetail?.isToday);
+      let isFuture = selectedWeekIdx > currentWeekIdx;
+
+      const isLocked = isOutsideAcademicYear || isHolidayLocked;
+      const finalLockReason = isOutsideAcademicYear
+        ? 'Nằm ngoài năm học đang chọn'
+        : lockReason;
+      const finalLockLabel = isOutsideAcademicYear
+        ? 'Ngoại khóa'
+        : lockLabel;
+
+      return {
+        ...day,
+        date: formattedDate,
+        dateStr: dateIsoStr,
+        isToday,
+        isFuture,
+        isLocked,
+        isHolidayLocked,
+        lockReason: finalLockReason,
+        lockLabel: finalLockLabel,
+        holiday: activeHoliday,
+      };
+    });
+  }, [activeWeekObj, selectedWeekId, academicStartCutoff, academicEndCutoff, timetableData]);
 
   // Check if current week has slots on T7 or CN
   const hasWeekendSlots = useMemo(() => {
@@ -298,6 +350,12 @@ export function WeeklyTimetableTab({ classId = '1' }) {
   const handleAssignActivityToSlot = async (activity, dayKey, routineSlotKey, dateStr) => {
     try {
       const targetDay = currentDays.find((d) => d.key === dayKey);
+      if (targetDay?.isLocked) {
+        toast.error(
+          `Không thể xếp kế hoạch tuần vào ngày ${targetDay.name} (${targetDay.date}) vì ngày này đã bị khóa dạy${targetDay.lockReason ? ` bởi "${targetDay.lockReason}"` : ''}.`
+        );
+        return;
+      }
       const isAdd = Boolean(pickerCell?.isAdd);
       const replacingSlotId = pickerCell?.replacingSlotId || null;
       const currentWeek = selectedWeekIdRef.current || selectedWeekId;
@@ -426,6 +484,12 @@ export function WeeklyTimetableTab({ classId = '1' }) {
     targetExistingSlots = [],
   }) => {
     try {
+      if (targetDay?.isLocked) {
+        toast.error(
+          `Không thể nhân bản hoạt động sang ngày ${targetDay.name} (${targetDay.date}) vì ngày này đã bị khóa dạy${targetDay.lockReason ? ` bởi "${targetDay.lockReason}"` : ''}.`
+        );
+        return;
+      }
       const routineKey = targetSlotDef.key;
       let saved;
 
@@ -493,6 +557,15 @@ export function WeeklyTimetableTab({ classId = '1' }) {
     const activeClipboard = clipboardSlotRef.current;
     if (!activeClipboard) return;
 
+    // Không cho phép chọn ô thuộc ngày đã bị khóa dạy
+    const targetDay = currentDaysRef.current?.find((d) => d.key === dayKey);
+    if (targetDay?.isLocked) {
+      toast.warning(
+        `Ngày ${targetDay.name} (${targetDay.date}) đã bị khóa dạy${targetDay.lockReason ? ` (${targetDay.lockReason})` : ''}, không thể dán vào ngày này.`
+      );
+      return;
+    }
+
     const clipboardRoutineKey = activeClipboard.routineSlot || activeClipboard.routine_slot;
     // Chỉ cho phép chọn các ô trong cùng một hoạt động (cùng routineSlot)
     if (routineKey !== clipboardRoutineKey) return;
@@ -520,9 +593,11 @@ export function WeeklyTimetableTab({ classId = '1' }) {
       if (prevIdx !== -1 && curIdx !== -1) {
         const start = Math.min(prevIdx, curIdx);
         const end = Math.max(prevIdx, curIdx);
-        const rangeDayKeys = DAY_ORDER.slice(start, end + 1).filter(
-          (dKey) => !isSameWeek || dKey !== activeClipboard.day
-        );
+        const rangeDayKeys = DAY_ORDER.slice(start, end + 1).filter((dKey) => {
+          if (isSameWeek && dKey === activeClipboard.day) return false;
+          const dObj = currentDaysRef.current?.find((d) => d.key === dKey);
+          return !dObj?.isLocked;
+        });
 
         setSelectedTargetCells((prev) => {
           const next = [...prev];
@@ -570,7 +645,7 @@ export function WeeklyTimetableTab({ classId = '1' }) {
     setLastClickedCell({ weekId: currentWeek, dayKey, routineKey });
   };
 
-  // Chọn các ngày còn lại trong tuần cho hàng khung giờ đang copy (trừ ô nguồn nếu cùng tuần)
+  // Chọn các ngày còn lại trong tuần cho hàng khung giờ đang copy (trừ ô nguồn nếu cùng tuần và trừ các ngày bị khóa)
   const handleSelectAllWeekForClipboard = () => {
     const activeClipboard = clipboardSlotRef.current;
     if (!activeClipboard) return;
@@ -583,7 +658,11 @@ export function WeeklyTimetableTab({ classId = '1' }) {
       ? ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']
       : ['T2', 'T3', 'T4', 'T5', 'T6'];
     const allWeekCells = DAY_KEYS
-      .filter((dKey) => !isSameWeek || dKey !== activeClipboard.day)
+      .filter((dKey) => {
+        if (isSameWeek && dKey === activeClipboard.day) return false;
+        const dObj = currentDaysRef.current?.find((d) => d.key === dKey);
+        return !dObj?.isLocked;
+      })
       .map((dKey) => ({
         weekId: currentWeek,
         dayKey: dKey,
@@ -608,11 +687,15 @@ export function WeeklyTimetableTab({ classId = '1' }) {
       const targetWeek = t.weekId || currentWeek;
       const isSameAsSourceWeek = !activeClipboard.weekId || activeClipboard.weekId === targetWeek;
       if (isSameAsSourceWeek && t.dayKey === activeClipboard.day) return false;
+      if (targetWeek === currentWeek) {
+        const dObj = currentDaysRef.current?.find((d) => d.key === t.dayKey);
+        if (dObj?.isLocked) return false;
+      }
       return true;
     });
 
     if (targets.length === 0) {
-      toast.error('Vui lòng chọn ít nhất một ô khác trong cùng hàng hoạt động để dán');
+      toast.error('Không có ô hợp lệ để dán (các ô đã chọn có thể đã bị khóa dạy hoặc nằm ngoài năm học)');
       return;
     }
 
@@ -770,7 +853,9 @@ export function WeeklyTimetableTab({ classId = '1' }) {
   }) => {
     if (!sourceSlot || !targetDay) return;
     if (targetDay?.isLocked) {
-      toast.warning('Không thể chuyển hoạt động sang ngày nằm ngoài năm học đang chọn.');
+      toast.error(
+        `Không thể chuyển hoạt động sang ngày ${targetDay.name} (${targetDay.date}) vì ngày này đã bị khóa dạy${targetDay.lockReason ? ` bởi "${targetDay.lockReason}"` : ''}.`
+      );
       return;
     }
     if (!isDuplicate && sourceDay.key === targetDay.key && sourceSlotDef.key === targetSlotDef.key) return;
@@ -972,17 +1057,21 @@ export function WeeklyTimetableTab({ classId = '1' }) {
           setSelectedSlotForPopover({ slot, day });
         }}
         onSelectEmptyCell={(day, slotDef) => {
-          if (clipboardSlot) {
-            handleToggleSelectCell(day.key, slotDef.key, false);
+          if (isReadOnly) return;
+          if (day?.isLocked) {
+            toast.error(
+              `Ngày ${day.name} (${day.date}) đã bị khóa dạy${day.lockReason ? ` bởi "${day.lockReason}"` : ''}. Không thể thêm kế hoạch tuần vào ngày này.`
+            );
             return;
           }
-          if (day?.isLocked) {
-            toast.warning('Ngày này nằm ngoài năm học đang chọn.');
+          if (clipboardSlot) {
+            handleToggleSelectCell(day.key, slotDef.key, false);
             return;
           }
           setPickerCell({ day, slotDef });
         }}
         onMoveSlot={handleMoveSlot}
+        readOnly={isReadOnly}
         hideHeader={true}
       />
 
@@ -1130,13 +1219,20 @@ export function WeeklyTimetableTab({ classId = '1' }) {
           setSelectedSlotForPopover((prev) => (prev ? { ...prev, slot: newSlot } : null));
         }}
         onChangeActivity={(slot, day) => {
+          const currentDayObj = currentDays.find((d) => d.key === (day?.key || slot.day)) || day;
+          if (currentDayObj?.isLocked) {
+            toast.error(
+              `Ngày ${currentDayObj.name || currentDayObj.key} (${currentDayObj.date || slot.date}) đã bị khóa dạy${currentDayObj.lockReason ? ` bởi "${currentDayObj.lockReason}"` : ''}. Không thể đổi hoạt động.`
+            );
+            return;
+          }
           const slotDef = ROUTINE_SLOTS.find(
             (s) => s.key === slot.routineSlot || s.key === slot.routine_slot
           ) || { key: slot.routineSlot, name: 'Tiết học', defaultTime: `${slot.startTime} – ${slot.endTime}` };
 
           setSelectedSlotForPopover(null);
           setPickerCell({
-            day: day || { key: slot.day, name: slot.day, date: slot.date },
+            day: currentDayObj || { key: slot.day, name: slot.day, date: slot.date },
             slotDef,
             currentActivityId: slot.activityId,
             replacingSlotId: slot.id,
@@ -1144,13 +1240,20 @@ export function WeeklyTimetableTab({ classId = '1' }) {
           });
         }}
         onAddActivity={(slot, day) => {
+          const currentDayObj = currentDays.find((d) => d.key === (day?.key || slot.day)) || day;
+          if (currentDayObj?.isLocked) {
+            toast.error(
+              `Ngày ${currentDayObj.name || currentDayObj.key} (${currentDayObj.date || slot.date}) đã bị khóa dạy${currentDayObj.lockReason ? ` bởi "${currentDayObj.lockReason}"` : ''}. Không thể thêm hoạt động vào ngày này.`
+            );
+            return;
+          }
           const slotDef = ROUTINE_SLOTS.find(
             (s) => s.key === slot.routineSlot || s.key === slot.routine_slot
           ) || { key: slot.routineSlot, name: 'Tiết học', defaultTime: `${slot.startTime} – ${slot.endTime}` };
 
           setSelectedSlotForPopover(null);
           setPickerCell({
-            day: day || { key: slot.day, name: slot.day, date: slot.date },
+            day: currentDayObj || { key: slot.day, name: slot.day, date: slot.date },
             slotDef,
             currentActivityId: null,
             isAdd: true,
@@ -1166,6 +1269,7 @@ export function WeeklyTimetableTab({ classId = '1' }) {
         }}
         onClearSlot={handleClearSlot}
         onReorderActivities={handleReorderActivities}
+        readOnly={isReadOnly}
       />
 
       {/* 7. Activity Slot Detail Drawer (Chỉnh sửa nội dung hoạt động giáo dục) */}
@@ -1173,7 +1277,7 @@ export function WeeklyTimetableTab({ classId = '1' }) {
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         initialSlot={selectedSlotForDrawer}
-        readOnly={false}
+        readOnly={isReadOnly}
         lockRoutineSlot={true}
         onSave={handleSaveEditedSlot}
       />

@@ -12,10 +12,12 @@ import {
   ArrowLeft01Icon,
   CheckmarkCircle01Icon,
   SparklesIcon,
+  UserIcon,
 } from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/shared/lib/utils';
 import { toast } from 'sonner';
+import { useAuthStore } from '@/features/auth';
 import { planningApi } from '../planning.api';
 import { ActivitySlotDrawer } from './ActivitySlotDrawer';
 
@@ -57,6 +59,8 @@ const ROUTINE_SLOT_LABELS = {
 export function EducationalActivitiesTab({ classId = '1' }) {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
+  const currentUser = useAuthStore((state) => state.user);
+  const currentStaffName = currentUser?.fullName || currentUser?.name || currentUser?.username || 'Giáo viên';
 
   // Selected goal ID from search params (null = List view, string = Detail view)
   const selectedGoalId = searchParams.get('goalId');
@@ -269,12 +273,19 @@ export function EducationalActivitiesTab({ classId = '1' }) {
       preparation: activity.preparation || '',
       procedure: activity.procedure || '',
       evaluation_criteria: activity.evaluation_criteria || activity.evaluation || '',
+      creatorName: activity.creatorName,
+      updaterName: activity.updaterName,
+      createdAt: activity.createdAt,
+      updatedAt: activity.updatedAt,
     });
     setIsDrawerOpen(true);
   };
 
   // Delete activity
   const handleDeleteActivity = async (activityId) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa hoạt động giáo dục này?')) {
+      return;
+    }
     try {
       await planningApi.deleteEducationalActivity(classId, activityId);
       setData((prev) => {
@@ -289,16 +300,18 @@ export function EducationalActivitiesTab({ classId = '1' }) {
         return { ...prev, goals: newGoals };
       });
       toast.success('Đã xóa hoạt động giáo dục');
-    } catch {
-      toast.error('Không thể xóa hoạt động');
+    } catch (err) {
+      const errMsg = err?.response?.data?.message || err?.message || 'Không thể xóa hoạt động';
+      toast.error(errMsg);
     }
   };
 
   // Save activity from drawer
   const handleSaveActivity = async (savedSlot) => {
     try {
+      const isEditing = Boolean(drawerInitialSlot?.id);
       const payload = {
-        id: drawerInitialSlot?.id || `act-${Date.now()}`,
+        ...(isEditing ? { id: drawerInitialSlot.id } : {}),
         contentId: activeContentContext?.id || drawerInitialSlot?.contentId || 'cnt-1-1',
         title: savedSlot.title,
         routineSlot: savedSlot.routineSlot || 'DIRECTED_STUDY',
@@ -308,10 +321,18 @@ export function EducationalActivitiesTab({ classId = '1' }) {
         procedure: savedSlot.procedure,
         evaluation_criteria: savedSlot.evaluation_criteria || savedSlot.evaluation,
         evaluation: savedSlot.evaluation_criteria || savedSlot.evaluation,
+        creatorName: drawerInitialSlot?.creatorName || currentStaffName,
+        updaterName: isEditing ? currentStaffName : null,
       };
 
       const res = await planningApi.saveEducationalActivity(classId, payload);
-      const savedActivity = res?.activity || payload;
+      const resData = res?.data || res?.activity || res;
+      const savedActivity = {
+        ...payload,
+        ...(resData && typeof resData === 'object' ? resData : {}),
+        creatorName: resData?.creatorName || payload.creatorName,
+        updaterName: isEditing ? (resData?.updaterName || currentStaffName) : null,
+      };
 
       setData((prev) => {
         if (!prev) return prev;
@@ -540,10 +561,16 @@ export function EducationalActivitiesTab({ classId = '1' }) {
                               className="flex-1 min-w-0 cursor-pointer space-y-1.5"
                               title={t('planning.clickToEditActivity', 'Bấm để xem và sửa chi tiết hoạt động trong Drawer')}
                             >
-                              <div>
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <span className="text-[13.5px] font-semibold text-foreground group-hover/act:text-[#1447e6] transition-colors">
                                   {act.title}
                                 </span>
+                                {act.creatorName && (
+                                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground bg-muted/60 border border-border/60 px-1.5 py-0.5 select-none">
+                                    <HugeiconsIcon icon={UserIcon} size={11} className="text-muted-foreground/80" />
+                                    <span>{act.creatorName}</span>
+                                  </span>
+                                )}
                               </div>
 
                               <p className="text-[12px] text-muted-foreground">
@@ -557,25 +584,49 @@ export function EducationalActivitiesTab({ classId = '1' }) {
                                   {act.objective}
                                 </p>
                               )}
+
+                              {act.updaterName && act.updaterName !== act.creatorName && (
+                                <p className="text-[11px] text-muted-foreground/80 italic">
+                                  Chỉnh sửa bởi: <span className="font-medium text-foreground/80 not-italic">{act.updaterName}</span>
+                                </p>
+                              )}
                             </div>
 
                             {/* Phải: Nút Sửa & Nút Xóa */}
-                            <div className="flex items-center gap-1 shrink-0 pt-0.5">
+                            <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
                               <button
                                 type="button"
                                 onClick={() => handleEditActivity(activeGoal, content, act)}
-                                className="size-7 flex items-center justify-center hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer rounded-none"
-                                title={t('common.edit', 'Chỉnh sửa')}
+                                className="h-7 px-2.5 flex items-center gap-1 bg-muted/60 hover:bg-muted text-[11.5px] font-medium text-foreground transition-colors cursor-pointer rounded-none border border-border"
+                                title={t('common.edit', 'Chỉnh sửa hoạt động')}
                               >
-                                <HugeiconsIcon icon={PencilEdit02Icon} size={13} />
+                                <HugeiconsIcon icon={PencilEdit02Icon} size={12} className="text-muted-foreground" />
+                                <span>{t('common.edit', 'Sửa')}</span>
                               </button>
                               <button
                                 type="button"
-                                onClick={() => handleDeleteActivity(act.id)}
-                                className="size-7 flex items-center justify-center hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors cursor-pointer rounded-none"
-                                title={t('common.delete', 'Xóa')}
+                                disabled={act.isScheduled || act.slotsCount > 0}
+                                onClick={() => {
+                                  if (act.isScheduled || act.slotsCount > 0) {
+                                    toast.warning('Hoạt động giáo dục đã được sử dụng trong kế hoạch tuần, không thể xóa.');
+                                    return;
+                                  }
+                                  handleDeleteActivity(act.id);
+                                }}
+                                className={cn(
+                                  'size-7 flex items-center justify-center rounded-none border transition-colors',
+                                  (act.isScheduled || act.slotsCount > 0)
+                                    ? 'opacity-40 cursor-not-allowed bg-muted/20 text-muted-foreground border-border/60'
+                                    : 'bg-destructive/5 hover:bg-destructive/15 text-destructive border-destructive/20 hover:border-destructive/30 cursor-pointer'
+                                )}
+                                title={
+                                  (act.isScheduled || act.slotsCount > 0)
+                                    ? 'Hoạt động đã được sử dụng trong kế hoạch tuần, không thể xóa'
+                                    : t('common.delete', 'Xóa hoạt động')
+                                }
+                                aria-label="Xóa hoạt động"
                               >
-                                <HugeiconsIcon icon={Delete02Icon} size={13} />
+                                <HugeiconsIcon icon={Delete02Icon} size={14} />
                               </button>
                             </div>
                           </div>
@@ -610,6 +661,7 @@ export function EducationalActivitiesTab({ classId = '1' }) {
           onClose={() => setIsDrawerOpen(false)}
           initialSlot={drawerInitialSlot}
           onSave={handleSaveActivity}
+          readOnly={false}
         />
       </div>
     );

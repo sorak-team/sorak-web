@@ -48,17 +48,19 @@ export function AcademicYearCard({ year }) {
           onClick={(e) => e.stopPropagation()}
         >
           <QuickColorPopover year={year} />
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              openEditDrawer(year.id);
-            }}
-            title={t('schoolYear.editYear', 'Chỉnh sửa năm học')}
-            className="size-7 flex items-center justify-center border border-border rounded-none transition-colors bg-background hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
-          >
-            <HugeiconsIcon icon={PencilEdit02Icon} size={13} />
-          </button>
+          {year.status !== 'COMPLETED' && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                openEditDrawer(year.id);
+              }}
+              title={t('schoolYear.editYear', 'Chỉnh sửa năm học')}
+              className="size-7 flex items-center justify-center border border-border rounded-none transition-colors bg-background hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
+            >
+              <HugeiconsIcon icon={PencilEdit02Icon} size={13} />
+            </button>
+          )}
         </div>
       </div>
 

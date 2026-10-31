@@ -16,9 +16,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useStudentStore } from '../students.store';
 import { useClassesStore } from '../../classes/classes.store';
+import { useAuthStore, isTeacherRole } from '@/features/auth';
 
 export function TransferStudentDialog({ onSuccess }) {
   const { t } = useTranslation();
+  const currentUser = useAuthStore((state) => state.user);
+  const isTeacher = isTeacherRole(currentUser?.role);
+
   const isTransferDialogOpen = useStudentStore((state) => state.isTransferDialogOpen);
   const studentToTransfer = useStudentStore((state) => state.studentToTransfer);
   const closeTransferDialog = useStudentStore((state) => state.closeTransferDialog);
@@ -28,11 +32,20 @@ export function TransferStudentDialog({ onSuccess }) {
   const fetchClasses = useClassesStore((state) => state.fetchClasses);
 
   const [targetClassId, setTargetClassId] = useState('');
+  const [selectedGrade, setSelectedGrade] = useState('ALL');
   const [reason, setReason] = useState('');
   const [transferDate, setTransferDate] = useState(
     new Date().toISOString().split('T')[0]
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const GRADE_OPTIONS = [
+    { value: 'ALL', label: 'Tất cả các khối' },
+    { value: 'nhatre', label: 'Khối Nhà trẻ' },
+    { value: 'mam', label: 'Khối Mầm (3–4 tuổi)' },
+    { value: 'choi', label: 'Khối Chồi (4–5 tuổi)' },
+    { value: 'la', label: 'Khối Lá (5–6 tuổi)' },
+  ];
 
   useEffect(() => {
     if (isTransferDialogOpen) {
@@ -40,8 +53,20 @@ export function TransferStudentDialog({ onSuccess }) {
       setTargetClassId('');
       setReason('');
       setTransferDate(new Date().toISOString().split('T')[0]);
+
+      // If student is currently in a grade, default to that grade or ALL
+      const currentClass = (classes || []).find(
+        (c) =>
+          (studentToTransfer?.currentClass?.classId && String(c.id) === String(studentToTransfer.currentClass.classId)) ||
+          (studentToTransfer?.currentClass?.className && String(c.name).toLowerCase() === String(studentToTransfer.currentClass.className).toLowerCase())
+      );
+      if (currentClass?.grade) {
+        setSelectedGrade(currentClass.grade);
+      } else {
+        setSelectedGrade('ALL');
+      }
     }
-  }, [isTransferDialogOpen, fetchClasses]);
+  }, [isTransferDialogOpen]);
 
   if (!studentToTransfer) return null;
 
@@ -49,12 +74,33 @@ export function TransferStudentDialog({ onSuccess }) {
   const currentClassName = studentToTransfer.currentClass?.className || null;
   const hasCurrentClass = Boolean(currentClassId || currentClassName);
 
-  // Filter out the class the student is currently enrolled in
-  const availableClasses = (classes || []).filter(
+  const currentClassObj = (classes || []).find(
     (c) =>
-      String(c.id) !== String(currentClassId) &&
-      String(c.name).toLowerCase() !== String(currentClassName || '').toLowerCase()
+      String(c.id) === String(currentClassId) ||
+      (currentClassName && String(c.name).toLowerCase() === String(currentClassName).toLowerCase())
   );
+  const currentGrade = currentClassObj?.grade || 'nhatre';
+
+  // Filter out the class the student is currently enrolled in
+  const availableClasses = (classes || []).filter((c) => {
+    if (String(c.id) === String(currentClassId)) return false;
+    if (currentClassName && String(c.name).toLowerCase() === String(currentClassName).toLowerCase()) return false;
+    if (isTeacher && currentGrade) {
+      return c.grade === currentGrade;
+    }
+    return true;
+  });
+
+  // Filter by selected grade
+  const filteredClasses = availableClasses.filter((c) => {
+    if (isTeacher) return true; // already locked to currentGrade
+    if (selectedGrade === 'ALL') return true;
+    return (
+      c.grade === selectedGrade ||
+      c.ageGroup === selectedGrade ||
+      (c.gradeLabel && c.gradeLabel.toLowerCase().includes(selectedGrade.toLowerCase()))
+    );
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -66,6 +112,17 @@ export function TransferStudentDialog({ onSuccess }) {
 
     if (!targetClassId) {
       toast.error('Vui lòng chọn lớp học chuyển đến');
+      return;
+    }
+
+    if (!reason.trim()) {
+      toast.error('Vui lòng nhập lý do chuyển lớp');
+      return;
+    }
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (transferDate < todayStr) {
+      toast.error('Ngày dự kiến chuyển phải từ hôm nay trở đi (nằm ở hiện tại hoặc tương lai)');
       return;
     }
 
@@ -149,6 +206,40 @@ export function TransferStudentDialog({ onSuccess }) {
             )}
           </div>
 
+          {/* Filter by Grade */}
+          <div className="space-y-1.5">
+            <Label htmlFor="targetGrade" className="text-[12px] font-medium text-foreground">
+              {isTeacher ? 'Khối lớp học sinh' : 'Lọc theo khối lớp'}
+            </Label>
+            {isTeacher ? (
+              <div>
+                <div className="w-full h-9 px-3 bg-muted/40 border border-border/70 rounded-none text-[13px] text-muted-foreground flex items-center select-none cursor-not-allowed">
+                  {currentClassObj?.gradeLabel || (GRADE_OPTIONS.find((g) => g.value === currentGrade)?.label) || 'Cùng khối học'}
+                </div>
+                <p className="text-[11.5px] text-muted-foreground italic mt-1">
+                  * Theo quy định, giáo viên chỉ đề xuất chuyển lớp cho học sinh trong cùng khối học.
+                </p>
+              </div>
+            ) : (
+              <select
+                id="targetGrade"
+                value={selectedGrade}
+                onChange={(e) => {
+                  setSelectedGrade(e.target.value);
+                  setTargetClassId('');
+                }}
+                disabled={!hasCurrentClass || isSubmitting}
+                className="w-full h-9 px-3 bg-background border border-border rounded-none text-[13px] text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {GRADE_OPTIONS.map((g) => (
+                  <option key={g.value} value={g.value}>
+                    {g.label}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
           {/* Target Class */}
           <div className="space-y-1.5">
             <Label htmlFor="targetClass" className="text-[12px] font-medium text-foreground">
@@ -162,8 +253,12 @@ export function TransferStudentDialog({ onSuccess }) {
               className="w-full h-9 px-3 bg-background border border-border rounded-none text-[13px] text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               required
             >
-              <option value="">-- Chọn lớp học chuyển đến --</option>
-              {availableClasses.map((c) => (
+              <option value="">
+                {filteredClasses.length === 0
+                  ? '-- Không có lớp khác trong khối này --'
+                  : '-- Chọn lớp học chuyển đến --'}
+              </option>
+              {filteredClasses.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name} ({c.gradeLabel || 'Khối Mầm'} • {c.studentCount || 0} học sinh)
                 </option>
@@ -174,22 +269,24 @@ export function TransferStudentDialog({ onSuccess }) {
           {/* Transfer Date */}
           <div className="space-y-1.5">
             <Label htmlFor="transferDate" className="text-[12px] font-medium text-foreground">
-              Ngày dự kiến chuyển
+              Ngày dự kiến chuyển <span className="text-destructive">*</span>
             </Label>
             <Input
               id="transferDate"
               type="date"
+              min={new Date().toISOString().split('T')[0]}
               value={transferDate}
               onChange={(e) => setTransferDate(e.target.value)}
               disabled={!hasCurrentClass || isSubmitting}
               className="h-9 rounded-none text-[13px] border-border"
+              required
             />
           </div>
 
           {/* Reason */}
           <div className="space-y-1.5">
             <Label htmlFor="reason" className="text-[12px] font-medium text-foreground">
-              Lý do chuyển lớp
+              Lý do chuyển lớp <span className="text-destructive">*</span>
             </Label>
             <Input
               id="reason"
@@ -198,6 +295,7 @@ export function TransferStudentDialog({ onSuccess }) {
               onChange={(e) => setReason(e.target.value)}
               disabled={!hasCurrentClass || isSubmitting}
               className="h-9 rounded-none text-[13px] border-border"
+              required
             />
           </div>
 

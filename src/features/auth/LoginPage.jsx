@@ -62,12 +62,18 @@ export default function LoginPage() {
   const { cooldown, startCooldown } = useOtpCooldown(twoFactorCooldownKey);
 
   // Cloudflare Turnstile Invisible Token (Auto-generated in background)
-  const [captchaToken, setCaptchaToken] = useState('');
+  const isTurnstileDisabled = import.meta.env.VITE_DISABLE_TURNSTILE === 'true';
+  const [captchaToken, setCaptchaToken] = useState(isTurnstileDisabled ? 'test-token-playwright' : '');
   const turnstileWidgetId = useRef(null);
 
   // Outside dashboard: enforce white mode & setup invisible Turnstile
   useEffect(() => {
     document.documentElement.classList.remove('dark');
+
+    if (isTurnstileDisabled) {
+      setCaptchaToken('test-token-playwright');
+      return;
+    }
 
     let checkInterval;
     let fallbackTimer;
@@ -122,7 +128,7 @@ export default function LoginPage() {
         turnstileWidgetId.current = null;
       }
     };
-  }, []);
+  }, [isTurnstileDisabled]);
 
   const {
     register,
@@ -155,13 +161,13 @@ export default function LoginPage() {
     } catch (e) {}
 
     // Ensure valid Turnstile token is available
-    let token = captchaToken;
-    if (!token && window.turnstile && turnstileWidgetId.current) {
+    let token = isTurnstileDisabled ? 'test-token-playwright' : captchaToken;
+    if (!isTurnstileDisabled && !token && window.turnstile && turnstileWidgetId.current) {
       token = window.turnstile.getResponse(turnstileWidgetId.current);
     }
 
     // If user clicked immediately before background Turnstile challenge resolved, wait up to 2.5s
-    if (!token && window.turnstile && turnstileWidgetId.current) {
+    if (!isTurnstileDisabled && !token && window.turnstile && turnstileWidgetId.current) {
       const start = Date.now();
       while (!token && Date.now() - start < 2500) {
         await new Promise((r) => setTimeout(r, 100));
@@ -614,7 +620,7 @@ export default function LoginPage() {
                 placeholder={
                   activeRole === 'PARENT_PH'
                     ? t('auth.identifierPlaceholderParent', 'Ví dụ: HS26001')
-                    : t('auth.identifierPlaceholderSchool', 'Ví dụ: ADMIN01, CB24001')
+                    : t('auth.identifierPlaceholderSchool', 'Ví dụ: CB20001, CB24001')
                 }
                 autoComplete="username"
                 disabled={isSubmitting}

@@ -85,13 +85,25 @@ export const classesApi = {
   },
 
   /**
-   * Batch remove students from classroom
+   * Unassign a single student from classroom (BGH only, before semester 1 start date)
    */
-  async removeStudents(classId, studentIds) {
+  async unassignStudent(classId, studentId) {
+    const response = await apiClient.delete(`/classes/${classId}/students/${studentId}`);
+    return response.data?.data || response.data;
+  },
+
+  /**
+   * Batch unassign students from classroom (BGH only, before semester 1 start date)
+   */
+  async unassignStudents(classId, studentIds) {
     const response = await apiClient.delete(`/classes/${classId}/students`, {
       data: { studentIds },
     });
     return response.data?.data || response.data;
+  },
+
+  async removeStudents(classId, studentIds) {
+    return this.unassignStudents(classId, studentIds);
   },
 
   /**
@@ -127,7 +139,7 @@ export const classesApi = {
   },
 
   /**
-   * Update teacher role (primary vs assistant)
+   * @deprecated All assigned teachers are equal co-teachers. Maintained for backward compatibility.
    */
   async updateTeacherRole(classId, teacherId, isPrimary) {
     const response = await apiClient.patch(`/classes/${classId}/teachers/${teacherId}/role`, {
@@ -176,6 +188,22 @@ export const classesApi = {
    */
   async updateGlobalTransferStatus(transferId, payload) {
     const response = await apiClient.patch(`/classes/transfers/${transferId}`, payload);
+    return response.data?.data || response.data;
+  },
+
+  /**
+   * Reject transfer request for Principal / Admin (BGH)
+   */
+  async rejectTransfer(transferId, payload) {
+    const response = await apiClient.patch(`/classes/transfers/${transferId}/reject`, payload);
+    return response.data?.data || response.data;
+  },
+
+  /**
+   * Cancel transfer request for Teacher (GV)
+   */
+  async cancelTransfer(transferId) {
+    const response = await apiClient.patch(`/classes/transfers/${transferId}/cancel`);
     return response.data?.data || response.data;
   },
 
@@ -232,6 +260,14 @@ export const classesApi = {
    */
   async getStudentReport(classId, params = {}) {
     const response = await apiClient.get(`/classes/${classId}/student-report`, { params });
+    return response.data?.data || response.data;
+  },
+
+  /**
+   * Complete / graduate student from classroom
+   */
+  async graduateStudent(classId, studentId) {
+    const response = await apiClient.post(`/classes/${classId}/students/${studentId}/graduate`);
     return response.data?.data || response.data;
   },
 };

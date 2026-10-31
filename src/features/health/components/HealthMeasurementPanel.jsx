@@ -29,6 +29,7 @@ export function HealthMeasurementPanel({
   slot,
   initialStudents = [],
   isRecorded = false,
+  readOnly = false,
   onClose,
   onSaveSuccess,
   onCleanSuccess,
@@ -101,6 +102,7 @@ export function HealthMeasurementPanel({
   }, [students]);
 
   const handleFieldChange = (id, field, value) => {
+    if (readOnly) return;
     setStudents((prev) =>
       prev.map((s) => {
         if (s.id !== id) return s;
@@ -117,20 +119,50 @@ export function HealthMeasurementPanel({
   };
 
   const handleSave = async () => {
-    if (!isDirty) return;
+    if (readOnly || !isDirty) return;
+
+    // Reject future dates
+    const todayStr = new Date().toISOString().slice(0, 10);
+    if (date && date > todayStr) {
+      toast.error('Không được thực hiện đo trong thời gian tương lai.');
+      return;
+    }
+
+    // Validate height and weight limits
+    for (const s of students) {
+      const hStr = String(s.height || '').trim();
+      const wStr = String(s.weight || '').trim();
+      if (hStr) {
+        const h = parseFloat(hStr);
+        if (isNaN(h) || h <= 0 || h > 150) {
+          toast.error(`Chiều cao của bé ${s.name} phải lớn hơn 0 và không vượt quá 150 cm.`);
+          return;
+        }
+      }
+      if (wStr) {
+        const w = parseFloat(wStr);
+        if (isNaN(w) || w <= 0 || w > 50) {
+          toast.error(`Cân nặng của bé ${s.name} phải lớn hơn 0 và không vượt quá 50 kg.`);
+          return;
+        }
+      }
+    }
+
     setIsSaving(true);
     try {
       const targetClassId = classId || '5';
       await healthApi.saveHealthRecords(targetClassId, {
         date,
         slotId: slot?.id,
-        records: students.map((s) => ({
-          studentId: s.id,
-          height: parseFloat(s.height) || 0,
-          weight: parseFloat(s.weight) || 0,
-          bmi: parseFloat(s.bmi) || 0,
-          note: s.note || '',
-        })),
+        records: students
+          .filter((s) => !s.isTransferred)
+          .map((s) => ({
+            studentId: s.id,
+            height: parseFloat(s.height) || 0,
+            weight: parseFloat(s.weight) || 0,
+            bmi: parseFloat(s.bmi) || 0,
+            note: s.note || '',
+          })),
       });
       toast.success(t('health.saveSuccess', 'Lưu số đo sức khoẻ thành công!'));
       setInitialSnapshot(
@@ -152,6 +184,7 @@ export function HealthMeasurementPanel({
   };
 
   const handleClean = async () => {
+    if (readOnly) return;
     if (!isRecorded) {
       toast.warning(isVi ? 'Ngày này chưa có dữ liệu sức khỏe để xóa.' : 'No health records to clean.');
       return;
@@ -223,26 +256,28 @@ export function HealthMeasurementPanel({
               </p>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className="size-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-none transition-colors cursor-pointer shrink-0"
-                    title="Tùy chọn khác"
-                  >
-                    <HugeiconsIcon icon={MoreHorizontalIcon} size={16} />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-52 rounded-none shadow-md">
-                  <DropdownMenuItem
-                    disabled={!isRecorded || isCleaning}
-                    onClick={handleClean}
-                    className="cursor-pointer text-[12.5px] py-2 px-3 text-foreground rounded-none disabled:opacity-35 disabled:cursor-not-allowed"
-                  >
-                    <span>{isVi ? 'Xoá toàn bộ số đo sức khỏe' : 'Delete health records'}</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {!readOnly && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="size-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-none transition-colors cursor-pointer shrink-0"
+                      title="Tùy chọn khác"
+                    >
+                      <HugeiconsIcon icon={MoreHorizontalIcon} size={16} />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-52 rounded-none shadow-md">
+                    <DropdownMenuItem
+                      disabled={!isRecorded || isCleaning}
+                      onClick={handleClean}
+                      className="cursor-pointer text-[12.5px] py-2 px-3 text-foreground rounded-none disabled:opacity-35 disabled:cursor-not-allowed"
+                    >
+                      <span>{isVi ? 'Xoá toàn bộ số đo sức khỏe' : 'Delete health records'}</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
               {onClose && (
                 <button
                   type="button"
@@ -342,10 +377,14 @@ export function HealthMeasurementPanel({
                   <td className="w-[115px] text-center py-1 px-1 whitespace-nowrap">
                     <input
                       type="number"
+                      disabled={readOnly || st.isTransferred}
                       value={st.height}
                       onChange={(e) => handleFieldChange(st.id, 'height', e.target.value)}
-                      placeholder="cm"
-                      className="w-16 h-7 px-1 text-center text-[12px] border border-border bg-background text-foreground rounded-none focus:outline-hidden focus:border-[#1447e6]"
+                      placeholder={st.isTransferred ? "—" : "cm"}
+                      className={cn(
+                        "w-16 h-7 px-1 text-center text-[12px] border border-border bg-background text-foreground rounded-none focus:outline-hidden focus:border-[#1447e6]",
+                        (readOnly || st.isTransferred) && "opacity-70 cursor-default bg-muted/40"
+                      )}
                     />
                   </td>
 
@@ -354,26 +393,34 @@ export function HealthMeasurementPanel({
                     <input
                       type="number"
                       step="0.1"
+                      disabled={readOnly || st.isTransferred}
                       value={st.weight}
                       onChange={(e) => handleFieldChange(st.id, 'weight', e.target.value)}
-                      placeholder="kg"
-                      className="w-16 h-7 px-1 text-center text-[12px] border border-border bg-background text-foreground rounded-none focus:outline-hidden focus:border-[#1447e6]"
+                      placeholder={st.isTransferred ? "—" : "kg"}
+                      className={cn(
+                        "w-16 h-7 px-1 text-center text-[12px] border border-border bg-background text-foreground rounded-none focus:outline-hidden focus:border-[#1447e6]",
+                        (readOnly || st.isTransferred) && "opacity-70 cursor-default bg-muted/40"
+                      )}
                     />
                   </td>
 
                   {/* Auto Calculated BMI */}
                   <td className="w-[70px] text-center py-1 px-1 font-mono text-[12px] text-muted-foreground whitespace-nowrap">
-                    {st.bmi || '—'}
+                    {st.isTransferred ? '—' : (st.bmi || '—')}
                   </td>
 
                   {/* Ghi chú */}
                   <td className="min-w-[120px] py-1 pl-2">
                     <input
                       type="text"
-                      value={st.note}
+                      disabled={readOnly || st.isTransferred}
+                      value={st.isTransferred ? 'Đã chuyển lớp (chỉ xem)' : st.note}
                       onChange={(e) => handleFieldChange(st.id, 'note', e.target.value)}
                       placeholder={t('health.notes', 'Ghi chú y tế')}
-                      className="w-full h-7 px-2 text-[11.5px] border border-border bg-background text-foreground rounded-none focus:outline-hidden focus:border-[#1447e6]"
+                      className={cn(
+                        "w-full h-7 px-2 text-[11.5px] border border-border bg-background text-foreground rounded-none focus:outline-hidden focus:border-[#1447e6]",
+                        (readOnly || st.isTransferred) && "opacity-70 cursor-default bg-muted/40 italic text-muted-foreground"
+                      )}
                     />
                   </td>
                 </tr>
@@ -408,28 +455,46 @@ export function HealthMeasurementPanel({
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            className="rounded-none h-9 text-[13px] px-4 cursor-pointer"
-          >
-            {t('common.cancel', 'Huỷ')}
-          </Button>
-          <Button
-            type="button"
-            onClick={handleSave}
-            disabled={!isDirty || isSaving || isCleaning}
-            className={cn(
-              'rounded-none h-9 text-[13px] px-5 font-medium transition-colors shadow-none',
-              isDirty && !isSaving && !isCleaning
-                ? 'bg-[#1447e6] hover:bg-[#123ec4] text-white cursor-pointer'
-                : 'bg-muted/80 text-muted-foreground border border-border/80 cursor-not-allowed opacity-60'
-            )}
-            title={!isDirty ? 'Chưa có thay đổi nào để lưu' : undefined}
-          >
-            {isSaving ? t('common.saving', 'Đang lưu...') : t('health.saveHealth', 'Lưu sức khoẻ')}
-          </Button>
+          {readOnly ? (
+            <>
+              <span className="px-2.5 py-1 text-[11.5px] font-medium bg-muted text-muted-foreground border border-border select-none">
+                Chế độ xem (BGH)
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="rounded-none h-9 text-[13px] px-4 cursor-pointer"
+              >
+                {t('common.close', 'Đóng')}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="rounded-none h-9 text-[13px] px-4 cursor-pointer"
+              >
+                {t('common.cancel', 'Huỷ')}
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSave}
+                disabled={!isDirty || isSaving || isCleaning}
+                className={cn(
+                  'rounded-none h-9 text-[13px] px-5 font-medium transition-colors shadow-none',
+                  isDirty && !isSaving && !isCleaning
+                    ? 'bg-[#1447e6] hover:bg-[#123ec4] text-white cursor-pointer'
+                    : 'bg-muted/80 text-muted-foreground border border-border/80 cursor-not-allowed opacity-60'
+                )}
+                title={!isDirty ? 'Chưa có thay đổi nào để lưu' : undefined}
+              >
+                {isSaving ? t('common.saving', 'Đang lưu...') : t('health.saveHealth', 'Lưu sức khoẻ')}
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </div>

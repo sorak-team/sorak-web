@@ -74,6 +74,14 @@ export const curriculumApi = {
   },
 
   /**
+   * Create an educational goal item
+   */
+  async createGoal(payload = {}) {
+    const response = await apiClient.post('/curriculum/goals/item', payload);
+    return response.data?.data || response.data;
+  },
+
+  /**
    * Update an educational goal item (title, indicatorCode, domain)
    */
   async updateGoal(payload = {}) {

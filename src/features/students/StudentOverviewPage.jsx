@@ -288,7 +288,7 @@ export function StudentOverviewPage() {
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white">
                 <HugeiconsIcon icon={ArrowReloadHorizontalIcon} size={18} className="animate-spin" />
               </div>
-            ) : (
+            ) : student.status !== 'graduated' ? (
               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 p-1">
                 <button
                   type="button"
@@ -309,7 +309,7 @@ export function StudentOverviewPage() {
                   </button>
                 )}
               </div>
-            )}
+            ) : null}
           </div>
 
           <div className="flex flex-col min-w-0 gap-1">
@@ -333,9 +333,16 @@ export function StudentOverviewPage() {
             type="button"
             variant="outline"
             size="icon"
-            onClick={() => openEditDrawer(student.id)}
-            className="size-8 rounded-none border border-border bg-background hover:bg-muted text-foreground cursor-pointer"
-            title={t('common.edit', 'Chỉnh sửa')}
+            disabled={student.status === 'graduated'}
+            onClick={() => {
+              if (student.status === 'graduated') return;
+              openEditDrawer(student.id);
+            }}
+            className={cn(
+              'size-8 rounded-none border border-border bg-background hover:bg-muted text-foreground cursor-pointer',
+              student.status === 'graduated' && 'opacity-40 cursor-not-allowed hover:bg-background'
+            )}
+            title={student.status === 'graduated' ? 'Học sinh đã tốt nghiệp, không thể chỉnh sửa' : t('common.edit', 'Chỉnh sửa')}
           >
             <HugeiconsIcon icon={PencilEdit02Icon} size={15} />
           </Button>
@@ -508,12 +515,9 @@ export function StudentOverviewPage() {
                         </strong>
                       </span>
                       <span className="text-[13px] text-muted-foreground">
-                        SĐT: <span className="font-semibold text-foreground">{p.phone || '—'}</span>
+                        SĐT: <span className="font-semibold text-foreground font-mono">{p.phone || '—'}</span>
                       </span>
                     </div>
-                    <span className="text-[12px] text-muted-foreground shrink-0">
-                      {p.canPickup !== false ? 'Được đón bé' : 'Không đón bé'}
-                    </span>
                   </div>
                 ))
               ) : (
@@ -618,7 +622,12 @@ export function StudentOverviewPage() {
       </div>
 
       {/* Slide-out Drawer Panel */}
-      <StudentDrawer />
+      <StudentDrawer
+        onSuccess={async () => {
+          await reloadDetail();
+          await fetchStudents();
+        }}
+      />
 
       {/* Delete Confirmation Modal */}
       <DeleteStudentDialog />

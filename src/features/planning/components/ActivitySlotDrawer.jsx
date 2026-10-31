@@ -4,6 +4,7 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import {
   Cancel01Icon,
   SparklesIcon,
+  UserIcon,
 } from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -166,6 +167,24 @@ export function ActivitySlotDrawer({ isOpen, onClose, initialSlot, onSave, readO
 
         {/* Scrollable Form Body */}
         <form id="slot-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-4">
+          {/* Author & Updater Audit Metadata Banner */}
+          {(initialSlot?.creatorName || initialSlot?.updaterName) && (
+            <div className="p-2.5 bg-muted/40 border border-border text-[12px] flex items-center justify-between flex-wrap gap-2">
+              {initialSlot.creatorName && (
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <HugeiconsIcon icon={UserIcon} size={13} className="text-muted-foreground/80 shrink-0" />
+                  <span>
+                    Giáo viên soạn: <strong className="text-foreground font-medium">{initialSlot.creatorName}</strong>
+                  </span>
+                </div>
+              )}
+              {initialSlot.updaterName && (
+                <div className="text-[11.5px] text-muted-foreground">
+                  Cập nhật bởi: <strong className="text-foreground font-medium">{initialSlot.updaterName}</strong>
+                </div>
+              )}
+            </div>
+          )}
           {/* Info Banner when readOnly, AI Banner when editing */}
           {readOnly ? (
             <div className="p-3 bg-muted/40 border border-border/80 text-[12px] text-muted-foreground leading-relaxed">

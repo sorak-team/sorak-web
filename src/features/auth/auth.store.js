@@ -48,6 +48,12 @@ export const useAuthStore = create(
 
         // If PARENT_PH, maintain linkedAccounts list
         if (user && user.role === 'PARENT_PH') {
+          const existingPhone = accounts[0]?.user?.phone;
+          const newPhone = user.phone;
+          if (existingPhone && newPhone && existingPhone !== newPhone) {
+            accounts = [];
+          }
+
           const exists = accounts.some(
             (a) => a.user?.id === user.id || a.user?.identifier === user.identifier,
           );
@@ -146,7 +152,12 @@ export const useAuthStore = create(
         }
       },
 
-      logout: () => set({ user: null, accessToken: null }),
+      logout: () =>
+        set({
+          user: null,
+          accessToken: null,
+          linkedAccounts: [],
+        }),
 
       logoutAll: () =>
         set({

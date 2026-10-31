@@ -74,6 +74,7 @@ export function AcademicCalendarView({
   startDate,
   endDate,
   onCountersUpdate,
+  isReadOnly = false,
 }) {
   const [holidaysData, setHolidaysData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -233,6 +234,7 @@ export function AcademicCalendarView({
   }, [viewMode, canPrevMonth, canNextMonth, isEditDrawerOpen, isImportDrawerOpen, currentYear, currentMonth, schoolYearBounds]);
 
   const handleOpenAdd = (dateStr = null) => {
+    if (isReadOnly) return;
     setHolidayToEdit(null);
     setSelectedDate(
       dateStr || `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-15`,
@@ -241,11 +243,13 @@ export function AcademicCalendarView({
   };
 
   const handleOpenEdit = (holiday) => {
+    if (isReadOnly) return;
     setHolidayToEdit(holiday);
     setIsEditDrawerOpen(true);
   };
 
   const handleDeleteQuick = async (holiday) => {
+    if (isReadOnly) return;
     if (window.confirm(`Xóa "${holiday.name}" khỏi lịch năm học?`)) {
       try {
         await academicYearsApi.deleteHoliday(schoolYearId, holiday.id);
@@ -485,8 +489,15 @@ export function AcademicCalendarView({
           <Button
             type="button"
             variant="outline"
-            onClick={() => setIsImportDrawerOpen(true)}
-            className="h-8 px-3 inline-flex items-center gap-1.5 text-[13px] font-medium border-border rounded-none shadow-none hover:bg-muted cursor-pointer"
+            disabled={isReadOnly}
+            onClick={() => !isReadOnly && setIsImportDrawerOpen(true)}
+            title={isReadOnly ? 'Năm học cũ / đã kết thúc không hỗ trợ import' : undefined}
+            className={cn(
+              'h-8 px-3 inline-flex items-center gap-1.5 text-[13px] font-medium border-border rounded-none shadow-none',
+              isReadOnly
+                ? 'opacity-40 cursor-not-allowed select-none text-muted-foreground'
+                : 'hover:bg-muted cursor-pointer',
+            )}
           >
             <HugeiconsIcon icon={File02Icon} size={14} />
             <span>Import</span>
@@ -495,8 +506,15 @@ export function AcademicCalendarView({
           {/* Add Holiday Button */}
           <Button
             type="button"
-            onClick={() => handleOpenAdd()}
-            className="h-8 px-3.5 inline-flex items-center gap-1.5 text-[13px] font-medium bg-[#1447e6] hover:bg-[#1447e6]/90 text-white rounded-none shadow-none cursor-pointer"
+            disabled={isReadOnly}
+            onClick={() => !isReadOnly && handleOpenAdd()}
+            title={isReadOnly ? 'Năm học cũ / đã kết thúc không hỗ trợ thêm mới' : undefined}
+            className={cn(
+              'h-8 px-3.5 inline-flex items-center gap-1.5 text-[13px] font-medium rounded-none shadow-none',
+              isReadOnly
+                ? 'opacity-40 bg-muted text-muted-foreground border border-border cursor-not-allowed select-none'
+                : 'bg-[#1447e6] hover:bg-[#1447e6]/90 text-white cursor-pointer',
+            )}
           >
             <HugeiconsIcon icon={PlusSignIcon} size={14} />
             <span>Thêm lịch</span>
@@ -506,20 +524,21 @@ export function AcademicCalendarView({
 
       {/* 2. CALENDAR GRID VIEW */}
       {viewMode === 'GRID' ? (
-        <div className="border border-border bg-card rounded-none shadow-2xs overflow-hidden">
-          {/* Days of week header (T2 -> CN) */}
-          <div className="grid grid-cols-7 border-b border-border bg-muted/20 text-center text-[11.5px] font-medium text-muted-foreground py-2 select-none tracking-wider">
-            <span>Thứ 2</span>
-            <span>Thứ 3</span>
-            <span>Thứ 4</span>
-            <span>Thứ 5</span>
-            <span>Thứ 6</span>
-            <span>Thứ 7</span>
-            <span>Chủ nhật</span>
-          </div>
+        <div className="border border-border bg-card rounded-none shadow-2xs overflow-x-auto">
+          <div className="min-w-[700px]">
+            {/* Days of week header (T2 -> CN) */}
+            <div className="grid grid-cols-7 border-b border-border bg-muted/20 text-center text-[11.5px] font-medium text-muted-foreground py-2 select-none tracking-wider">
+              <span>Thứ 2</span>
+              <span>Thứ 3</span>
+              <span>Thứ 4</span>
+              <span>Thứ 5</span>
+              <span>Thứ 6</span>
+              <span>Thứ 7</span>
+              <span>Chủ nhật</span>
+            </div>
 
-          {/* 7-column Calendar Cells */}
-          <div className="grid grid-cols-7 divide-x divide-y divide-border min-w-[700px]">
+            {/* 7-column Calendar Cells */}
+            <div className="grid grid-cols-7 divide-x divide-y divide-border">
             {calendarCells.map((cell, idx) => {
               // Blank padding cells before 1st and after last day of month (no blurred numbers)
               if (!cell.isCurrentMonth) {
@@ -575,7 +594,7 @@ export function AcademicCalendarView({
                     )}
 
                     {/* Quick Add on cell hover */}
-                    {!isOutside && (
+                    {!isOutside && !isReadOnly && (
                       <button
                         type="button"
                         onClick={(e) => {
@@ -593,26 +612,33 @@ export function AcademicCalendarView({
                   {/* Event Text wrapping to next lines (Text rớt xuống dòng) */}
                   <div className="flex-1 space-y-1 overflow-y-auto scrollbar-none">
                     {cellEvents.map((evt, eIdx) => {
-                      const isHoliday = !evt.isTeachingAllowed;
+                      const isHoliday = evt.type === 'HOLIDAY' || (!evt.isTeachingAllowed && evt.type !== 'EVENT');
+                      const isTeachingLocked = !evt.isTeachingAllowed;
 
                       return (
                         <div
                           key={evt.id || eIdx}
-                          onClick={(e) => {
+                          onClick={isReadOnly ? undefined : (e) => {
                             e.stopPropagation();
                             handleOpenEdit(evt);
                           }}
                           className={cn(
-                            'w-full text-left px-2 py-1 text-[11px] font-medium leading-snug rounded-none border-l-2 transition-all cursor-pointer whitespace-normal break-words select-none shadow-2xs hover:opacity-90',
+                            'w-full text-left px-2 py-1 text-[11px] font-medium leading-snug rounded-none border-l-2 transition-all whitespace-normal break-words select-none shadow-2xs',
+                            isReadOnly ? 'cursor-default' : 'cursor-pointer hover:opacity-90',
                             isHoliday
                               ? 'bg-blue-50/90 text-[#1447e6] border-l-[#1447e6] border-y border-r border-blue-200/60 dark:bg-blue-950/40 dark:text-blue-300'
                               : 'bg-muted/60 text-foreground border-l-slate-400 border-y border-r border-border hover:bg-muted',
                           )}
-                          title={`${evt.name} (${isHoliday ? 'Ngày nghỉ' : 'Sự kiện'})`}
+                          title={`${evt.name} (${evt.typeLabel || (isHoliday ? 'Ngày nghỉ' : 'Sự kiện')}${isTeachingLocked ? ' · Khóa lịch dạy' : ''})`}
                         >
-                          <span className="break-words leading-tight block">
-                            {evt.name}
-                          </span>
+                          <div className="flex items-start gap-1">
+                            {isTeachingLocked && (
+                              <span className="text-[10px] text-destructive/90 shrink-0 select-none" title="Khóa xếp lịch dạy giáo viên">🔒</span>
+                            )}
+                            <span className="break-words leading-tight flex-1">
+                              {evt.name}
+                            </span>
+                          </div>
                         </div>
                       );
                     })}
@@ -646,13 +672,14 @@ export function AcademicCalendarView({
               </kbd>
             </div>
           </div>
+          </div>
         </div>
       ) : (
         /* 3. TABLE / LIST VIEW - Strictly follows StudentsPage / StudentTable standard */
         <div className="flex flex-col gap-4">
           <div className="border border-border bg-card rounded-none shadow-2xs overflow-hidden">
             {/* Table Search & Filter Toolbar: Count on left, Search & Filter on right */}
-            <div className="px-6 py-4 border-b border-border bg-card flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-border bg-card flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
               <span className="text-[13px] text-muted-foreground font-normal">
                 {filteredItems.length} mục trong năm học
               </span>
@@ -744,9 +771,9 @@ export function AcademicCalendarView({
               </div>
             </div>
 
-            {/* Table: Fit 100% container without horizontal scrollbar */}
-            <div className="w-full">
-              <table className="w-full text-left border-collapse table-fixed">
+            {/* Table: Fit 100% container with horizontal scrollbar on mobile */}
+            <div className="w-full overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[700px]">
                 <thead>
                   <tr className="h-11 border-b border-border bg-muted/20 text-[13px] font-medium text-foreground">
                     <th className="px-4 py-3 font-medium w-[25%]">Tên ngày nghỉ / Sự kiện</th>
@@ -774,8 +801,11 @@ export function AcademicCalendarView({
                       return (
                         <tr
                           key={item.id}
-                          onClick={() => handleOpenEdit(item)}
-                          className="h-[60px] hover:bg-muted/30 transition-colors cursor-pointer group"
+                          onClick={isReadOnly ? undefined : () => handleOpenEdit(item)}
+                          className={cn(
+                            'h-[60px] transition-colors',
+                            isReadOnly ? 'cursor-default' : 'hover:bg-muted/30 cursor-pointer group',
+                          )}
                         >
                           <td className="px-4 py-3.5">
                             <span
@@ -798,7 +828,7 @@ export function AcademicCalendarView({
                             </div>
                           </td>
                           <td className="px-3 py-3.5">
-                            {isHoliday ? (
+                            {item.type === 'HOLIDAY' ? (
                               <span className="inline-flex items-center justify-center px-2 py-0.5 text-[12px] font-medium bg-blue-100 text-[#1447e6] dark:bg-blue-950/60 dark:text-blue-300 rounded-none whitespace-nowrap">
                                 Ngày nghỉ
                               </span>
@@ -809,9 +839,16 @@ export function AcademicCalendarView({
                             )}
                           </td>
                           <td className="px-3 py-3.5">
-                            <span className="text-[13px] text-muted-foreground font-normal whitespace-nowrap">
-                              {isHoliday ? 'Khóa lịch dạy' : 'Dạy bình thường'}
-                            </span>
+                            {!item.isTeachingAllowed ? (
+                              <span className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-destructive whitespace-nowrap">
+                                <span>🔒</span>
+                                <span>Khóa lịch dạy</span>
+                              </span>
+                            ) : (
+                              <span className="text-[12.5px] text-muted-foreground font-normal whitespace-nowrap">
+                                Dạy bình thường
+                              </span>
+                            )}
                           </td>
                           <td className="px-3 py-3.5">
                             <span
@@ -853,6 +890,9 @@ export function AcademicCalendarView({
         isOpen={isEditDrawerOpen}
         onClose={() => setIsEditDrawerOpen(false)}
         schoolYearId={schoolYearId}
+        schoolYearName={schoolYearName}
+        schoolYearStartDate={schoolYearBounds.startDateStr}
+        schoolYearEndDate={schoolYearBounds.endDateStr}
         selectedDate={selectedDate}
         holidayToEdit={holidayToEdit}
         onSuccess={fetchHolidays}

@@ -20,6 +20,7 @@ export function AttendanceCheckInPanel({
   slot,
   initialStudents = [],
   isRecorded = false,
+  readOnly = false,
   onClose,
   onSaveSuccess,
   onCleanSuccess,
@@ -99,20 +100,22 @@ export function AttendanceCheckInPanel({
   // - Nếu đã điểm danh: chỉ enable khi có thay đổi (isDirty)
   // - Nếu chưa điểm danh: luôn enable để lưu nhanh danh sách mặc định Có mặt
   const canSave = useMemo(() => {
-    if (isSaving || isCleaning || students.length === 0) return false;
+    if (readOnly || isSaving || isCleaning || students.length === 0) return false;
     if (isCurrentlyRecorded) {
       return isDirty;
     }
     return true;
-  }, [isSaving, isCleaning, students.length, isCurrentlyRecorded, isDirty]);
+  }, [readOnly, isSaving, isCleaning, students.length, isCurrentlyRecorded, isDirty]);
 
   const handleToggleStatus = (id, newStatus) => {
+    if (readOnly) return;
     setStudents((prev) =>
       prev.map((s) => (s.id === id ? { ...s, status: newStatus } : s))
     );
   };
 
   const handleNoteChange = (id, newNote) => {
+    if (readOnly) return;
     setStudents((prev) =>
       prev.map((s) => (s.id === id ? { ...s, note: newNote } : s))
     );
@@ -123,7 +126,7 @@ export function AttendanceCheckInPanel({
   const unexcusedCount = students.filter((s) => s.status === 'UNEXCUSED_ABSENCE').length;
 
   const handleSave = async () => {
-    if (!canSave) return;
+    if (readOnly || !canSave) return;
     setIsSaving(true);
     try {
       const targetClassId = classId || '5';
@@ -150,6 +153,7 @@ export function AttendanceCheckInPanel({
   };
 
   const handleClean = async () => {
+    if (readOnly) return;
     if (!isCurrentlyRecorded) {
       toast.warning(isVi ? 'Ngày này chưa có dữ liệu điểm danh để xóa.' : 'No attendance records to clean.');
       return;
@@ -216,26 +220,28 @@ export function AttendanceCheckInPanel({
             </p>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className="size-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-none transition-colors cursor-pointer shrink-0"
-                  title="Tùy chọn khác"
-                >
-                  <HugeiconsIcon icon={MoreHorizontalIcon} size={16} />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52 rounded-none shadow-md">
-                <DropdownMenuItem
-                  disabled={!isCurrentlyRecorded || isCleaning}
-                  onClick={handleClean}
-                  className="cursor-pointer text-[12.5px] py-2 px-3 text-foreground rounded-none disabled:opacity-35 disabled:cursor-not-allowed"
-                >
-                  <span>{isVi ? 'Xoá toàn bộ điểm danh' : 'Delete attendance'}</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {!readOnly && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="size-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-none transition-colors cursor-pointer shrink-0"
+                    title="Tùy chọn khác"
+                  >
+                    <HugeiconsIcon icon={MoreHorizontalIcon} size={16} />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52 rounded-none shadow-md">
+                  <DropdownMenuItem
+                    disabled={!isCurrentlyRecorded || isCleaning}
+                    onClick={handleClean}
+                    className="cursor-pointer text-[12.5px] py-2 px-3 text-foreground rounded-none disabled:opacity-35 disabled:cursor-not-allowed"
+                  >
+                    <span>{isVi ? 'Xoá toàn bộ điểm danh' : 'Delete attendance'}</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             {onClose && (
               <button
                 type="button"
@@ -351,66 +357,82 @@ export function AttendanceCheckInPanel({
 
                   {/* 3-segment Toggle: [ Có ] [ CP ] [ KP ] - Rộng rãi, không bị co ép */}
                   <td className="w-[140px] min-w-[140px] text-center py-1.5 px-2 whitespace-nowrap">
-                    <div className="inline-flex items-center border border-border bg-background rounded-none p-0.5 shadow-2xs shrink-0">
-                      {/* Có mặt / Present */}
-                      <button
-                        type="button"
-                        onClick={() => handleToggleStatus(st.id, 'PRESENT')}
-                        title={titlePresent}
-                        className={cn(
-                          'w-9 h-7 shrink-0 text-[11.5px] font-medium transition-colors cursor-pointer rounded-none whitespace-nowrap flex items-center justify-center',
-                          isP
-                            ? 'bg-[#1447e6] text-white shadow-2xs font-semibold'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                        )}
-                      >
-                        {labelPresent}
-                      </button>
+                    {st.isTransferred ? (
+                      <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium bg-muted text-muted-foreground border border-border">
+                        Đã chuyển lớp
+                      </span>
+                    ) : (
+                      <div className="inline-flex items-center border border-border bg-background rounded-none p-0.5 shadow-2xs shrink-0">
+                        {/* Có mặt / Present */}
+                        <button
+                          type="button"
+                          disabled={readOnly || st.isTransferred}
+                          onClick={() => handleToggleStatus(st.id, 'PRESENT')}
+                          title={titlePresent}
+                          className={cn(
+                            'w-9 h-7 shrink-0 text-[11.5px] font-medium transition-colors rounded-none whitespace-nowrap flex items-center justify-center',
+                            readOnly || st.isTransferred ? 'cursor-default' : 'cursor-pointer',
+                            isP
+                              ? 'bg-[#1447e6] text-white shadow-2xs font-semibold'
+                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                          )}
+                        >
+                          {labelPresent}
+                        </button>
 
-                      {/* Có phép / Excused */}
-                      <button
-                        type="button"
-                        onClick={() => handleToggleStatus(st.id, 'EXCUSED_ABSENCE')}
-                        title={titleExcused}
-                        className={cn(
-                          'w-9 h-7 shrink-0 text-[11.5px] font-medium transition-colors cursor-pointer rounded-none border-x border-border/60 whitespace-nowrap flex items-center justify-center',
-                          isExcused
-                            ? 'bg-amber-500 text-white shadow-2xs font-semibold'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                        )}
-                      >
-                        {labelExcused}
-                      </button>
+                        {/* Có phép / Excused */}
+                        <button
+                          type="button"
+                          disabled={readOnly || st.isTransferred}
+                          onClick={() => handleToggleStatus(st.id, 'EXCUSED_ABSENCE')}
+                          title={titleExcused}
+                          className={cn(
+                            'w-9 h-7 shrink-0 text-[11.5px] font-medium transition-colors rounded-none border-x border-border/60 whitespace-nowrap flex items-center justify-center',
+                            readOnly || st.isTransferred ? 'cursor-default' : 'cursor-pointer',
+                            isExcused
+                              ? 'bg-amber-500 text-white shadow-2xs font-semibold'
+                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                          )}
+                        >
+                          {labelExcused}
+                        </button>
 
-                      {/* Không phép / Unexcused */}
-                      <button
-                        type="button"
-                        onClick={() => handleToggleStatus(st.id, 'UNEXCUSED_ABSENCE')}
-                        title={titleUnexcused}
-                        className={cn(
-                          'w-9 h-7 shrink-0 text-[11.5px] font-medium transition-colors cursor-pointer rounded-none whitespace-nowrap flex items-center justify-center',
-                          isUnexcused
-                            ? 'bg-rose-600 text-white shadow-2xs font-semibold'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                        )}
-                      >
-                        {labelUnexcused}
-                      </button>
-                    </div>
+                        {/* Không phép / Unexcused */}
+                        <button
+                          type="button"
+                          disabled={readOnly || st.isTransferred}
+                          onClick={() => handleToggleStatus(st.id, 'UNEXCUSED_ABSENCE')}
+                          title={titleUnexcused}
+                          className={cn(
+                            'w-9 h-7 shrink-0 text-[11.5px] font-medium transition-colors rounded-none whitespace-nowrap flex items-center justify-center',
+                            readOnly || st.isTransferred ? 'cursor-default' : 'cursor-pointer',
+                            isUnexcused
+                              ? 'bg-rose-600 text-white shadow-2xs font-semibold'
+                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                          )}
+                        >
+                          {labelUnexcused}
+                        </button>
+                      </div>
+                    )}
                   </td>
 
                   {/* Ghi chú: đồng bộ chuẩn design của Sức khoẻ và Đánh giá */}
                   <td className="py-1 pl-3 min-w-[140px]">
                     <input
                       type="text"
-                      value={st.note || ''}
+                      disabled={readOnly || st.isTransferred}
+                      value={st.isTransferred ? 'Đã chuyển sang lớp khác (chỉ xem)' : (st.note || '')}
                       onChange={(e) => handleNoteChange(st.id, e.target.value)}
                       placeholder={
                         isExcused || isUnexcused
                           ? (isVi ? 'Lý do vắng...' : 'Absence reason...')
                           : (isVi ? 'Ghi chú đón trẻ...' : 'Note...')
                       }
-                      className="w-full h-7 px-2.5 text-[11.5px] border border-border bg-background text-foreground rounded-none focus:outline-hidden focus:border-[#1447e6]"
+                      className={cn(
+                        "w-full h-7 px-2.5 text-[11.5px] border border-border bg-background text-foreground rounded-none focus:outline-hidden focus:border-[#1447e6]",
+                        (readOnly || st.isTransferred) && "opacity-70 cursor-default bg-muted/30 italic text-muted-foreground"
+                      )}
                     />
                   </td>
                 </tr>
@@ -437,32 +459,50 @@ export function AttendanceCheckInPanel({
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            className="rounded-none h-9 text-[13px] px-4 cursor-pointer"
-          >
-            {t('common.cancel', 'Huỷ')}
-          </Button>
-          <Button
-            type="button"
-            onClick={handleSave}
-            disabled={!canSave}
-            className={cn(
-              'rounded-none h-9 text-[13px] px-5 font-medium transition-colors shadow-none',
-              canSave
-                ? 'bg-[#1447e6] hover:bg-[#123ec4] text-white cursor-pointer'
-                : 'bg-muted/80 text-muted-foreground border border-border/80 cursor-not-allowed opacity-60'
-            )}
-            title={
-              isCurrentlyRecorded && !isDirty
-                ? (isVi ? 'Chưa có thay đổi nào để lưu' : 'No changes to save')
-                : undefined
-            }
-          >
-            {isSaving ? t('common.saving', 'Đang lưu...') : t('attendance.saveAttendance', 'Lưu điểm danh')}
-          </Button>
+          {readOnly ? (
+            <>
+              <span className="px-2.5 py-1 text-[11.5px] font-medium bg-muted text-muted-foreground border border-border select-none">
+                Chế độ xem (BGH)
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="rounded-none h-9 text-[13px] px-4 cursor-pointer"
+              >
+                {t('common.close', 'Đóng')}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="rounded-none h-9 text-[13px] px-4 cursor-pointer"
+              >
+                {t('common.cancel', 'Huỷ')}
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSave}
+                disabled={!canSave}
+                className={cn(
+                  'rounded-none h-9 text-[13px] px-5 font-medium transition-colors shadow-none',
+                  canSave
+                    ? 'bg-[#1447e6] hover:bg-[#123ec4] text-white cursor-pointer'
+                    : 'bg-muted/80 text-muted-foreground border border-border/80 cursor-not-allowed opacity-60'
+                )}
+                title={
+                  isCurrentlyRecorded && !isDirty
+                    ? (isVi ? 'Chưa có thay đổi nào để lưu' : 'No changes to save')
+                    : undefined
+                }
+              >
+                {isSaving ? t('common.saving', 'Đang lưu...') : t('attendance.saveAttendance', 'Lưu điểm danh')}
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </div>

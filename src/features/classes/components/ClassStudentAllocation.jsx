@@ -10,6 +10,7 @@ import {
   MoreVerticalIcon,
   ViewIcon,
   ArrowDataTransferHorizontalIcon,
+  Delete02Icon,
 } from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -81,6 +82,20 @@ export function ClassStudentAllocation({ currentClass, isTeacher: propIsTeacher 
     );
   }, [classRoster, rosterSearch]);
 
+  const handleRemoveStudentFromClass = async (student) => {
+    if (!window.confirm(`Bạn có chắc chắn muốn gỡ học sinh ${student.fullName} khỏi lớp ${currentClass?.name}?`)) {
+      return;
+    }
+    try {
+      await classesApi.unassignStudent(currentClass.id, student.id);
+      toast.success(`Đã gỡ học sinh ${student.fullName} khỏi lớp thành công.`);
+      fetchClassRoster();
+      fetchGlobalClasses();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Không thể gỡ học sinh khỏi lớp.');
+    }
+  };
+
   return (
     <>
       {/* 1. Page Header matching "Cấu hình lớp" & "Phân công giáo viên" */}
@@ -138,16 +153,14 @@ export function ClassStudentAllocation({ currentClass, isTeacher: propIsTeacher 
                   />
                 </div>
 
-                {!isTeacher && (
-                  <Button
-                    type="button"
-                    onClick={() => setIsIntakeDrawerOpen(true)}
-                    className="h-8 px-3.5 bg-[#1447e6] hover:bg-[#1447e6]/90 text-white text-[13px] font-medium rounded-none shadow-none cursor-pointer flex items-center gap-1.5 shrink-0"
-                  >
-                    <HugeiconsIcon icon={PlusSignIcon} size={15} />
-                    <span>{t('classes.intakeActionShort', 'Tiếp nhận học sinh')}</span>
-                  </Button>
-                )}
+                <Button
+                  type="button"
+                  onClick={() => setIsIntakeDrawerOpen(true)}
+                  className="h-8 px-3.5 bg-[#1447e6] hover:bg-[#1447e6]/90 text-white text-[13px] font-medium rounded-none shadow-none cursor-pointer flex items-center gap-1.5 shrink-0"
+                >
+                  <HugeiconsIcon icon={PlusSignIcon} size={15} />
+                  <span>{t('classes.intakeActionShort', 'Tiếp nhận học sinh')}</span>
+                </Button>
               </div>
             </div>
 
@@ -253,50 +266,62 @@ export function ClassStudentAllocation({ currentClass, isTeacher: propIsTeacher 
                           {student.gender === 'FEMALE' ? 'Nữ' : 'Nam'}
                         </td>
 
-                        {/* Thao tác (Chỉ dành cho BGH) */}
-                        {!isTeacher && (
-                          <td className="px-3 text-right whitespace-nowrap">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <button
-                                  type="button"
-                                  className="size-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer rounded-none ml-auto"
-                                  title={t('common.actions', 'Thao tác')}
-                                >
-                                  <HugeiconsIcon icon={MoreVerticalIcon} size={15} />
-                                </button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent
-                                align="end"
-                                className="w-44 p-1 rounded-none border border-border bg-card shadow-xl z-50 text-[13px]"
+                        {/* Thao tác (Cho cả BGH và Giáo viên) */}
+                        <td className="px-3 text-right whitespace-nowrap">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                type="button"
+                                className="size-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer rounded-none ml-auto"
+                                title={t('common.actions', 'Thao tác')}
                               >
-                                <DropdownMenuItem
-                                  onClick={() => setTransferStudent(student)}
-                                  className="flex items-center gap-2 h-8 px-2 text-[13px] cursor-pointer rounded-none"
-                                >
-                                  <HugeiconsIcon
-                                    icon={ArrowDataTransferHorizontalIcon}
-                                    size={14}
-                                    className="text-muted-foreground"
-                                  />
-                                  <span>{t('classes.transferRequest', 'Yêu cầu chuyển lớp')}</span>
-                                </DropdownMenuItem>
+                                <HugeiconsIcon icon={MoreVerticalIcon} size={15} />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                              align="end"
+                              className="w-48 p-1 rounded-none border border-border bg-card shadow-xl z-50 text-[13px]"
+                            >
+                              <DropdownMenuItem
+                                onClick={() => setTransferStudent(student)}
+                                className="flex items-center gap-2 h-8 px-2 text-[13px] cursor-pointer rounded-none"
+                              >
+                                <HugeiconsIcon
+                                  icon={ArrowDataTransferHorizontalIcon}
+                                  size={14}
+                                  className="text-muted-foreground"
+                                />
+                                <span>{t('classes.transferRequest', 'Yêu cầu chuyển lớp')}</span>
+                              </DropdownMenuItem>
 
+                              {!isTeacher && (
                                 <DropdownMenuItem
-                                  onClick={() => navigate(currentClass?.id ? `/classes/${currentClass.id}/students/${student.id}` : `/students/${student.id}`)}
-                                  className="flex items-center gap-2 h-8 px-2 text-[13px] cursor-pointer rounded-none"
+                                  onClick={() => handleRemoveStudentFromClass(student)}
+                                  className="flex items-center gap-2 h-8 px-2 text-[13px] text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer rounded-none"
                                 >
                                   <HugeiconsIcon
-                                    icon={ViewIcon}
+                                    icon={Delete02Icon}
                                     size={14}
-                                    className="text-muted-foreground"
+                                    className="text-destructive"
                                   />
-                                  <span>{t('common.viewDetails', 'Xem hồ sơ học sinh')}</span>
+                                  <span>Gỡ khỏi lớp</span>
                                 </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </td>
-                        )}
+                              )}
+
+                              <DropdownMenuItem
+                                onClick={() => navigate(currentClass?.id ? `/classes/${currentClass.id}/students/${student.id}` : `/students/${student.id}`)}
+                                className="flex items-center gap-2 h-8 px-2 text-[13px] cursor-pointer rounded-none"
+                              >
+                                <HugeiconsIcon
+                                  icon={ViewIcon}
+                                  size={14}
+                                  className="text-muted-foreground"
+                                />
+                                <span>{t('common.viewDetails', 'Xem hồ sơ học sinh')}</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </td>
                       </tr>
                     ))
                   )}

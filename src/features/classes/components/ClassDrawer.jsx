@@ -53,7 +53,7 @@ export function ClassDrawer() {
 
   if (!isDrawerOpen) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const cleanName = sanitizeClassName(formData.name);
     if (!cleanName) {
@@ -61,28 +61,65 @@ export function ClassDrawer() {
       return;
     }
 
-    if (drawerMode === 'edit' && editingClassId) {
-      updateClass(editingClassId, {
-        name: cleanName,
-        grade: formData.grade,
-        room: formData.room.trim(),
-        teacher: formData.teacher.trim(),
-        description: formData.description.trim(),
-      });
-      toast.success(t('classes.updateSuccess', 'Đã cập nhật thông tin lớp học thành công!'));
-    } else {
-      addClass({
-        ...formData,
-        name: cleanName,
-        room: formData.room.trim(),
-        teacher: formData.teacher.trim(),
-        description: formData.description.trim(),
-        studentCount: 0,
-      });
-      toast.success(t('classes.createSuccess', 'Đã tạo lớp học mới thành công!'));
+    // Check duplicate class name in current year (Bug #10)
+    const isDuplicate = classes.some((c) => {
+      const matchId =
+        drawerMode === 'edit' &&
+        editingClassId &&
+        (c.id === editingClassId || c.publicId === editingClassId);
+      if (matchId) return false;
+      return sanitizeClassName(c.name).toLowerCase() === cleanName.toLowerCase();
+    });
+
+    if (isDuplicate) {
+      toast.error(t('classes.duplicateName', `Tên lớp '${cleanName}' đã tồn tại trong năm học này!`));
+      return;
     }
 
-    closeDrawer();
+    if (formData.room?.trim()) {
+      const isRoomDuplicate = classes.some((c) => {
+        const matchId =
+          drawerMode === 'edit' &&
+          editingClassId &&
+          (c.id === editingClassId || c.publicId === editingClassId);
+        if (matchId) return false;
+        const cRoom = (c.room || c.roomNumber || '').trim();
+        return cRoom.toLowerCase() === formData.room.trim().toLowerCase();
+      });
+
+      if (isRoomDuplicate) {
+        toast.error(`Phòng '${formData.room.trim()}' đã được xếp cho lớp khác trong năm học này!`);
+        return;
+      }
+    }
+
+    try {
+      if (drawerMode === 'edit' && editingClassId) {
+        await updateClass(editingClassId, {
+          name: cleanName,
+          grade: formData.grade,
+          room: formData.room.trim(),
+          teacher: formData.teacher.trim(),
+          description: formData.description.trim(),
+        });
+        toast.success(t('classes.updateSuccess', 'Đã cập nhật thông tin lớp học thành công!'));
+      } else {
+        await addClass({
+          ...formData,
+          name: cleanName,
+          room: formData.room.trim(),
+          teacher: formData.teacher.trim(),
+          description: formData.description.trim(),
+          studentCount: 0,
+        });
+        toast.success(t('classes.createSuccess', 'Đã tạo lớp học mới thành công!'));
+      }
+      closeDrawer();
+    } catch (err) {
+      console.error('Save class failed:', err);
+      const msg = err.response?.data?.message || err.message || t('classes.saveFailed', 'Lỗi khi lưu lớp học');
+      toast.error(msg);
+    }
   };
 
   return (
@@ -166,15 +203,24 @@ export function ClassDrawer() {
                   {t('classes.fieldGrade', 'Khối lớp')}
                 </Label>
                 <select
+                  disabled={drawerMode === 'edit'}
                   value={formData.grade}
                   onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
-                  className="w-full h-9 px-3 bg-background border border-border rounded-none text-[13px] text-foreground focus:outline-hidden focus:border-primary cursor-pointer"
+                  className={cn(
+                    "w-full h-9 px-3 bg-background border border-border rounded-none text-[13px] text-foreground focus:outline-hidden focus:border-primary",
+                    drawerMode === 'edit' ? "opacity-60 cursor-not-allowed bg-muted/40" : "cursor-pointer"
+                  )}
                 >
                   <option value="nhatre">Khối Nhà trẻ (12–36 tháng)</option>
                   <option value="mam">Khối Mầm (3–4 tuổi)</option>
                   <option value="choi">Khối Chồi (4–5 tuổi)</option>
                   <option value="la">Khối Lá (5–6 tuổi)</option>
                 </select>
+                {drawerMode === 'edit' && (
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Không thể thay đổi khối lớp sau khi đã tạo lớp học.
+                  </p>
+                )}
               </div>
             </div>
           </div>

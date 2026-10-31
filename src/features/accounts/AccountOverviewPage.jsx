@@ -15,6 +15,7 @@ import { useAuthStore } from '@/features/auth';
 import { AccountSettingsDrawer } from './components/AccountSettingsDrawer';
 import { ResetPasswordConfirmModal } from './components/ResetPasswordConfirmModal';
 import { TemporaryPasswordModal } from './components/TemporaryPasswordModal';
+import { LockAccountConfirmModal } from './components/LockAccountConfirmModal';
 import { NotFoundPage } from '@/features/error';
 import { cn } from '@/shared/lib/utils';
 
@@ -35,6 +36,7 @@ export function AccountOverviewPage() {
   const fetchAccounts = useAccountStore((state) => state.fetchAccounts);
   const openSettingsDrawer = useAccountStore((state) => state.openSettingsDrawer);
   const toggleAccountStatus = useAccountStore((state) => state.toggleAccountStatus);
+  const openLockConfirm = useAccountStore((state) => state.openLockConfirm);
 
   React.useEffect(() => {
     fetchAccounts();
@@ -113,11 +115,23 @@ export function AccountOverviewPage() {
     );
   };
 
+  const isSelf = Boolean(
+    user &&
+    account &&
+    (
+      String(user.id) === String(account.id) ||
+      (user.accountId && String(user.accountId) === String(account.id)) ||
+      (user.username && account.username && user.username.toLowerCase() === account.username.toLowerCase()) ||
+      (user.identifier && account.username && user.identifier.toLowerCase() === account.username.toLowerCase())
+    )
+  );
+
   const handleDeactivateRetiredAccount = () => {
-    toggleAccountStatus(account.id);
-    toast.success(
-      t('account.lockedSuccess', 'Đã khóa tài khoản thành công'),
-    );
+    if (isSelf) {
+      toast.error('Không thể tự khóa tài khoản của chính mình');
+      return;
+    }
+    openLockConfirm(account);
   };
 
   // Retired but Active Warning condition (FE-02G)
@@ -418,6 +432,7 @@ export function AccountOverviewPage() {
       <AccountSettingsDrawer />
       <ResetPasswordConfirmModal />
       <TemporaryPasswordModal />
+      <LockAccountConfirmModal />
     </div>
   );
 }

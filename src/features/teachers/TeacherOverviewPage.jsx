@@ -365,19 +365,9 @@ export function TeacherOverviewPage() {
                   teacher.assignedClasses.map((ac, idx) => (
                     <span
                       key={idx}
-                      className={cn(
-                        'inline-flex items-center px-2.5 py-0.5 text-[12px] font-medium rounded-none',
-                        ac.isPrimary
-                          ? 'bg-primary/10 text-primary border border-primary/20'
-                          : 'bg-muted text-foreground border border-border',
-                      )}
+                      className="inline-flex items-center px-2.5 py-0.5 text-[12px] font-medium rounded-none bg-primary/10 text-primary border border-primary/20"
                     >
                       {ac.className}
-                      {ac.isPrimary && (
-                        <span className="ml-1 text-[10px] opacity-75 font-normal">
-                          ({t('teacher.primaryTeacher', 'Chủ nhiệm')})
-                        </span>
-                      )}
                     </span>
                   ))
                 ) : (
@@ -415,6 +405,74 @@ export function TeacherOverviewPage() {
                 {teacher.joinDate || '—'}
               </span>
             </div>
+          </div>
+        </div>
+
+        {/* Card 3: Lịch sử phân công & giảng dạy */}
+        <div className="lg:col-span-12 border border-border bg-card rounded-none overflow-hidden shadow-2xs">
+          <div className="p-4 border-b border-border bg-muted/20 flex items-center justify-between">
+            <div>
+              <h3 className="text-[14px] font-semibold text-foreground">
+                Lịch sử phân công & giảng dạy
+              </h3>
+              <p className="text-[12px] text-muted-foreground font-normal">
+                Toàn bộ các lớp học và niên khóa giáo viên đã hoặc đang phụ trách
+              </p>
+            </div>
+            <span className="text-[12px] font-mono text-muted-foreground">
+              {teacher.assignmentHistory?.length || 0} bản ghi
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-[13px]">
+              <thead>
+                <tr className="border-b border-border bg-muted/10 text-muted-foreground text-[11.5px] font-medium uppercase tracking-tight">
+                  <th className="py-2.5 px-4">Lớp học</th>
+                  <th className="py-2.5 px-4">Năm học</th>
+                  <th className="py-2.5 px-4">Ngày nhận lớp</th>
+                  <th className="py-2.5 px-4">Ngày kết thúc</th>
+                  <th className="py-2.5 px-4">Trạng thái phân công</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/60">
+                {!teacher.assignmentHistory || teacher.assignmentHistory.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-6 text-center text-muted-foreground text-[13px]">
+                      Chưa có lịch sử phân công lớp học nào được ghi nhận.
+                    </td>
+                  </tr>
+                ) : (
+                  teacher.assignmentHistory.map((item, idx) => (
+                    <tr key={idx} className="hover:bg-muted/10 transition-colors">
+                      <td className="py-2.5 px-4 font-medium text-foreground">
+                        {item.className}
+                      </td>
+                      <td className="py-2.5 px-4 text-muted-foreground font-mono">
+                        {item.schoolYear || '—'}
+                      </td>
+                      <td className="py-2.5 px-4 font-mono">
+                        {item.assignedAtFormatted}
+                      </td>
+                      <td className="py-2.5 px-4 font-mono text-muted-foreground">
+                        {item.leftAtFormatted}
+                      </td>
+                      <td className="py-2.5 px-4">
+                        {item.isActive ? (
+                          <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-none bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                            Đang phụ trách
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-none bg-muted text-muted-foreground border border-border">
+                            {item.leaveReason === 'RESIGNED' ? 'Đã thôi việc' : 'Đã kết thúc'}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

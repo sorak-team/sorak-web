@@ -7,6 +7,7 @@ import {
 } from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/shared/lib/utils';
+import { useAuthStore, isBghRole } from '@/features/auth';
 
 export function SemesterAssessmentDrawer({
   student,
@@ -18,6 +19,8 @@ export function SemesterAssessmentDrawer({
   onSave,
 }) {
   const { t } = useTranslation();
+  const currentUser = useAuthStore((state) => state.user);
+  const isBgh = isBghRole(currentUser?.role);
 
   const [notes, setNotes] = useState(student?.teacherNotes || '');
   const [isSaving, setIsSaving] = useState(false);
@@ -34,7 +37,7 @@ export function SemesterAssessmentDrawer({
   const isEvaluated = Boolean(notes.trim());
 
   const handleSave = async () => {
-    if (!isDirty) return;
+    if (!isDirty || isBgh) return;
     setIsSaving(true);
     try {
       await onSave({
@@ -60,54 +63,55 @@ export function SemesterAssessmentDrawer({
     return status;
   };
 
+  // Check if student has evaluated goals in this semester
+  const hasEvaluatedGoals = Boolean(
+    student.hasEvaluatedGoals ||
+    student.totalGoals?.achieved !== undefined ||
+    (student.domains && Object.values(student.domains).some((v) => v !== null && v !== undefined))
+  );
+
   // 5 developmental domains data
-  const domains = student.domains || {
-    physical: 95,
-    cognitive: 90,
-    language: 95,
-    socioEmotional: 95,
-    aesthetic: 95,
-  };
+  const domains = student.domains || {};
 
   const domainList = [
     {
       key: 'physical',
       title: t('domains.physicalTitle', '1. Phát triển Thể chất'),
       desc: t('domains.physicalDesc', 'Vận động thô, vận động tinh, nề nếp ăn ngủ và vệ sinh tự phục vụ'),
-      value: student.domainBreakdown?.physical?.rate ?? (domains.physical ?? 0),
-      achieved: student.domainBreakdown?.physical?.achieved ?? Math.round(((domains.physical ?? 0) / 100) * 25),
+      value: student.domainBreakdown?.physical?.rate ?? (domains.physical ?? null),
+      achieved: student.domainBreakdown?.physical?.achieved ?? 0,
       total: student.domainBreakdown?.physical?.total ?? 25,
     },
     {
       key: 'cognitive',
       title: t('domains.cognitiveTitle', '2. Phát triển Nhận thức'),
       desc: t('domains.cognitiveDesc', 'Khám phá khoa học, làm quen toán học và nhận biết thế giới xung quanh'),
-      value: student.domainBreakdown?.cognitive?.rate ?? (domains.cognitive ?? 0),
-      achieved: student.domainBreakdown?.cognitive?.achieved ?? Math.round(((domains.cognitive ?? 0) / 100) * 20),
+      value: student.domainBreakdown?.cognitive?.rate ?? (domains.cognitive ?? null),
+      achieved: student.domainBreakdown?.cognitive?.achieved ?? 0,
       total: student.domainBreakdown?.cognitive?.total ?? 20,
     },
     {
       key: 'language',
       title: t('domains.languageTitle', '3. Phát triển Ngôn ngữ'),
       desc: t('domains.languageDesc', 'Nghe hiểu chỉ dẫn, phát âm rõ ràng, diễn đạt câu ngắn tự tin'),
-      value: student.domainBreakdown?.language?.rate ?? (domains.language ?? 0),
-      achieved: student.domainBreakdown?.language?.achieved ?? Math.round(((domains.language ?? 0) / 100) * 18),
+      value: student.domainBreakdown?.language?.rate ?? (domains.language ?? null),
+      achieved: student.domainBreakdown?.language?.achieved ?? 0,
       total: student.domainBreakdown?.language?.total ?? 18,
     },
     {
       key: 'socioEmotional',
       title: t('domains.socialEmotionalTitle', '4. Tình cảm & Kỹ năng xã hội'),
       desc: t('domains.socialEmotionalDesc', 'Lễ phép với cô giáo, hòa đồng cùng bạn, biết chia sẻ và hợp tác'),
-      value: student.domainBreakdown?.socioEmotional?.rate ?? (domains.socioEmotional ?? 0),
-      achieved: student.domainBreakdown?.socioEmotional?.achieved ?? Math.round(((domains.socioEmotional ?? 0) / 100) * 20),
+      value: student.domainBreakdown?.socioEmotional?.rate ?? (domains.socioEmotional ?? null),
+      achieved: student.domainBreakdown?.socioEmotional?.achieved ?? 0,
       total: student.domainBreakdown?.socioEmotional?.total ?? 20,
     },
     {
       key: 'aesthetic',
       title: t('domains.aestheticTitle', '5. Phát triển Thẩm mỹ'),
       desc: t('domains.aestheticDesc', 'Cảm thụ cái đẹp, tích cực tham gia ca hát, vận động theo nhạc và tạo hình'),
-      value: student.domainBreakdown?.aesthetic?.rate ?? (domains.aesthetic ?? 0),
-      achieved: student.domainBreakdown?.aesthetic?.achieved ?? Math.round(((domains.aesthetic ?? 0) / 100) * 16),
+      value: student.domainBreakdown?.aesthetic?.rate ?? (domains.aesthetic ?? null),
+      achieved: student.domainBreakdown?.aesthetic?.achieved ?? 0,
       total: student.domainBreakdown?.aesthetic?.total ?? 16,
     },
   ];
@@ -249,65 +253,88 @@ export function SemesterAssessmentDrawer({
             </div>
           </div>
 
-          {/* Section: 5 Lĩnh vực phát triển (Clean list without redundant badges) */}
+          {/* Section: 5 Lĩnh vực phát triển */}
           <div className="border border-border bg-card shadow-2xs">
             <div className="px-4 py-2.5 border-b border-border bg-muted/20 flex items-center justify-between">
               <span className="text-[13px] font-semibold text-foreground tracking-tight">
                 {t('assessment.goalsBy5Domains', 'Mục tiêu đạt được theo 5 lĩnh vực phát triển')}
               </span>
-              {student.totalGoals && (
+              {hasEvaluatedGoals && student.totalGoals ? (
                 <span className="text-[11.5px] font-mono text-muted-foreground">
                   {t('assessment.totalGoalsAchieved', 'Tổng đạt:')} <strong className="text-foreground font-semibold">{student.totalGoals.achieved}/{student.totalGoals.total}</strong> mục tiêu ({student.totalGoals.rate}%)
+                </span>
+              ) : (
+                <span className="text-[11.5px] text-muted-foreground italic font-medium">
+                  {t('assessment.noEvaluationData', 'Chưa có dữ liệu đánh giá')}
                 </span>
               )}
             </div>
 
-            <div className="divide-y divide-border/60">
-              {domainList.map((item) => (
-                <div
-                  key={item.key}
-                  className="px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-muted/10 transition-colors"
-                >
-                  <div className="flex flex-col min-w-0 flex-1">
-                    <span className="text-[13px] font-medium text-foreground">
-                      {item.title}
-                    </span>
-                    <span className="text-[11.5px] text-muted-foreground truncate">
-                      {item.desc}
-                    </span>
-                  </div>
+            {!hasEvaluatedGoals ? (
+              <div className="py-8 px-4 flex flex-col items-center justify-center gap-1 text-center bg-muted/10 select-none">
+                <span className="text-[13px] font-semibold text-foreground">
+                  {t('assessment.noEvaluationData', 'Chưa có dữ liệu đánh giá')}
+                </span>
+                <span className="text-[12px] text-muted-foreground">
+                  {t('assessment.noGoalsEvaluatedYet', 'Học sinh chưa có dữ liệu đánh giá mục tiêu phát triển trong học kỳ này.')}
+                </span>
+              </div>
+            ) : (
+              <div className="divide-y divide-border/60">
+                {domainList.map((item) => (
+                  <div
+                    key={item.key}
+                    className="px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-muted/10 transition-colors"
+                  >
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="text-[13px] font-medium text-foreground">
+                        {item.title}
+                      </span>
+                      <span className="text-[11.5px] text-muted-foreground truncate">
+                        {item.desc}
+                      </span>
+                    </div>
 
-                  <div className="w-64 shrink-0 flex items-center gap-3">
-                    <div className="flex-1 h-1.5 bg-muted rounded-none overflow-hidden">
-                      <div
-                        className={cn(
-                          'h-full',
-                          item.value >= 90
-                            ? 'bg-emerald-600 dark:bg-emerald-500'
-                            : 'bg-primary'
-                        )}
-                        style={{ width: `${item.value}%` }}
-                      />
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0 text-right">
-                      <span className="text-[12px] font-mono text-muted-foreground whitespace-nowrap">
-                        {item.achieved}/{item.total} MT
-                      </span>
-                      <span
-                        className={cn(
-                          'w-11 text-right font-mono text-[13px] font-semibold',
-                          item.value >= 90
-                            ? 'text-emerald-600 dark:text-emerald-400'
-                            : 'text-foreground'
-                        )}
-                      >
-                        {item.value}%
-                      </span>
+                    <div className="w-64 shrink-0 flex items-center gap-3">
+                      {item.value !== null && item.value !== undefined ? (
+                        <>
+                          <div className="flex-1 h-1.5 bg-muted rounded-none overflow-hidden">
+                            <div
+                              className={cn(
+                                'h-full',
+                                item.value >= 90
+                                  ? 'bg-emerald-600 dark:bg-emerald-500'
+                                  : 'bg-primary'
+                              )}
+                              style={{ width: `${item.value}%` }}
+                            />
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0 text-right">
+                            <span className="text-[12px] font-mono text-muted-foreground whitespace-nowrap">
+                              {item.achieved}/{item.total} MT
+                            </span>
+                            <span
+                              className={cn(
+                                'w-11 text-right font-mono text-[13px] font-semibold',
+                                item.value >= 90
+                                  ? 'text-emerald-600 dark:text-emerald-400'
+                                  : 'text-foreground'
+                              )}
+                            >
+                              {item.value}%
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="w-full text-right text-[12px] text-muted-foreground italic">
+                          {t('assessment.notEvaluated', 'Chưa đánh giá')}
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Section: Nhận xét của giáo viên cuối kỳ */}
@@ -316,17 +343,34 @@ export function SemesterAssessmentDrawer({
               <label className="text-[13px] font-semibold text-foreground tracking-tight">
                 {t('assessment.semesterCommentTitle', { semester: semesterLabel, defaultValue: `Nhận xét của giáo viên cuối ${semesterLabel}` })}
               </label>
-              <span className="text-[11.5px] text-muted-foreground">
-                {t('assessment.electronicRecord', 'Ghi nhận vào học bạ điện tử')}
-              </span>
+              {isBgh ? (
+                <span className="text-[11.5px] font-medium text-primary">
+                  {t('assessment.bghViewOnly', 'Chế độ xem (Ban Giám Hiệu)')}
+                </span>
+              ) : (
+                <span className="text-[11.5px] text-muted-foreground">
+                  {t('assessment.electronicRecord', 'Ghi nhận vào học bạ điện tử')}
+                </span>
+              )}
             </div>
 
             <textarea
               value={notes}
+              readOnly={isBgh}
+              disabled={isBgh}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder={t('assessment.semesterCommentPlaceholder', 'Nhập nhận xét chi tiết về các mặt phát triển của bé cuối học kỳ...')}
+              placeholder={
+                isBgh
+                  ? (student.teacherNotes ? '' : t('assessment.teacherNotCommented', 'Giáo viên chưa nhập nhận xét'))
+                  : t('assessment.semesterCommentPlaceholder', 'Nhập nhận xét chi tiết về các mặt phát triển của bé cuối học kỳ...')
+              }
               rows={4}
-              className="w-full p-3 text-[13px] border border-border bg-background text-foreground rounded-none focus:outline-none focus:border-[#1447e6] leading-relaxed resize-none transition-colors placeholder:text-muted-foreground/40 shadow-2xs"
+              className={cn(
+                'w-full p-3 text-[13px] border border-border rounded-none focus:outline-none leading-relaxed resize-none transition-colors placeholder:text-muted-foreground/40 shadow-2xs',
+                isBgh
+                  ? 'bg-muted/30 text-foreground cursor-default'
+                  : 'bg-background text-foreground focus:border-[#1447e6]'
+              )}
             />
           </div>
         </div>
@@ -339,22 +383,24 @@ export function SemesterAssessmentDrawer({
             onClick={onClose}
             className="h-8.5 px-4 text-[13px] border-border bg-card hover:bg-muted text-foreground rounded-none shadow-none cursor-pointer"
           >
-            {t('common.cancel', 'Hủy')}
+            {isBgh ? t('common.close', 'Đóng') : t('common.cancel', 'Hủy')}
           </Button>
 
-          <Button
-            type="button"
-            onClick={handleSave}
-            disabled={!isDirty || isSaving}
-            className={cn(
-              'h-8.5 px-5 text-[13px] font-medium rounded-none shadow-none flex items-center justify-center transition-colors',
-              isDirty
-                ? 'bg-[#1447e6] hover:bg-[#1447e6]/90 text-white cursor-pointer'
-                : 'bg-muted text-muted-foreground border border-border cursor-not-allowed opacity-60'
-            )}
-          >
-            <span>{isSaving ? t('common.saving', 'Đang lưu...') : t('common.save', 'Lưu')}</span>
-          </Button>
+          {!isBgh && (
+            <Button
+              type="button"
+              onClick={handleSave}
+              disabled={!isDirty || isSaving}
+              className={cn(
+                'h-8.5 px-5 text-[13px] font-medium rounded-none shadow-none flex items-center justify-center transition-colors',
+                isDirty
+                  ? 'bg-[#1447e6] hover:bg-[#1447e6]/90 text-white cursor-pointer'
+                  : 'bg-muted text-muted-foreground border border-border cursor-not-allowed opacity-60'
+              )}
+            >
+              <span>{isSaving ? t('common.saving', 'Đang lưu...') : t('common.save', 'Lưu')}</span>
+            </Button>
+          )}
         </div>
       </div>
     </div>

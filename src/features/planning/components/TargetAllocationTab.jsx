@@ -23,6 +23,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/shared/lib/utils';
 import { toast } from 'sonner';
+import { useAuthStore } from '@/features/auth';
 import { planningApi } from '../planning.api';
 
 // Days of week
@@ -134,6 +135,11 @@ function generateMonthDays(year, month) {
 
 export function TargetAllocationTab({ classId = '1' }) {
   const { t } = useTranslation();
+  const currentUser = useAuthStore((state) => state.user);
+  const isBgh = useMemo(() => {
+    const r = String(currentUser?.role || '').toUpperCase();
+    return r === 'PRINCIPAL_BGH' || r === 'PRINCIPAL' || r === 'VICE_PRINCIPAL' || r.includes('BGH') || r.includes('PRINCIPAL');
+  }, [currentUser?.role]);
   const [allocationData, setAllocationData] = useState(null);
   const [themes, setThemes] = useState([]);
   const [selectedThemeCode, setSelectedThemeCode] = useState('01');
@@ -238,7 +244,7 @@ export function TargetAllocationTab({ classId = '1' }) {
 
   // Toggle selection of a goal for the active theme
   const handleToggleGoalAllocation = async (goalId) => {
-    if (!currentTheme) return;
+    if (isBgh || !currentTheme) return;
     const isAlreadyAllocated = currentThemeGoalIds.has(goalId);
 
     let newAllocatedGoals;
@@ -663,21 +669,26 @@ export function TargetAllocationTab({ classId = '1' }) {
             return (
               <div
                 key={goal.id}
-                onClick={() => handleToggleGoalAllocation(goal.id)}
+                onClick={() => !isBgh && handleToggleGoalAllocation(goal.id)}
                 className={cn(
-                  'flex items-start gap-3 p-3 border transition-colors cursor-pointer select-none text-[12.5px] rounded-none bg-card',
+                  'flex items-start gap-3 p-3 border transition-colors select-none text-[12.5px] rounded-none bg-card',
+                  isBgh ? 'cursor-default' : 'cursor-pointer',
                   isSelected
                     ? 'border-border bg-card'
-                    : 'border-border/70 hover:border-border hover:bg-muted/30',
+                    : isBgh ? 'border-border/60' : 'border-border/70 hover:border-border hover:bg-muted/30',
                 )}
               >
                 {/* Checkbox to select/deselect directly */}
                 <input
                   type="checkbox"
                   checked={isSelected}
-                  onChange={() => handleToggleGoalAllocation(goal.id)}
+                  disabled={isBgh}
+                  onChange={() => !isBgh && handleToggleGoalAllocation(goal.id)}
                   onClick={(e) => e.stopPropagation()}
-                  className="size-4 rounded-none accent-[#1447e6] mt-0.5 shrink-0 cursor-pointer"
+                  className={cn(
+                    "size-4 rounded-none accent-[#1447e6] mt-0.5 shrink-0",
+                    isBgh ? "cursor-default opacity-80" : "cursor-pointer"
+                  )}
                 />
 
                 <div className="flex-1 min-w-0 space-y-1">
@@ -1083,15 +1094,21 @@ export function TargetAllocationTab({ classId = '1' }) {
               <span>Cập nhật: {updatedAt}</span>
             </div>
 
-            <Button
-              type="button"
-              onClick={handleSaveAllocation}
-              disabled={isSaving}
-              className="h-8 px-3.5 bg-[#1447e6] hover:bg-[#1447e6]/90 text-white text-[12.5px] font-medium rounded-none shadow-none cursor-pointer flex items-center gap-1.5 transition-colors"
-            >
-              <HugeiconsIcon icon={CheckmarkCircle01Icon} size={14} />
-              <span>{isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}</span>
-            </Button>
+            {isBgh ? (
+              <span className="text-[12px] text-muted-foreground italic bg-muted/40 px-2.5 py-1 border border-border/60">
+                Chế độ xem dành cho Ban giám hiệu
+              </span>
+            ) : (
+              <Button
+                type="button"
+                onClick={handleSaveAllocation}
+                disabled={isSaving}
+                className="h-8 px-3.5 bg-[#1447e6] hover:bg-[#1447e6]/90 text-white text-[12.5px] font-medium rounded-none shadow-none cursor-pointer flex items-center gap-1.5 transition-colors"
+              >
+                <HugeiconsIcon icon={CheckmarkCircle01Icon} size={14} />
+                <span>{isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}</span>
+              </Button>
+            )}
           </div>
         </div>
       </div>

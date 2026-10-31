@@ -24,15 +24,46 @@ export function CreateTransferDrawer({
 }) {
   const { t } = useTranslation();
   const globalClasses = useClassesStore((state) => state.classes) || [];
+  const fetchGlobalClasses = useClassesStore((state) => state.fetchClasses);
+  const hasLoadedClasses = useClassesStore((state) => state.hasLoaded);
+  const isClassesLoading = useClassesStore((state) => state.isLoading);
   const [students, setStudents] = useState([]);
   const [isLoadingStudents, setIsLoadingStudents] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState(initialStudentId || '');
   const [toClassId, setToClassId] = useState('');
+  const [selectedGrade, setSelectedGrade] = useState('ALL');
   const [transferDate, setTransferDate] = useState(() => {
     return new Date().toISOString().split('T')[0];
   });
   const [reason, setReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Automatically fetch classes if store is empty (e.g. for Teacher routes)
+  useEffect(() => {
+    if (isOpen && !hasLoadedClasses && !isClassesLoading) {
+      fetchGlobalClasses();
+    }
+  }, [isOpen, hasLoadedClasses, isClassesLoading, fetchGlobalClasses]);
+
+  const currentClassObj = globalClasses.find(
+    (c) => String(c.id) === String(classId) || String(c.publicId) === String(classId),
+  );
+  const currentGrade = currentClassObj?.grade || 'nhatre';
+
+  // Pre-filter by the student's current class grade on open
+  useEffect(() => {
+    if (isOpen && currentGrade) {
+      setSelectedGrade(currentGrade);
+    }
+  }, [isOpen, currentGrade]);
+
+  const GRADE_OPTIONS = [
+    { value: 'ALL', label: 'Tất cả các khối' },
+    { value: 'nhatre', label: 'Khối Nhà trẻ' },
+    { value: 'mam', label: 'Khối Mầm (3–4 tuổi)' },
+    { value: 'choi', label: 'Khối Chồi (4–5 tuổi)' },
+    { value: 'la', label: 'Khối Lá (5–6 tuổi)' },
+  ];
 
   // Sync initial student id
   useEffect(() => {
@@ -43,16 +74,26 @@ export function CreateTransferDrawer({
 
   // Target classes fallback to all other classes
   const availableTargetClasses = useMemo(() => {
-    if (targetClasses && targetClasses.length > 0) return targetClasses;
-    return globalClasses
-      .filter((c) => String(c.id) !== String(classId))
-      .map((c) => ({
-        id: c.id,
-        name: c.name,
-        gradeLabel: c.gradeLabel || c.grade,
-        room: c.room || '',
-      }));
-  }, [targetClasses, globalClasses, classId]);
+    const list = targetClasses && targetClasses.length > 0
+      ? targetClasses
+      : globalClasses
+          .filter((c) => String(c.id) !== String(classId) && String(c.publicId) !== String(classId))
+          .map((c) => ({
+            id: c.publicId || c.id,
+            name: c.name,
+            grade: c.grade || (c.ageGroup ? c.ageGroup.toLowerCase().replace('_', '') : ''),
+            gradeLabel: c.gradeLabel || c.grade,
+            room: c.room || c.roomNumber || '',
+          }));
+
+    if (selectedGrade === 'ALL') return list;
+    return list.filter((c) => {
+      return (
+        c.grade === selectedGrade ||
+        (c.gradeLabel && c.gradeLabel.toLowerCase().includes(selectedGrade.toLowerCase()))
+      );
+    });
+  }, [targetClasses, globalClasses, classId, selectedGrade]);
 
   // Load active students in this class
   useEffect(() => {
@@ -86,6 +127,11 @@ export function CreateTransferDrawer({
     }
     if (!reason.trim()) {
       toast.error(t('classes.enterTransferReasonRequired', 'Vui lòng nhập lý do chuyển lớp.'));
+      return;
+    }
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (transferDate < todayStr) {
+      toast.error('Ngày dự kiến chuyển phải từ hôm nay trở đi (nằm ở hiện tại hoặc tương lai)');
       return;
     }
 
@@ -223,6 +269,27 @@ export function CreateTransferDrawer({
                 )}
               </div>
 
+              {/* Filter by Grade */}
+              <div className="space-y-1.5">
+                <Label className="text-[12px] font-medium text-foreground">
+                  Lọc theo khối lớp
+                </Label>
+                <select
+                  value={selectedGrade}
+                  onChange={(e) => {
+                    setSelectedGrade(e.target.value);
+                    setToClassId('');
+                  }}
+                  className="w-full h-9 px-3 bg-background border border-border rounded-none text-[13px] text-foreground focus:outline-none focus:border-primary cursor-pointer"
+                >
+                  {GRADE_OPTIONS.map((g) => (
+                    <option key={g.value} value={g.value}>
+                      {g.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* Select Destination Class */}
               <div className="space-y-1.5">
                 <Label className="text-[12px] font-medium text-foreground">
@@ -233,7 +300,11 @@ export function CreateTransferDrawer({
                   onChange={(e) => setToClassId(e.target.value)}
                   className="w-full h-9 px-3 bg-background border border-border rounded-none text-[13px] text-foreground focus:outline-none focus:border-primary cursor-pointer"
                 >
-                  <option value="">{t('classes.chooseTargetClassPlaceholder', '-- Chọn lớp tiếp nhận --')}</option>
+                  <option value="">
+                    {availableTargetClasses.length === 0
+                      ? '-- Không có lớp trong khối này --'
+                      : t('classes.chooseTargetClassPlaceholder', '-- Chọn lớp tiếp nhận --')}
+                  </option>
                   {availableTargetClasses.map((cls) => (
                     <option key={cls.id} value={cls.id}>
                       {cls.name} - {cls.gradeLabel} {cls.room ? (cls.room.startsWith('Phòng') ? `(${cls.room})` : `(Phòng ${cls.room})`) : ''}
@@ -249,6 +320,7 @@ export function CreateTransferDrawer({
                 </Label>
                 <Input
                   type="date"
+                  min={new Date().toISOString().split('T')[0]}
                   value={transferDate}
                   onChange={(e) => setTransferDate(e.target.value)}
                   className="h-9 text-[13px] font-mono rounded-none border-border"

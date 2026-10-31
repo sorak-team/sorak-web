@@ -1,23 +1,24 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
   Search01Icon,
   PlusSignIcon,
   Delete02Icon,
-  Shield01Icon,
   MoreHorizontalIcon,
+  ViewIcon,
 } from '@hugeicons/core-free-icons';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
-  DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { cn } from '@/shared/lib/utils';
 import { classesApi } from '../classes.api';
 import { AssignTeacherDrawer } from './AssignTeacherDrawer';
@@ -26,6 +27,7 @@ import { useAuthStore } from '@/features/auth';
 
 export function ClassTeacherAllocation({ currentClass, isTeacher: propIsTeacher }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const isTeacher =
     propIsTeacher !== undefined
@@ -76,27 +78,6 @@ export function ClassTeacherAllocation({ currentClass, isTeacher: propIsTeacher 
     );
   }, [data.activeTeachers, searchQuery]);
 
-  // Role toggle
-  const handleToggleRole = async (teacher) => {
-    const newIsPrimary = !teacher.isPrimary;
-    try {
-      await classesApi.updateTeacherRole(currentClass.id, teacher.teacherId, newIsPrimary);
-      toast.success(
-        newIsPrimary
-          ? t('classes.promotedToPrimary', 'Đã đặt {{name}} làm GVCN.', {
-              name: teacher.fullName,
-            })
-          : t('classes.demotedToAssistant', 'Đã chuyển {{name}} thành GVBM.', {
-              name: teacher.fullName,
-            }),
-      );
-      loadData();
-    } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Lỗi khi cập nhật vai trò';
-      toast.error(msg);
-    }
-  };
-
   // Remove teacher
   const handleConfirmRemove = async () => {
     if (!teacherToRemove) return;
@@ -126,7 +107,7 @@ export function ClassTeacherAllocation({ currentClass, isTeacher: propIsTeacher 
         <p className="text-[12px] text-muted-foreground font-normal">
           {t(
             'classes.teacherAllocationSubtitle',
-            'Phân công GVCN và GVBM chăm sóc lớp',
+            'Phân công các giáo viên phụ trách chăm sóc và giảng dạy lớp học',
           )}
         </p>
       </div>
@@ -151,7 +132,7 @@ export function ClassTeacherAllocation({ currentClass, isTeacher: propIsTeacher 
                 <p className="text-[13px] text-muted-foreground">
                   {t(
                     'classes.assignedTeachersSub',
-                    'Bao gồm GVCN và GVBM phụ trách giảng dạy và chăm sóc trẻ.',
+                    'Danh sách các giáo viên cùng phụ trách giảng dạy và chăm sóc trẻ.',
                   )}
                 </p>
               </div>
@@ -194,9 +175,6 @@ export function ClassTeacherAllocation({ currentClass, isTeacher: propIsTeacher 
                     <th className="px-3 min-w-[220px] font-medium">
                       {t('teacher.colTeacher', 'Giáo viên')}
                     </th>
-                    <th className="px-3 min-w-[160px] font-medium">
-                      {t('classes.teacherRoleCol', 'Vai trò')}
-                    </th>
                     <th className="px-3 min-w-[130px] font-medium">
                       {t('teacher.colPhone', 'Số điện thoại')}
                     </th>
@@ -204,7 +182,7 @@ export function ClassTeacherAllocation({ currentClass, isTeacher: propIsTeacher 
                       {t('classes.teacherAssignedAtCol', 'Ngày phân công')}
                     </th>
                     {!isTeacher && (
-                      <th className="px-3 min-w-[80px] w-[80px] text-right font-medium whitespace-nowrap">
+                      <th className="px-3 min-w-[95px] w-[95px] text-right font-medium whitespace-nowrap">
                         {t('common.actions', 'Thao tác')}
                       </th>
                     )}
@@ -224,7 +202,6 @@ export function ClassTeacherAllocation({ currentClass, isTeacher: propIsTeacher 
                             </div>
                           </div>
                         </td>
-                        <td className="px-3"><div className="h-5 w-24 bg-muted/50" /></td>
                         <td className="px-3"><div className="h-3.5 w-20 bg-muted/50" /></td>
                         <td className="px-3"><div className="h-3.5 w-20 bg-muted/50" /></td>
                         {!isTeacher && <td className="px-3 text-right"><div className="size-7 bg-muted/40 ml-auto" /></td>}
@@ -232,7 +209,7 @@ export function ClassTeacherAllocation({ currentClass, isTeacher: propIsTeacher 
                     ))
                   ) : filteredTeachers.length === 0 ? (
                     <tr>
-                      <td colSpan={isTeacher ? 5 : 6} className="py-12 text-center text-muted-foreground text-[13px]">
+                      <td colSpan={isTeacher ? 4 : 5} className="py-12 text-center text-muted-foreground text-[13px]">
                         {searchQuery.trim()
                           ? t('teacher.notFound', 'Không tìm thấy giáo viên nào phù hợp.')
                           : t('classes.noTeachersInClass', 'Lớp chưa được phân công giáo viên nào.')}
@@ -240,7 +217,6 @@ export function ClassTeacherAllocation({ currentClass, isTeacher: propIsTeacher 
                     </tr>
                   ) : (
                     filteredTeachers.map((teacher, index) => {
-                      const isPrimary = teacher.isPrimary;
                       const assignedDateStr = teacher.assignedAt
                         ? new Date(teacher.assignedAt).toLocaleDateString('vi-VN')
                         : '—';
@@ -278,25 +254,6 @@ export function ClassTeacherAllocation({ currentClass, isTeacher: propIsTeacher 
                             </div>
                           </td>
 
-                          {/* Role Badge: GVCN & GVBM */}
-                          <td className="px-3 whitespace-nowrap">
-                            {isPrimary ? (
-                              <span
-                                title="Giáo viên chủ nhiệm"
-                                className="inline-flex items-center justify-center px-2 py-0.5 text-[12px] font-semibold bg-[#1447e6]/10 text-[#1447e6] border border-[#1447e6]/25 rounded-none"
-                              >
-                                GVCN
-                              </span>
-                            ) : (
-                              <span
-                                title="Giáo viên bảo mẫu"
-                                className="inline-flex items-center justify-center px-2 py-0.5 text-[12px] font-medium bg-muted text-muted-foreground border border-border/50 rounded-none"
-                              >
-                                GVBM
-                              </span>
-                            )}
-                          </td>
-
                           {/* Phone */}
                           <td className="px-3 text-[14px] text-foreground font-normal whitespace-nowrap">
                             {teacher.phone || '—'}
@@ -309,12 +266,12 @@ export function ClassTeacherAllocation({ currentClass, isTeacher: propIsTeacher 
 
                           {/* Actions Dropdown (Only for BGH) */}
                           {!isTeacher && (
-                            <td className="px-3 min-w-[80px] w-[80px] text-right whitespace-nowrap">
+                            <td className="px-3 min-w-[95px] w-[95px] text-right whitespace-nowrap">
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <button
                                     type="button"
-                                    className="size-7 inline-flex items-center justify-center rounded-none text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors cursor-pointer"
+                                    className="size-7 inline-flex items-center justify-center rounded-none text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors cursor-pointer ml-auto"
                                     title={t('common.actions', 'Thao tác')}
                                     data-name="Actions · More"
                                   >
@@ -323,22 +280,22 @@ export function ClassTeacherAllocation({ currentClass, isTeacher: propIsTeacher 
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent
                                   align="end"
-                                  className="w-auto min-w-[180px] p-1 rounded-none border border-border bg-card shadow-xl z-50 text-foreground whitespace-nowrap"
+                                  className="w-40 p-1 rounded-none border border-border bg-card shadow-xl z-50 text-foreground"
                                 >
                                   <DropdownMenuItem
-                                    onClick={() => handleToggleRole(teacher)}
-                                    className="flex items-center gap-2 h-8 px-2.5 text-[13px] cursor-pointer rounded-none hover:bg-muted/60 whitespace-nowrap"
+                                    onClick={() => navigate(`/teachers/${teacher.teacherId || teacher.id}`)}
+                                    className="flex items-center gap-2 h-8 px-2 text-[13px] cursor-pointer rounded-none hover:bg-muted/60"
                                   >
-                                    <HugeiconsIcon icon={Shield01Icon} size={15} />
-                                    <span className="whitespace-nowrap">{isPrimary ? 'Đặt làm GVBM' : 'Đặt làm GVCN'}</span>
+                                    <HugeiconsIcon icon={ViewIcon} size={15} />
+                                    <span>{t('teacher.actionView', 'Xem chi tiết')}</span>
                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator className="my-1 border-t border-border" />
                                   <DropdownMenuItem
                                     onClick={() => setTeacherToRemove(teacher)}
-                                    className="flex items-center gap-2 h-8 px-2.5 text-[13px] text-destructive hover:text-destructive hover:bg-destructive/10 focus:text-destructive focus:bg-destructive/10 cursor-pointer rounded-none whitespace-nowrap"
+                                    className="flex items-center gap-2 h-8 px-2 text-[13px] text-destructive hover:text-destructive hover:bg-destructive/10 focus:text-destructive focus:bg-destructive/10 cursor-pointer rounded-none"
                                   >
                                     <HugeiconsIcon icon={Delete02Icon} size={15} />
-                                    <span>Gỡ khỏi lớp</span>
+                                    <span>{t('classes.removeTeacherBtn', 'Gỡ khỏi lớp')}</span>
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>

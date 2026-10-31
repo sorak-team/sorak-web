@@ -96,7 +96,7 @@ The application will run locally at `http://localhost:5173`.
 
 ## Default Accounts
 
-Use the following accounts (password: `123456`) to access different role views:
+Use the following accounts (password: `Sorak@2026`) to access different role views:
 
 | Role | Username | Accessible View |
 | :--- | :--- | :--- |

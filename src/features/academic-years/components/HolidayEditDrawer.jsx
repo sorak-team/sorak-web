@@ -27,6 +27,9 @@ export function HolidayEditDrawer({
   isOpen,
   onClose,
   schoolYearId,
+  schoolYearName,
+  schoolYearStartDate,
+  schoolYearEndDate,
   selectedDate,
   holidayToEdit,
   onSuccess,
@@ -49,9 +52,10 @@ export function HolidayEditDrawer({
       setName(holidayToEdit.name || '');
       setStartDate(holidayToEdit.startDate || '');
       setEndDate(holidayToEdit.endDate || holidayToEdit.startDate || '');
-      setIsHoliday(!holidayToEdit.isTeachingAllowed);
+      const isEvt = holidayToEdit.type === 'EVENT' || (holidayToEdit.description || '').includes('[SỰ KIỆN]');
+      setIsHoliday(!isEvt);
       setBlockTeaching(!holidayToEdit.isTeachingAllowed);
-      
+
       // Parse scope
       const existingDesc = holidayToEdit.description || '';
       if (Array.isArray(holidayToEdit.targetGrades) && holidayToEdit.targetGrades.length > 0) {
@@ -77,8 +81,12 @@ export function HolidayEditDrawer({
         }
       }
 
-      // Clean up description if it starts with [Khối ...]
-      const cleanedDesc = existingDesc.replace(/^\[.*?\]\s*/, '');
+      // Clean up description if it starts with [Khối ...] or [SỰ KIỆN]
+      const cleanedDesc = existingDesc
+        .replace(/^\[.*?\]\s*/, '')
+        .replace(/\[SỰ KIỆN\]\s*/g, '')
+        .replace(/\[EVENT\]\s*/g, '')
+        .trim();
       setDescription(cleanedDesc);
       setIsDeleteModalOpen(false);
     } else if (selectedDate) {
@@ -124,6 +132,20 @@ export function HolidayEditDrawer({
       return;
     }
 
+    if (schoolYearStartDate && schoolYearEndDate) {
+      if (startDate < schoolYearStartDate || endDate > schoolYearEndDate) {
+        const fmt = (dStr) => {
+          if (!dStr) return '';
+          const [y, m, d] = dStr.split('-');
+          return `${d}/${m}/${y}`;
+        };
+        toast.error(
+          `Thời gian phải nằm trong khung thời gian của năm học ${schoolYearName || ''} (${fmt(schoolYearStartDate)} - ${fmt(schoolYearEndDate)}).`,
+        );
+        return;
+      }
+    }
+
     let scopeLabel = 'Toàn trường';
     const isSpecificScope = selectedGrades.length > 0;
     if (isSpecificScope) {
@@ -142,6 +164,7 @@ export function HolidayEditDrawer({
       name: name.trim(),
       startDate,
       endDate,
+      type: isHoliday ? 'HOLIDAY' : 'EVENT',
       isTeachingAllowed: !blockTeaching,
       targetGrades: isSpecificScope ? selectedGrades : [],
       description: finalDesc || (isHoliday ? `Nghỉ ${scopeLabel.toLowerCase()}` : `Sự kiện ${scopeLabel.toLowerCase()}`),
@@ -296,6 +319,8 @@ export function HolidayEditDrawer({
                   <input
                     type="date"
                     required
+                    min={schoolYearStartDate || undefined}
+                    max={schoolYearEndDate || undefined}
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
                     className="h-10 w-full border border-border px-3.5 text-[13.5px] rounded-none bg-background text-foreground font-mono focus:outline-none focus:ring-1 focus:ring-primary"
@@ -308,6 +333,8 @@ export function HolidayEditDrawer({
                   <input
                     type="date"
                     required
+                    min={startDate || schoolYearStartDate || undefined}
+                    max={schoolYearEndDate || undefined}
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
                     className="h-10 w-full border border-border px-3.5 text-[13.5px] rounded-none bg-background text-foreground font-mono focus:outline-none focus:ring-1 focus:ring-primary"
@@ -386,8 +413,8 @@ export function HolidayEditDrawer({
                 {selectedGrades.length === 0
                   ? 'Áp dụng cho toàn thể các khối trong trường.'
                   : `Đã chọn: ${selectedGrades
-                      .map((id) => GRADE_BLOCKS.find((b) => b.id === id)?.name)
-                      .join(', ')}.`}
+                    .map((id) => GRADE_BLOCKS.find((b) => b.id === id)?.name)
+                    .join(', ')}.`}
               </p>
             </div>
 
@@ -441,7 +468,7 @@ export function HolidayEditDrawer({
                 variant="outline"
                 onClick={onClose}
                 disabled={isSubmitting || isDeleting}
-                className="h-9 px-4.5 text-[13.5px] rounded-none border-border cursor-pointer"
+                className="h-9 px-6 text-[13.5px] rounded-none border-border cursor-pointer"
               >
                 Hủy
               </Button>

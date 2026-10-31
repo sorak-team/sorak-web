@@ -6,6 +6,7 @@ export { LogoutDialog } from './LogoutDialog';
 export { ProtectedRoute } from './ProtectedRoute';
 export { PublicOnlyRoute } from './PublicOnlyRoute';
 export { useAuthStore, isBghRole, isTeacherRole, isParentRole } from './auth.store';
+export { RequirePasswordChangeModal } from './RequirePasswordChangeModal';
 export { authApi } from './auth.api';
 export * from './auth-schema';
 

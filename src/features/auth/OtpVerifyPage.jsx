@@ -22,7 +22,15 @@ export default function OtpVerifyPage() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const email = location.state?.email || searchParams.get('email') || '';
-  const maskedDisplayEmail = location.state?.emailMasked || maskEmail(email);
+  const [canonicalEmail, setCanonicalEmail] = useState(email);
+
+  useEffect(() => {
+    if (email) setCanonicalEmail(email);
+  }, [email]);
+
+  const maskedDisplayEmail =
+    location.state?.emailMasked ||
+    (email.includes('@') ? maskEmail(email) : `tài khoản ${email}`);
 
   // Persistent 60s cooldown based on wall-clock timestamp across F5 / page reloads
   const cooldownKey = email ? `forgot_${email.toLowerCase().trim()}` : null;
@@ -102,8 +110,13 @@ export default function OtpVerifyPage() {
   const onOtpSubmit = async (data) => {
     setIsSubmittingOtp(true);
     try {
-      const res = await authApi.verifyOtp({ email, otp: data.otp });
+      const targetEmail = canonicalEmail || email;
+      const res = await authApi.verifyOtp({ email: targetEmail, otp: data.otp });
       const token = res.data?.resetToken || res.resetToken;
+      const returnedEmail = res.data?.email || res.email;
+      if (returnedEmail) {
+        setCanonicalEmail(returnedEmail);
+      }
 
       if (!token) {
         toast.error(t('auth.otpInvalidOrExpired', 'Không tìm thấy mã phiên đặt lại mật khẩu. Vui lòng yêu cầu lại mã OTP.'));
@@ -137,7 +150,7 @@ export default function OtpVerifyPage() {
     setIsResettingPassword(true);
     try {
       const res = await authApi.resetPassword({
-        email,
+        email: canonicalEmail || email,
         resetToken,
         password: data.password,
       });

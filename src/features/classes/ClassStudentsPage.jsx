@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
@@ -42,7 +42,12 @@ export function ClassStudentsPage() {
     );
   }, [academicYears, selectedYearId]);
 
-  const isPastYear = activeYearObj && (activeYearObj.status === 'ended' || activeYearObj.status === 'ENDED');
+  const isPastYear = activeYearObj && (
+    activeYearObj.status === 'ended' ||
+    activeYearObj.status === 'ENDED' ||
+    activeYearObj.status === 'completed' ||
+    activeYearObj.status === 'COMPLETED'
+  );
 
   const teacherClass = useMemo(() => {
     return findTeacherClassForYear(user, classes, selectedYearId);
@@ -80,12 +85,23 @@ export function ClassStudentsPage() {
     let list = [...students];
 
     // Filter by class: Check current class or enrollment history in this class
-    if (targetClassId) {
+    const matchIds = targetClassId
+      ? new Set(
+          [
+            String(targetClassId),
+            String(targetClass?.id || ''),
+            String(targetClass?.publicId || ''),
+            String(targetClass?.classId || ''),
+          ].filter(Boolean)
+        )
+      : null;
+
+    if (matchIds && matchIds.size > 0) {
       list = list.filter((student) => {
-        const studentClassId = student.currentClass?.classId || student.classId;
-        const inCurrent = String(studentClassId) === String(targetClassId);
+        const studentClassId = String(student.currentClass?.classId || student.classId || '');
+        const inCurrent = matchIds.has(studentClassId);
         const inHistory = (student.enrollmentHistory || []).some(
-          (e) => String(e.classId) === String(targetClassId)
+          (e) => matchIds.has(String(e.classId || ''))
         );
         return inCurrent || inHistory;
       });
@@ -107,7 +123,7 @@ export function ClassStudentsPage() {
     // Map status strictly according to student_enrollments for this class
     list = list.map((s) => {
       const classEnrollment = (s.enrollmentHistory || []).find(
-        (e) => String(e.classId) === String(targetClassId)
+        (e) => matchIds ? matchIds.has(String(e.classId || '')) : String(e.classId) === String(targetClassId)
       );
 
       let contextualStatus = s.status || 'studying';
@@ -115,7 +131,7 @@ export function ClassStudentsPage() {
         const enrStatus = String(classEnrollment.status).toUpperCase();
         switch (enrStatus) {
           case 'ENROLLED':
-            contextualStatus = 'studying';
+            contextualStatus = isPastYear ? 'completed' : 'studying';
             break;
           case 'COMPLETED':
             contextualStatus = 'completed';
@@ -136,7 +152,7 @@ export function ClassStudentsPage() {
             contextualStatus = 'dropped_out';
             break;
           default:
-            contextualStatus = 'studying';
+            contextualStatus = isPastYear ? 'completed' : 'studying';
             break;
         }
       } else if (isPastYear || classEnrollment?.leftAt) {
@@ -173,6 +189,24 @@ export function ClassStudentsPage() {
 
   if (id && /^\d+$/.test(String(id))) {
     return <NotFoundPage />;
+  }
+
+  // If user is a teacher, restrict access strictly to their assigned class
+  const isTeacher = user?.role === 'TEACHER_GV';
+  if (isTeacher) {
+    if (teacherClass) {
+      const isOwnClass =
+        String(id) === String(teacherClass.id) ||
+        String(id) === String(teacherClass.publicId) ||
+        (targetClass &&
+          (String(targetClass.id) === String(teacherClass.id) ||
+            String(targetClass.publicId) === String(teacherClass.publicId)));
+      if (id && !isOwnClass) {
+        return <Navigate to={`/classes/${teacherClass.id}/students`} replace />;
+      }
+    } else if (classes.length > 0) {
+      return <Navigate to="/" replace />;
+    }
   }
 
   if (id && !targetClass) {
