@@ -28,6 +28,7 @@ export function transformBackendClass(c) {
   return {
     id: c.id,
     publicId: c.publicId,
+    classId: c.classId || c.class_id,
     name: sanitizeClassName(c.name || c.className),
     grade: gradeKey,
     ageGroup: c.ageGroup,
@@ -88,6 +89,9 @@ export const useClassesStore = create((set, get) => ({
   searchQuery: '',
   collapsedGrades: {}, // { nhatre: false, mam: false, ... }
   isLoading: false,
+  isFetching: false,
+  hasLoaded: false,
+  lastFetchedYearId: null,
   error: null,
 
   // Modal / Drawer / Command Menu UI state
@@ -106,13 +110,20 @@ export const useClassesStore = create((set, get) => ({
   viewMode: 'grid', // 'grid' | 'table'
 
   // Fetch classes from backend API
-  fetchClasses: async (schoolYearId) => {
-    set({ isLoading: true, error: null });
+  fetchClasses: async (schoolYearId, force = false) => {
+    const targetYearId =
+      schoolYearId !== undefined
+        ? schoolYearId
+        : useAcademicYearStore.getState().selectedYearId;
+
+    const state = get();
+    // Prevent duplicate concurrent requests
+    if (state.isFetching) {
+      return state.classes;
+    }
+
+    set({ isLoading: true, isFetching: true, error: null });
     try {
-      const targetYearId =
-        schoolYearId !== undefined
-          ? schoolYearId
-          : useAcademicYearStore.getState().selectedYearId;
       const params = { limit: 100 };
       if (targetYearId && targetYearId !== 'all') {
         params.schoolYearId = targetYearId;
@@ -122,16 +133,31 @@ export const useClassesStore = create((set, get) => ({
         const transformed = res.items.map(transformBackendClass);
         const sorted = sortClassesByGrade(transformed);
         set({
-          classes: sorted.length > 0 ? sorted : [],
+          classes: sorted,
           isLoading: false,
+          isFetching: false,
+          hasLoaded: true,
+          lastFetchedYearId: targetYearId ?? 'all',
         });
         return sorted;
       }
-      set({ classes: [], isLoading: false });
+      set({
+        classes: [],
+        isLoading: false,
+        isFetching: false,
+        hasLoaded: true,
+        lastFetchedYearId: targetYearId ?? 'all',
+      });
       return [];
     } catch (err) {
       console.error('API error fetching classes:', err);
-      set({ classes: [], isLoading: false, error: err.message });
+      set({
+        classes: [],
+        isLoading: false,
+        isFetching: false,
+        hasLoaded: true,
+        error: err.message,
+      });
       return [];
     }
   },
@@ -234,18 +260,17 @@ export const useClassesStore = create((set, get) => ({
     };
     const ageGroup = ageGroupMap[newClassData.grade] || 'MAM';
 
-    try {
-      await classesApi.create({
-        name: cleanName,
-        ageGroup,
-        roomNumber: newClassData.room || '',
-        description: newClassData.description || null,
-      });
-    } catch (e) {
-      console.warn('API create class failed, storing locally:', e.message);
-    }
+    const selectedYearId = useAcademicYearStore.getState().selectedYearId;
+    const res = await classesApi.create({
+      name: cleanName,
+      ageGroup,
+      roomNumber: newClassData.room || '',
+      description: newClassData.description || null,
+      schoolYearId: selectedYearId,
+    });
+    const created = res?.data || res;
 
-    const id = newClassData.id || `class-${Date.now()}`;
+    const id = created?.id || created?.publicId || newClassData.id || `class-${Date.now()}`;
     const gradeLabels = {
       nhatre: 'Khối Nhà trẻ',
       mam: 'Khối Mầm',
@@ -260,11 +285,12 @@ export const useClassesStore = create((set, get) => ({
     };
     const newItem = {
       id,
+      publicId: created?.publicId,
       name: cleanName,
       grade: newClassData.grade || 'nhatre',
       gradeLabel: gradeLabels[newClassData.grade] || 'Khối Nhà trẻ',
       teacher: newClassData.teacher || 'Chưa phân công',
-      teachersCount: newClassData.teachersCount || 1,
+      teachersCount: newClassData.teachersCount || (newClassData.teacher ? 1 : 0),
       studentCount: newClassData.studentCount || 0,
       room: newClassData.room || 'Phòng 101',
       description: newClassData.description || '',
@@ -276,6 +302,10 @@ export const useClassesStore = create((set, get) => ({
       classes: [...state.classes, newItem],
       isAddModalOpen: false,
     }));
+    if (selectedYearId) {
+      get().fetchClasses(selectedYearId);
+    }
+    return newItem;
   },
 
   updateClass: async (id, updates) => {
@@ -306,11 +336,7 @@ export const useClassesStore = create((set, get) => ({
   },
 
   deleteClass: async (id) => {
-    try {
-      await classesApi.delete(id);
-    } catch (e) {
-      console.warn('API delete class failed:', e.message);
-    }
+    await classesApi.delete(id);
 
     if (get().attachedClassId === id) {
       try {
@@ -327,9 +353,9 @@ export const useClassesStore = create((set, get) => ({
     }));
   },
 
-  assignTeacherToClass: async (classId, teacherId, isPrimary = false) => {
+  assignTeacherToClass: async (classId, teacherId) => {
     try {
-      await classesApi.assignTeacher(classId, { teacherId, isPrimary });
+      await classesApi.assignTeacher(classId, { teacherId });
       get().fetchClasses();
     } catch (e) {
       console.warn('API assign teacher failed:', e.message);
@@ -432,17 +458,18 @@ export function findTeacherClassesForYear(user, classes, yearId) {
 export function findTeacherClassForYear(user, classes, yearId) {
   const teacherClasses = findTeacherClassesForYear(user, classes, yearId);
   if (teacherClasses.length > 0) {
-    const primary = teacherClasses.find((c) => {
-      if (c.teacher && (c.teacher === user?.fullName || c.teacher === user?.name)) return true;
+    const matched = teacherClasses.find((c) => {
+      if (c.teacher && (c.teacher === user?.fullName || c.teacher === user?.name || (user?.fullName && c.teacher.includes(user.fullName)) || (user?.name && c.teacher.includes(user.name)))) return true;
+      if (Array.isArray(c.teachers) && c.teachers.some((t) => t.fullName === user?.fullName || t.teacherId === user?.teacherId)) return true;
       if (Array.isArray(user?.assignedClasses)) {
         const ac = user.assignedClasses.find(
           (a) => String(a.classId) === String(c.id) || String(a.classId) === String(c.publicId)
         );
-        if (ac?.isPrimary) return true;
+        if (ac) return true;
       }
       return false;
     });
-    return primary || teacherClasses[0];
+    return matched || teacherClasses[0];
   }
   return null;
 }

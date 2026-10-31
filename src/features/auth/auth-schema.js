@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+export const passwordComplexityRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>_\-+=~`[\]\\;/]).{8,}$/;
+export const passwordComplexityMessage = 'Mật khẩu phải tối thiểu 8 ký tự, bao gồm ít nhất 1 chữ hoa, 1 chữ số và 1 ký tự đặc biệt';
+
 export const loginSchema = z.object({
   identifier: z
     .string()
@@ -9,7 +12,8 @@ export const loginSchema = z.object({
   password: z
     .string()
     .min(1, 'Vui lòng nhập mật khẩu')
-    .min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
+    .min(8, passwordComplexityMessage)
+    .regex(passwordComplexityRegex, passwordComplexityMessage),
   role: z.enum(['PARENT_PH', 'TEACHER_GV', 'PRINCIPAL_BGH', 'ADMIN_BGH']).default('PARENT_PH'),
 });
 
@@ -33,7 +37,8 @@ export const resetPasswordSchema = z
     password: z
       .string()
       .min(1, 'Vui lòng nhập mật khẩu mới')
-      .min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
+      .min(8, 'Mật khẩu phải tối thiểu 8 ký tự')
+      .regex(passwordComplexityRegex, passwordComplexityMessage),
     confirmPassword: z.string().min(1, 'Vui lòng xác nhận mật khẩu mới'),
   })
   .refine((data) => data.password === data.confirmPassword, {

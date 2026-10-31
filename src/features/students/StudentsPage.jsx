@@ -32,6 +32,16 @@ export function StudentsPage() {
   const user = useAuthStore((state) => state.user);
   const classes = useClassesStore((state) => state.classes);
   const selectedYearId = useAcademicYearStore((state) => state.selectedYearId);
+  const academicYears = useAcademicYearStore((state) => state.academicYears);
+  const currentYearObj =
+    academicYears?.find(
+      (y) =>
+        String(y.id) === String(selectedYearId) ||
+        (selectedYearId === '2026-2027' && (String(y.id) === '1' || y.name?.includes('2026'))),
+    ) ||
+    academicYears?.find((y) => y.active) ||
+    {};
+  const isYearCompleted = currentYearObj?.status === 'COMPLETED';
 
   const {
     students,
@@ -185,15 +195,21 @@ export function StudentsPage() {
           </div>
 
           {/* Add Student Button */}
-          <Button
-            type="button"
-            onClick={openCreateDrawer}
-            className="h-8 px-3 text-[13px] font-medium bg-[#1447e6] hover:bg-[#1447e6]/90 text-white rounded-none shadow-none cursor-pointer flex items-center gap-1.5"
-            data-name="Button · Thêm học sinh"
-          >
-            <HugeiconsIcon icon={Add01Icon} size={15} />
-            <span>{t('student.addStudent', 'Thêm học sinh')}</span>
-          </Button>
+          {!isYearCompleted ? (
+            <Button
+              type="button"
+              onClick={openCreateDrawer}
+              className="h-8 px-3 text-[13px] font-medium bg-[#1447e6] hover:bg-[#1447e6]/90 text-white rounded-none shadow-none cursor-pointer flex items-center gap-1.5"
+              data-name="Button · Thêm học sinh"
+            >
+              <HugeiconsIcon icon={Add01Icon} size={15} />
+              <span>{t('student.addStudent', 'Thêm học sinh')}</span>
+            </Button>
+          ) : (
+            <div className="h-8 px-2.5 text-[12px] font-medium bg-muted text-muted-foreground border border-border flex items-center gap-1.5">
+              <span>Năm học đã kết thúc (Chỉ xem)</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -225,9 +241,9 @@ export function StudentsPage() {
       />
 
       {/* Global Slide-in Drawer & Action Modals */}
-      <StudentDrawer />
+      <StudentDrawer onSuccess={fetchStudents} />
       <DeleteStudentDialog />
-      <TransferStudentDialog />
+      <TransferStudentDialog onSuccess={fetchStudents} />
     </div>
   );
 }

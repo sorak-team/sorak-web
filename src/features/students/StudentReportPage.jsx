@@ -21,11 +21,14 @@ import { useStudentStore, getStudentAvatarUrl, transformBackendStudent } from '.
 import { studentsApi } from './students.api';
 import { StudentDrawer } from './components/StudentDrawer';
 import { DeleteStudentDialog } from './components/DeleteStudentDialog';
+import { WhoGrowthCharts, evaluateChildGrowth } from './components/WhoGrowthCharts';
 import { uploadApi } from '@/shared/api/upload.api';
 import { useAuthStore } from '@/features/auth';
 import { useAcademicYearStore } from '@/features/academic-years';
+import { useClassesStore } from '@/features/classes';
 import { classesApi } from '@/features/classes/classes.api';
 import { NotFoundPage } from '@/features/error';
+import { GraduationCap } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 
 function formatDateDisplay(iso) {
@@ -93,6 +96,7 @@ export function StudentReportPage() {
   const { t } = useTranslation();
 
   const user = useAuthStore((state) => state.user);
+  const classes = useClassesStore((state) => state.classes) || [];
   const isTeacher =
     user?.role === 'TEACHER_GV' ||
     user?.role === 'TEACHER' ||
@@ -119,6 +123,10 @@ export function StudentReportPage() {
   const [isReportLoading, setIsReportLoading] = useState(false);
   const reportCacheRef = useRef(new Map());
 
+  // Class Program Graduation State
+  const [isGraduateModalOpen, setIsGraduateModalOpen] = useState(false);
+  const [isGraduating, setIsGraduating] = useState(false);
+
   // Student Switcher Dropdown State
   const studentDropdownRef = useRef(null);
   const [isStudentMenuOpen, setIsStudentMenuOpen] = useState(false);
@@ -126,6 +134,7 @@ export function StudentReportPage() {
 
   // Lightbox Preview Modal for Portrait Photo
   const [previewPhoto, setPreviewPhoto] = useState(null);
+  const [hoveredHealthId, setHoveredHealthId] = useState(null);
 
   // Sync tab with URL
   useEffect(() => {
@@ -172,18 +181,21 @@ export function StudentReportPage() {
   const currentClassId = classIdFromUrl || student?.currentClass?.classId || student?.classId;
 
   // Class students list for switcher & navigation (< >)
+  // Prefers reportData.studentList (authoritative list of active students in this class)
   const classStudents = useMemo(() => {
+    if (Array.isArray(reportData?.studentList) && reportData.studentList.length > 0) {
+      return [...reportData.studentList].sort((a, b) =>
+        (a.studentCode || '').localeCompare(b.studentCode || '', undefined, { numeric: true })
+      );
+    }
     if (!currentClassId) return [];
     return students
       .filter((s) => {
         const inCurrent = String(s.currentClass?.classId || s.classId) === String(currentClassId);
-        const inHistory = (s.enrollmentHistory || []).some(
-          (e) => String(e.classId) === String(currentClassId)
-        );
-        return inCurrent || inHistory;
+        return inCurrent;
       })
       .sort((a, b) => (a.studentCode || '').localeCompare(b.studentCode || '', undefined, { numeric: true }));
-  }, [students, currentClassId]);
+  }, [reportData?.studentList, students, currentClassId]);
 
   const currentStudentIndex = useMemo(() => {
     if (!student || classStudents.length === 0) return -1;
@@ -304,6 +316,10 @@ export function StudentReportPage() {
   );
 
   useEffect(() => {
+    setReportData(null);
+  }, [effectiveStudentId, currentClassId]);
+
+  useEffect(() => {
     if (student?.id && currentClassId) {
       loadStudentReport(student.id, currentClassId, selectedSemester);
     }
@@ -363,6 +379,13 @@ export function StudentReportPage() {
     ) || null;
   }, [currentClassId, student]);
 
+  const currentContextClass = useMemo(() => {
+    if (!currentClassId) return null;
+    return classes.find(
+      (c) => String(c.id) === String(currentClassId) || String(c.publicId) === String(currentClassId)
+    ) || null;
+  }, [classes, currentClassId]);
+
   // Contextual status:
   // - In BGH global student management without classId: read directly from student.status (students table).
   // - In class context (isTeacher or classIdFromUrl): read from student_enrollments of that class!
@@ -400,6 +423,62 @@ export function StudentReportPage() {
 
     return { status: student?.status || 'studying', reason: null };
   }, [student, currentClassEnrollment, classIdFromUrl, isTeacher]);
+
+  const isStudentGraduated = useMemo(() => {
+    return (student?.status || '').toLowerCase() === 'graduated';
+  }, [student?.status]);
+
+  const isClassEnrollmentGraduated = useMemo(() => {
+    const enrStatus = currentClassEnrollment?.status;
+    if (enrStatus) {
+      const s = String(enrStatus).toUpperCase();
+      return s === 'GRADUATED' || s === 'COMPLETED';
+    }
+    return false;
+  }, [currentClassEnrollment]);
+
+  const isClassLopLa = useMemo(() => {
+    const ageGroup = (reportData?.classInfo?.ageGroup || student?.currentClass?.ageGroup || '').toUpperCase();
+    const name = (reportData?.classInfo?.name || student?.currentClass?.className || '').toLowerCase();
+    return ageGroup === 'LA' || name.includes('lá') || name.includes('la');
+  }, [reportData, student]);
+
+  const eligibility = useMemo(() => {
+    return (
+      reportData?.graduationEligibility || {
+        isEligible: false,
+        hasSem1: false,
+        hasSem2: false,
+        totalRequiredMonths: 9,
+        evaluatedMonthsCount: 0,
+        missingMonths: [],
+        missingSemesters: ['Học kỳ 1', 'Học kỳ 2'],
+      }
+    );
+  }, [reportData]);
+
+  const handleConfirmGraduation = async () => {
+    if (!currentClassId || !student?.id) return;
+    if (!eligibility.isEligible) {
+      toast.error('Học sinh chưa có đủ 2 đánh giá học kỳ và đầy đủ đánh giá tháng.');
+      return;
+    }
+    setIsGraduating(true);
+    try {
+      const res = await classesApi.graduateStudent(currentClassId, student.id);
+      toast.success(res?.message || 'Đã ghi nhận hoàn thành chương trình học thành công');
+      setIsGraduateModalOpen(false);
+      reportCacheRef.current.clear();
+      await reloadDetail();
+      await fetchStudents();
+      await loadStudentReport(student.id, currentClassId, selectedSemester);
+    } catch (err) {
+      console.error('Graduation error:', err);
+      toast.error(err.response?.data?.message || err.message || 'Thao tác thất bại');
+    } finally {
+      setIsGraduating(false);
+    }
+  };
 
   const handleAvatarFileChange = async (e) => {
     const file = e.target.files?.[0];
@@ -720,7 +799,7 @@ export function StudentReportPage() {
                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white">
                   <HugeiconsIcon icon={ArrowReloadHorizontalIcon} size={18} className="animate-spin" />
                 </div>
-              ) : (
+              ) : !isStudentGraduated ? (
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 p-1">
                   <button
                     type="button"
@@ -741,7 +820,7 @@ export function StudentReportPage() {
                     </button>
                   )}
                 </div>
-              )}
+              ) : null}
             </div>
 
             <div className="flex flex-col min-w-0 gap-1">
@@ -753,28 +832,65 @@ export function StudentReportPage() {
               </div>
               <p className="text-[13px] text-muted-foreground font-normal truncate">
                 {student.studentCode ? `${t('student.studentCodePrefix', 'Mã HS')}: ${student.studentCode}` : ''}
-                {student.currentClass
-                  ? ` · ${student.currentClass.className}`
-                  : pastEnrollments.length > 0
-                    ? ` · Chưa xếp lớp (Lớp cũ: ${pastEnrollments[0].className})`
-                    : ` · ${t('student.notAssigned', 'Chưa phân lớp')}`}
+                {(() => {
+                  const displayClassName =
+                    reportData?.classInfo?.name ||
+                    currentContextClass?.name ||
+                    currentClassEnrollment?.className ||
+                    student?.currentClass?.className;
+                  return displayClassName
+                    ? ` · ${displayClassName}`
+                    : pastEnrollments.length > 0
+                      ? ` · Chưa xếp lớp (Lớp cũ: ${pastEnrollments[0].className})`
+                      : ` · ${t('student.notAssigned', 'Chưa phân lớp')}`;
+                })()}
                 {student.primaryParent && ` · ${t('student.parentLabel', 'Phụ huynh')}: ${student.primaryParent.fullName} (${student.primaryParent.phone})`}
               </p>
             </div>
           </div>
 
-          {/* Action Buttons: Edit for everyone, Delete hidden for Teachers */}
+          {/* Action Buttons: Graduation, Edit, Delete */}
           <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              onClick={() => openEditDrawer(student.id)}
-              className="size-8 rounded-none border border-border bg-background hover:bg-muted text-foreground cursor-pointer"
-              title={t('common.edit', 'Chỉnh sửa')}
-            >
-              <HugeiconsIcon icon={PencilEdit02Icon} size={15} />
-            </Button>
+            {/* Button Hoàn thành chương trình học (nằm kế nút Edit) */}
+            {currentClassId && (
+              isClassEnrollmentGraduated ? (
+                <span className="inline-flex items-center gap-1.5 h-8 px-2.5 text-[12px] font-medium text-muted-foreground bg-muted/40 border border-border rounded-none shadow-2xs select-none">
+                  <GraduationCap className="size-3.5 text-muted-foreground" />
+                  <span>Đã hoàn thành lớp</span>
+                </span>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsGraduateModalOpen(true)}
+                  className="h-8 px-3 text-[12px] rounded-none border border-border bg-background hover:bg-muted text-foreground cursor-pointer shadow-2xs transition-colors font-normal inline-flex items-center gap-1.5"
+                  title="Hoàn thành chương trình học"
+                >
+                  <GraduationCap className="size-3.5 text-muted-foreground shrink-0" />
+                  <span>Hoàn thành chương trình học</span>
+                </Button>
+              )
+            )}
+
+            {!isTeacher && (
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                disabled={isStudentGraduated}
+                onClick={() => {
+                  if (isStudentGraduated) return;
+                  openEditDrawer(student.id);
+                }}
+                className={cn(
+                  'size-8 rounded-none border border-border bg-background hover:bg-muted text-foreground cursor-pointer',
+                  isStudentGraduated && 'opacity-40 cursor-not-allowed hover:bg-background'
+                )}
+                title={isStudentGraduated ? 'Học sinh đã tốt nghiệp, không thể chỉnh sửa' : t('common.edit', 'Chỉnh sửa')}
+              >
+                <HugeiconsIcon icon={PencilEdit02Icon} size={15} />
+              </Button>
+            )}
 
             {!isTeacher && (
               <Button
@@ -1092,9 +1208,6 @@ export function StudentReportPage() {
                         <span className="text-[14px] font-medium text-foreground">
                           {p.relationship}: <strong className="font-semibold">{p.fullName}</strong>
                         </span>
-                        <span className="text-[12px] text-muted-foreground font-normal">
-                          {p.canPickup !== false ? 'Được đón bé' : 'Chưa đăng ký đón'}
-                        </span>
                       </div>
                       <div className="text-[13px] text-muted-foreground space-y-0.5">
                         <div>
@@ -1193,85 +1306,100 @@ export function StudentReportPage() {
         </div>
       )}
 
-      {/* 5. Tab 2: Health Monitoring Table */}
+      {/* 5. Tab 2: Health Monitoring (Table on top, WHO Growth Charts below) */}
       {activeTab === 'health' && (
-        <div className="border border-border bg-card">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b border-border bg-muted/40 font-medium text-muted-foreground uppercase text-[11px] tracking-wider">
-                <tr>
-                  <th className="px-4 py-2.5">Đợt đo</th>
-                  <th className="px-4 py-2.5">Ngày đo</th>
-                  <th className="px-4 py-2.5 text-right">Chiều cao</th>
-                  <th className="px-4 py-2.5 text-right">Cân nặng</th>
-                  <th className="px-4 py-2.5 text-right">BMI</th>
-                  <th className="px-4 py-2.5">Thể trạng (WHO)</th>
-                  <th className="px-4 py-2.5">Ghi chú y tế</th>
-                  <th className="px-4 py-2.5">Người ghi nhận</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {isReportLoading ? (
+        <div className="space-y-6">
+          {/* Historical Health Measurements Table (On Top) */}
+          <div className="border border-border bg-card shadow-xs">
+            <div className="p-3.5 border-b border-border flex items-center justify-between bg-card">
+              <h4 className="text-[13px] font-semibold text-foreground">
+                Lịch sử các đợt đo & Khám sức khỏe định kỳ
+              </h4>
+              <span className="text-[11.5px] font-mono text-muted-foreground">
+                {healthData.history?.length || 0} đợt đo
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="border-b border-border bg-muted/40 font-medium text-muted-foreground uppercase text-[11px] tracking-wider">
                   <tr>
-                    <td colSpan={8} className="py-8 text-center text-muted-foreground">
-                      Đang tải dữ liệu đo sức khỏe...
-                    </td>
+                    <th className="px-4 py-2.5">Đợt đo</th>
+                    <th className="px-4 py-2.5">Ngày đo</th>
+                    <th className="px-4 py-2.5 text-right">Chiều cao</th>
+                    <th className="px-4 py-2.5 text-right">Cân nặng</th>
+                    <th className="px-4 py-2.5">Chiều cao / Tuổi</th>
+                    <th className="px-4 py-2.5">Cân nặng / Thể trạng</th>
+                    <th className="px-4 py-2.5">Ghi chú y tế</th>
+                    <th className="px-4 py-2.5">Người ghi nhận</th>
                   </tr>
-                ) : healthData.history.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="py-8 text-center text-muted-foreground">
-                      Chưa có dữ liệu đo sức khỏe cho học sinh này.
-                    </td>
-                  </tr>
-                ) : (
-                  healthData.history.map((record) => {
-                    const isUnderweight = record.classification?.toLowerCase().includes('nhẹ cân');
-                    const isOverweight = record.classification?.toLowerCase().includes('thừa cân') || record.classification?.toLowerCase().includes('béo phì');
-                    return (
-                      <tr key={record.id} className="transition-colors hover:bg-muted/30">
-                        <td className="px-4 py-2.5 font-semibold text-foreground">
-                          {record.roundName}
-                        </td>
-                        <td className="px-4 py-2.5 font-mono text-muted-foreground">
-                          {record.dateFormatted}
-                        </td>
-                        <td className="px-4 py-2.5 text-right font-mono text-foreground">
-                          {record.height} cm
-                        </td>
-                        <td className="px-4 py-2.5 text-right font-mono text-foreground">
-                          {record.weight} kg
-                        </td>
-                        <td className="px-4 py-2.5 text-right font-mono font-bold text-foreground">
-                          {record.bmi}
-                        </td>
-                        <td className="px-4 py-2.5">
-                          {isUnderweight ? (
-                            <span className="inline-flex items-center px-2 py-0.5 text-[11.5px] font-medium rounded-none bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50">
-                              {record.classification || 'Theo dõi nhẹ cân'}
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {isReportLoading ? (
+                    <tr>
+                      <td colSpan={8} className="py-8 text-center text-muted-foreground">
+                        Đang tải dữ liệu đo sức khỏe...
+                      </td>
+                    </tr>
+                  ) : healthData.history.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="py-8 text-center text-muted-foreground">
+                        Chưa có dữ liệu đo sức khỏe cho học sinh này.
+                      </td>
+                    </tr>
+                  ) : (
+                    healthData.history.map((record) => {
+                      const { heightEvaluation, weightEvaluation } = evaluateChildGrowth({
+                        heightZ: record.zscoreHeight ?? record.heightZscore,
+                        weightZ: record.zscoreWeight ?? record.weightZscore,
+                        bmiZ: record.zscoreBmi ?? record.bmiZscore,
+                      });
+
+                      return (
+                        <tr
+                          key={record.id}
+                          onMouseEnter={() => setHoveredHealthId(record.id)}
+                          onMouseLeave={() => setHoveredHealthId(null)}
+                          className={cn('transition-colors cursor-pointer', hoveredHealthId === record.id ? 'bg-primary/5 dark:bg-primary/10' : 'hover:bg-muted/30')}
+                        >
+                          <td className="px-4 py-2.5 font-semibold text-foreground">
+                            {record.roundName}
+                          </td>
+                          <td className="px-4 py-2.5 font-mono text-muted-foreground">
+                            {record.dateFormatted}
+                          </td>
+                          <td className="px-4 py-2.5 text-right font-mono text-foreground">
+                            {record.height} cm
+                          </td>
+                          <td className="px-4 py-2.5 text-right font-mono text-foreground">
+                            {record.weight} kg
+                          </td>
+                          <td className="px-4 py-2.5 whitespace-nowrap">
+                            <span className={cn('inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-none border', heightEvaluation.badgeClass)}>
+                              {heightEvaluation.label}
                             </span>
-                          ) : isOverweight ? (
-                            <span className="inline-flex items-center px-2 py-0.5 text-[11.5px] font-medium rounded-none bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800/50">
-                              {record.classification || 'Theo dõi thừa cân'}
+                          </td>
+                          <td className="px-4 py-2.5 whitespace-nowrap">
+                            <span className={cn('inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-none border', weightEvaluation.badgeClass)}>
+                              {weightEvaluation.label}
                             </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2 py-0.5 text-[11.5px] font-medium rounded-none bg-blue-100 dark:bg-blue-950/60 text-[#1447e6] dark:text-blue-400 border border-blue-200 dark:border-blue-800/50">
-                              {record.classification || 'Bình thường'}
-                            </span>
-                          )}
-                        </td>
-                        <td className="max-w-xs px-4 py-2.5 text-muted-foreground">
-                          {record.notes || 'Bình thường, thể trạng ổn định'}
-                        </td>
-                        <td className="px-4 py-2.5 text-foreground font-medium">
-                          {formatRecordedBy(record.recordedBy)}
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+                          </td>
+                          <td className="max-w-xs px-4 py-2.5 text-muted-foreground">
+                            {record.notes || 'Bình thường, thể trạng ổn định'}
+                          </td>
+                          <td className="px-4 py-2.5 text-foreground font-medium">
+                            {formatRecordedBy(record.recordedBy)}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
+
+          {/* WHO Growth Charts (Below Table) */}
+          <WhoGrowthCharts student={student} healthData={healthData} highlightedId={hoveredHealthId} />
         </div>
       )}
 
@@ -1608,8 +1736,124 @@ export function StudentReportPage() {
         </div>
       )}
 
+      {/* Class Graduation Confirmation Modal (Clean & Professional Minimalist Design) */}
+      {isGraduateModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in-0 duration-150"
+          onClick={() => !isGraduating && setIsGraduateModalOpen(false)}
+        >
+          <div
+            className="bg-card border border-border p-6 shadow-2xl max-w-[480px] w-full space-y-4 rounded-none text-foreground animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2">
+                <GraduationCap className="size-4.5 text-foreground shrink-0" />
+                <h3 className="text-[15px] font-semibold text-foreground tracking-tight">
+                  Hoàn thành chương trình lớp học
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsGraduateModalOpen(false)}
+                disabled={isGraduating}
+                className="size-6 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-50"
+              >
+                <HugeiconsIcon icon={Cancel01Icon} size={15} />
+              </button>
+            </div>
+
+            {/* Student Summary */}
+            <div className="text-[13px] text-muted-foreground leading-normal">
+              Xác nhận hoàn thành năm học cho học sinh{' '}
+              <span className="font-semibold text-foreground">{student.fullName}</span> ({student.studentCode}) tại lớp{' '}
+              <span className="font-semibold text-foreground">{reportData?.classInfo?.name || student?.currentClass?.className || 'này'}</span>.
+            </div>
+
+            {/* Clean Evaluation Checklist */}
+            <div className="border border-border divide-y divide-border text-[13px]">
+              <div className="flex items-center justify-between px-3.5 py-2.5">
+                <span className="text-foreground">Đánh giá Học kỳ 1</span>
+                <span className={cn('text-[12px] font-mono', eligibility.hasSem1 ? 'text-foreground font-medium' : 'text-muted-foreground')}>
+                  {eligibility.hasSem1 ? 'Đã hoàn thành' : 'Chưa đánh giá'}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between px-3.5 py-2.5">
+                <span className="text-foreground">Đánh giá Học kỳ 2</span>
+                <span className={cn('text-[12px] font-mono', eligibility.hasSem2 ? 'text-foreground' : 'text-muted-foreground')}>
+                  {eligibility.hasSem2 ? 'Đã hoàn thành' : 'Chưa đánh giá'}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between px-3.5 py-2.5">
+                <span className="text-foreground">Đánh giá các tháng</span>
+                <span
+                  className={cn(
+                    'text-[12px] font-mono',
+                    eligibility.missingMonths?.length === 0 ? 'text-foreground font-medium' : 'text-muted-foreground'
+                  )}
+                >
+                  {eligibility.evaluatedMonthsCount}/{eligibility.totalRequiredMonths} tháng
+                  {eligibility.missingMonths?.length > 0 ? ` (thiếu ${eligibility.missingMonths.length} tháng)` : ''}
+                </span>
+              </div>
+
+              {eligibility.missingMonths?.length > 0 && (
+                <div className="px-3.5 py-2 text-[11.5px] text-muted-foreground bg-muted/20 leading-relaxed">
+                  <span className="font-medium text-foreground">Tháng chưa đánh giá: </span>
+                  {eligibility.missingMonths.map((m) => `T${m.month}/${m.year}`).join(', ')}
+                </div>
+              )}
+            </div>
+
+            {/* Minimalist Notice */}
+            <div className="text-[12px] text-muted-foreground space-y-1 pt-1 leading-normal">
+              {!eligibility.isEligible && (
+                <p>• Cần hoàn thành đủ 2 kỳ đánh giá và toàn bộ các tháng trước khi xác nhận.</p>
+              )}
+              <p>
+                • {isClassLopLa
+                  ? 'Đối với lớp Lá: Học sinh sẽ được ghi nhận tốt nghiệp ra trường.'
+                  : 'Trạng thái học sinh tại trường vẫn giữ nguyên để tiếp tục xếp lớp năm học mới.'}
+              </p>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isGraduating}
+                onClick={() => setIsGraduateModalOpen(false)}
+                className="h-8 px-4 text-[12px] rounded-none border-border cursor-pointer hover:bg-muted"
+              >
+                Hủy
+              </Button>
+              <Button
+                type="button"
+                disabled={!eligibility.isEligible || isGraduating}
+                onClick={handleConfirmGraduation}
+                className="h-8 px-4 text-[12px] rounded-none bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {isGraduating ? 'Đang xử lý...' : 'Xác nhận hoàn thành'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Slide-out Drawer Panel */}
-      <StudentDrawer />
+      <StudentDrawer
+        currentClassId={currentClassId}
+        classEnrollment={currentClassEnrollment}
+        contextualStatus={contextualStatus}
+        onSuccess={async () => {
+          await reloadDetail();
+          await fetchStudents();
+        }}
+      />
 
       {/* Delete Confirmation Modal */}
       <DeleteStudentDialog />

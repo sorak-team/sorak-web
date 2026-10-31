@@ -10,3 +10,4 @@ export { ResetPasswordConfirmModal } from './components/ResetPasswordConfirmModa
 export { TemporaryPasswordModal } from './components/TemporaryPasswordModal';
 export { AccountColumnsDropdown } from './components/AccountColumnsDropdown';
 export { AccountFilterDropdown } from './components/AccountFilterDropdown';
+export { LockAccountConfirmModal } from './components/LockAccountConfirmModal';

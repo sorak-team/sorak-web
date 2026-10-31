@@ -22,7 +22,7 @@ import {
 } from '@hugeicons/core-free-icons';
 import { toast } from 'sonner';
 
-import { useAuthStore } from '@/features/auth';
+import { useAuthStore, passwordComplexityRegex, passwordComplexityMessage } from '@/features/auth';
 import { authApi } from '@/features/auth/auth.api';
 import {
   Dialog,
@@ -277,26 +277,46 @@ export function SettingsDialog({
     next: '',
     confirm: '',
   });
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-  const handleChangePassword = (e) => {
+  const handleChangePassword = async (e) => {
     e.preventDefault();
     if (!passwordData.current) {
       toast.error('Vui lòng nhập mật khẩu hiện tại.');
       return;
     }
-    if (passwordData.next.length < 6) {
-      toast.error('Mật khẩu mới phải có ít nhất 6 ký tự.');
+    if (!passwordComplexityRegex.test(passwordData.next)) {
+      toast.error(passwordComplexityMessage);
       return;
     }
     if (passwordData.next !== passwordData.confirm) {
       toast.error('Mật khẩu xác nhận không khớp.');
       return;
     }
+    if (passwordData.next === passwordData.current) {
+      toast.error('Mật khẩu mới không được trùng với mật khẩu hiện tại.');
+      return;
+    }
 
-    toast.success(
-      t('settings.toastPasswordSuccess', 'Đã đổi mật khẩu thành công!'),
-    );
-    setPasswordData({ current: '', next: '', confirm: '' });
+    setIsChangingPassword(true);
+    try {
+      const res = await authApi.changePassword({
+        currentPassword: passwordData.current,
+        newPassword: passwordData.next,
+      });
+      toast.success(
+        res?.message || t('settings.toastPasswordSuccess', 'Đã đổi mật khẩu thành công!'),
+      );
+      setPasswordData({ current: '', next: '', confirm: '' });
+    } catch (err) {
+      const errorMessage =
+        err?.response?.data?.message ||
+        err?.response?.data?.error?.message ||
+        'Không thể đổi mật khẩu. Vui lòng kiểm tra lại mật khẩu hiện tại.';
+      toast.error(errorMessage);
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   // 2FA State
@@ -910,7 +930,7 @@ export function SettingsDialog({
                       <Input
                         type="password"
                         value={passwordData.next}
-                        placeholder={t('settings.newPasswordPlaceholder', 'Tối thiểu 6 ký tự')}
+                        placeholder={t('settings.newPasswordPlaceholder', 'Tối thiểu 8 ký tự (chữ hoa, số, ký tự đặc biệt)')}
                         onChange={(e) =>
                           setPasswordData({
                             ...passwordData,
@@ -944,11 +964,14 @@ export function SettingsDialog({
                   <div className="flex justify-end pt-2 border-t border-border">
                     <Button
                       type="submit"
+                      disabled={isChangingPassword}
                       variant="outline"
-                      className="h-8 px-4 text-[13px] font-medium border-border text-foreground rounded-none shadow-none cursor-pointer hover:bg-muted"
+                      className="h-8 px-4 text-[13px] font-medium border-border text-foreground rounded-none shadow-none cursor-pointer hover:bg-muted disabled:opacity-50"
                     >
                       <HugeiconsIcon icon={Key01Icon} size={14} className="mr-1.5" />
-                      {t('settings.changePasswordBtn', 'Cập nhật mật khẩu')}
+                      {isChangingPassword
+                        ? 'Đang cập nhật...'
+                        : t('settings.changePasswordBtn', 'Cập nhật mật khẩu')}
                     </Button>
                   </div>
                 </form>

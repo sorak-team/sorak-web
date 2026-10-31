@@ -9,6 +9,7 @@ import {
   ArrowRight01Icon,
 } from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
+import { useAuthStore } from '@/features/auth';
 import { classesApi } from '../classes/classes.api';
 import { getStudentAvatarUrl } from '../students/students.store';
 import { NotFoundPage } from '@/features/error';
@@ -57,13 +58,19 @@ export function TransferDetailPage() {
     return g || '—';
   };
 
+  const user = useAuthStore((state) => state.user);
+  const isTeacher = user?.role === 'TEACHER_GV';
+
   const [transfer, setTransfer] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
-  // Reject modal state
+  // Reject modal state (BGH)
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
+
+  // Cancel dialog state (Teacher)
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
 
   const loadTransfer = useCallback(async () => {
     try {
@@ -74,17 +81,21 @@ export function TransferDetailPage() {
       }
     } catch (err) {
       console.error('Error loading transfer details:', err);
-      toast.error('Không tìm thấy thông tin yêu cầu chuyển lớp.');
+      const msg = err.response?.data?.message || 'Không tìm thấy thông tin yêu cầu chuyển lớp.';
+      toast.error(msg);
+      if (err.response?.status === 403) {
+        navigate('/transfers', { replace: true });
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [id]);
+  }, [id, navigate]);
 
   useEffect(() => {
     loadTransfer();
   }, [loadTransfer]);
 
-  // Handle Approve
+  // Handle Approve (BGH)
   const handleApprove = async () => {
     if (!transfer) return;
     try {
@@ -102,13 +113,12 @@ export function TransferDetailPage() {
     }
   };
 
-  // Handle Reject Confirm
+  // Handle Reject Confirm (BGH)
   const handleConfirmReject = async () => {
     if (!transfer || !rejectReason.trim()) return;
     try {
       setIsUpdatingStatus(true);
-      await classesApi.updateGlobalTransferStatus(transfer.id, {
-        status: 'REJECTED',
+      await classesApi.rejectTransfer(transfer.id, {
         rejectedReason: rejectReason.trim(),
       });
       toast.success(`Đã từ chối yêu cầu chuyển lớp của học sinh ${transfer.studentName}.`);
@@ -117,6 +127,23 @@ export function TransferDetailPage() {
       loadTransfer();
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Lỗi khi từ chối';
+      toast.error(msg);
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  // Handle Cancel Confirm (Teacher)
+  const handleConfirmCancel = async () => {
+    if (!transfer) return;
+    try {
+      setIsUpdatingStatus(true);
+      await classesApi.cancelTransfer(transfer.id);
+      toast.success(`Đã hủy yêu cầu chuyển lớp của học sinh ${transfer.studentName}.`);
+      setIsCancelDialogOpen(false);
+      loadTransfer();
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Lỗi khi hủy yêu cầu';
       toast.error(msg);
     } finally {
       setIsUpdatingStatus(false);
@@ -173,6 +200,16 @@ export function TransferDetailPage() {
       })
     : null;
 
+  const cancelledDateFormatted = transfer.cancelledAt
+    ? new Date(transfer.cancelledAt).toLocaleDateString('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : null;
+
   return (
     <div
       className="w-full flex-1 flex flex-col gap-6 max-w-[1300px] mx-auto text-foreground pb-12 select-none"
@@ -221,6 +258,11 @@ export function TransferDetailPage() {
                   {t('transfers.statusRejected', 'Đã từ chối')}
                 </span>
               )}
+              {transfer.status === 'CANCELLED' && (
+                <span className="inline-flex items-center justify-center px-2.5 py-0.5 text-[12px] font-medium bg-muted text-muted-foreground rounded-none">
+                  {t('transfers.statusCancelled', 'Đã hủy')}
+                </span>
+              )}
             </div>
             <p className="text-[13px] text-muted-foreground font-normal truncate">
               <span className="font-mono text-muted-foreground">
@@ -234,28 +276,49 @@ export function TransferDetailPage() {
 
         {/* Right: Actions for PENDING status */}
         {transfer.status === 'PENDING' ? (
-          <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={isUpdatingStatus}
-              onClick={() => setIsRejectModalOpen(true)}
-              className="h-8 px-3 text-[13px] border border-border bg-background hover:bg-muted text-foreground rounded-none shadow-none cursor-pointer font-normal"
-            >
-              {t('transfers.rejectAction', 'Từ chối')}
-            </Button>
-            <Button
-              type="button"
-              disabled={isUpdatingStatus}
-              onClick={handleApprove}
-              className="h-8 px-4 text-[13px] bg-[#1447e6] hover:bg-[#1447e6]/90 text-white rounded-none shadow-none cursor-pointer font-medium"
-            >
-              {isUpdatingStatus ? t('common.processing', 'Đang xử lý...') : t('transfers.approveAction', 'Phê duyệt chuyển lớp')}
-            </Button>
-          </div>
+          !isTeacher ? (
+            <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isUpdatingStatus}
+                onClick={() => setIsRejectModalOpen(true)}
+                className="h-8 px-3 text-[13px] border border-border bg-background hover:bg-muted text-foreground rounded-none shadow-none cursor-pointer font-normal"
+              >
+                {t('transfers.rejectAction', 'Từ chối')}
+              </Button>
+              <Button
+                type="button"
+                disabled={isUpdatingStatus}
+                onClick={handleApprove}
+                className="h-8 px-4 text-[13px] bg-[#1447e6] hover:bg-[#1447e6]/90 text-white rounded-none shadow-none cursor-pointer font-medium"
+              >
+                {isUpdatingStatus ? t('common.processing', 'Đang xử lý...') : t('transfers.approveAction', 'Phê duyệt chuyển lớp')}
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3 self-start sm:self-center shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isUpdatingStatus}
+                onClick={() => setIsCancelDialogOpen(true)}
+                className="h-8 px-3 text-[13px] border border-destructive/30 bg-background hover:bg-destructive/10 text-destructive rounded-none shadow-none cursor-pointer font-normal"
+              >
+                {t('transfers.cancelAction', 'Hủy yêu cầu')}
+              </Button>
+              <span className="text-[13px] text-amber-600 font-medium">
+                {t('transfers.statusPending', 'Chờ BGH duyệt')}
+              </span>
+            </div>
+          )
         ) : transfer.status === 'APPROVED' ? (
           <div className="text-[13px] text-muted-foreground font-normal self-start sm:self-center shrink-0">
             {t('transfers.statusApproved', 'Đã duyệt')}
+          </div>
+        ) : transfer.status === 'CANCELLED' ? (
+          <div className="text-[13px] text-muted-foreground font-normal self-start sm:self-center shrink-0">
+            {t('transfers.statusCancelled', 'Đã hủy')}
           </div>
         ) : (
           <div className="text-[13px] text-muted-foreground font-normal self-start sm:self-center shrink-0">
@@ -387,6 +450,18 @@ export function TransferDetailPage() {
                 </span>
                 <span className="text-[13px] text-muted-foreground font-normal">
                   {approvedDateFormatted}
+                </span>
+              </div>
+            )}
+
+            {/* Thời gian hủy (nếu có) */}
+            {cancelledDateFormatted && (
+              <div className="flex items-center justify-between p-4 h-[52px]">
+                <span className="text-[14px] text-foreground/80 font-normal">
+                  Thời gian hủy
+                </span>
+                <span className="text-[13px] text-muted-foreground font-normal">
+                  {cancelledDateFormatted}
                 </span>
               </div>
             )}
@@ -546,10 +621,22 @@ export function TransferDetailPage() {
               </span>
             </div>
           )}
+
+          {/* Thông báo nếu đã hủy */}
+          {transfer.status === 'CANCELLED' && (
+            <div className="p-3.5 border border-border bg-muted/20 flex items-center justify-between text-[13px]">
+              <span className="text-muted-foreground">
+                Yêu cầu chuyển lớp này đã được giáo viên hủy bỏ.
+              </span>
+              <span className="text-muted-foreground font-mono text-[12px]">
+                {cancelledDateFormatted ? `Ngày hủy: ${cancelledDateFormatted}` : ''}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Reject Modal */}
+      {/* Reject Modal (BGH) */}
       {isRejectModalOpen && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
           <div className="w-full max-w-[440px] border border-border bg-card p-5 rounded-none shadow-xl flex flex-col gap-4 select-none">
@@ -596,6 +683,43 @@ export function TransferDetailPage() {
                 className="h-8 px-4 rounded-none bg-destructive hover:bg-destructive/90 text-white text-[13px] font-medium shadow-none cursor-pointer disabled:opacity-40"
               >
                 {isUpdatingStatus ? 'Đang lưu...' : 'Xác nhận từ chối'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Modal (Teacher) */}
+      {isCancelDialogOpen && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-[440px] border border-border bg-card p-5 rounded-none shadow-xl flex flex-col gap-4 select-none">
+            <div className="flex flex-col gap-1">
+              <h3 className="text-[16px] font-semibold text-foreground">
+                Hủy yêu cầu chuyển lớp
+              </h3>
+              <p className="text-[13px] text-muted-foreground">
+                Bạn có chắc chắn muốn hủy yêu cầu chuyển lớp của học sinh{' '}
+                <strong>{transfer.studentName}</strong> (Mã HS: {transfer.studentCode}) không? Sau khi hủy, yêu cầu sẽ không được gửi tới Ban Giám Hiệu.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isUpdatingStatus}
+                onClick={() => setIsCancelDialogOpen(false)}
+                className="h-8 px-4 rounded-none border-border text-[13px] font-normal shadow-none cursor-pointer"
+              >
+                Đóng
+              </Button>
+              <Button
+                type="button"
+                disabled={isUpdatingStatus}
+                onClick={handleConfirmCancel}
+                className="h-8 px-4 rounded-none bg-destructive hover:bg-destructive/90 text-white text-[13px] font-medium shadow-none cursor-pointer disabled:opacity-40"
+              >
+                {isUpdatingStatus ? 'Đang hủy...' : 'Xác nhận hủy'}
               </Button>
             </div>
           </div>

@@ -7,10 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useTeacherStore, getTeacherAvatarUrl, generateTeacherCode } from '../teachers.store';
+import { useAuthStore } from '@/features/auth';
 import { cn } from '@/shared/lib/utils';
 
 export function TeacherDrawer() {
   const { t } = useTranslation();
+  const currentUser = useAuthStore((state) => state.user);
   const {
     isDrawerOpen,
     drawerMode,
@@ -22,6 +24,17 @@ export function TeacherDrawer() {
   } = useTeacherStore();
 
   const currentTeacher = teachers.find((item) => item.id === editingTeacherId);
+
+  const isSelf = Boolean(
+    drawerMode === 'edit' &&
+      currentTeacher &&
+      currentUser &&
+      ((currentUser.teacherId && String(currentTeacher.id) === String(currentUser.teacherId)) ||
+        (currentUser.teacher?.id && String(currentTeacher.id) === String(currentUser.teacher.id)) ||
+        (currentUser.employeeCode && currentTeacher.employeeCode?.toLowerCase() === currentUser.employeeCode?.toLowerCase()) ||
+        (currentUser.email && currentTeacher.email?.toLowerCase() === currentUser.email?.toLowerCase()) ||
+        (currentUser.id && currentTeacher.accountId && String(currentTeacher.accountId) === String(currentUser.id)))
+  );
 
   // Form State matching DB Schema (model Teacher)
   const [employeeCode, setEmployeeCode] = useState('');
@@ -77,7 +90,7 @@ export function TeacherDrawer() {
 
   if (!isDrawerOpen) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!fullName.trim()) {
       toast.error('Vui lòng nhập họ tên giáo viên');
@@ -98,10 +111,36 @@ export function TeacherDrawer() {
       }
     }
 
+    if (phone.trim()) {
+      const dupPhone = teachers.find(
+        (t) =>
+          (drawerMode !== 'edit' || (t.id !== editingTeacherId && t.publicId !== editingTeacherId)) &&
+          t.phone &&
+          t.phone.trim() === phone.trim(),
+      );
+      if (dupPhone) {
+        toast.error(`Số điện thoại '${phone.trim()}' đã được đăng ký bởi giáo viên khác (${dupPhone.fullName})!`);
+        return;
+      }
+    }
+
+    if (email.trim()) {
+      const dupEmail = teachers.find(
+        (t) =>
+          (drawerMode !== 'edit' || (t.id !== editingTeacherId && t.publicId !== editingTeacherId)) &&
+          t.email &&
+          t.email.trim().toLowerCase() === email.trim().toLowerCase(),
+      );
+      if (dupEmail) {
+        toast.error(`Email '${email.trim()}' đã được đăng ký bởi giáo viên khác (${dupEmail.fullName})!`);
+        return;
+      }
+    }
+
     const payload = {
-      employeeCode: employeeCode.trim() || `GV${String(Date.now()).slice(-4)}`,
+      employeeCode: employeeCode.trim() || undefined,
       fullName: fullName.trim(),
-      citizenId: citizenId.trim() || `079${String(Date.now()).slice(-9)}`,
+      citizenId: citizenId.trim() || undefined,
       email: email.trim(),
       phone: phone.trim(),
       avatar: currentTeacher?.avatar || getTeacherAvatarUrl(null, fullName.trim()),
@@ -113,12 +152,18 @@ export function TeacherDrawer() {
       address: address.trim(),
     };
 
-    if (drawerMode === 'edit' && editingTeacherId) {
-      updateTeacher(editingTeacherId, payload);
-      toast.success('Đã cập nhật hồ sơ giáo viên thành công');
-    } else {
-      createTeacher(payload);
-      toast.success('Đã thêm giáo viên mới thành công');
+    try {
+      if (drawerMode === 'edit' && editingTeacherId) {
+        await updateTeacher(editingTeacherId, payload);
+        toast.success('Đã cập nhật hồ sơ giáo viên thành công');
+      } else {
+        await createTeacher(payload);
+        toast.success('Đã thêm giáo viên mới thành công');
+      }
+    } catch (err) {
+      console.error('Teacher save failed:', err);
+      const msg = err.response?.data?.message || err.message || 'Thao tác không thành công';
+      toast.error(msg);
     }
   };
 
@@ -329,7 +374,8 @@ export function TeacherDrawer() {
                   <select
                     value={role}
                     onChange={(e) => setRole(e.target.value)}
-                    className="h-9 w-full px-3 text-[13px] bg-background border border-border rounded-none text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+                    disabled={isSelf}
+                    className="h-9 w-full px-3 text-[13px] bg-background border border-border rounded-none text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     <option value="Giáo viên">Giáo viên</option>
                     <option value="Phó hiệu trưởng">Phó hiệu trưởng</option>
@@ -343,7 +389,8 @@ export function TeacherDrawer() {
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
-                    className="h-9 w-full px-3 text-[13px] bg-background border border-border rounded-none text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+                    disabled={isSelf}
+                    className="h-9 w-full px-3 text-[13px] bg-background border border-border rounded-none text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     <option value="active">
                       {t('teacher.statusActive', 'Đang công tác')}
@@ -356,6 +403,11 @@ export function TeacherDrawer() {
                     </option>
                   </select>
                 </div>
+                {isSelf && (
+                  <p className="text-[11.5px] text-muted-foreground italic col-span-1 sm:col-span-2">
+                    * Bạn không thể tự thay đổi chức vụ hoặc trạng thái công tác của chính mình
+                  </p>
+                )}
               </div>
 
               {/* Row 2: Ngày vào làm & Trình độ */}

@@ -9,6 +9,7 @@ import {
   PencilEdit02Icon,
   MoreHorizontalIcon,
   Delete02Icon,
+  UserIcon,
 } from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
 import {
@@ -87,6 +88,7 @@ export function ActivitySlotPopover({
   onEditActivity,
   onReorderActivities,
   onSelectSlot,
+  readOnly = false,
 }) {
   const [localSlots, setLocalSlots] = useState([]);
   const [activeSlotId, setActiveSlotId] = useState(slot?.id);
@@ -186,6 +188,13 @@ export function ActivitySlotPopover({
               {dateOnly && (
                 <span className="inline-flex items-center h-6 px-2 text-[11.5px] font-medium bg-muted/80 text-foreground border border-border/80 shrink-0 select-none">
                   {dateOnly}
+                </span>
+              )}
+              {/* Badge 3: Khóa dạy do ngày lễ / sự kiện */}
+              {day?.isLocked && (
+                <span className="inline-flex items-center gap-1 h-6 px-2 text-[11px] font-semibold bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/25 rounded-none shrink-0 select-none">
+                  <span>🔒</span>
+                  <span>{day.lockReason ? `Đã khóa: ${day.lockReason}` : 'Đã khóa dạy'}</span>
                 </span>
               )}
             </div>
@@ -292,10 +301,10 @@ export function ActivitySlotPopover({
                               className="cursor-pointer gap-2.5 text-[12.5px] py-2 rounded-none"
                             >
                               <HugeiconsIcon icon={PencilEdit02Icon} size={15} className="text-muted-foreground" />
-                              <span>Chỉnh sửa giáo án</span>
+                              <span>{readOnly ? 'Xem chi tiết giáo án' : 'Chỉnh sửa giáo án'}</span>
                             </DropdownMenuItem>
                           )}
-                          {onChangeActivity && (
+                          {!readOnly && !day?.isLocked && onChangeActivity && (
                             <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -307,7 +316,7 @@ export function ActivitySlotPopover({
                               <span>Đổi hoạt động khác</span>
                             </DropdownMenuItem>
                           )}
-                          {onClearSlot && (
+                          {!readOnly && onClearSlot && (
                             <>
                               <DropdownMenuSeparator className="my-1" />
                               <DropdownMenuItem
@@ -326,6 +335,38 @@ export function ActivitySlotPopover({
                       </DropdownMenu>
                     </div>
                   </div>
+
+                  {/* Người thêm vào lịch tuần & Giáo viên soạn bài */}
+                  {(itemSlot.slotCreatorName || itemSlot.creatorName || itemSlot.activityCreatorName) && (
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 py-2 px-2.5 bg-muted/25 border border-border/60 text-[12px] text-muted-foreground select-none">
+                      {(itemSlot.slotCreatorName || itemSlot.creatorName) && (
+                        <div className="flex items-center gap-1.5">
+                          <HugeiconsIcon icon={UserIcon} size={12} className="text-muted-foreground/70" />
+                          <span className="text-muted-foreground/80">Xếp lịch bởi:</span>
+                          <span className="font-medium text-foreground">
+                            {itemSlot.slotCreatorName || itemSlot.creatorName}
+                          </span>
+                        </div>
+                      )}
+                      {(itemSlot.slotUpdaterName || itemSlot.updaterName) &&
+                        (itemSlot.slotUpdaterName || itemSlot.updaterName) !== (itemSlot.slotCreatorName || itemSlot.creatorName) && (
+                          <div className="flex items-center gap-1 text-[11.5px]">
+                            <span className="text-muted-foreground/70">Dời/sửa:</span>
+                            <span className="font-medium text-foreground">
+                              {itemSlot.slotUpdaterName || itemSlot.updaterName}
+                            </span>
+                          </div>
+                        )}
+                      {itemSlot.activityCreatorName && (
+                        <div className="flex items-center gap-1.5 border-l border-border/80 pl-3">
+                          <span className="text-muted-foreground/70">Soạn bài:</span>
+                          <span className="font-medium text-foreground">
+                            {itemSlot.activityCreatorName}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Thông tin Lĩnh vực, Mục tiêu GD, Chỉ số BGD, Nội dung GD: Thoáng đãng */}
                   <div className="space-y-1.5 text-[13px] border-t border-border/50 pt-3">
@@ -422,8 +463,8 @@ export function ActivitySlotPopover({
             })}
           </div>
 
-          {/* Nút Thêm hoạt động vào slot này */}
-          {onAddActivity && (
+          {/* Nút Thêm hoạt động vào slot này (chỉ khi ngày không bị khóa và không ở chế độ readOnly) */}
+          {onAddActivity && !day?.isLocked && !readOnly && (
             <button
               type="button"
               onClick={() => onAddActivity(slot, day)}
@@ -432,6 +473,12 @@ export function ActivitySlotPopover({
               <HugeiconsIcon icon={PlusSignIcon} size={15} />
               <span>Thêm hoạt động vào slot này</span>
             </button>
+          )}
+          {day?.isLocked && (
+            <div className="w-full p-2.5 border border-dashed border-red-500/30 bg-red-500/5 text-red-600 dark:text-red-400 text-[12px] font-medium flex items-center justify-center gap-1.5 select-none">
+              <span>🔒</span>
+              <span>Ngày này đã bị khóa lịch dạy{day.lockReason ? ` (${day.lockReason})` : ''}. Không thể xếp thêm hoạt động.</span>
+            </div>
           )}
         </div>
 

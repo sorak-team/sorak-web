@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
@@ -140,29 +140,54 @@ function generateMonthDays(year, month) {
 export function CurriculumSingleThemeDetailPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { yearId = '2025-2026', ageGroup = 'nhatre', themeId = '02' } = useParams();
+  const location = useLocation();
+  const passedTheme = location.state?.theme;
+  const passedThemes = location.state?.themes;
 
-  const [isLoading, setIsLoading] = useState(true);
-  const [themes, setThemes] = useState([]);
+  const { yearId = '2026-2027', ageGroup = 'nhatre', themeId = '02' } = useParams();
+
+  const baseYear = (() => {
+    if (yearId && /\d{4}/.test(yearId)) {
+      const m = yearId.match(/(\d{4})/);
+      if (m) return parseInt(m[1], 10);
+    }
+    return 2026;
+  })();
+
+  const defaultStartDate = passedTheme?.startDate || '';
+  const defaultEndDate = passedTheme?.endDate || '';
+
+  const [isLoading, setIsLoading] = useState(!passedTheme);
+  const [themes, setThemes] = useState(passedThemes || []);
   const [themeSetInfo, setThemeSetInfo] = useState(null);
-  const [currentThemeIndex, setCurrentThemeIndex] = useState(0);
+  const [currentThemeIndex, setCurrentThemeIndex] = useState(location.state?.selectedTopicIndex ?? 0);
 
-  // Form state for current theme
-  const [subThemes, setSubThemes] = useState([]);
-  const [originalSubThemes, setOriginalSubThemes] = useState([]);
-  const [themeName, setThemeName] = useState('');
-  const [themeCode, setThemeCode] = useState('02');
-  const [startDate, setStartDate] = useState('2025-09-22');
-  const [endDate, setEndDate] = useState('2025-10-12');
-  const [status, setStatus] = useState('DRAFT');
+  // Form state for current theme - prioritize data passed from parent theme
+  const [subThemes, setSubThemes] = useState(passedTheme ? normalizeSubThemes(passedTheme.subThemes) : []);
+  const [originalSubThemes, setOriginalSubThemes] = useState(passedTheme ? normalizeSubThemes(passedTheme.subThemes) : []);
+  const [themeName, setThemeName] = useState(passedTheme?.name || '');
+  const [themeCode, setThemeCode] = useState(passedTheme?.code || (themeId ? String(themeId).padStart(2, '0') : '01'));
+  const [startDate, setStartDate] = useState(passedTheme?.startDate || '');
+  const [endDate, setEndDate] = useState(passedTheme?.endDate || '');
+  const [status, setStatus] = useState(passedTheme?.status || 'DRAFT');
   const [updatedAt, setUpdatedAt] = useState('13/10/2026');
 
   // Interactive calendar scheduling state
   const [activeSubThemeIndex, setActiveSubThemeIndex] = useState(null);
 
   // Calendar month state
-  const [calendarYear, setCalendarYear] = useState(2025);
-  const [calendarMonth, setCalendarMonth] = useState(8); // September (0-indexed: 8)
+  const initialCal = (() => {
+    const s = passedTheme?.startDate || '';
+    if (s) {
+      const parts = s.split('-').map(Number);
+      if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+        return { y: parts[0], m: parts[1] - 1 };
+      }
+    }
+    return { y: baseYear, m: 8 };
+  })();
+  const [calendarYear, setCalendarYear] = useState(initialCal.y);
+  const [calendarMonth, setCalendarMonth] = useState(initialCal.m);
   const [showRightSidebar, setShowRightSidebar] = useState(true);
 
   const setActiveThemeName = useCurriculumStore((s) => s.setActiveThemeName);
@@ -198,34 +223,74 @@ export function CurriculumSingleThemeDetailPage() {
         if (localStatus) {
           themeList = themeList.map((t) => ({ ...t, status: localStatus }));
         }
+        // Merge passedThemes or passedTheme from state so active parent theme dates and edits are preserved
+        if (passedThemes && Array.isArray(passedThemes) && passedThemes.length > 0) {
+          passedThemes.forEach((pt, pIdx) => {
+            const idx = themeList.findIndex(
+              (t) => (pt.id && t.id === pt.id) || (pt.code && t.code === pt.code) || t.name === pt.name,
+            );
+            if (idx !== -1) {
+              themeList[idx] = { ...themeList[idx], ...pt };
+            } else if (pIdx < themeList.length) {
+              themeList[pIdx] = { ...themeList[pIdx], ...pt };
+            } else {
+              themeList.push(pt);
+            }
+          });
+        } else if (passedTheme) {
+          const idx = themeList.findIndex(
+            (t) => (passedTheme.id && t.id === passedTheme.id) || (passedTheme.code && t.code === passedTheme.code) || t.name === passedTheme.name,
+          );
+          if (idx !== -1) {
+            themeList[idx] = { ...themeList[idx], ...passedTheme };
+          } else if (themeList.length > 0 && /^\d+$/.test(String(themeId))) {
+            const num = parseInt(themeId, 10);
+            if (num >= 1 && num <= themeList.length) {
+              themeList[num - 1] = { ...themeList[num - 1], ...passedTheme };
+            }
+          }
+        }
+
         setThemes(themeList);
         setStoreThemes(themeList);
 
         if (themeList.length > 0) {
           // Find target theme by ID or by Code or by index
           let foundIdx = themeList.findIndex(
-            (th) => th.id === themeId || th.code === themeId,
+            (th) =>
+              String(th.id) === String(themeId) ||
+              String(th.code) === String(themeId) ||
+              String(th.publicId) === String(themeId) ||
+              (themeId && th.id && String(th.id).includes(themeId)) ||
+              (themeId && th.code && String(th.code).includes(themeId)),
           );
           if (foundIdx === -1) {
+            foundIdx = themeList.findIndex((th) => th.name === decodeURIComponent(themeId));
+          }
+          if (foundIdx === -1 && /^\d+$/.test(String(themeId))) {
             const numeric = parseInt(themeId, 10);
-            if (!isNaN(numeric) && numeric >= 1 && numeric <= themeList.length) {
+            if (numeric >= 1 && numeric <= themeList.length) {
               foundIdx = numeric - 1;
-            } else {
-              foundIdx = 1; // Default to index 1 (Gia đình)
             }
+          }
+          if (foundIdx === -1 && location.state?.selectedTopicIndex !== undefined) {
+            foundIdx = location.state.selectedTopicIndex;
+          }
+          if (foundIdx === -1) {
+            foundIdx = 0; // Default to index 0 (Chủ đề 01)
           }
 
           setCurrentThemeIndex(foundIdx);
           const current = themeList[foundIdx];
           if (current) {
-            setThemeName(current.name || '');
-            const rawC = String(current.code || '');
+            setThemeName(current.name || passedTheme?.name || '');
+            const rawC = String(current.code || passedTheme?.code || '');
             const matchC = rawC.match(/(\d+)$/);
             setThemeCode(matchC ? matchC[1].padStart(2, '0') : String(foundIdx + 1).padStart(2, '0'));
-            setStartDate(current.startDate || '2025-09-22');
-            setEndDate(current.endDate || '2025-10-12');
+            setStartDate(current.startDate || passedTheme?.startDate || '');
+            setEndDate(current.endDate || passedTheme?.endDate || '');
             setStatus(current.status || localStatus || 'DRAFT');
-            const normalized = normalizeSubThemes(current.subThemes);
+            const normalized = normalizeSubThemes(current.subThemes || passedTheme?.subThemes);
             setSubThemes(normalized);
             setOriginalSubThemes(normalized);
             if (normalized.length > 0) {
@@ -233,8 +298,9 @@ export function CurriculumSingleThemeDetailPage() {
             }
 
             // Auto navigate calendar to start date month
-            if (current.startDate) {
-              const parts = current.startDate.split('-').map(Number);
+            const finalStart = current.startDate || passedTheme?.startDate;
+            if (finalStart) {
+              const parts = finalStart.split('-').map(Number);
               if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1])) {
                 setCalendarYear(parts[0]);
                 setCalendarMonth(parts[1] - 1);
@@ -479,6 +545,10 @@ export function CurriculumSingleThemeDetailPage() {
       toast.warning('Bộ chủ đề đã công bố. Vui lòng gỡ công bố ở trang tổng quan để thêm nhánh.');
       return;
     }
+    if (!startDate || !endDate) {
+      toast.warning('Chủ đề chưa có khoảng thời gian bắt đầu và kết thúc.');
+      return;
+    }
     if (isThemeFull) {
       toast.warning(`Chủ đề đã phân bổ đủ thời gian (đến hết ngày ${formatDateVn(endDate)}). Không thể thêm nhánh mới.`);
       return;
@@ -492,12 +562,17 @@ export function CurriculumSingleThemeDetailPage() {
       }
     }
 
+    // Luôn bám chặt vào khung thời gian của chủ đề gốc
+    if (startDate && nextStart < startDate) {
+      nextStart = startDate;
+    }
+
     if (endDate && nextStart > endDate) {
       toast.warning(`Ngày tiếp theo (${formatDateVn(nextStart)}) vượt quá ngày kết thúc chủ đề (${formatDateVn(endDate)}).`);
       return;
     }
 
-    // Tự động phân bổ đúng 1 tuần (7 ngày)
+    // Tự động phân bổ đúng 1 tuần (7 ngày) hoặc đến hết endDate
     let nextEnd = nextStart ? addDaysToDate(nextStart, 6) : '';
     if (endDate && nextEnd > endDate) {
       nextEnd = endDate;
@@ -519,12 +594,40 @@ export function CurriculumSingleThemeDetailPage() {
     if (isAllPublished) return;
     setSubThemes((prev) => {
       const updated = [...prev];
-      const cur = { ...updated[index], [field]: value };
-      if (field === 'startDate' && value) {
-        if (!cur.endDate || cur.endDate < value) {
-          let suggestedEnd = addDaysToDate(value, 6);
+      let adjustedVal = value;
+      // Khống chế ngày của nhánh không được lệch ra ngoài chủ đề gốc
+      if (field === 'startDate' && adjustedVal) {
+        if (startDate && adjustedVal < startDate) {
+          toast.warning(`Ngày bắt đầu nhánh không được trước ngày bắt đầu chủ đề (${formatDateVn(startDate)}).`);
+          adjustedVal = startDate;
+        }
+        if (endDate && adjustedVal > endDate) {
+          toast.warning(`Ngày bắt đầu nhánh không được sau ngày kết thúc chủ đề (${formatDateVn(endDate)}).`);
+          adjustedVal = endDate;
+        }
+      }
+      if (field === 'endDate' && adjustedVal) {
+        if (endDate && adjustedVal > endDate) {
+          toast.warning(`Ngày kết thúc nhánh không được sau ngày kết thúc chủ đề (${formatDateVn(endDate)}).`);
+          adjustedVal = endDate;
+        }
+        if (startDate && adjustedVal < startDate) {
+          toast.warning(`Ngày kết thúc nhánh không được trước ngày bắt đầu chủ đề (${formatDateVn(startDate)}).`);
+          adjustedVal = startDate;
+        }
+      }
+
+      const cur = { ...updated[index], [field]: adjustedVal };
+      if (field === 'startDate' && adjustedVal) {
+        if (!cur.endDate || cur.endDate < adjustedVal) {
+          let suggestedEnd = addDaysToDate(adjustedVal, 6);
           if (endDate && suggestedEnd > endDate) suggestedEnd = endDate;
           cur.endDate = suggestedEnd;
+        }
+      }
+      if (field === 'endDate' && adjustedVal) {
+        if (cur.startDate && cur.startDate > adjustedVal) {
+          cur.startDate = adjustedVal;
         }
       }
       updated[index] = cur;
@@ -712,11 +815,28 @@ export function CurriculumSingleThemeDetailPage() {
       setUpdatedAt(new Date().toLocaleDateString('vi-VN'));
 
       try {
-        await curriculumApi.updateThemeSetDetail({
+        const res = await curriculumApi.updateThemeSetDetail({
           year: yearId.replace('-', '–'),
           ageGroup,
           themes: updatedThemes,
         });
+        if (res?.themes && Array.isArray(res.themes)) {
+          setThemes(res.themes);
+          setStoreThemes(res.themes);
+          const curId = activeTopic.id;
+          const curName = themeName;
+          const foundIdx = res.themes.findIndex(
+            (t) => (curId && (t.id === curId || t.publicId === curId)) || t.name === curName,
+          );
+          if (foundIdx !== -1) {
+            setCurrentThemeIndex(foundIdx);
+            if (res.themes[foundIdx].subThemes) {
+              const freshSubs = normalizeSubThemes(res.themes[foundIdx].subThemes);
+              setSubThemes(freshSubs);
+              setOriginalSubThemes(freshSubs);
+            }
+          }
+        }
       } catch (err) {
         console.warn('Failed to save themes on server:', err);
       }
@@ -855,34 +975,36 @@ export function CurriculumSingleThemeDetailPage() {
 
   // Khung thời gian năm học (để phân biệt ngày trong năm học vs ngoài năm học)
   const academicYearBounds = useMemo(() => {
-    // 1. Ưu tiên ngày bắt đầu/kết thúc năm học từ API themeSetInfo
-    if (themeSetInfo?.startDate && themeSetInfo?.endDate) {
+    // 1. Ưu tiên ngày bắt đầu/kết thúc năm học từ API themeSetInfo (nếu hợp lệ YYYY-MM-DD với năm >= 2000)
+    if (
+      themeSetInfo?.startDate &&
+      themeSetInfo?.endDate &&
+      /^\d{4}-\d{2}-\d{2}$/.test(themeSetInfo.startDate) &&
+      /^\d{4}-\d{2}-\d{2}$/.test(themeSetInfo.endDate)
+    ) {
       return {
         start: themeSetInfo.startDate,
         end: themeSetInfo.endDate,
       };
     }
 
-    // 2. Nếu có danh sách chủ đề, lấy ngày bắt đầu chủ đề đầu tiên và kết thúc chủ đề cuối cùng
-    const validStarts = (themes || []).map((t) => t.startDate).filter(Boolean).sort();
-    const validEnds = (themes || []).map((t) => t.endDate).filter(Boolean).sort();
-
-    if (validStarts.length > 0 && validEnds.length > 0) {
-      return {
-        start: validStarts[0],
-        end: validEnds[validEnds.length - 1],
-      };
+    // 2. Fallback theo chuỗi năm học (phân tích năm 4 chữ số, mặc định 05/09 đến 31/05)
+    const yearMatch = (yearId || '').match(/\d{4}/g);
+    let startYear = 2026;
+    let endYear = 2027;
+    if (yearMatch && yearMatch.length >= 2) {
+      startYear = parseInt(yearMatch[0], 10);
+      endYear = parseInt(yearMatch[1], 10);
+    } else if (yearMatch && yearMatch.length === 1) {
+      startYear = parseInt(yearMatch[0], 10);
+      endYear = startYear + 1;
     }
 
-    // 3. Fallback theo chuỗi năm học (mặc định khai giảng 05/09 đến 31/05)
-    const parts = (yearId || '').split(/[-–]/).map(Number);
-    const startYear = parts[0] || 2026;
-    const endYear = parts[1] || startYear + 1;
     return {
-      start: `${startYear}-09-05`,
+      start: `${startYear}-09-01`,
       end: `${endYear}-05-31`,
     };
-  }, [yearId, themes, themeSetInfo]);
+  }, [yearId, themeSetInfo]);
 
   // Calendar Days computation cho cả 2 tháng liên tiếp
   const month2Year = calendarMonth === 11 ? calendarYear + 1 : calendarYear;
@@ -1002,6 +1124,13 @@ export function CurriculumSingleThemeDetailPage() {
           {/* Clean Header: Title + Rename & Toggle Sidebar */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-3 border-b border-border">
             <div className="space-y-1 min-w-0">
+              <Link
+                to={`/curriculum/themes/${yearId}/${ageGroup}`}
+                className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors mb-1 cursor-pointer"
+              >
+                <HugeiconsIcon icon={ArrowLeft01Icon} size={14} />
+                <span>Quay lại tổng quan chủ đề</span>
+              </Link>
               {isEditingThemeName ? (
                 <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                   <span className="text-[17px] font-semibold text-muted-foreground whitespace-nowrap">
@@ -1190,24 +1319,34 @@ export function CurriculumSingleThemeDetailPage() {
                         />
                       </div>
 
-                      {/* Right: Khoảng ngày dd/mm → dd/mm + Nút xóa */}
-                      <div className="flex items-center gap-2.5 shrink-0">
-                        {hasDates ? (
-                          <span
-                            className={cn(
-                              'text-[12.5px] tabular-nums transition-colors',
-                              isActive
-                                ? 'text-[#1447e6] font-semibold'
-                                : 'text-muted-foreground font-normal',
-                            )}
-                          >
-                            {formatDateRangeDdMm(branch.startDate, branch.endDate)}
-                          </span>
-                        ) : (
-                          <span className="text-[12px] text-muted-foreground/60 italic">
-                            Chưa xếp ngày
-                          </span>
-                        )}
+                      {/* Right: Khoảng ngày bắt đầu & kết thúc + Nút xóa */}
+                      <div
+                        className="flex items-center gap-2 shrink-0"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="date"
+                            value={branch.startDate || ''}
+                            min={startDate || undefined}
+                            max={branch.endDate || endDate || undefined}
+                            onChange={(e) => handleUpdateSubTheme(bIdx, 'startDate', e.target.value)}
+                            disabled={isAllPublished}
+                            className="h-8 px-2 bg-background border border-border text-[12px] font-normal text-foreground outline-none focus:border-primary transition-colors cursor-pointer"
+                            title="Ngày bắt đầu nhánh"
+                          />
+                          <span className="text-muted-foreground text-[12px]">→</span>
+                          <input
+                            type="date"
+                            value={branch.endDate || ''}
+                            min={branch.startDate || startDate || undefined}
+                            max={endDate || undefined}
+                            onChange={(e) => handleUpdateSubTheme(bIdx, 'endDate', e.target.value)}
+                            disabled={isAllPublished}
+                            className="h-8 px-2 bg-background border border-border text-[12px] font-normal text-foreground outline-none focus:border-primary transition-colors cursor-pointer"
+                            title="Ngày kết thúc nhánh"
+                          />
+                        </div>
 
                         {/* Nút xóa nhánh */}
                         <button

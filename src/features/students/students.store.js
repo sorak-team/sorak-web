@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { studentsApi } from './students.api';
+import { useAcademicYearStore } from '@/features/academic-years';
 
 export function toDisplayDate(iso) {
   if (!iso) return '';
@@ -222,14 +223,12 @@ export function transformBackendStudent(s) {
           fullName: s.primaryParent.fullName,
           relationship: s.primaryParent.relationship,
           phone: s.primaryParent.phone,
-          canPickup: s.primaryParent.canPickup !== false,
         }
       : s.parents?.[0]
         ? {
             fullName: s.parents[0].fullName,
             relationship: s.parents[0].relationship,
             phone: s.parents[0].phone,
-            canPickup: s.parents[0].canPickup !== false,
           }
         : null,
     parents: s.parents || [],
@@ -374,10 +373,19 @@ export const useStudentStore = create((set, get) => ({
     }),
 
   // API Integration: Fetch Students
-  fetchStudents: async () => {
+  fetchStudents: async (arg) => {
     set({ isLoading: true, error: null });
     try {
-      const data = await studentsApi.list({ limit: 100 });
+      const yearFromArg = typeof arg === 'object' ? arg?.schoolYearId : arg;
+      const targetYearId =
+        yearFromArg !== undefined
+          ? yearFromArg
+          : useAcademicYearStore.getState().selectedYearId;
+      const params = { limit: 100 };
+      if (targetYearId && targetYearId !== 'all') {
+        params.schoolYearId = targetYearId;
+      }
+      const data = await studentsApi.list(params);
       if (data && data.items && data.items.length > 0) {
         const transformed = data.items.map(transformBackendStudent);
         transformed.sort(sortStudentsByClassTier);
@@ -484,10 +492,11 @@ export const useStudentStore = create((set, get) => ({
       if (result) {
         const transformed = transformBackendStudent(result);
         set((state) => ({
-          students: state.students.map((item) => (item.id === id ? transformed : item)),
+          students: state.students.map((item) => (item.id === id || item.publicId === id ? transformed : item)),
+          detailStudent: (state.detailStudent?.id === id || state.detailStudent?.publicId === id) ? transformed : state.detailStudent,
           isDrawerOpen: false,
         }));
-        return;
+        return transformed;
       }
     } catch (err) {
       console.warn('Backend API update failed, updating local store:', err);
@@ -496,7 +505,7 @@ export const useStudentStore = create((set, get) => ({
     // Local fallback
     set((state) => ({
       students: state.students.map((item) => {
-        if (item.id === id) {
+        if (item.id === id || item.publicId === id) {
           return {
             ...item,
             ...payload,
@@ -508,20 +517,26 @@ export const useStudentStore = create((set, get) => ({
         }
         return item;
       }),
+      detailStudent: (state.detailStudent?.id === id || state.detailStudent?.publicId === id)
+        ? {
+            ...state.detailStudent,
+            ...payload,
+            parents: payload.parents !== undefined ? payload.parents : state.detailStudent.parents,
+            primaryParent: payload.parents?.[0] !== undefined ? payload.parents[0] : state.detailStudent.primaryParent,
+            dateOfBirth: payload.dob ? toIsoDate(payload.dob) : state.detailStudent.dateOfBirth,
+            enrollmentDate: payload.joinDate ? toIsoDate(payload.joinDate) : state.detailStudent.enrollmentDate,
+          }
+        : state.detailStudent,
       isDrawerOpen: false,
     }));
   },
 
   // API Integration: Delete Student
   deleteStudent: async (id) => {
-    try {
-      await studentsApi.delete(id);
-    } catch (err) {
-      console.warn('Backend API delete failed, updating local store:', err);
-    }
+    await studentsApi.delete(id);
 
     set((state) => ({
-      students: state.students.filter((item) => item.id !== id),
+      students: state.students.filter((item) => item.id !== id && item.publicId !== id),
       isDeleteDialogOpen: false,
       studentToDelete: null,
     }));

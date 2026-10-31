@@ -9,9 +9,14 @@ export function GoalItemDrawer({
   onClose,
   initialData,
   onSave,
+  ageGroup = '',
   currentAgeGroupLabel = 'Khối Nhà trẻ (12–36 tháng)',
   nextCodeSuggestion = '',
 }) {
+  const isMam =
+    ageGroup === 'MAM' ||
+    currentAgeGroupLabel?.toLowerCase()?.includes('mầm') ||
+    currentAgeGroupLabel?.toLowerCase()?.includes('mam');
   const [code, setCode] = useState('');
   const [title, setTitle] = useState('');
   const [domain, setDomain] = useState('PHYSICAL');
@@ -44,7 +49,7 @@ export function GoalItemDrawer({
       code: code ? code.trim() : '',
       title: title.trim(),
       domain,
-      indicatorCode: indicatorCode.trim(),
+      indicatorCode: isMam ? '' : indicatorCode.trim(),
     };
 
     if (onSave) onSave(payload);
@@ -152,19 +157,21 @@ export function GoalItemDrawer({
             />
           </div>
 
-          {/* Chỉ số Bộ Giáo dục */}
-          <div className="space-y-1.5">
-            <label className="text-[13px] font-medium text-foreground">
-              Chỉ số Bộ Giáo dục (nếu có)
-            </label>
-            <input
-              type="text"
-              value={indicatorCode}
-              onChange={(e) => setIndicatorCode(e.target.value)}
-              className="w-full h-8 px-2.5 bg-background border border-border text-[13px] rounded-none outline-none focus:border-primary"
-              placeholder="VD: CS 12 (Thông tư 51)"
-            />
-          </div>
+          {/* Chỉ số Bộ Giáo dục (Ẩn đối với khối Mầm) */}
+          {!isMam && (
+            <div className="space-y-1.5">
+              <label className="text-[13px] font-medium text-foreground">
+                Chỉ số Bộ Giáo dục (nếu có)
+              </label>
+              <input
+                type="text"
+                value={indicatorCode}
+                onChange={(e) => setIndicatorCode(e.target.value)}
+                className="w-full h-8 px-2.5 bg-background border border-border text-[13px] rounded-none outline-none focus:border-primary"
+                placeholder="VD: CS 12 (Thông tư 51)"
+              />
+            </div>
+          )}
         </form>
 
         {/* Footer */}

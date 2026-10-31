@@ -20,6 +20,7 @@ import { AccountSettingsDrawer } from './components/AccountSettingsDrawer';
 import { AddAccountModal } from './components/AddAccountModal';
 import { ResetPasswordConfirmModal } from './components/ResetPasswordConfirmModal';
 import { TemporaryPasswordModal } from './components/TemporaryPasswordModal';
+import { LockAccountConfirmModal } from './components/LockAccountConfirmModal';
 import { TablePagination } from '@/shared/components/TablePagination';
 import { usePaginationStore } from '@/shared/stores/pagination.store';
 import { cn } from '@/shared/lib/utils';
@@ -294,6 +295,7 @@ export function AccountsPage() {
       <AddAccountModal />
       <ResetPasswordConfirmModal />
       <TemporaryPasswordModal />
+      <LockAccountConfirmModal />
     </div>
   );
 }

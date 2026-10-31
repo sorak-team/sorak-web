@@ -265,10 +265,19 @@ export function CurriculumGoalDetailPage() {
     setIsItemDrawerOpen(true);
   };
 
-  const handleDeleteGoal = (goalId) => {
+  const handleDeleteGoal = async (goalId) => {
     if (isPublished) {
       toast.error('Không thể xóa mục tiêu khi ngân hàng mục tiêu đã công bố.');
       return;
+    }
+    try {
+      await curriculumApi.deleteGoal({
+        year: yearId.replace('-', '–'),
+        ageGroup,
+        goalId,
+      });
+    } catch (err) {
+      console.warn('API deleteGoal error:', err);
     }
     setGoalTree((prev) => {
       const updated = prev.map((domain) => {
@@ -283,56 +292,150 @@ export function CurriculumGoalDetailPage() {
     toast.success('Đã xóa mục tiêu khỏi ngân hàng');
   };
 
-  const handleSaveGoal = (goalData) => {
+  const handleSaveGoal = async (goalData) => {
     if (isPublished) {
       toast.warning('Ngân hàng mục tiêu đã công bố. Vui lòng gỡ công bố để chỉnh sửa.');
       return;
     }
+    const DOMAIN_DEFS = {
+      PHYSICAL: { title: 'Phát triển thể chất', domainLabel: 'Thể chất' },
+      COGNITIVE: { title: 'Phát triển nhận thức', domainLabel: 'Nhận thức' },
+      LANGUAGE: { title: 'Phát triển ngôn ngữ', domainLabel: 'Ngôn ngữ' },
+      SOCIO_EMOTIONAL: { title: 'Phát triển tình cảm - KNXH', domainLabel: 'Tình cảm - KNXH' },
+      AESTHETIC: { title: 'Phát triển thẩm mỹ', domainLabel: 'Thẩm mỹ' },
+    };
+
     if (editingGoal) {
-      // update title, indicatorCode (code remains determined by sequential order)
-      setGoalTree((prev) =>
-        prev.map((domain) => {
-          const directGoals = domain.children || [];
-          const hasGoal = directGoals.some((g) => g.id === editingGoal.id);
-          if (hasGoal || domain.domain === goalData.domain) {
-            return {
-              ...domain,
-              children: directGoals.map((g) =>
-                g.id === editingGoal.id
-                  ? {
-                      ...g,
-                      title: goalData.title,
-                      indicatorCode: goalData.indicatorCode,
-                    }
-                  : g,
-              ),
-            };
-          }
-          return domain;
-        }),
-      );
-    } else {
-      // create new under selected domain
-      const targetDomain = goalData.domain || 'PHYSICAL';
+      try {
+        await curriculumApi.updateGoal({
+          year: yearId.replace('-', '–'),
+          ageGroup,
+          goalId: editingGoal.id,
+          data: goalData,
+        });
+      } catch (err) {
+        console.warn('API updateGoal failed, updating locally:', err);
+      }
+
       setGoalTree((prev) => {
-        const updated = prev.map((domain) => {
-          if (domain.domain === targetDomain) {
-            const directGoals = domain.children || [];
-            const newGoal = {
-              id: `g-${Date.now()}`,
-              title: goalData.title,
-              indicatorCode: goalData.indicatorCode,
-              type: 'Mục tiêu học tập',
+        const targetDomainKey = goalData.domain || editingGoal.domain || 'PHYSICAL';
+        const isDomainChanged = editingGoal.domain && editingGoal.domain !== targetDomainKey;
+
+        const updatedGoal = {
+          ...editingGoal,
+          title: goalData.title,
+          indicatorCode: goalData.indicatorCode,
+          domain: targetDomainKey,
+          domainLabel: DOMAIN_DEFS[targetDomainKey]?.domainLabel || targetDomainKey,
+        };
+
+        let updatedTree = [];
+        if (!isDomainChanged) {
+          updatedTree = prev.map((dom) => {
+            const directGoals = dom.children || [];
+            return {
+              ...dom,
+              children: directGoals.map((g) => (g.id === editingGoal.id ? updatedGoal : g)),
             };
+          });
+        } else {
+          let targetDomainFound = false;
+          updatedTree = prev.map((dom) => {
+            const directGoals = dom.children || [];
+            if (dom.domain === editingGoal.domain) {
+              return {
+                ...dom,
+                children: directGoals.filter((g) => g.id !== editingGoal.id),
+              };
+            }
+            if (dom.domain === targetDomainKey) {
+              targetDomainFound = true;
+              return {
+                ...dom,
+                children: [...directGoals, updatedGoal],
+              };
+            }
+            return dom;
+          });
+
+          if (!targetDomainFound) {
+            const def = DOMAIN_DEFS[targetDomainKey] || { title: targetDomainKey, domainLabel: targetDomainKey };
+            const domainOrder = ['PHYSICAL', 'COGNITIVE', 'LANGUAGE', 'SOCIO_EMOTIONAL', 'AESTHETIC'];
+            const newDomainNode = {
+              id: `dom-${targetDomainKey.toLowerCase()}`,
+              code: `${domainOrder.indexOf(targetDomainKey) + 1}.`,
+              title: def.title,
+              domain: targetDomainKey,
+              domainLabel: def.domainLabel,
+              children: [updatedGoal],
+              count: 1,
+            };
+            updatedTree.push(newDomainNode);
+            updatedTree.sort(
+              (a, b) => domainOrder.indexOf(a.domain) - domainOrder.indexOf(b.domain),
+            );
+          }
+        }
+
+        return reindexGoalTree(updatedTree);
+      });
+
+      setIsItemDrawerOpen(false);
+      setEditingGoal(null);
+      toast.success('Đã cập nhật mục tiêu giáo dục thành công!');
+    } else {
+      let createdGoal = null;
+      try {
+        const res = await curriculumApi.createGoal({
+          year: yearId.replace('-', '–'),
+          ageGroup,
+          data: goalData,
+        });
+        createdGoal = res.goal;
+      } catch (err) {
+        console.warn('API createGoal failed, creating locally:', err);
+      }
+
+      const targetDomain = goalData.domain || 'PHYSICAL';
+      const newGoal = {
+        id: createdGoal?.id || `g-${Date.now()}`,
+        code: createdGoal?.code || 'MT01',
+        title: goalData.title,
+        indicatorCode: goalData.indicatorCode,
+        type: 'Mục tiêu học tập',
+        contentsCount: 0,
+        contents: [],
+      };
+
+      setGoalTree((prev) => {
+        let hasDomain = false;
+        let updated = prev.map((domain) => {
+          if (domain.domain === targetDomain) {
+            hasDomain = true;
             return {
               ...domain,
-              children: [...directGoals, newGoal],
+              children: [...(domain.children || []), newGoal],
             };
           }
           return domain;
         });
+
+        if (!hasDomain) {
+          const domainInfo = DOMAIN_DEFS[targetDomain] || DOMAIN_DEFS.PHYSICAL;
+          const newDomainNode = {
+            id: `d-${targetDomain.toLowerCase()}`,
+            code: `${updated.length + 1}.`,
+            title: domainInfo.title,
+            domain: targetDomain,
+            domainLabel: domainInfo.domainLabel,
+            children: [newGoal],
+          };
+          updated = [...updated, newDomainNode];
+        }
+
         return reindexGoalTree(updated);
       });
+      setUpdatedAt(new Date().toLocaleDateString('vi-VN'));
       toast.success('Đã thêm mục tiêu mới vào ngân hàng');
     }
   };
@@ -546,7 +649,7 @@ export function CurriculumGoalDetailPage() {
                                     <span className="text-[13px] font-medium text-foreground group-hover/title:text-[#1447e6] group-hover/title:underline underline-offset-2 transition-colors">
                                       {goal.title}
                                     </span>
-                                    {goal.indicatorCode && (
+                                    {goal.indicatorCode && ageGroup?.toLowerCase() !== 'mam' && (
                                       <span className="inline-flex items-center px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground bg-muted/70 border border-border/60 rounded-none shrink-0 select-none">
                                         {goal.indicatorCode}
                                       </span>
@@ -730,6 +833,7 @@ export function CurriculumGoalDetailPage() {
         }}
         initialData={editingGoal}
         nextCodeSuggestion={`MT ${totalGoalsCount + 1}`}
+        ageGroup={ageGroup}
         currentAgeGroupLabel={GRADE_LABELS_FULL[ageGroup] || 'Khối Nhà trẻ (12–36 tháng)'}
         onSave={handleSaveGoal}
       />

@@ -65,23 +65,19 @@ export const ROUTINE_SLOTS = [
 export const TIME_ROWS = ROUTINE_SLOTS.map((s) => s.fallbackTime);
 
 export const DEFAULT_DAYS = [
-  { key: 'T2', shortName: 'T2', name: 'Thứ 2', date: '28/09' },
-  { key: 'T3', shortName: 'T3', name: 'Thứ 3', date: '29/09' },
-  { key: 'T4', shortName: 'T4', name: 'Thứ 4', date: '30/09' },
-  { key: 'T5', shortName: 'T5', name: 'Thứ 5', date: '01/10' },
-  { key: 'T6', shortName: 'T6', name: 'Thứ 6', date: '02/10' },
-  { key: 'T7', shortName: 'T7', name: 'Thứ 7', date: '03/10' },
-  { key: 'CN', shortName: 'CN', name: 'CN', date: '04/10' },
+  { key: 'T2', shortName: 'T2', name: 'Thứ Hai', date: '28/09' },
+  { key: 'T3', shortName: 'T3', name: 'Thứ Ba', date: '29/09' },
+  { key: 'T4', shortName: 'T4', name: 'Thứ Tư', date: '30/09' },
+  { key: 'T5', shortName: 'T5', name: 'Thứ Năm', date: '01/10' },
+  { key: 'T6', shortName: 'T6', name: 'Thứ Sáu', date: '02/10' },
+  { key: 'T7', shortName: 'T7', name: 'Thứ Bảy', date: '03/10' },
+  { key: 'CN', shortName: 'CN', name: 'Chủ Nhật', date: '04/10' },
 ];
 
 export const getScheduledStatusColor = (status) => {
   switch (status) {
     case 'COMPLETED':
       return 'bg-emerald-600';
-    case 'RESCHEDULED':
-      return 'bg-amber-500';
-    case 'CANCELLED':
-      return 'bg-rose-500';
     case 'SCHEDULED':
     default:
       return null;
@@ -91,11 +87,7 @@ export const getScheduledStatusColor = (status) => {
 export const getScheduledStatusBorder = (status) => {
   switch (status) {
     case 'COMPLETED':
-      return '!border-l-2 !border-l-emerald-600';
-    case 'RESCHEDULED':
-      return '!border-l-2 !border-l-amber-500';
-    case 'CANCELLED':
-      return '!border-l-2 !border-l-rose-500';
+      return '!border-l-2 !border-l-emerald-600 !bg-emerald-500/[0.07] hover:!bg-emerald-500/[0.11] dark:!bg-emerald-950/30 border-emerald-600/30';
     case 'SCHEDULED':
     default:
       return '';
@@ -110,10 +102,6 @@ export const getScheduledStatusLabel = (status, t = (k, def) => def) => {
   switch (status) {
     case 'COMPLETED':
       return t('planning.statusCompleted', 'Đã thực hiện');
-    case 'RESCHEDULED':
-      return t('planning.statusRescheduled', 'Đổi lịch');
-    case 'CANCELLED':
-      return t('planning.statusCancelled', 'Đã hủy');
     case 'SCHEDULED':
     default:
       return t('planning.statusPending', 'Chưa đánh giá');
@@ -128,6 +116,7 @@ export function TeacherTimetableGrid({
   activeSlotId = null,
   activeDayKey = null,
   mode = 'attendance', // 'attendance' | 'health' | 'assessment' | 'daily' | 'planning'
+  readOnly = false,
   onSelectSlot,
   onSelectDay,
   onSelectEmptyCell,
@@ -175,7 +164,7 @@ export function TeacherTimetableGrid({
   }, [draggedItem]);
 
   const handleSlotDragStart = (e, slot, day, slotDef) => {
-    if (mode !== 'planning') return;
+    if (readOnly || mode !== 'planning') return;
     setDraggedItem({ slot, day, slotDef });
     e.dataTransfer.effectAllowed = 'copyMove';
     try {
@@ -291,39 +280,48 @@ export function TeacherTimetableGrid({
                   ? Boolean(day.isFuture)
                   : (todayIdx >= 0 && dIdx > todayIdx);
 
-                const borderTopClass = mode === 'planning'
-                  ? 'border-t-2 border-t-transparent'
-                  : isDismissalDone
-                    ? 'border-t-2 border-t-emerald-600'
-                    : isAttendanceDone
-                      ? 'border-t-2 border-t-[#1447e6]'
-                      : day.isToday
-                        ? 'border-t-2 border-t-foreground'
-                        : 'border-t-2 border-t-transparent';
+                const borderTopClass = 'border-t-2 border-t-transparent';
 
-                let dayNameColorClass = mode === 'planning'
-                  ? (day.isToday ? 'text-foreground font-bold' : 'text-foreground font-semibold')
-                  : isDismissalDone
-                    ? 'text-emerald-700 dark:text-emerald-400 font-semibold'
-                    : isAttendanceDone
-                      ? 'text-[#1447e6] dark:text-blue-400 font-semibold'
-                      : day.isToday
-                        ? 'text-foreground font-bold'
-                        : 'text-foreground';
+                const dayNameColorClass = day.isLocked
+                  ? 'text-muted-foreground/40 font-normal'
+                  : (mode !== 'planning' && day.isToday)
+                    ? 'text-[#1447e6] dark:text-blue-400 font-bold'
+                    : 'text-foreground font-semibold';
 
-                let dayDateColorClass = mode === 'planning'
-                  ? 'text-muted-foreground font-normal'
-                  : isDismissalDone
-                    ? 'text-emerald-600 dark:text-emerald-400 font-medium'
-                    : isAttendanceDone
-                      ? 'text-[#1447e6]/80 dark:text-blue-400 font-medium'
-                      : day.isToday
-                        ? 'text-foreground/80 font-medium'
-                        : 'text-muted-foreground';
+                const dayDateColorClass = day.isLocked
+                  ? 'text-muted-foreground/35 font-normal'
+                  : (mode !== 'planning' && day.isToday)
+                    ? 'text-[#1447e6]/80 dark:text-blue-400 font-medium'
+                    : 'text-muted-foreground font-normal';
 
-                if (day.isLocked) {
-                  dayNameColorClass = 'text-muted-foreground/40 font-normal';
-                  dayDateColorClass = 'text-muted-foreground/35 font-normal';
+                let statusBadge = null;
+                if (mode === 'daily') {
+                  if (day.isLocked) {
+                    statusBadge = {
+                      label: day.lockLabel || 'Khóa',
+                      className: 'bg-muted/75 text-muted-foreground border border-border/70 font-normal',
+                    };
+                  } else if (isDismissalDone) {
+                    statusBadge = {
+                      label: t('daily.badgeDismissalDoneShort', 'Đã đón'),
+                      className: 'bg-emerald-50 text-emerald-700 border border-emerald-200/90 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60 font-medium',
+                    };
+                  } else if (isAttendanceDone) {
+                    statusBadge = {
+                      label: t('daily.badgeAttendanceDone', 'Đã điểm danh'),
+                      className: 'bg-amber-50 text-amber-700 border border-amber-200/90 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60 font-medium',
+                    };
+                  } else if (day.isToday) {
+                    statusBadge = {
+                      label: t('daily.badgeToday', 'Hôm nay'),
+                      className: 'bg-blue-50 text-[#1447e6] border border-blue-200/90 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 font-semibold',
+                    };
+                  } else {
+                    statusBadge = {
+                      label: t('daily.badgeNotAttended', 'Chưa điểm danh'),
+                      className: 'bg-muted/75 text-muted-foreground border border-border/70 font-normal',
+                    };
+                  }
                 }
 
                 return (
@@ -341,38 +339,70 @@ export function TeacherTimetableGrid({
                           : isDismissalDone
                             ? 'ring-1 ring-emerald-600 ring-inset bg-emerald-50/20 dark:bg-emerald-950/20'
                             : isAttendanceDone
-                              ? 'ring-1 ring-[#1447e6] ring-inset bg-blue-50/40 dark:bg-blue-950/40'
+                              ? 'ring-1 ring-amber-500 ring-inset bg-amber-50/30 dark:bg-amber-950/30'
                               : day.isToday
-                                ? 'ring-1 ring-foreground ring-inset bg-muted/25'
+                                ? 'ring-1 ring-[#1447e6] ring-inset bg-blue-50/30 dark:bg-blue-900/30'
                                 : 'ring-1 ring-foreground/20 ring-inset bg-muted/20'
                       )
                     )}
                     title={
                       day.isLocked
-                        ? `${day.name} · Ngày nằm ngoài năm học đang chọn (Đã khóa)`
+                        ? (day.lockReason ? `${day.name} · ${day.lockReason} (Đã khóa dạy)` : `${day.name} · Đã khóa`)
                         : isClickable
                           ? `Chọn ${day.name} để điểm danh, sức khoẻ hoặc đón trẻ (${isDismissalDone ? 'Đã đón trẻ' : isAttendanceDone ? 'Đã điểm danh' : day.isToday ? 'Hôm nay (Chưa điểm danh)' : isFuture ? 'Chưa đến ngày' : 'Chưa bắt đầu'})`
                           : undefined
                     }
                   >
                     <div className="flex flex-col items-center gap-0.5">
-                      <span
-                        className={cn(
-                          'text-[13px] tracking-tight',
-                          day.isToday && !day.isLocked ? 'font-bold' : 'font-semibold',
-                          dayNameColorClass
-                        )}
-                      >
-                        {t(`days.${day.key}.short`, day.shortName || day.name)}
-                      </span>
+                      <div className="flex items-center gap-1 justify-center">
+                        <span
+                          className={cn(
+                            'text-[13px] tracking-tight',
+                            day.isToday && !day.isLocked ? 'font-bold' : 'font-semibold',
+                            dayNameColorClass
+                          )}
+                        >
+                          {t(`days.${day.key}.short`, day.shortName || day.name)}
+                        </span>
+                      </div>
                       <div
                         className={cn(
-                          'text-[11.5px] font-mono',
+                          'text-[11.5px] font-mono leading-tight',
                           dayDateColorClass
                         )}
                       >
                         {day.date}
                       </div>
+
+                      {/* Khung cố định chiều cao cho nhãn trạng thái: Giữ cho mọi cột luôn thẳng hàng 100% giống phụ huynh */}
+                      {mode === 'daily' ? (
+                        <div className="h-5 min-h-[20px] flex items-center justify-center mt-1">
+                          {statusBadge ? (
+                            <span
+                              className={cn(
+                                'text-[10px] px-1.5 py-0.5 border leading-none shrink-0 shadow-2xs select-none inline-flex items-center gap-0.5',
+                                statusBadge.className
+                              )}
+                            >
+                              {statusBadge.icon && <span className="text-[9px]">{statusBadge.icon}</span>}
+                              <span>{statusBadge.label}</span>
+                            </span>
+                          ) : (
+                            <span className="text-[10px] px-1.5 py-0.5 leading-none invisible select-none" aria-hidden="true">
+                              —
+                            </span>
+                          )}
+                        </div>
+                      ) : day.isLocked ? (
+                        <div
+                          className="mt-0.5 flex items-center justify-center max-w-[105px]"
+                          title={day.lockReason || 'Đã khóa'}
+                        >
+                          <span className="inline-flex items-center text-[10px] font-normal px-1.5 py-0.5 bg-muted/75 text-muted-foreground border border-border/70 truncate max-w-full">
+                            <span className="truncate">{day.lockLabel || 'Khóa'}</span>
+                          </span>
+                        </div>
+                      ) : null}
                     </div>
                   </th>
                 );
@@ -599,7 +629,7 @@ export function TeacherTimetableGrid({
                               return (
                                 <div
                                   key={itemSlot.id}
-                                  draggable={mode === 'planning'}
+                                  draggable={!readOnly && mode === 'planning' && !day.isLocked}
                                   onDragStart={(e) => handleSlotDragStart(e, itemSlot, day, slotDef)}
                                   onDragEnd={handleSlotDragEnd}
                                   onClick={(e) => {
@@ -629,10 +659,15 @@ export function TeacherTimetableGrid({
                                     }
                                     if (onSelectSlot) onSelectSlot(itemSlot, day);
                                   }}
-                                  title={mode === 'planning' ? (itemSlot.title || itemSlot.shortTitle) : `${itemSlot.title || itemSlot.shortTitle} · ${getScheduledStatusLabel(itemSlot.status, t)}`}
+                                  title={
+                                    mode === 'planning'
+                                      ? `${itemSlot.title || itemSlot.shortTitle}${itemSlot.slotCreatorName || itemSlot.creatorName ? ` (Xếp bởi: ${itemSlot.slotCreatorName || itemSlot.creatorName})` : ''}`
+                                      : `${itemSlot.title || itemSlot.shortTitle} · ${getScheduledStatusLabel(itemSlot.status, t)}`
+                                  }
                                   className={cn(
                                     'flex-1 p-1.5 flex flex-col justify-center items-center text-center cursor-pointer rounded-none transition-all group border min-h-[44px] bg-card relative',
-                                    mode === 'planning' && 'cursor-grab active:cursor-grabbing hover:border-foreground/50',
+                                    !readOnly && mode === 'planning' && 'cursor-grab active:cursor-grabbing hover:border-foreground/50',
+                                    readOnly && 'hover:border-foreground/50',
                                     isBeingDragged && 'opacity-30 border-dashed border-[#1447e6]',
                                     isBeingCopied
                                       ? 'border-2 border-dashed border-primary bg-primary/[0.06] shadow-xs'
@@ -674,7 +709,7 @@ export function TeacherTimetableGrid({
 
                             return (
                               <div
-                                draggable={mode === 'planning'}
+                                draggable={!readOnly && mode === 'planning' && !day.isLocked}
                                 onDragStart={(e) => handleSlotDragStart(e, slot, day, slotDef)}
                                 onDragEnd={handleSlotDragEnd}
                                 onClick={(e) => {
@@ -704,10 +739,15 @@ export function TeacherTimetableGrid({
                                   }
                                   if (onSelectSlot) onSelectSlot(slot, day);
                                 }}
-                                title={mode === 'planning' ? (slot.title || slot.shortTitle) : `${slot.title || slot.shortTitle} · ${getScheduledStatusLabel(slot.status, t)}`}
+                                title={
+                                  mode === 'planning'
+                                    ? `${slot.title || slot.shortTitle}${slot.slotCreatorName || slot.creatorName ? ` (Xếp bởi: ${slot.slotCreatorName || slot.creatorName})` : ''}`
+                                    : `${slot.title || slot.shortTitle} · ${getScheduledStatusLabel(slot.status, t)}`
+                                }
                                 className={cn(
                                   'h-full p-2.5 flex flex-col justify-center items-center text-center cursor-pointer rounded-none transition-all group border bg-card relative',
-                                  mode === 'planning' && 'cursor-grab active:cursor-grabbing hover:border-foreground/50',
+                                  !readOnly && mode === 'planning' && 'cursor-grab active:cursor-grabbing hover:border-foreground/50',
+                                  readOnly && 'hover:border-foreground/50',
                                   isBeingDragged && 'opacity-30 border-dashed border-[#1447e6]',
                                   isBeingCopied
                                     ? 'border-2 border-dashed border-primary bg-primary/[0.06] shadow-xs'
@@ -777,14 +817,23 @@ export function TeacherTimetableGrid({
                             );
                           })()
                         ) : mode === 'planning' ? (
-                          day.isLocked ? (
+                          readOnly ? (
+                            <div className="w-full h-full min-h-[85px] flex items-center justify-center p-2 text-center select-none border border-dashed border-border/20 opacity-30">
+                              <span className="text-[12px] text-muted-foreground/60 font-light">—</span>
+                            </div>
+                          ) : day.isLocked ? (
                             <div
-                              className="w-full h-full min-h-[85px] flex flex-col items-center justify-center p-2 text-center select-none bg-muted/15 border border-dashed border-border/30 opacity-40 cursor-default"
-                              title="Ngày nằm ngoài năm học đang chọn (Đã khóa)"
+                              className="w-full h-full min-h-[85px] flex flex-col items-center justify-center p-2 text-center select-none bg-muted/15 border border-dashed border-border/30 opacity-70 cursor-not-allowed"
+                              title={day.lockReason ? `Đã khóa dạy: ${day.lockReason}` : "Ngày nằm ngoài năm học đang chọn (Đã khóa)"}
                             >
-                              <span className="text-[11.5px] text-muted-foreground/50 italic">
-                                {t('planning.locked', 'Đã khóa')}
-                              </span>
+                              <div className="flex items-center gap-1 text-[11px] font-normal text-muted-foreground">
+                                <span>{day.lockLabel ? (day.lockLabel.length > 20 ? `${day.lockLabel.slice(0, 18)}…` : day.lockLabel) : t('planning.locked', 'Đã khóa')}</span>
+                              </div>
+                              {day.lockReason && (
+                                <span className="text-[10px] text-muted-foreground line-clamp-2 mt-0.5 px-1 leading-tight" title={day.lockReason}>
+                                  {day.lockReason}
+                                </span>
+                              )}
                             </div>
                           ) : (
                             <div

@@ -58,17 +58,17 @@ export function SchoolYearTransitionModal({ isOpen, onClose, currentYear, onSucc
   if (!isOpen) return null;
 
   const targetYearName = readinessData?.targetYearName || 'Năm học 2027–2028';
-  const step3Data = readinessData?.step3 || {
+  const studentStatusData = readinessData?.step1 || readinessData?.step3 || {
     totalStudents: 286,
     enrolledCount: 0,
     completedCount: 286,
     isEligible: true,
     pendingClasses: [],
   };
-  const enrolledCount = step3Data.enrolledCount ?? 0;
-  const isStep3Eligible = enrolledCount === 0;
+  const enrolledCount = studentStatusData.enrolledCount ?? 0;
+  const isStudentStatusEligible = enrolledCount === 0;
 
-  // Step 3 Action: Close remaining active enrollments
+  // Step 1 Action: Close remaining active enrollments
   const handleCloseRemainingEnrollments = async () => {
     try {
       setIsClosingEnrollments(true);
@@ -113,21 +113,21 @@ export function SchoolYearTransitionModal({ isOpen, onClose, currentYear, onSucc
   const stepsMeta = [
     {
       num: 1,
-      title: 'Khung chủ đề',
-      sub: copyThemes ? 'Hoàn thành & Kế thừa' : 'Tạo mới năm sau',
-      icon: Layers01Icon,
+      title: 'Trạng thái học sinh',
+      sub: 'Đánh giá & chốt năm học',
+      icon: UserGroupIcon,
     },
     {
       num: 2,
-      title: 'Khung mục tiêu',
-      sub: copyGoals ? '120 mục tiêu & Kế thừa' : 'Tạo mới năm sau',
-      icon: Calendar03Icon,
+      title: 'Khung chủ đề',
+      sub: 'Kế thừa khung chủ đề',
+      icon: Layers01Icon,
     },
     {
       num: 3,
-      title: 'Trạng thái học sinh',
-      sub: isStep3Eligible ? '0 HS đang học (Đạt)' : `${enrolledCount} HS cần chốt`,
-      icon: UserGroupIcon,
+      title: 'Khung mục tiêu',
+      sub: 'Kế thừa ngân hàng mục tiêu',
+      icon: Calendar03Icon,
     },
     {
       num: 4,
@@ -208,8 +208,8 @@ export function SchoolYearTransitionModal({ isOpen, onClose, currentYear, onSucc
                       key={s.num}
                       onClick={() => {
                         if (isComplete) return;
-                        if (s.num === 4 && !isStep3Eligible) {
-                          toast.error('Cần chốt trạng thái học sinh ở Bước 3 trước khi lên khối.');
+                        if (s.num > 1 && !isStudentStatusEligible) {
+                          toast.error('Cần chốt trạng thái học sinh ở Bước 1 trước khi tiếp tục.');
                           return;
                         }
                         setCurrentStep(s.num);
@@ -345,16 +345,128 @@ export function SchoolYearTransitionModal({ isOpen, onClose, currentYear, onSucc
                 <div className="p-3.5 rounded-none bg-muted/40 border border-border text-[12px] space-y-1">
                   <span className="font-semibold text-foreground block">Việc tiếp theo:</span>
                   <p className="text-muted-foreground">
-                    Ban giám hiệu tiến hành phân lớp và phân công giáo viên chủ nhiệm cho năm học mới từ pool học sinh.
+                    Ban giám hiệu tiến hành phân lớp và phân công giáo viên phụ trách cho năm học mới từ pool học sinh.
                   </p>
                 </div>
               </div>
             ) : currentStep === 1 ? (
-              /* STEP 1: HOÀN THÀNH KHUNG CHỦ ĐỀ VÀ TÙY CHỌN SAO CHÉP */
+              /* STEP 1: KHÔNG CÒN HỌC SINH NÀO TRONG ENROLL NĂM CŨ LÀ ĐANG HỌC */
               <div className="space-y-4 animate-in fade-in duration-150">
                 <div>
                   <span className="text-[11px] font-semibold text-[#1447e6] uppercase tracking-wider block font-mono">
                     BƯỚC 01 / 04
+                  </span>
+                  <h3 className="text-[16px] font-semibold text-foreground tracking-tight mt-0.5">
+                    Kiểm tra trạng thái học sinh năm cũ
+                  </h3>
+                  <p className="text-[12px] text-muted-foreground mt-0.5">
+                    Điều kiện bắt buộc: Không còn học sinh nào trong danh sách lớp năm cũ đang ở trạng thái "Đang học".
+                  </p>
+                </div>
+
+                {/* Status Evaluation Banner */}
+                {isStudentStatusEligible ? (
+                  <div className="p-4 rounded-none bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 space-y-1">
+                    <div className="flex items-center gap-2 font-semibold text-[13.5px]">
+                      <HugeiconsIcon icon={CheckmarkCircle02Icon} size={18} className="text-emerald-600" />
+                      <span>Đạt điều kiện: 0 học sinh đang học</span>
+                    </div>
+                    <p className="text-[12px] text-emerald-700 dark:text-emerald-400">
+                      Toàn bộ học sinh trong niên khóa {currentYear?.name} đã được chốt kết quả năm học (Hoàn thành / Tốt nghiệp), không còn học sinh nào ở trạng thái đang học.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-none bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 space-y-2">
+                    <div className="flex items-center gap-2 font-semibold text-[13.5px]">
+                      <HugeiconsIcon icon={Alert02Icon} size={18} className="text-amber-600" />
+                      <span>Chưa đạt điều kiện: Còn {enrolledCount} học sinh đang học</span>
+                    </div>
+                    <p className="text-[12px] text-amber-800 dark:text-amber-300">
+                      Quy chuẩn chuyển giao năm học yêu cầu tất cả học sinh năm cũ phải được chốt kết quả (Hoàn thành năm học hoặc Tốt nghiệp). Cần chốt trạng thái cho các em trước khi lên khối.
+                    </p>
+                    <div className="pt-2 flex items-center justify-between">
+                      <span className="text-[12px] font-medium text-amber-800 dark:text-amber-200">
+                        Thao tác nhanh cho Ban giám hiệu:
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleCloseRemainingEnrollments}
+                        disabled={isClosingEnrollments}
+                        className="h-8 px-3.5 inline-flex items-center gap-1.5 text-[12.5px] font-medium bg-[#1447e6] hover:bg-[#123ecc] text-white rounded-none cursor-pointer transition-colors shadow-xs disabled:opacity-50"
+                      >
+                        {isClosingEnrollments ? (
+                          <>
+                            <div className="size-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            <span>Đang chốt trạng thái...</span>
+                          </>
+                        ) : (
+                          <>
+                            <HugeiconsIcon icon={CheckmarkCircle02Icon} size={14} />
+                            <span>Chốt hoàn tất năm học cho {enrolledCount} học sinh</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Grade Breakdown Table */}
+                <div className="rounded-none border border-border bg-card overflow-hidden text-[13px]">
+                  <div className="px-4 py-3 border-b border-border bg-muted/20 flex items-center justify-between">
+                    <span className="font-semibold text-foreground text-[13px]">
+                      Tình trạng học sinh theo 4 khối lớp
+                    </span>
+                    <span className="text-[11.5px] font-mono text-muted-foreground">
+                      {studentStatusData.totalStudents ?? 286} học sinh tổng
+                    </span>
+                  </div>
+                  <table className="w-full text-left">
+                    <thead className="bg-muted/10 border-b border-border text-muted-foreground text-[12px]">
+                      <tr>
+                        <th className="py-2.5 px-4 font-medium">Khối lớp</th>
+                        <th className="py-2.5 px-4 font-medium">Sĩ số</th>
+                        <th className="py-2.5 px-4 font-medium">Trạng thái chốt năm cũ</th>
+                        <th className="py-2.5 px-4 text-right font-medium">Điều kiện</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {[
+                        { grade: 'Nhà trẻ', count: 62, status: 'Hoàn thành năm học' },
+                        { grade: 'Mầm', count: 78, status: 'Hoàn thành năm học' },
+                        { grade: 'Chồi', count: 76, status: 'Hoàn thành năm học' },
+                        { grade: 'Lá', count: 70, status: 'Hoàn thành chương trình (Tốt nghiệp)' },
+                      ].map((item) => (
+                        <tr key={item.grade}>
+                          <td className="py-3 px-4 font-medium text-foreground">Khối {item.grade}</td>
+                          <td className="py-3 px-4 font-mono">{item.count} HS</td>
+                          <td className="py-3 px-4 text-muted-foreground text-[12.5px]">{item.status}</td>
+                          <td className="py-3 px-4 text-right">
+                            {isStudentStatusEligible ? (
+                              <span className="px-2 py-0.5 rounded-none text-[11px] font-medium bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                                Đã chốt
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-none text-[11px] font-medium bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                                Cần chốt
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="p-3.5 rounded-none bg-muted/40 border border-border text-[12px] text-muted-foreground">
+                  <strong className="text-foreground">Nguyên tắc chuyển giao:</strong> Học sinh hoàn thành năm cũ sẽ được chuyển sang danh sách lên khối mới ở Bước 4. Học sinh khối Lá sẽ được công nhận hoàn thành chương trình mầm non.
+                </div>
+              </div>
+            ) : currentStep === 2 ? (
+              /* STEP 2: HOÀN THÀNH KHUNG CHỦ ĐỀ VÀ TÙY CHỌN SAO CHÉP */
+              <div className="space-y-4 animate-in fade-in duration-150">
+                <div>
+                  <span className="text-[11px] font-semibold text-[#1447e6] uppercase tracking-wider block font-mono">
+                    BƯỚC 02 / 04
                   </span>
                   <h3 className="text-[16px] font-semibold text-foreground tracking-tight mt-0.5">
                     Hoàn thành khung chủ đề
@@ -459,12 +571,12 @@ export function SchoolYearTransitionModal({ isOpen, onClose, currentYear, onSucc
                   </button>
                 </div>
               </div>
-            ) : currentStep === 2 ? (
-              /* STEP 2: CÓ MUỐN ĐEM KHUNG MỤC TIÊU NĂM CŨ QUA NĂM MỚI KHÔNG */
+            ) : currentStep === 3 ? (
+              /* STEP 3: CÓ MUỐN ĐEM KHUNG MỤC TIÊU NĂM CŨ QUA NĂM MỚI KHÔNG */
               <div className="space-y-4 animate-in fade-in duration-150">
                 <div>
                   <span className="text-[11px] font-semibold text-[#1447e6] uppercase tracking-wider block font-mono">
-                    BƯỚC 02 / 04
+                    BƯỚC 03 / 04
                   </span>
                   <h3 className="text-[16px] font-semibold text-foreground tracking-tight mt-0.5">
                     Hoàn tất khung mục tiêu
@@ -534,118 +646,6 @@ export function SchoolYearTransitionModal({ isOpen, onClose, currentYear, onSucc
                   )}
                 </div>
               </div>
-            ) : currentStep === 3 ? (
-              /* STEP 3: KHÔNG CÒN HỌC SINH NÀO TRONG ENROLL NĂM CŨ LÀ ĐANG HỌC */
-              <div className="space-y-4 animate-in fade-in duration-150">
-                <div>
-                  <span className="text-[11px] font-semibold text-[#1447e6] uppercase tracking-wider block font-mono">
-                    BƯỚC 03 / 04
-                  </span>
-                  <h3 className="text-[16px] font-semibold text-foreground tracking-tight mt-0.5">
-                    Kiểm tra trạng thái học sinh năm cũ
-                  </h3>
-                  <p className="text-[12px] text-muted-foreground mt-0.5">
-                    Điều kiện bắt buộc: Không còn học sinh nào trong danh sách lớp năm cũ đang ở trạng thái "Đang học".
-                  </p>
-                </div>
-
-                {/* Status Evaluation Banner */}
-                {isStep3Eligible ? (
-                  <div className="p-4 rounded-none bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 space-y-1">
-                    <div className="flex items-center gap-2 font-semibold text-[13.5px]">
-                      <HugeiconsIcon icon={CheckmarkCircle02Icon} size={18} className="text-emerald-600" />
-                      <span>Đạt điều kiện: 0 học sinh đang học</span>
-                    </div>
-                    <p className="text-[12px] text-emerald-700 dark:text-emerald-400">
-                      Toàn bộ 286/286 học sinh trong niên khóa {currentYear?.name} đã được chốt kết quả năm học (Hoàn thành / Tốt nghiệp), không còn học sinh nào ở trạng thái đang học.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="p-4 rounded-none bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 space-y-2">
-                    <div className="flex items-center gap-2 font-semibold text-[13.5px]">
-                      <HugeiconsIcon icon={Alert02Icon} size={18} className="text-amber-600" />
-                      <span>Chưa đạt điều kiện: Còn {enrolledCount} học sinh đang học</span>
-                    </div>
-                    <p className="text-[12px] text-amber-800 dark:text-amber-300">
-                      Quy chuẩn chuyển giao năm học yêu cầu tất cả học sinh năm cũ phải được chốt kết quả (Hoàn thành năm học hoặc Tốt nghiệp). Cần chốt trạng thái cho các em trước khi lên khối.
-                    </p>
-                    <div className="pt-2 flex items-center justify-between">
-                      <span className="text-[12px] font-medium text-amber-800 dark:text-amber-200">
-                        Thao tác nhanh cho Ban giám hiệu:
-                      </span>
-                      <button
-                        type="button"
-                        onClick={handleCloseRemainingEnrollments}
-                        disabled={isClosingEnrollments}
-                        className="h-8 px-3.5 inline-flex items-center gap-1.5 text-[12.5px] font-medium bg-[#1447e6] hover:bg-[#123ecc] text-white rounded-none cursor-pointer transition-colors shadow-xs disabled:opacity-50"
-                      >
-                        {isClosingEnrollments ? (
-                          <>
-                            <div className="size-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            <span>Đang chốt trạng thái...</span>
-                          </>
-                        ) : (
-                          <>
-                            <HugeiconsIcon icon={CheckmarkCircle02Icon} size={14} />
-                            <span>Chốt hoàn tất năm học cho {enrolledCount} học sinh</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Grade Breakdown Table */}
-                <div className="rounded-none border border-border bg-card overflow-hidden text-[13px]">
-                  <div className="px-4 py-3 border-b border-border bg-muted/20 flex items-center justify-between">
-                    <span className="font-semibold text-foreground text-[13px]">
-                      Tình trạng học sinh theo 4 khối lớp
-                    </span>
-                    <span className="text-[11.5px] font-mono text-muted-foreground">
-                      286 học sinh tổng
-                    </span>
-                  </div>
-                  <table className="w-full text-left">
-                    <thead className="bg-muted/10 border-b border-border text-muted-foreground text-[12px]">
-                      <tr>
-                        <th className="py-2.5 px-4 font-medium">Khối lớp</th>
-                        <th className="py-2.5 px-4 font-medium">Sĩ số</th>
-                        <th className="py-2.5 px-4 font-medium">Trạng thái chốt năm cũ</th>
-                        <th className="py-2.5 px-4 text-right font-medium">Điều kiện</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {[
-                        { grade: 'Nhà trẻ', count: 62, status: 'Hoàn thành năm học' },
-                        { grade: 'Mầm', count: 78, status: 'Hoàn thành năm học' },
-                        { grade: 'Chồi', count: 76, status: 'Hoàn thành năm học' },
-                        { grade: 'Lá', count: 70, status: 'Hoàn thành chương trình (Tốt nghiệp)' },
-                      ].map((item) => (
-                        <tr key={item.grade}>
-                          <td className="py-3 px-4 font-medium text-foreground">Khối {item.grade}</td>
-                          <td className="py-3 px-4 font-mono">{item.count} HS</td>
-                          <td className="py-3 px-4 text-muted-foreground text-[12.5px]">{item.status}</td>
-                          <td className="py-3 px-4 text-right">
-                            {isStep3Eligible ? (
-                              <span className="px-2 py-0.5 rounded-none text-[11px] font-medium bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                                Đã chốt
-                              </span>
-                            ) : (
-                              <span className="px-2 py-0.5 rounded-none text-[11px] font-medium bg-amber-500/10 text-amber-600 border border-amber-500/20">
-                                Cần chốt
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="p-3.5 rounded-none bg-muted/40 border border-border text-[12px] text-muted-foreground">
-                  <strong className="text-foreground">Nguyên tắc chuyển giao:</strong> Học sinh hoàn thành năm cũ sẽ được chuyển sang danh sách lên khối mới ở Bước 4. Học sinh khối Lá sẽ được công nhận hoàn thành chương trình mầm non.
-                </div>
-              </div>
             ) : (
               /* STEP 4: LÊN KHỐI XÁC NHẬN */
               <div className="space-y-4 animate-in fade-in duration-150">
@@ -682,7 +682,7 @@ export function SchoolYearTransitionModal({ isOpen, onClose, currentYear, onSucc
                     <div className="p-2.5 bg-card border border-border">
                       <div className="text-muted-foreground">3. Trạng thái học sinh:</div>
                       <div className="font-semibold text-emerald-600 mt-0.5">
-                        0 HS đang học (Đã chốt 100%)
+                        {isStudentStatusEligible ? 'Đã chốt 100% học sinh' : `Còn ${enrolledCount} HS cần chốt`}
                       </div>
                     </div>
                   </div>

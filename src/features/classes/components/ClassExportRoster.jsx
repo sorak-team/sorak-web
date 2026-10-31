@@ -109,7 +109,6 @@ export function ClassExportRoster({ currentClass }) {
           `Phụ huynh ${i} - Họ tên`,
           `Phụ huynh ${i} - Quan hệ`,
           `Phụ huynh ${i} - Số điện thoại`,
-          `Phụ huynh ${i} - Quyền đón trẻ`,
         );
       }
     }
@@ -132,7 +131,6 @@ export function ClassExportRoster({ currentClass }) {
                 fullName: st.parentName,
                 relationship: st.parentRelationship,
                 phone: st.parentPhone,
-                canPickup: st.canPickup,
               }]
             : [];
 
@@ -143,10 +141,9 @@ export function ClassExportRoster({ currentClass }) {
               p.fullName || '',
               p.relationship || '',
               p.phone || '',
-              p.canPickup === 'Có' || p.canPickup === true ? 'Có' : 'Không',
             );
           } else {
-            row.push('', '', '', '');
+            row.push('', '', '');
           }
         }
       }
@@ -259,7 +256,7 @@ export function ClassExportRoster({ currentClass }) {
                 {
                   key: 'teachers',
                   title: t('classes.fieldTeachers', 'Giáo viên phụ trách lớp'),
-                  desc: 'Bảng riêng: Giáo viên chủ nhiệm & Giáo viên bảo mẫu, Mã cán bộ, SĐT, Email',
+                  desc: 'Bảng riêng: Giáo viên phụ trách, Mã cán bộ, SĐT, Email',
                 },
                 {
                   key: 'summary',

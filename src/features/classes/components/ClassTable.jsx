@@ -19,7 +19,7 @@ import {
 import { useClassesStore } from '../classes.store';
 import { ClassVisual } from './ClassVisual';
 
-export function ClassTable({ classes }) {
+export function ClassTable({ classes, isYearCompleted = false }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -154,15 +154,17 @@ export function ClassTable({ classes }) {
                       <span>{t('classes.actionView', 'Xem chi tiết')}</span>
                     </DropdownMenuItem>
 
-                    <DropdownMenuItem
-                      onClick={() => {
-                        openEditDrawer(cls.id);
-                      }}
-                      className="flex items-center gap-2 h-8 px-2 text-[13px] cursor-pointer rounded-none hover:bg-muted/60"
-                    >
-                      <HugeiconsIcon icon={Edit02Icon} size={15} />
-                      <span>{t('classes.actionEdit', 'Chỉnh sửa')}</span>
-                    </DropdownMenuItem>
+                    {!isYearCompleted && (
+                      <DropdownMenuItem
+                        onClick={() => {
+                          openEditDrawer(cls.id);
+                        }}
+                        className="flex items-center gap-2 h-8 px-2 text-[13px] cursor-pointer rounded-none hover:bg-muted/60"
+                      >
+                        <HugeiconsIcon icon={Edit02Icon} size={15} />
+                        <span>{t('classes.actionEdit', 'Chỉnh sửa')}</span>
+                      </DropdownMenuItem>
+                    )}
 
                     <DropdownMenuItem
                       onClick={() => {
@@ -175,15 +177,18 @@ export function ClassTable({ classes }) {
                       <span>{t('classes.actionSettings', 'Quản lý lớp')}</span>
                     </DropdownMenuItem>
 
-                    <DropdownMenuSeparator className="my-1 border-t border-border" />
-
-                    <DropdownMenuItem
-                      onClick={() => openDeleteModal(cls)}
-                      className="flex items-center gap-2 h-8 px-2 text-[13px] text-destructive hover:text-destructive hover:bg-destructive/10 focus:text-destructive focus:bg-destructive/10 cursor-pointer rounded-none"
-                    >
-                      <HugeiconsIcon icon={Delete02Icon} size={15} />
-                      <span>{t('classes.actionDelete', 'Xóa lớp')}</span>
-                    </DropdownMenuItem>
+                    {!isYearCompleted && (
+                      <>
+                        <DropdownMenuSeparator className="my-1 border-t border-border" />
+                        <DropdownMenuItem
+                          onClick={() => openDeleteModal(cls)}
+                          className="flex items-center gap-2 h-8 px-2 text-[13px] text-destructive hover:text-destructive hover:bg-destructive/10 focus:text-destructive focus:bg-destructive/10 cursor-pointer rounded-none"
+                        >
+                          <HugeiconsIcon icon={Delete02Icon} size={15} />
+                          <span>{t('classes.actionDelete', 'Xóa lớp')}</span>
+                        </DropdownMenuItem>
+                      </>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </td>

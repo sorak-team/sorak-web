@@ -418,7 +418,7 @@ export function AcademicYearClassesView({ schoolYearId, schoolYearName, classes 
                 <div className="space-y-1.5 text-[12px]">
                   <div className="flex items-center gap-2 text-emerald-600 font-medium">
                     <HugeiconsIcon icon={CheckmarkCircle02Icon} size={14} />
-                    <span>Đã phân công giáo viên chủ nhiệm</span>
+                    <span>Đã phân công giáo viên phụ trách</span>
                   </div>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <HugeiconsIcon icon={Alert02Icon} size={14} className="text-amber-500" />

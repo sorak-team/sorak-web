@@ -571,7 +571,7 @@ export function AppSidebar({
                   </Link>
                 )}
 
-                {/* 7. Cấu hình lớp (Chỉ dành cho BGH / Principal) */}
+                {/* 7. Cấu hình & Quản lý lớp (Chỉ dành cho BGH, ẩn đối với Giáo viên) */}
                 {!isTeacher && (
                   <Link
                     to={`/classes/${currentClass.id}/settings`}

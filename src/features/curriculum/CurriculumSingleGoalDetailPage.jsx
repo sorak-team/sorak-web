@@ -422,8 +422,11 @@ export function CurriculumSingleGoalDetailPage() {
             </p>
           </div>
 
-          {/* 2-column grid: Lĩnh vực phát triển & Chỉ số Bộ Giáo dục */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Lĩnh vực phát triển & Chỉ số Bộ Giáo dục (Chỉ số ẩn đối với khối Mầm) */}
+          <div className={cn(
+            'grid gap-4',
+            ageGroup?.toLowerCase() === 'mam' ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'
+          )}>
             {/* Lĩnh vực phát triển */}
             <div className="p-3 bg-muted/20 border border-border/70 flex flex-col gap-1">
               <span className="text-[11.5px] font-medium text-muted-foreground uppercase tracking-wider">
@@ -435,22 +438,24 @@ export function CurriculumSingleGoalDetailPage() {
             </div>
 
             {/* Chỉ số Bộ Giáo dục */}
-            <div className="p-3 bg-muted/20 border border-border/70 flex flex-col gap-1">
-              <span className="text-[11.5px] font-medium text-muted-foreground uppercase tracking-wider">
-                {t('planning.moetIndicatorLabel', 'Chỉ số Bộ Giáo dục')}
-              </span>
-              <div className="flex items-center gap-1.5">
-                {goal?.indicatorCode ? (
-                  <span className="px-2 py-0.5 text-[12px] font-mono font-semibold bg-muted text-foreground border border-border">
-                    {goal.indicatorCode}
-                  </span>
-                ) : (
-                  <span className="text-[13px] text-muted-foreground italic">
-                    {t('planning.noIndicator', 'Không có chỉ số')}
-                  </span>
-                )}
+            {ageGroup?.toLowerCase() !== 'mam' && (
+              <div className="p-3 bg-muted/20 border border-border/70 flex flex-col gap-1">
+                <span className="text-[11.5px] font-medium text-muted-foreground uppercase tracking-wider">
+                  {t('planning.moetIndicatorLabel', 'Chỉ số Bộ Giáo dục')}
+                </span>
+                <div className="flex items-center gap-1.5">
+                  {goal?.indicatorCode ? (
+                    <span className="px-2 py-0.5 text-[12px] font-mono font-semibold bg-muted text-foreground border border-border">
+                      {goal.indicatorCode}
+                    </span>
+                  ) : (
+                    <span className="text-[13px] text-muted-foreground italic">
+                      {t('planning.noIndicator', 'Không có chỉ số')}
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -569,6 +574,7 @@ export function CurriculumSingleGoalDetailPage() {
         isOpen={isEditDrawerOpen}
         onClose={() => setIsEditDrawerOpen(false)}
         initialData={goal}
+        ageGroup={ageGroup}
         currentAgeGroupLabel={ageGroupLabel}
         onSave={handleSaveGoalInfo}
       />

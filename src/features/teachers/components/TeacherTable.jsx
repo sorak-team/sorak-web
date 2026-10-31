@@ -16,11 +16,23 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { useTeacherStore, getTeacherAvatarUrl } from '../teachers.store';
+import { useAuthStore } from '@/features/auth';
 import { cn } from '@/shared/lib/utils';
 
 export function TeacherTable({ paginatedTeachers }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const currentUser = useAuthStore((state) => state.user);
+
+  const isTeacherSelf = (teacher) => {
+    if (!currentUser || !teacher) return false;
+    if (teacher.id && currentUser.teacherId && String(teacher.id) === String(currentUser.teacherId)) return true;
+    if (teacher.id && currentUser.teacher?.id && String(teacher.id) === String(currentUser.teacher.id)) return true;
+    if (teacher.employeeCode && currentUser.employeeCode && teacher.employeeCode.toLowerCase() === currentUser.employeeCode.toLowerCase()) return true;
+    if (teacher.email && currentUser.email && teacher.email.toLowerCase() === currentUser.email.toLowerCase()) return true;
+    if (teacher.accountId && currentUser.id && String(teacher.accountId) === String(currentUser.id)) return true;
+    return false;
+  };
 
   const visibleColumns = useTeacherStore((state) => state.visibleColumns);
   const isLoading = useTeacherStore((state) => state.isLoading);
@@ -280,14 +292,18 @@ export function TeacherTable({ paginatedTeachers }) {
                       <HugeiconsIcon icon={PencilEdit02Icon} size={15} />
                       <span>{t('teacher.actionEdit', 'Chỉnh sửa')}</span>
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator className="my-1 border-t border-border" />
-                    <DropdownMenuItem
-                      onClick={() => openDeleteDialog(teacher.id)}
-                      className="flex items-center gap-2 h-8 px-2 text-[13px] text-destructive hover:text-destructive hover:bg-destructive/10 focus:text-destructive focus:bg-destructive/10 cursor-pointer rounded-none"
-                    >
-                      <HugeiconsIcon icon={Delete02Icon} size={15} />
-                      <span>{t('teacher.actionDelete', 'Xóa')}</span>
-                    </DropdownMenuItem>
+                    {!isTeacherSelf(teacher) && (
+                      <>
+                        <DropdownMenuSeparator className="my-1 border-t border-border" />
+                        <DropdownMenuItem
+                          onClick={() => openDeleteDialog(teacher.id)}
+                          className="flex items-center gap-2 h-8 px-2 text-[13px] text-destructive hover:text-destructive hover:bg-destructive/10 focus:text-destructive focus:bg-destructive/10 cursor-pointer rounded-none"
+                        >
+                          <HugeiconsIcon icon={Delete02Icon} size={15} />
+                          <span>{t('teacher.actionDelete', 'Xóa')}</span>
+                        </DropdownMenuItem>
+                      </>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </td>

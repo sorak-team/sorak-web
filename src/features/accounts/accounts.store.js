@@ -138,7 +138,9 @@ function transformBackendAccount(acc) {
     lastLogin: acc.lastLoginAt ? new Date(acc.lastLoginAt).toLocaleString('vi-VN') : null,
     createdAt: acc.createdAt ? new Date(acc.createdAt).toLocaleString('vi-VN') : '',
     activatedAt: acc.isActive ? (acc.createdAt ? new Date(acc.createdAt).toLocaleString('vi-VN') : '') : null,
-    lastPasswordChange: null,
+    lastPasswordChange: acc.passwordChangedAt
+      ? new Date(acc.passwordChangedAt).toLocaleString('vi-VN')
+      : null,
     accessStatus: acc.isActive ? 'normal' : 'locked',
     department: isStaff ? 'Mầm non Sorak' : 'Phụ huynh học sinh',
     avatar,
@@ -220,6 +222,10 @@ export const useAccountStore = create((set, get) => ({
   resetPasswordAccount: null,
   isTemporaryPasswordModalOpen: false,
   temporaryPassword: '',
+
+  // Lock account confirmation modal
+  isLockConfirmOpen: false,
+  accountToLock: null,
 
   // Fetch accounts from API
   fetchAccounts: async () => {
@@ -320,11 +326,17 @@ export const useAccountStore = create((set, get) => ({
 
   confirmResetPassword: async () => {
     const account = get().resetPasswordAccount;
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789@#%';
-    let tempPass = 'Sorak@';
-    for (let i = 0; i < 6; i++) {
-      tempPass += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
+    const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const lower = 'abcdefghjkmnpqrstuvwxyz';
+    const digits = '23456789';
+    const specials = '@#$%!';
+    const u1 = upper.charAt(Math.floor(Math.random() * upper.length));
+    const l1 = lower.charAt(Math.floor(Math.random() * lower.length));
+    const d1 = digits.charAt(Math.floor(Math.random() * digits.length));
+    const d2 = digits.charAt(Math.floor(Math.random() * digits.length));
+    const s1 = specials.charAt(Math.floor(Math.random() * specials.length));
+    const u2 = upper.charAt(Math.floor(Math.random() * upper.length));
+    const tempPass = `Sorak@${u1}${l1}${d1}${d2}${s1}${u2}`;
 
     if (account?.id) {
       try {
@@ -348,18 +360,24 @@ export const useAccountStore = create((set, get) => ({
       resetPasswordAccount: null,
     }),
 
+  openLockConfirm: (account) => set({ isLockConfirmOpen: true, accountToLock: account }),
+  closeLockConfirm: () => set({ isLockConfirmOpen: false, accountToLock: null }),
+
   updateAccountRole: async (id, newRole) => {
     const roleEnum = newRole === 'leader' ? 'PRINCIPAL_BGH' : 'TEACHER_GV';
     try {
       await accountsApi.update(id, { role: roleEnum });
+      set((state) => ({
+        staffAccounts: state.staffAccounts.map((acc) =>
+          acc.id === id ? { ...acc, role: newRole } : acc,
+        ),
+      }));
+      return true;
     } catch (e) {
-      console.warn('API update role failed:', e.message);
+      const errMsg = e.response?.data?.message || e.message || 'Cập nhật vai trò thất bại';
+      console.warn('API update role failed:', errMsg);
+      throw new Error(errMsg);
     }
-    set((state) => ({
-      staffAccounts: state.staffAccounts.map((acc) =>
-        acc.id === id ? { ...acc, role: newRole } : acc,
-      ),
-    }));
   },
 
   toggleAccountStatus: async (id) => {
@@ -371,24 +389,26 @@ export const useAccountStore = create((set, get) => ({
 
     try {
       await accountsApi.toggleStatus(id, isActive);
+      set((state) => ({
+        staffAccounts: state.staffAccounts.map((acc) => {
+          if (acc.id === id) {
+            return { ...acc, accountStatus: nextStatus };
+          }
+          return acc;
+        }),
+        parentAccounts: state.parentAccounts.map((acc) => {
+          if (acc.id === id) {
+            return { ...acc, accountStatus: nextStatus };
+          }
+          return acc;
+        }),
+      }));
+      return nextStatus;
     } catch (e) {
-      console.warn('API toggle status failed:', e.message);
+      const errMsg = e.response?.data?.message || e.message || 'Cập nhật trạng thái thất bại';
+      console.warn('API toggle status failed:', errMsg);
+      throw new Error(errMsg);
     }
-
-    set((state) => ({
-      staffAccounts: state.staffAccounts.map((acc) => {
-        if (acc.id === id) {
-          return { ...acc, accountStatus: nextStatus };
-        }
-        return acc;
-      }),
-      parentAccounts: state.parentAccounts.map((acc) => {
-        if (acc.id === id) {
-          return { ...acc, accountStatus: nextStatus };
-        }
-        return acc;
-      }),
-    }));
   },
 
   createAccount: async (newAccount) => {
@@ -421,7 +441,9 @@ export const useAccountStore = create((set, get) => ({
         createdAt: dateStr,
         activatedAt: newAccount.accountStatus === 'active' ? dateStr : null,
         lastLogin: null,
-        lastPasswordChange: null,
+        lastPasswordChange: newAccount.passwordChangedAt
+      ? new Date(newAccount.passwordChangedAt).toLocaleString('vi-VN')
+      : null,
         accessStatus: 'normal',
         department: 'Mầm non Sorak',
         avatar: newAccount.avatar || getAccountAvatarUrl(null, newAccount.fullName, 'teacher'),
@@ -480,7 +502,9 @@ export const useAccountStore = create((set, get) => ({
         createdAt: dateStr,
         activatedAt: newAccount.accountStatus !== 'inactive' ? dateStr : null,
         lastLogin: null,
-        lastPasswordChange: null,
+        lastPasswordChange: newAccount.passwordChangedAt
+      ? new Date(newAccount.passwordChangedAt).toLocaleString('vi-VN')
+      : null,
         accessStatus: 'normal',
         department: isStaff ? 'Mầm non Sorak' : 'Phụ huynh học sinh',
         avatar: newAccount.avatar || getAccountAvatarUrl(null, newAccount.fullName),

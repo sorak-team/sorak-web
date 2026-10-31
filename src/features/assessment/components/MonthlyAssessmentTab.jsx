@@ -197,30 +197,76 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
 
   // Generate realistic weekly stats with dynamic weekly health status
   const enrichStudentWithWeeklyStats = (st, idx) => {
-    // Week attendance rates (days present / 5 days)
-    const w1Att = idx % 9 === 3 ? 4 : 5;
-    const w2Att = idx % 7 === 2 ? 3 : 5;
-    const w3Att = idx % 6 === 4 ? 4 : 5;
-    const w4Att = idx % 8 === 1 ? 3 : 5;
-    const w5Att = idx % 5 === 2 ? 4 : 5;
+    const isSept = Number(selectedMonth) === 9;
+    const fallbackHealth = 'Bình thường';
 
-    // Week goal completion rates (goals achieved / 4 goals)
-    const w1Goal = idx % 8 === 5 ? 3 : 4;
-    const w2Goal = idx % 6 === 1 ? 2 : 4;
-    const w3Goal = idx % 7 === 3 ? 3 : 4;
-    const w4Goal = idx % 9 === 2 ? 3 : 4;
-    const w5Goal = idx % 5 === 0 ? 4 : 3;
+    if (st.weeklyStats) {
+      const enrichedWeekly = {};
+      const wKeys = ['week1', 'week2', 'week3', 'week4', 'week5'];
+      wKeys.forEach((wk, wIdx) => {
+        const w = st.weeklyStats[wk];
+        if (!w) {
+          enrichedWeekly[wk] = {
+            attendancePresent: 0,
+            attendanceTotal: isSept && wIdx === 3 ? 3 : 5,
+            attendanceRate: 0,
+            goalsAchieved: 0,
+            goalsTotal: 4,
+            goalsRate: 0,
+            healthStatus: fallbackHealth,
+          };
+          return;
+        }
+        const p = Number(w.attendancePresent ?? 0);
+        const tA = Number(w.attendanceTotal || (isSept && wIdx === 3 ? 3 : 5));
+        const a = Number(w.goalsAchieved ?? 0);
+        const tG = Number(w.goalsTotal || 4);
+        enrichedWeekly[wk] = {
+          ...w,
+          attendancePresent: p,
+          attendanceTotal: tA,
+          attendanceRate: w.attendanceRate !== undefined ? Number(w.attendanceRate) : Math.round((p / tA) * 100),
+          goalsAchieved: a,
+          goalsTotal: tG,
+          goalsRate: w.goalsRate !== undefined ? Number(w.goalsRate) : Math.round((a / tG) * 100),
+          healthStatus: w.healthStatus || fallbackHealth,
+        };
+      });
+      return {
+        ...st,
+        weeklyStats: enrichedWeekly,
+      };
+    }
 
-    // Trạng thái sức khỏe cơ bản ban đầu
-    const initialStatus = idx % 10 === 7 ? 'Theo dõi nhẹ cân' : idx % 14 === 3 ? 'Theo dõi thừa cân/béo phì' : 'Bình thường';
+    // Use rose flags to determine stats:
+    // If student achieved flower for a week (st.weekXRose === true), they met 100% criteria (5/5 attendance, 4/4 goals, 'Bình thường' health)
+    // If not achieved, 4/5 days (80%) and 3/4 goals (75%)
+    const w1Rose = Boolean(st.week1Rose);
+    const w2Rose = Boolean(st.week2Rose);
+    const w3Rose = Boolean(st.week3Rose);
+    const w4Rose = Boolean(st.week4Rose);
+    const w5Rose = Boolean(st.week5Rose);
+
+    const hasAnyRose = w1Rose || w2Rose || w3Rose || w4Rose || w5Rose;
+    const w1Att = w1Rose ? 5 : (hasAnyRose ? 4 : 0);
+    const w2Att = w2Rose ? 5 : (hasAnyRose ? 4 : 0);
+    const w3Att = w3Rose ? 5 : (hasAnyRose ? 4 : 0);
+    const w4Att = w4Rose ? 5 : (hasAnyRose ? 4 : 0);
+    const w5Att = w5Rose ? 5 : (hasAnyRose ? 4 : 0);
+
+    const w1Goal = w1Rose ? 4 : (hasAnyRose ? 3 : 0);
+    const w2Goal = w2Rose ? 4 : (hasAnyRose ? 3 : 0);
+    const w3Goal = w3Rose ? 4 : (hasAnyRose ? 3 : 0);
+    const w4Goal = w4Rose ? 4 : (hasAnyRose ? 3 : 0);
+    const w5Goal = w5Rose ? 4 : (hasAnyRose ? 3 : 0);
+
+    // Trạng thái sức khỏe cơ bản ban đầu: Mặc định 'Bình thường', không bao giờ mặc định thừa cân/béo phì
+    const initialStatus = 'Bình thường';
 
     // Dữ liệu các đợt đo sức khỏe thực tế của học sinh trong tháng:
-    // - Tuần 1: Có đo đầu tháng (Thứ 3 ngày 02/10 và Thứ 6 ngày 04/10 -> lấy Thứ 6 gần cuối tuần nhất)
-    // - Tuần 2: Không đo -> kế thừa lần đo gần nhất Tuần 1 (ngày 04/10)
-    // - Tuần 3: Có đo theo dõi định kỳ vào Thứ 5 ngày 16/10 -> lấy lần đo ngày 16/10
-    // - Tuần 4 & Tuần 5: Không đo -> kế thừa lần đo gần nhất Tuần 3 (ngày 16/10)
+    // Tháng 9 chưa đánh giá sức khỏe nên danh sách đợt đo rỗng (Chưa đánh giá)
     const mStr = String(selectedMonth).padStart(2, '0');
-    const studentMeasurements = st.healthMeasurements || [
+    const studentMeasurements = st.healthMeasurements || (isSept ? [] : [
       {
         weekNumber: 1,
         dayOrder: 3,
@@ -229,27 +275,20 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
         status: initialStatus,
       },
       {
-        weekNumber: 1,
-        dayOrder: 5,
-        dayLabel: 'Thứ 6',
-        date: `12/${mStr}`,
-        status: initialStatus,
-      },
-      {
         weekNumber: 3,
         dayOrder: 4,
         dayLabel: 'Thứ 5',
         date: `24/${mStr}`,
-        // Một số bé cải thiện thể trạng sang Bình thường hoặc phát hiện cần theo dõi
-        status: idx % 10 === 7 ? 'Bình thường' : idx % 12 === 5 ? 'Theo dõi nhẹ cân' : initialStatus,
+        status: initialStatus,
       },
-    ];
+    ]);
 
-    const w1Health = resolveWeeklyHealth(studentMeasurements, 1, initialStatus);
-    const w2Health = resolveWeeklyHealth(studentMeasurements, 2, initialStatus);
-    const w3Health = resolveWeeklyHealth(studentMeasurements, 3, initialStatus);
-    const w4Health = resolveWeeklyHealth(studentMeasurements, 4, initialStatus);
-    const w5Health = resolveWeeklyHealth(studentMeasurements, 5, initialStatus);
+    const fallbackHealthResolved = isSept ? 'Chưa đánh giá' : initialStatus;
+    const w1Health = resolveWeeklyHealth(studentMeasurements, 1, fallbackHealthResolved);
+    const w2Health = resolveWeeklyHealth(studentMeasurements, 2, fallbackHealthResolved);
+    const w3Health = resolveWeeklyHealth(studentMeasurements, 3, fallbackHealthResolved);
+    const w4Health = resolveWeeklyHealth(studentMeasurements, 4, fallbackHealth);
+    const w5Health = resolveWeeklyHealth(studentMeasurements, 5, fallbackHealth);
 
     return {
       ...st,
@@ -535,7 +574,7 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
   }, [students, searchQuery, statusFilter]);
 
   const getHealthStatusLabel = (status) => {
-    if (!status) return t('health.statusNormal', 'Bình thường');
+    if (!status || status === 'Chưa đánh giá') return t('health.notEvaluated', 'Chưa đánh giá');
     if (status === 'Bình thường') return t('health.statusNormal', 'Bình thường');
     if (status === 'Theo dõi nhẹ cân') return t('health.statusUnderweight', 'Theo dõi nhẹ cân');
     if (status === 'Theo dõi thừa cân/béo phì') return t('health.statusOverweight', 'Theo dõi thừa cân/béo phì');
@@ -990,13 +1029,15 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
                             <span
                               className={cn(
                                 'text-[13px] font-semibold',
-                                wkStats.attendanceRate >= 80 ? 'text-foreground' : 'text-amber-600 dark:text-amber-400'
+                                (wkStats.attendanceRate ?? 0) >= 80 ? 'text-foreground' : 'text-amber-600 dark:text-amber-400'
                               )}
                             >
-                              {wkStats.attendanceRate}%
+                              {wkStats.attendanceRate !== undefined
+                                ? wkStats.attendanceRate
+                                : Math.round(((wkStats.attendancePresent || 0) / (wkStats.attendanceTotal || 5)) * 100)}%
                             </span>
                             <span className="text-[11px] text-muted-foreground">
-                              {wkStats.attendancePresent}/{wkStats.attendanceTotal} {t('assessment.sessionsUnit', 'buổi')}
+                              {wkStats.attendancePresent ?? 0}/{wkStats.attendanceTotal ?? 5} {t('assessment.sessionsUnit', 'buổi')}
                             </span>
                           </div>
                         </td>
@@ -1007,13 +1048,15 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
                             <span
                               className={cn(
                                 'text-[13px] font-semibold',
-                                wkStats.goalsRate >= 75 ? 'text-foreground' : 'text-muted-foreground'
+                                (wkStats.goalsRate ?? 0) >= 75 ? 'text-foreground' : 'text-muted-foreground'
                               )}
                             >
-                              {wkStats.goalsRate}%
+                              {wkStats.goalsRate !== undefined
+                                ? wkStats.goalsRate
+                                : Math.round(((wkStats.goalsAchieved || 0) / (wkStats.goalsTotal || 4)) * 100)}%
                             </span>
                             <span className="text-[11px] text-muted-foreground">
-                              {wkStats.goalsAchieved}/{wkStats.goalsTotal} {t('assessment.goalsUnit', 'mục tiêu')}
+                              {wkStats.goalsAchieved ?? 0}/{wkStats.goalsTotal ?? 4} {t('assessment.goalsUnit', 'mục tiêu')}
                             </span>
                           </div>
                         </td>
@@ -1025,6 +1068,8 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
                               'inline-flex items-center px-2 py-0.5 text-[11.5px] font-medium rounded-none whitespace-nowrap cursor-help',
                               wkStats.healthStatus === 'Bình thường'
                                 ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300'
+                                : wkStats.healthStatus === 'Chưa đánh giá'
+                                ? 'bg-muted/70 text-muted-foreground'
                                 : 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300'
                             )}
                             title={wkStats.healthSourceLabel || t('assessment.weeklyHealth', 'Sức khỏe tuần')}

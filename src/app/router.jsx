@@ -59,6 +59,8 @@ function ClassRouteGuard() {
   const { id } = useParams();
   const classes = useClassesStore((state) => state.classes) || [];
   const isLoading = useClassesStore((state) => state.isLoading);
+  const hasLoaded = useClassesStore((state) => state.hasLoaded);
+  const lastFetchedYearId = useClassesStore((state) => state.lastFetchedYearId);
   const fetchClasses = useClassesStore((state) => state.fetchClasses);
   const upsertClass = useClassesStore((state) => state.upsertClass);
   const selectedYearId = useAcademicYearStore((state) => state.selectedYearId);
@@ -71,12 +73,13 @@ function ClassRouteGuard() {
     ? classes.find((c) => String(c.id) === String(id) || String(c.publicId) === String(id))
     : null;
 
-  // 2. Fetch classes if store is empty
+  // 2. Fetch classes if store has not loaded for this academic year yet
   useEffect(() => {
-    if (classes.length === 0 && !isLoading) {
+    const isLoadedForYear = hasLoaded && String(lastFetchedYearId) === String(selectedYearId);
+    if (!isLoadedForYear && !isLoading) {
       fetchClasses(selectedYearId);
     }
-  }, [classes.length, isLoading, fetchClasses, selectedYearId]);
+  }, [hasLoaded, lastFetchedYearId, isLoading, fetchClasses, selectedYearId]);
 
   // 3. Validate existence and sync academic year ONLY on initial navigation to class URL
   useEffect(() => {

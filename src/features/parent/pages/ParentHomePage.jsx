@@ -83,8 +83,8 @@ export function ParentHomePage() {
   };
 
   const guardians = data?.guardians || [
-    { fullName: 'Lê Thị Ngọc', relationship: 'Mẹ', phone: '0901 111 001', canPickup: true },
-    { fullName: 'Nguyễn Thanh Bình', relationship: 'Bố', phone: '0901 111 002', canPickup: true },
+    { fullName: 'Lê Thị Ngọc', relationship: 'Mẹ', phone: '0901 111 001' },
+    { fullName: 'Nguyễn Thanh Bình', relationship: 'Bố', phone: '0901 111 002' },
   ];
 
   const timetable = [

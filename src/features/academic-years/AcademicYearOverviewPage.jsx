@@ -36,6 +36,8 @@ export function AcademicYearOverviewPage() {
     isLoading,
     fetchAcademicYears,
     openEditDrawer,
+    selectedYearId,
+    setSelectedYearId,
   } = useAcademicYearStore();
 
   useEffect(() => {
@@ -53,20 +55,40 @@ export function AcademicYearOverviewPage() {
     syncedCalendarCount: 0,
   });
   const [upcomingHolidays, setUpcomingHolidays] = useState([]);
+  const [yearDetail, setYearDetail] = useState(null);
 
-  // Find target year
+  // Find target year with exact id match prioritized
   const year =
-    academicYears.find(
-      (y) =>
-        String(y.id) === String(id) ||
-        y.range === id ||
-        y.name === id ||
-        (id && y.name?.includes(id)) ||
-        (id === '2026-2027' && (String(y.id) === '1' || y.name?.includes('2026'))),
-    ) || (academicYears.length > 0 && !id ? academicYears[0] : null);
+    academicYears.find((y) => String(y.id) === String(id)) ||
+    academicYears.find((y) => y.range === id || y.name === id) ||
+    academicYears.find((y) => id && id.length >= 4 && y.name?.includes(id)) ||
+    (id === '2026-2027' && academicYears.find((y) => String(y.id) === '1' || y.name?.includes('2026'))) ||
+    (academicYears.length > 0 && !id ? academicYears[0] : null);
+
+  // Transition is only allowed for the active academic year; completed/old years are disabled
+  const isTransitionDisabled = year?.status === 'COMPLETED' || (!year?.active && year?.status !== 'ACTIVE');
+
+  useEffect(() => {
+    if (year?.id && String(selectedYearId) !== String(year.id)) {
+      setSelectedYearId(String(year.id));
+    }
+  }, [year?.id, selectedYearId, setSelectedYearId]);
+
+  useEffect(() => {
+    if (isTransitionDisabled && activeTab === 'TRANSITION') {
+      setActiveTab('OVERVIEW');
+    }
+  }, [isTransitionDisabled, activeTab]);
 
   useEffect(() => {
     if (year?.id) {
+      academicYearsApi
+        .getById(year.id)
+        .then((res) => {
+          if (res) setYearDetail(res);
+        })
+        .catch(console.error);
+
       academicYearsApi
         .listHolidays(year.id)
         .then((res) => {
@@ -104,18 +126,48 @@ export function AcademicYearOverviewPage() {
     return <NotFoundPage />;
   }
 
-  // Operational staffing & student assignment metrics
-  const totalClassesCount = Number(year.totalClasses) || 12;
-  const classesWithoutTeacher = 2;
-  const classesWithTeacher = Math.max(0, totalClassesCount - classesWithoutTeacher);
+  // Operational staffing & student assignment metrics (merged with real yearDetail)
+  const currentYear = { ...year, ...(yearDetail || {}) };
 
-  const totalStudentsCount = Number(year.totalStudents) || 286;
-  const studentsUnassigned = 12;
-  const studentsAssigned = Math.max(0, totalStudentsCount - studentsUnassigned);
+  const totalClassesCount = currentYear.totalClasses !== undefined && currentYear.totalClasses !== null
+    ? Number(currentYear.totalClasses)
+    : (currentYear.classes?.length || 0);
 
-  const totalTeachersCount = Number(year.teachers) || 24;
-  const teachersUnassigned = 4;
-  const teachersAssigned = Math.max(0, totalTeachersCount - teachersUnassigned);
+  const classesWithTeacher = currentYear.classesWithTeacher !== undefined && currentYear.classesWithTeacher !== null
+    ? Number(currentYear.classesWithTeacher)
+    : 0;
+
+  const classesWithoutTeacher = currentYear.classesWithoutTeacher !== undefined && currentYear.classesWithoutTeacher !== null
+    ? Number(currentYear.classesWithoutTeacher)
+    : Math.max(0, totalClassesCount - classesWithTeacher);
+
+  const totalStudentsCount = currentYear.totalStudents !== undefined && currentYear.totalStudents !== null
+    ? Number(currentYear.totalStudents)
+    : 0;
+
+  const studentsAssigned = currentYear.studentsAssigned !== undefined && currentYear.studentsAssigned !== null
+    ? Number(currentYear.studentsAssigned)
+    : totalStudentsCount;
+
+  const studentsUnassigned = currentYear.studentsUnassigned !== undefined && currentYear.studentsUnassigned !== null
+    ? Number(currentYear.studentsUnassigned)
+    : Math.max(0, totalStudentsCount - studentsAssigned);
+
+  const totalTeachersCount = currentYear.totalTeachers !== undefined && currentYear.totalTeachers !== null
+    ? Number(currentYear.totalTeachers)
+    : (currentYear.teachers !== undefined ? Number(currentYear.teachers) : 0);
+
+  const teachersAssigned = currentYear.teachersAssigned !== undefined && currentYear.teachersAssigned !== null
+    ? Number(currentYear.teachersAssigned)
+    : 0;
+
+  const teachersUnassigned = currentYear.teachersUnassigned !== undefined && currentYear.teachersUnassigned !== null
+    ? Number(currentYear.teachersUnassigned)
+    : Math.max(0, totalTeachersCount - teachersAssigned);
+
+  const studentsPct = totalStudentsCount > 0 ? Math.round((studentsAssigned / totalStudentsCount) * 100) : 0;
+  const teachersPct = totalTeachersCount > 0 ? Math.round((teachersAssigned / totalTeachersCount) * 100) : 0;
+  const classesPct = totalClassesCount > 0 ? Math.round((classesWithTeacher / totalClassesCount) * 100) : 0;
 
   return (
     <div
@@ -156,8 +208,8 @@ export function AcademicYearOverviewPage() {
             </div>
 
             <p className="text-[12.5px] text-muted-foreground font-normal truncate">
-              {year.startDate} – {year.endDate} · {year.totalClasses || 12}{' '}
-              {t('schoolYear.classesSuffix')} · {year.totalStudents || 286} học sinh
+              {currentYear.startDate} – {currentYear.endDate} · {totalClassesCount}{' '}
+              {t('schoolYear.classesSuffix')} · {totalStudentsCount} học sinh
             </p>
           </div>
         </div>
@@ -196,72 +248,76 @@ export function AcademicYearOverviewPage() {
             </div>
 
             {/* Subtab Navigation Items */}
-            <nav className="flex flex-col gap-1">
+            <nav className="grid grid-cols-3 lg:flex lg:flex-col gap-1 sm:gap-1.5">
               <button
                 type="button"
                 onClick={() => setActiveTab('OVERVIEW')}
                 className={cn(
-                  'w-full h-9 px-3 flex items-center text-[13px] font-medium text-left transition-colors cursor-pointer rounded-none',
+                  'w-full h-8.5 sm:h-9 px-2 sm:px-3 flex items-center justify-center lg:justify-start text-[12px] sm:text-[13px] font-medium text-center lg:text-left transition-colors cursor-pointer rounded-none',
                   activeTab === 'OVERVIEW'
                     ? 'bg-blue-50 text-[#1447e6] font-semibold dark:bg-blue-950/40 dark:text-blue-400'
                     : 'text-foreground hover:bg-muted/60',
                 )}
                 data-node-id="5229:23402"
               >
-                Tổng quan
+                <span className="truncate">Tổng quan</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveTab('CALENDAR')}
                 className={cn(
-                  'w-full h-9 px-3 flex items-center text-[13px] font-medium text-left transition-colors cursor-pointer rounded-none',
+                  'w-full h-8.5 sm:h-9 px-2 sm:px-3 flex items-center justify-center lg:justify-start text-[12px] sm:text-[13px] font-medium text-center lg:text-left transition-colors cursor-pointer rounded-none',
                   activeTab === 'CALENDAR'
                     ? 'bg-blue-50 text-[#1447e6] font-semibold dark:bg-blue-950/40 dark:text-blue-400'
                     : 'text-foreground hover:bg-muted/60',
                 )}
                 data-node-id="5229:23406"
               >
-                Lịch năm học
+                <span className="truncate">Lịch năm học</span>
               </button>
 
               <button
                 type="button"
-                onClick={() => setActiveTab('TRANSITION')}
+                disabled={isTransitionDisabled}
+                onClick={() => !isTransitionDisabled && setActiveTab('TRANSITION')}
+                title={isTransitionDisabled ? 'Năm học cũ / đã kết thúc không hỗ trợ chuyển giao' : ''}
                 className={cn(
-                  'w-full h-9 px-3 flex items-center text-[13px] font-medium text-left transition-colors cursor-pointer rounded-none',
-                  activeTab === 'TRANSITION'
-                    ? 'bg-blue-50 text-[#1447e6] font-semibold dark:bg-blue-950/40 dark:text-blue-400'
-                    : 'text-foreground hover:bg-muted/60',
+                  'w-full h-8.5 sm:h-9 px-2 sm:px-3 flex items-center justify-center lg:justify-start text-[12px] sm:text-[13px] font-medium text-center lg:text-left transition-colors rounded-none',
+                  isTransitionDisabled
+                    ? 'opacity-40 text-muted-foreground cursor-not-allowed select-none'
+                    : activeTab === 'TRANSITION'
+                      ? 'bg-blue-50 text-[#1447e6] font-semibold dark:bg-blue-950/40 dark:text-blue-400 cursor-pointer'
+                      : 'text-foreground hover:bg-muted/60 cursor-pointer',
                 )}
               >
-                Chuyển giao năm học
+                <span className="truncate">Chuyển giao năm học</span>
               </button>
             </nav>
 
             {activeTab === 'CALENDAR' && (
               <>
                 <div className="h-px bg-border my-1" />
-                <div className="flex flex-col gap-2.5">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 px-2 font-mono">
+                <div className="flex flex-col gap-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 px-1 lg:px-2 font-mono">
                     THỐNG KÊ LỊCH NĂM HỌC
                   </span>
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center justify-between px-3 py-1.5 text-[13px] text-muted-foreground">
-                      <span>Tổng số mục</span>
-                      <span className="font-mono text-foreground font-semibold">
+                  <div className="grid grid-cols-3 lg:flex lg:flex-col gap-1.5 lg:gap-1">
+                    <div className="flex flex-col lg:flex-row items-center lg:justify-between p-2 lg:px-3 lg:py-1.5 bg-background lg:bg-transparent border border-border lg:border-0 text-[12px] sm:text-[13px] text-muted-foreground text-center lg:text-left">
+                      <span className="text-[11px] lg:text-[13px]">Tổng số mục</span>
+                      <span className="font-mono text-foreground font-semibold mt-0.5 lg:mt-0">
                         {String(calendarCounters.totalEvents).padStart(2, '0')}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between px-3 py-1.5 text-[13px] text-muted-foreground">
-                      <span>Ngày nghỉ</span>
-                      <span className="font-mono text-foreground font-semibold">
+                    <div className="flex flex-col lg:flex-row items-center lg:justify-between p-2 lg:px-3 lg:py-1.5 bg-background lg:bg-transparent border border-border lg:border-0 text-[12px] sm:text-[13px] text-muted-foreground text-center lg:text-left">
+                      <span className="text-[11px] lg:text-[13px]">Ngày nghỉ</span>
+                      <span className="font-mono text-foreground font-semibold mt-0.5 lg:mt-0">
                         {String(calendarCounters.holidaysCount).padStart(2, '0')}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between px-3 py-1.5 text-[13px] text-muted-foreground">
-                      <span>Sự kiện sinh hoạt</span>
-                      <span className="font-mono text-foreground font-semibold">
+                    <div className="flex flex-col lg:flex-row items-center lg:justify-between p-2 lg:px-3 lg:py-1.5 bg-background lg:bg-transparent border border-border lg:border-0 text-[12px] sm:text-[13px] text-muted-foreground text-center lg:text-left">
+                      <span className="text-[11px] lg:text-[13px]">Sự kiện</span>
+                      <span className="font-mono text-foreground font-semibold mt-0.5 lg:mt-0">
                         {String(calendarCounters.generalActivitiesCount).padStart(2, '0')}
                       </span>
                     </div>
@@ -356,27 +412,27 @@ export function AcademicYearOverviewPage() {
                   {/* Clean Horizontal Rows */}
                   <div className="flex flex-col divide-y divide-border/60">
                     {/* Row 1: Học sinh */}
-                    <div className="py-2.5 first:pt-0 last:pb-0 flex items-center justify-between gap-3">
-                      <div className="flex flex-col min-w-[90px]">
+                    <div className="py-2.5 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
+                      <div className="flex items-center justify-between sm:justify-start gap-2 min-w-[90px]">
                         <span className="text-[13px] font-medium text-foreground">Học sinh</span>
                         <span className="text-[11.5px] text-muted-foreground font-mono">
                           {studentsAssigned}/{totalStudentsCount} em
                         </span>
                       </div>
 
-                      <div className="flex-1 max-w-[180px] sm:max-w-[220px] flex items-center gap-2.5">
+                      <div className="flex-1 w-full sm:max-w-[220px] flex items-center gap-2.5">
                         <div className="h-1.5 w-full bg-muted overflow-hidden rounded-none">
                           <div
                             className="h-full bg-[#1447e6] dark:bg-blue-500"
-                            style={{ width: `${(studentsAssigned / totalStudentsCount) * 100}%` }}
+                            style={{ width: `${studentsPct}%` }}
                           />
                         </div>
                         <span className="text-[11.5px] font-mono font-medium text-[#1447e6] dark:text-blue-400 w-8 text-right">
-                          {Math.round((studentsAssigned / totalStudentsCount) * 100)}%
+                          {studentsPct}%
                         </span>
                       </div>
 
-                      <div className="text-right shrink-0">
+                      <div className="text-left sm:text-right shrink-0">
                         <span className="text-[12px] text-muted-foreground">
                           {studentsUnassigned > 0 ? `${studentsUnassigned} chưa xếp lớp` : 'Đã phân lớp 100%'}
                         </span>
@@ -384,27 +440,27 @@ export function AcademicYearOverviewPage() {
                     </div>
 
                     {/* Row 2: Giáo viên */}
-                    <div className="py-2.5 first:pt-0 last:pb-0 flex items-center justify-between gap-3">
-                      <div className="flex flex-col min-w-[90px]">
+                    <div className="py-2.5 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
+                      <div className="flex items-center justify-between sm:justify-start gap-2 min-w-[90px]">
                         <span className="text-[13px] font-medium text-foreground">Giáo viên</span>
                         <span className="text-[11.5px] text-muted-foreground font-mono">
                           {teachersAssigned}/{totalTeachersCount} GV
                         </span>
                       </div>
 
-                      <div className="flex-1 max-w-[180px] sm:max-w-[220px] flex items-center gap-2.5">
+                      <div className="flex-1 w-full sm:max-w-[220px] flex items-center gap-2.5">
                         <div className="h-1.5 w-full bg-muted overflow-hidden rounded-none">
                           <div
                             className="h-full bg-[#1447e6] dark:bg-blue-500"
-                            style={{ width: `${(teachersAssigned / totalTeachersCount) * 100}%` }}
+                            style={{ width: `${teachersPct}%` }}
                           />
                         </div>
                         <span className="text-[11.5px] font-mono font-medium text-[#1447e6] dark:text-blue-400 w-8 text-right">
-                          {Math.round((teachersAssigned / totalTeachersCount) * 100)}%
+                          {teachersPct}%
                         </span>
                       </div>
 
-                      <div className="text-right shrink-0">
+                      <div className="text-left sm:text-right shrink-0">
                         <span className="text-[12px] text-muted-foreground">
                           {teachersUnassigned > 0 ? `${teachersUnassigned} GV dự phòng` : 'Đã nhận lớp 100%'}
                         </span>
@@ -412,27 +468,27 @@ export function AcademicYearOverviewPage() {
                     </div>
 
                     {/* Row 3: Lớp học */}
-                    <div className="py-2.5 first:pt-0 last:pb-0 flex items-center justify-between gap-3">
-                      <div className="flex flex-col min-w-[90px]">
+                    <div className="py-2.5 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
+                      <div className="flex items-center justify-between sm:justify-start gap-2 min-w-[90px]">
                         <span className="text-[13px] font-medium text-foreground">Lớp học</span>
                         <span className="text-[11.5px] text-muted-foreground font-mono">
                           {classesWithTeacher}/{totalClassesCount} lớp
                         </span>
                       </div>
 
-                      <div className="flex-1 max-w-[180px] sm:max-w-[220px] flex items-center gap-2.5">
+                      <div className="flex-1 w-full sm:max-w-[220px] flex items-center gap-2.5">
                         <div className="h-1.5 w-full bg-muted overflow-hidden rounded-none">
                           <div
                             className="h-full bg-[#1447e6] dark:bg-blue-500"
-                            style={{ width: `${(classesWithTeacher / totalClassesCount) * 100}%` }}
+                            style={{ width: `${classesPct}%` }}
                           />
                         </div>
                         <span className="text-[11.5px] font-mono font-medium text-[#1447e6] dark:text-blue-400 w-8 text-right">
-                          {Math.round((classesWithTeacher / totalClassesCount) * 100)}%
+                          {classesPct}%
                         </span>
                       </div>
 
-                      <div className="text-right shrink-0">
+                      <div className="text-left sm:text-right shrink-0">
                         <span className="text-[12px] text-muted-foreground">
                           {classesWithoutTeacher > 0 ? `${classesWithoutTeacher} lớp chưa có GV` : 'Đủ giáo viên'}
                         </span>
@@ -568,10 +624,10 @@ export function AcademicYearOverviewPage() {
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-0.5">
                     {[
-                      { name: 'Nhà trẻ', count: '3 lớp', age: '18–36 th' },
-                      { name: 'Mầm', count: '3 lớp', age: '3–4 tuổi' },
-                      { name: 'Chồi', count: '3 lớp', age: '4–5 tuổi' },
-                      { name: 'Lá', count: '3 lớp', age: '5–6 tuổi' },
+                      { name: 'Nhà trẻ', count: `${currentYear.ageGroupsBreakdown?.NHA_TRE ?? (currentYear.classes?.filter(c => c.ageGroup === 'NHA_TRE' || (c.name || '').toLowerCase().includes('nhà trẻ') || (c.name || '').toLowerCase().includes('nha tre')).length || 0)} lớp`, age: '18–36 th' },
+                      { name: 'Mầm', count: `${currentYear.ageGroupsBreakdown?.MAM ?? (currentYear.classes?.filter(c => c.ageGroup === 'MAM' || (c.name || '').toLowerCase().includes('mầm') || (c.name || '').toLowerCase().includes('mam')).length || 0)} lớp`, age: '3–4 tuổi' },
+                      { name: 'Chồi', count: `${currentYear.ageGroupsBreakdown?.CHOI ?? (currentYear.classes?.filter(c => c.ageGroup === 'CHOI' || (c.name || '').toLowerCase().includes('chồi') || (c.name || '').toLowerCase().includes('choi')).length || 0)} lớp`, age: '4–5 tuổi' },
+                      { name: 'Lá', count: `${currentYear.ageGroupsBreakdown?.LA ?? (currentYear.classes?.filter(c => c.ageGroup === 'LA' || (c.name || '').toLowerCase().includes('lá') || (c.name || '').toLowerCase().includes('la')).length || 0)} lớp`, age: '5–6 tuổi' },
                     ].map((g) => (
                       <div
                         key={g.name}
@@ -598,6 +654,7 @@ export function AcademicYearOverviewPage() {
               startDate={year.startDate}
               endDate={year.endDate}
               onCountersUpdate={setCalendarCounters}
+              isReadOnly={isTransitionDisabled}
             />
           )}
 

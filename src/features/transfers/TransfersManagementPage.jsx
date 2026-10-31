@@ -35,6 +35,8 @@ import {
 import { TablePagination } from '@/shared/components/TablePagination';
 import { usePaginationStore } from '@/shared/stores/pagination.store';
 import { useAcademicYearStore } from '@/features/academic-years';
+import { useAuthStore } from '@/features/auth';
+import { useClassesStore, findTeacherClassForYear } from '@/features/classes';
 import { cn } from '@/shared/lib/utils';
 import { classesApi } from '../classes/classes.api';
 import { studentsApi } from '../students/students.api';
@@ -50,8 +52,15 @@ const STATUS_SORT_WEIGHTS = {
 export function TransfersManagementPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const user = useAuthStore((state) => state.user);
+  const classes = useClassesStore((state) => state.classes) || [];
   const selectedYearId = useAcademicYearStore((state) => state.selectedYearId);
   const academicYears = useAcademicYearStore((state) => state.academicYears);
+  const isTeacher = user?.role === 'TEACHER_GV';
+  const teacherClass = useMemo(
+    () => findTeacherClassForYear(user, classes, selectedYearId),
+    [user, classes, selectedYearId],
+  );
   const selectedYear = useMemo(
     () => academicYears.find((y) => String(y.id) === String(selectedYearId)) || academicYears[0],
     [academicYears, selectedYearId],
@@ -82,10 +91,13 @@ export function TransfersManagementPage() {
     setCurrentPage(1);
   }, [selectedYearId, statusFilter, searchQuery]);
 
-  // Rejection modal state
+  // Rejection modal state (BGH)
   const [transferToReject, setTransferToReject] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  // Cancellation modal state (Teacher)
+  const [transferToCancel, setTransferToCancel] = useState(null);
 
   // Create Transfer Drawer State (BGH authority)
   const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
@@ -151,10 +163,37 @@ export function TransfersManagementPage() {
 
       // Filter only students whose current class belongs to this school year
       const classIdsInYear = new Set(classList.map((c) => String(c.id || c.class_id)));
-      const enrolledStudents = studentList.filter((s) => {
+      let enrolledStudents = studentList.filter((s) => {
         const studentClassId = String(s.currentClass?.classId || s.currentClass?.id || '');
         return classIdsInYear.has(studentClassId);
       });
+
+      // If user is a teacher, restrict available students to teacher's own class
+      if (isTeacher) {
+        const teacherClassIds = new Set();
+        if (teacherClass) {
+          teacherClassIds.add(String(teacherClass.id || teacherClass.publicId || teacherClass.class_id));
+        }
+        const userSub = String(user?.sub || user?.id || user?.accountId || '');
+        (classes || []).forEach((c) => {
+          const isAssigned = (c.teachers || c.teacher_classes || []).some((tc) => {
+            const acc = tc.teacher?.account || tc.account;
+            const tId = String(tc.id || tc.teacher_id || tc.account_id || '');
+            return (
+              (acc && (String(acc.account_id) === userSub || String(acc.public_id) === userSub)) ||
+              tId === userSub
+            );
+          });
+          if (isAssigned) {
+            teacherClassIds.add(String(c.id || c.publicId || c.class_id));
+          }
+        });
+
+        enrolledStudents = enrolledStudents.filter((s) => {
+          const studentClassId = String(s.currentClass?.classId || s.currentClass?.id || '');
+          return teacherClassIds.has(studentClassId);
+        });
+      }
 
       setAvailableStudents(enrolledStudents);
       setAvailableClasses(classList);
@@ -212,10 +251,42 @@ export function TransfersManagementPage() {
     const currentClassId = String(
       selectedStudent.currentClass.classId || selectedStudent.currentClass.id,
     );
-    return availableClasses.filter(
-      (c) => String(c.id || c.class_id) !== currentClassId,
-    );
+    const studentAgeGroup = String(
+      selectedStudent.currentClass.ageGroup || selectedStudent.currentClass.grade || '',
+    )
+      .toUpperCase()
+      .replace(/[^A-Z]/g, '');
+
+    return availableClasses.filter((c) => {
+      // Cannot transfer to current class
+      if (String(c.id || c.class_id) === currentClassId) return false;
+
+      // BR-43: Target class must match the student's age group / grade
+      if (studentAgeGroup) {
+        const classAgeGroup = String(c.ageGroup || c.grade || '')
+          .toUpperCase()
+          .replace(/[^A-Z]/g, '');
+        if (classAgeGroup && classAgeGroup !== studentAgeGroup) {
+          return false;
+        }
+      }
+      return true;
+    });
   }, [availableClasses, selectedStudent]);
+
+  // Keep target class select valid when selected student or filtered target classes change
+  useEffect(() => {
+    if (filteredTargetClasses.length > 0) {
+      const isTargetValid = filteredTargetClasses.some(
+        (c) => String(c.id || c.class_id) === String(formToClassId),
+      );
+      if (!isTargetValid) {
+        setFormToClassId(String(filteredTargetClasses[0].id || filteredTargetClasses[0].class_id));
+      }
+    } else {
+      setFormToClassId('');
+    }
+  }, [filteredTargetClasses, formToClassId]);
 
   const selectedTargetClass = useMemo(() => {
     return availableClasses.find(
@@ -247,7 +318,7 @@ export function TransfersManagementPage() {
         toClassId: formToClassId,
         transferDate: formTransferDate,
         reason: formReason.trim() || 'Chuyển theo nguyện vọng phụ huynh',
-        autoApprove: formAutoApprove,
+        autoApprove: isTeacher ? false : formAutoApprove,
       });
 
       if (formAutoApprove) {
@@ -291,8 +362,7 @@ export function TransfersManagementPage() {
     if (!transferToReject) return;
     try {
       setIsUpdatingStatus(true);
-      await classesApi.updateGlobalTransferStatus(transferToReject.id, {
-        status: 'REJECTED',
+      await classesApi.rejectTransfer(transferToReject.id, {
         rejectedReason: rejectReason.trim(),
       });
       toast.success(`Đã từ chối yêu cầu chuyển lớp của học sinh ${transferToReject.studentName}.`);
@@ -301,6 +371,22 @@ export function TransfersManagementPage() {
       loadData();
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Lỗi khi từ chối';
+      toast.error(msg);
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!transferToCancel) return;
+    try {
+      setIsUpdatingStatus(true);
+      await classesApi.cancelTransfer(transferToCancel.id);
+      toast.success(`Đã hủy yêu cầu chuyển lớp của học sinh ${transferToCancel.studentName}.`);
+      setTransferToCancel(null);
+      loadData();
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Lỗi khi hủy yêu cầu';
       toast.error(msg);
     } finally {
       setIsUpdatingStatus(false);
@@ -485,6 +571,7 @@ export function TransfersManagementPage() {
                 { key: 'PENDING', label: t('transfers.statusPending', 'Chờ duyệt') },
                 { key: 'APPROVED', label: t('transfers.statusApproved', 'Đã duyệt') },
                 { key: 'REJECTED', label: t('transfers.statusRejected', 'Đã từ chối') },
+                { key: 'CANCELLED', label: t('transfers.statusCancelled', 'Đã hủy') },
               ].map((item) => (
                 <DropdownMenuItem
                   key={item.key}
@@ -702,6 +789,11 @@ export function TransfersManagementPage() {
                             {t('transfers.statusRejected', 'Đã từ chối')}
                           </span>
                         )}
+                        {transfer.status === 'CANCELLED' && (
+                          <span className="inline-flex items-center justify-center px-2 py-0.5 text-[12px] font-medium bg-muted text-muted-foreground rounded-none">
+                            {t('transfers.statusCancelled', 'Đã hủy')}
+                          </span>
+                        )}
                       </td>
                     )}
 
@@ -742,28 +834,44 @@ export function TransfersManagementPage() {
                             {transfer.status === 'PENDING' && (
                               <>
                                 <DropdownMenuSeparator className="my-1 border-t border-border" />
-                                <DropdownMenuItem
-                                  disabled={isUpdatingStatus}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleApprove(transfer);
-                                  }}
-                                  className="flex items-center gap-2 h-8 px-2 text-[13px] text-foreground cursor-pointer rounded-none hover:bg-muted/60 disabled:opacity-40"
-                                >
-                                  <HugeiconsIcon icon={Tick01Icon} size={15} />
-                                  <span>{t('transfers.approveAction', 'Duyệt yêu cầu')}</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  disabled={isUpdatingStatus}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setTransferToReject(transfer);
-                                  }}
-                                  className="flex items-center gap-2 h-8 px-2 text-[13px] text-foreground cursor-pointer rounded-none hover:bg-muted/60 disabled:opacity-40"
-                                >
-                                  <HugeiconsIcon icon={Cancel01Icon} size={15} />
-                                  <span>{t('transfers.rejectAction', 'Từ chối')}</span>
-                                </DropdownMenuItem>
+                                {!isTeacher ? (
+                                  <>
+                                    <DropdownMenuItem
+                                      disabled={isUpdatingStatus}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleApprove(transfer);
+                                      }}
+                                      className="flex items-center gap-2 h-8 px-2 text-[13px] text-foreground cursor-pointer rounded-none hover:bg-muted/60 disabled:opacity-40"
+                                    >
+                                      <HugeiconsIcon icon={Tick01Icon} size={15} />
+                                      <span>{t('transfers.approveAction', 'Duyệt yêu cầu')}</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      disabled={isUpdatingStatus}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setTransferToReject(transfer);
+                                      }}
+                                      className="flex items-center gap-2 h-8 px-2 text-[13px] text-foreground cursor-pointer rounded-none hover:bg-muted/60 disabled:opacity-40"
+                                    >
+                                      <HugeiconsIcon icon={Cancel01Icon} size={15} />
+                                      <span>{t('transfers.rejectAction', 'Từ chối')}</span>
+                                    </DropdownMenuItem>
+                                  </>
+                                ) : (
+                                  <DropdownMenuItem
+                                    disabled={isUpdatingStatus}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setTransferToCancel(transfer);
+                                    }}
+                                    className="flex items-center gap-2 h-8 px-2 text-[13px] text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer rounded-none disabled:opacity-40"
+                                  >
+                                    <HugeiconsIcon icon={Cancel01Icon} size={15} />
+                                    <span>{t('transfers.cancelAction', 'Hủy yêu cầu')}</span>
+                                  </DropdownMenuItem>
+                                )}
                               </>
                             )}
                           </DropdownMenuContent>
@@ -1004,30 +1112,32 @@ export function TransfersManagementPage() {
                   </div>
 
                   {/* BGH Privilege: Auto Approve and Move Immediately */}
-                  <div className="p-3.5 border border-border bg-muted/20 flex items-start gap-3">
-                    <input
-                      type="checkbox"
-                      id="autoApproveToggle"
-                      checked={formAutoApprove}
-                      onChange={(e) => setFormAutoApprove(e.target.checked)}
-                      className="size-4 mt-0.5 rounded-none text-primary border-border focus:ring-primary cursor-pointer"
-                    />
-                    <label htmlFor="autoApproveToggle" className="cursor-pointer select-none">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[13px] font-semibold text-foreground">
-                          Phê duyệt & Điều chuyển ngay vào lớp mới
+                  {!isTeacher && (
+                    <div className="p-3.5 border border-border bg-muted/20 flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        id="autoApproveToggle"
+                        checked={formAutoApprove}
+                        onChange={(e) => setFormAutoApprove(e.target.checked)}
+                        className="size-4 mt-0.5 rounded-none text-primary border-border focus:ring-primary cursor-pointer"
+                      />
+                      <label htmlFor="autoApproveToggle" className="cursor-pointer select-none">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[13px] font-semibold text-foreground">
+                            Phê duyệt & Điều chuyển ngay vào lớp mới
+                          </span>
+                          <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 bg-primary/10 text-primary border border-primary/20">
+                            Quyền BGH
+                          </span>
+                        </div>
+                        <span className="text-[12px] text-muted-foreground block mt-1 leading-relaxed">
+                          {formAutoApprove
+                            ? 'Học sinh sẽ được rút khỏi lớp cũ và ghi danh vào lớp tiếp nhận ngay lập tức. Hồ sơ chuyển lớp được lưu ở trạng thái Đã duyệt.'
+                            : 'Yêu cầu sẽ được tạo ở trạng thái Chờ duyệt để rà soát hoặc biểu quyết thêm.'}
                         </span>
-                        <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 bg-primary/10 text-primary border border-primary/20">
-                          Quyền BGH
-                        </span>
-                      </div>
-                      <span className="text-[12px] text-muted-foreground block mt-1 leading-relaxed">
-                        {formAutoApprove
-                          ? 'Học sinh sẽ được rút khỏi lớp cũ và ghi danh vào lớp tiếp nhận ngay lập tức. Hồ sơ chuyển lớp được lưu ở trạng thái Đã duyệt.'
-                          : 'Yêu cầu sẽ được tạo ở trạng thái Chờ duyệt để rà soát hoặc biểu quyết thêm.'}
-                      </span>
-                    </label>
-                  </div>
+                      </label>
+                    </div>
+                  )}
                 </div>
 
                 {/* Sticky Drawer Footer */}
@@ -1119,6 +1229,46 @@ export function TransfersManagementPage() {
                 className="h-8 px-4 rounded-none bg-destructive hover:bg-destructive/90 text-white text-[13px] font-medium shadow-none cursor-pointer disabled:opacity-40"
               >
                 {isUpdatingStatus ? t('common.saving', 'Đang lưu...') : t('transfers.rejectAction', 'Xác nhận từ chối')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Modal (Teacher) */}
+      {transferToCancel && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-[440px] border border-border bg-card p-5 rounded-none shadow-xl flex flex-col gap-4 select-none">
+            <div className="flex flex-col gap-1">
+              <h3 className="text-[16px] font-semibold text-foreground">
+                {t('transfers.confirmCancelTitle', 'Hủy yêu cầu chuyển lớp')}
+              </h3>
+              <p className="text-[13px] text-muted-foreground">
+                {t('transfers.confirmCancelDesc', {
+                  name: transferToCancel.studentName,
+                  code: transferToCancel.studentCode,
+                  defaultValue: `Bạn có chắc chắn muốn hủy yêu cầu chuyển lớp của học sinh ${transferToCancel.studentName} (Mã HS: ${transferToCancel.studentCode}) không? Sau khi hủy, yêu cầu sẽ không được gửi tới Ban Giám Hiệu.`
+                })}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isUpdatingStatus}
+                onClick={() => setTransferToCancel(null)}
+                className="h-8 px-4 rounded-none border-border text-[13px] font-normal shadow-none cursor-pointer"
+              >
+                {t('common.cancel', 'Đóng')}
+              </Button>
+              <Button
+                type="button"
+                disabled={isUpdatingStatus}
+                onClick={handleConfirmCancel}
+                className="h-8 px-4 rounded-none bg-destructive hover:bg-destructive/90 text-white text-[13px] font-medium shadow-none cursor-pointer disabled:opacity-40"
+              >
+                {isUpdatingStatus ? t('common.saving', 'Đang hủy...') : t('transfers.cancelAction', 'Xác nhận hủy')}
               </Button>
             </div>
           </div>

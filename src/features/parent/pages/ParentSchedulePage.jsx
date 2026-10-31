@@ -149,22 +149,43 @@ export function ParentSchedulePage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedSlotDetail, selectedDayAttendance, isCalendarOpen, handlePrevWeek, handleNextWeek]);
 
-  // Load dữ liệu từ parentApi
-  const fetchScheduleData = async () => {
+  // Target class ID resolution ưu tiên lớp đang theo học của học sinh
+  const resolvedClassId = useMemo(() => {
+    return (
+      classId ||
+      outletCtx.selectedClassId ||
+      outletCtx.homeroomClass?.id ||
+      outletCtx.homeData?.selectedClassId ||
+      outletCtx.homeData?.homeroomClass?.id ||
+      data?.selectedClassId ||
+      data?.classInfo?.id ||
+      '1b01db4d-3576-40d4-b85d-e7fe0b5ba8e4'
+    );
+  }, [classId, outletCtx, data]);
+
+  // Load dữ liệu từ parentApi đồng bộ theo tuần và ngày
+  const fetchScheduleData = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await parentApi.getSchedule(classId ? { classId } : {});
+      const startDate = activeWeekObj?.dayDetails?.[0]?.dateStr;
+      const endDate = activeWeekObj?.dayDetails?.[6]?.dateStr;
+      const res = await parentApi.getSchedule({
+        ...(resolvedClassId ? { classId: resolvedClassId } : {}),
+        weekId: selectedWeekId,
+        startDate,
+        endDate,
+      });
       setData(res);
     } catch (err) {
       console.error('Failed to load schedule data:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [resolvedClassId, selectedWeekId, activeWeekObj]);
 
   useEffect(() => {
     fetchScheduleData();
-  }, [classId]);
+  }, [fetchScheduleData]);
 
   // Quản lý đồng bộ dữ liệu kế hoạch tuần thực tế từ planningApi (đồng nhất 100% với giáo viên)
   const [weeklyPlanSlots, setWeeklyPlanSlots] = useState([]);
@@ -174,7 +195,7 @@ export function ParentSchedulePage() {
     let isCancelled = false;
     const loadRealWeeklyPlan = async () => {
       try {
-        const targetClassId = classId || data?.selectedClassId || data?.classInfo?.id || '1b01db4d-3576-40d4-b85d-e7fe0b5ba8e4';
+        const targetClassId = resolvedClassId;
         const startDate = activeWeekObj?.dayDetails?.[0]?.dateStr;
         const endDate = activeWeekObj?.dayDetails?.[6]?.dateStr;
         const res = await planningApi.getWeeklyTimetable(targetClassId, {
@@ -205,7 +226,7 @@ export function ParentSchedulePage() {
     return () => {
       isCancelled = true;
     };
-  }, [classId, data?.selectedClassId, data?.classInfo?.id, selectedWeekId, activeWeekObj]);
+  }, [resolvedClassId, selectedWeekId, activeWeekObj]);
 
   const timetable = data?.timetable || { routineSlots: [], weeklyActivities: [] };
   const attendancesList = useMemo(() => {
@@ -328,11 +349,19 @@ export function ParentSchedulePage() {
       const dayObj = currentDays.find((d) => d.key === dayKey);
 
       // 1. Kiểm tra slot trong kế hoạch tuần thật (planningApi)
-      const realSlot = (weeklyPlanSlots || []).find(
-        (s) =>
-          (s.routineSlot === slotKey || s.routine_slot === slotKey) &&
-          (s.day === dayKey || s.dayOfWeek === dow || (dayObj?.date && s.date === dayObj.date))
-      );
+      const realSlot = (weeklyPlanSlots || []).find((s) => {
+        const slotMatches = s.routineSlot === slotKey || s.routine_slot === slotKey || s.slotKey === slotKey;
+        if (!slotMatches) return false;
+
+        const dayMatches = s.day === dayKey || s.dayKey === dayKey || s.dayOfWeek === dow;
+        if (!dayMatches) return false;
+
+        if (dayObj?.date && s.date && s.date !== dayObj.date) return false;
+        if (dayObj?.fullIsoDate && s.isoDate && s.isoDate !== dayObj.fullIsoDate) return false;
+
+        return true;
+      });
+
       if (realSlot && realSlot.title) {
         return {
           ...realSlot,
@@ -342,11 +371,21 @@ export function ParentSchedulePage() {
       }
 
       // 2. Kiểm tra weeklyActivities trả về từ parentApi.getSchedule
-      const backendAct = (timetable.weeklyActivities || []).find(
-        (a) =>
-          (a.routineSlot === slotKey || a.routine_slot === slotKey) &&
-          (a.dayOfWeek === dow || a.dayOfWeek === dayKey || (dayObj?.fullIsoDate && a.isoDate === dayObj.fullIsoDate))
-      );
+      const backendAct = (timetable.weeklyActivities || []).find((a) => {
+        const slotMatches = a.routineSlot === slotKey || a.routine_slot === slotKey;
+        if (!slotMatches) return false;
+
+        if (dayObj?.fullIsoDate && a.isoDate) {
+          return a.isoDate === dayObj.fullIsoDate;
+        }
+        if (dayObj?.date && a.date) {
+          return a.date === dayObj.date;
+        }
+
+        const dayMatches = a.dayOfWeek === dow || a.dayOfWeek === dayKey;
+        return dayMatches;
+      });
+
       if (backendAct && backendAct.title) {
         return {
           ...backendAct,
@@ -381,7 +420,7 @@ export function ParentSchedulePage() {
         return null;
       }
 
-      const teacherName = data?.primaryTeacher?.fullName || 'Cô Nguyễn Thị Mai (Giáo viên chủ nhiệm)';
+      const teacherName = data?.primaryTeacher?.fullName || 'Cô Nguyễn Thị Mai (Giáo viên phụ trách)';
       const targetIso = dayObj.fullIsoDate;
       const targetDisplay = dayObj.date;
 
@@ -396,10 +435,7 @@ export function ParentSchedulePage() {
       });
 
       if (realAtt) {
-        const isNotYet = realAtt.status === 'NOT_YET' ||
-          (!realAtt.checkInTime && !realAtt.checkOutTime && realAtt.rawStatus !== 'EXCUSED_ABSENCE' && realAtt.rawStatus !== 'UNEXCUSED_ABSENCE');
-
-        if (isNotYet) {
+        if (realAtt.status === 'NOT_YET') {
           return {
             status: 'NOT_YET',
             statusLabel: 'Chưa điểm danh',
@@ -449,13 +485,13 @@ export function ParentSchedulePage() {
           (realAtt.pickupRelationship || '').trim().toLowerCase()
         );
 
-        const hasCheckOut = Boolean(realAtt.checkOutTime || realAtt.pickupPersonName);
+        const hasCheckOut = Boolean(realAtt.checkOutTime || realAtt.pickupPersonName || realAtt.status === 'PICKED_UP');
 
         return {
           status: hasCheckOut ? 'PICKED_UP' : 'AT_SCHOOL',
-          statusLabel: hasCheckOut ? 'Đã đón' : 'Đang ở lớp',
+          statusLabel: hasCheckOut ? 'Đã đón' : 'Đã điểm danh',
           checkIn: {
-            time: realAtt.checkInTime || (hasCheckOut ? '07:30' : '07:30'),
+            time: realAtt.checkInTime || '07:30',
             status: 'PRESENT',
             statusLabel: 'Có mặt',
             teacher: teacherName,
@@ -507,22 +543,23 @@ export function ParentSchedulePage() {
 
     if (!dayAttendance || !dayAttendance.checkIn || dayAttendance.status === 'NOT_YET' || dayAttendance.isNotYet) {
       return {
-        type: 'NOT_YET',
-        thClass: cn(
-          'bg-card hover:bg-muted/30 border-b border-border transition-colors',
-          day.isToday && 'bg-primary/5 hover:bg-primary/10'
-        ),
+        type: day.isToday ? 'TODAY' : 'NOT_YET',
+        thClass: 'bg-card hover:bg-muted/30 border-b border-border transition-colors',
         titleClass: cn(
           'text-foreground font-semibold',
-          day.isToday && 'text-primary font-bold'
+          day.isToday && 'text-[#1447e6] dark:text-blue-400 font-bold'
         ),
         dateClass: cn(
           'text-muted-foreground',
-          day.isToday && 'text-primary/80 font-medium'
+          day.isToday && 'text-[#1447e6]/80 dark:text-blue-400 font-medium'
         ),
-        badgeClass: 'bg-muted/75 text-muted-foreground border border-border/70 font-normal',
-        label: 'Chưa điểm danh',
-        tooltip: `Chưa có thông tin điểm danh ngày ${day.name}`,
+        badgeClass: day.isToday
+          ? 'bg-blue-50 text-[#1447e6] border border-blue-200/90 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 font-semibold'
+          : 'bg-muted/75 text-muted-foreground border border-border/70 font-normal',
+        label: day.isToday ? 'Hôm nay' : 'Chưa điểm danh',
+        tooltip: day.isToday
+          ? `Hôm nay · Chưa điểm danh (${day.name})`
+          : `Chưa có thông tin điểm danh ngày ${day.name}`,
       };
     }
 
@@ -533,12 +570,9 @@ export function ParentSchedulePage() {
     if (checkIn.status === 'UNEXCUSED_ABSENCE' || dayAttendance.status === 'UNEXCUSED_ABSENCE') {
       return {
         type: 'UNEXCUSED_ABSENCE',
-        thClass: cn(
-          'bg-card hover:bg-muted/30 border-b border-border transition-colors',
-          day.isToday && 'bg-rose-50/20'
-        ),
-        titleClass: 'text-foreground font-semibold',
-        dateClass: 'text-muted-foreground',
+        thClass: 'bg-card hover:bg-muted/30 border-b border-border transition-colors',
+        titleClass: cn('text-foreground font-semibold', day.isToday && 'text-[#1447e6] dark:text-blue-400 font-bold'),
+        dateClass: cn('text-muted-foreground', day.isToday && 'text-[#1447e6]/80 dark:text-blue-400 font-medium'),
         badgeClass: 'bg-rose-50 text-rose-700 border border-rose-200/90 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/60 font-medium',
         label: 'Vắng K.phép',
         tooltip: `Vắng không phép ngày ${day.name} · Chưa có đơn xin phép`,
@@ -549,31 +583,25 @@ export function ParentSchedulePage() {
     if (checkIn.status === 'EXCUSED_ABSENCE' || dayAttendance.status === 'EXCUSED_ABSENCE') {
       return {
         type: 'EXCUSED_ABSENCE',
-        thClass: cn(
-          'bg-card hover:bg-muted/30 border-b border-border transition-colors',
-          day.isToday && 'bg-amber-50/20'
-        ),
-        titleClass: 'text-foreground font-semibold',
-        dateClass: 'text-muted-foreground',
+        thClass: 'bg-card hover:bg-muted/30 border-b border-border transition-colors',
+        titleClass: cn('text-foreground font-semibold', day.isToday && 'text-[#1447e6] dark:text-blue-400 font-bold'),
+        dateClass: cn('text-muted-foreground', day.isToday && 'text-[#1447e6]/80 dark:text-blue-400 font-medium'),
         badgeClass: 'bg-amber-50 text-amber-700 border border-amber-200/90 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60 font-medium',
         label: 'Vắng có phép',
         tooltip: `Vắng có phép ngày ${day.name} · Có đơn xin phép được duyệt`,
       };
     }
 
-    // 3. Đang ở lớp (Check-in có mặt, chưa đón)
+    // 3. Đã điểm danh (Check-in có mặt, chưa đón)
     if (dayAttendance.status === 'AT_SCHOOL' || (checkIn.status === 'PRESENT' && !checkOut?.time)) {
       return {
         type: 'IN_CLASS',
-        thClass: cn(
-          'bg-card hover:bg-muted/30 border-b border-border transition-colors',
-          day.isToday && 'bg-blue-50/25'
-        ),
-        titleClass: cn('text-foreground font-semibold', day.isToday && 'text-primary font-bold'),
-        dateClass: cn('text-muted-foreground', day.isToday && 'text-primary/80 font-medium'),
-        badgeClass: 'bg-blue-50 text-[#1447e6] border border-blue-200/90 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 font-semibold animate-pulse',
-        label: 'Đang ở lớp',
-        tooltip: `Điểm danh lúc ${checkIn.time || '07:28'} · Bé đang ở lớp cùng cô`,
+        thClass: 'bg-card hover:bg-muted/30 border-b border-border transition-colors',
+        titleClass: cn('text-foreground font-semibold', day.isToday && 'text-[#1447e6] dark:text-blue-400 font-bold'),
+        dateClass: cn('text-muted-foreground', day.isToday && 'text-[#1447e6]/80 dark:text-blue-400 font-medium'),
+        badgeClass: 'bg-amber-50 text-amber-700 border border-amber-200/90 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60 font-medium',
+        label: 'Đã điểm danh',
+        tooltip: `Điểm danh lúc ${checkIn.time || '07:30'} · Đã điểm danh`,
       };
     }
 
@@ -581,12 +609,9 @@ export function ParentSchedulePage() {
     if (dayAttendance.status === 'PICKED_UP' || (checkIn.status === 'PRESENT' && checkOut?.time)) {
       return {
         type: 'PICKED_UP',
-        thClass: cn(
-          'bg-card hover:bg-muted/30 border-b border-border transition-colors',
-          day.isToday && 'bg-emerald-50/20'
-        ),
-        titleClass: 'text-foreground font-semibold',
-        dateClass: 'text-muted-foreground',
+        thClass: 'bg-card hover:bg-muted/30 border-b border-border transition-colors',
+        titleClass: cn('text-foreground font-semibold', day.isToday && 'text-[#1447e6] dark:text-blue-400 font-bold'),
+        dateClass: cn('text-muted-foreground', day.isToday && 'text-[#1447e6]/80 dark:text-blue-400 font-medium'),
         badgeClass: 'bg-emerald-50 text-emerald-700 border border-emerald-200/90 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60 font-medium',
         label: 'Đã đón',
         tooltip: `Đến: ${checkIn.time || '07:30'} · Đã đón lúc ${checkOut.time} (${checkOut.relation || 'Phụ huynh'})`,
@@ -594,16 +619,17 @@ export function ParentSchedulePage() {
     }
 
     return {
-      type: 'NORMAL',
-      thClass: cn(
-        'bg-card hover:bg-muted/30 border-b border-border transition-colors',
-        day.isToday && 'bg-primary/5 hover:bg-primary/10'
-      ),
-      titleClass: cn('text-foreground font-semibold', day.isToday && 'text-primary font-bold'),
-      dateClass: cn('text-muted-foreground', day.isToday && 'text-primary/80 font-medium'),
-      badgeClass: 'bg-muted/75 text-muted-foreground border border-border/70 font-normal',
-      label: 'Chưa điểm danh',
-      tooltip: `Chưa có thông tin điểm danh ngày ${day.name}`,
+      type: day.isToday ? 'TODAY' : 'NORMAL',
+      thClass: 'bg-card hover:bg-muted/30 border-b border-border transition-colors',
+      titleClass: cn('text-foreground font-semibold', day.isToday && 'text-[#1447e6] dark:text-blue-400 font-bold'),
+      dateClass: cn('text-muted-foreground', day.isToday && 'text-[#1447e6]/80 dark:text-blue-400 font-medium'),
+      badgeClass: day.isToday
+        ? 'bg-blue-50 text-[#1447e6] border border-blue-200/90 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 font-semibold'
+        : 'bg-muted/75 text-muted-foreground border border-border/70 font-normal',
+      label: day.isToday ? 'Hôm nay' : 'Chưa điểm danh',
+      tooltip: day.isToday
+        ? `Hôm nay · Chưa điểm danh (${day.name})`
+        : `Chưa có thông tin điểm danh ngày ${day.name}`,
     };
   }, []);
 
@@ -639,42 +665,47 @@ export function ParentSchedulePage() {
     (slotKey, dayKey) => {
       if (dayKey === 'T7' || dayKey === 'CN') return null;
 
-      const isFutureWeek = activeWeekObj?.id && activeWeekObj.id > 'w-2';
-      if (isFutureWeek) {
-        return {
-          status: 'PENDING',
-          label: 'Chưa diễn ra',
-          notes: 'Hoạt động giáo dục dự kiến theo kế hoạch của lớp.',
-          teacher: 'Cô Nguyễn Thị Mai',
-        };
-      }
-
       const dayObj = currentDays.find((d) => d.key === dayKey);
+      if (!dayObj) return null;
 
-      // 1. Kiểm tra đánh giá từ backend slotAssessments
-      if (data?.slotAssessments?.length && dayObj?.date) {
+      // 1. Kiểm tra đánh giá từ backend slotAssessments (theo ngày và slot)
+      if (data?.slotAssessments?.length) {
         const match = data.slotAssessments.find((sa) => {
+          const slotMatches = sa.routineSlot === slotKey || sa.routine_slot === slotKey;
+          if (!slotMatches) return false;
+
+          if (sa.isoDate && dayObj.fullIsoDate && sa.isoDate === dayObj.fullIsoDate) return true;
+          if (sa.dateFormatted && dayObj.date && sa.dateFormatted === dayObj.date) return true;
           const saDate = sa.date || '';
-          return (
-            (sa.routineSlot === slotKey || sa.routine_slot === slotKey) &&
-            (saDate.startsWith(dayObj.date) || saDate.includes(dayObj.date))
-          );
+          if (dayObj.date && (saDate.startsWith(dayObj.date) || saDate.includes(dayObj.date))) return true;
+          return false;
         });
+
         if (match) {
           const st = match.status;
           return {
             status: st,
-            label: st === 'OUTSTANDING' ? 'Vượt trội' : st === 'NOT_ACHIEVED' ? 'Chưa đạt' : 'Đạt',
+            label: st === 'OUTSTANDING' || st === 'EXCELLENT' ? 'Vượt trội' : st === 'NOT_ACHIEVED' ? 'Chưa đạt' : 'Đạt',
             notes: match.notes,
-            teacher: 'Cô Nguyễn Thị Mai',
+            teacher: match.evaluatorName || data?.primaryTeacher?.fullName || 'Cô Phạm Hoàng Anh',
           };
         }
       }
 
-      // Không có bản ghi đánh giá trong CSDL -> trả về null (không bịa đặt đánh giá)
+      // 2. Nếu ngày trong tương lai (sau ngày hôm nay)
+      if (dayObj.fullIsoDate && todayIsoStr && dayObj.fullIsoDate > todayIsoStr) {
+        return {
+          status: 'PENDING',
+          label: 'Chưa diễn ra',
+          notes: 'Hoạt động giáo dục dự kiến theo kế hoạch tuần của lớp.',
+          teacher: data?.primaryTeacher?.fullName || 'Cô giáo chủ nhiệm',
+        };
+      }
+
+      // Không có bản ghi đánh giá riêng trong CSDL -> trả về null
       return null;
     },
-    [currentDays, activeWeekObj, data?.slotAssessments]
+    [currentDays, data?.slotAssessments, data?.primaryTeacher?.fullName, todayIsoStr]
   );
 
   // Xử lý bấm vào một ô slot trên thời khóa biểu
@@ -911,11 +942,9 @@ export function ParentSchedulePage() {
                           onClick={() => handleCellClick(slotDef, day)}
                           className={cn(
                             'p-1.5 border-r last:border-r-0 border-border align-middle min-w-[145px] h-[88px] transition-colors select-none',
-                            day.isToday
-                              ? 'bg-blue-50/75 dark:bg-blue-950/35 hover:bg-blue-100/60 cursor-pointer'
-                              : isWeekendDay
-                                ? 'bg-muted/10 text-center'
-                                : 'bg-card hover:bg-muted/30 cursor-pointer'
+                            isWeekendDay
+                              ? 'bg-muted/10 text-center'
+                              : 'bg-card hover:bg-muted/30 cursor-pointer'
                           )}
                           title={!isWeekendDay ? `${act.title || slotDef.name} · Nhấp để xem chi tiết` : undefined}
                         >
@@ -925,13 +954,15 @@ export function ParentSchedulePage() {
                               'h-full w-full p-2 flex items-center justify-center text-center transition-all',
                               isWeekendDay
                                 ? 'flex items-center justify-center'
-                                : evaluation?.status === 'OUTSTANDING'
+                                : evaluation?.status === 'OUTSTANDING' || evaluation?.status === 'EXCELLENT'
                                   ? 'border border-border/75 border-l-2 border-l-purple-500 bg-purple-500/[0.06] dark:bg-purple-400/[0.10] hover:bg-purple-500/[0.10] hover:border-purple-300 dark:hover:border-purple-700'
                                   : evaluation?.status === 'ACHIEVED'
                                     ? 'border border-border/75 border-l-2 border-l-emerald-500 bg-emerald-500/[0.05] dark:bg-emerald-400/[0.08] hover:bg-emerald-500/[0.09] hover:border-emerald-300 dark:hover:border-emerald-700'
                                     : evaluation?.status === 'NOT_ACHIEVED'
                                       ? 'border border-border/75 border-l-2 border-l-rose-500 bg-rose-500/[0.06] dark:bg-rose-400/[0.10] hover:bg-rose-500/[0.10] hover:border-rose-300 dark:hover:border-rose-700'
-                                      : 'border border-border/75 bg-card hover:bg-muted/30'
+                                      : act.status === 'COMPLETED'
+                                        ? 'border border-border/75 border-l-2 border-l-emerald-600/70 bg-emerald-500/[0.03] hover:bg-emerald-500/[0.06]'
+                                        : 'border border-border/75 bg-card hover:bg-muted/30'
                             )}
                           >
                             {isWeekendDay ? (
@@ -1218,7 +1249,7 @@ export function ParentSchedulePage() {
                         Chưa có thông tin điểm danh
                       </span>
                       <p className="text-muted-foreground text-[12.5px] leading-relaxed">
-                        Ngày {day.name} ({day.date}) hiện chưa ghi nhận dữ liệu điểm danh đến lớp hoặc chưa phát sinh hoạt động đón trả trẻ. Giáo viên chủ nhiệm sẽ cập nhật trạng thái khi bé đến lớp.
+                        Ngày {day.name} ({day.date}) hiện chưa ghi nhận dữ liệu điểm danh đến lớp hoặc chưa phát sinh hoạt động đón trả trẻ. Giáo viên phụ trách sẽ cập nhật trạng thái khi bé đến lớp.
                       </p>
                     </div>
                     <div className="mt-1 inline-flex items-center gap-1.5 px-2.5 py-1 text-[11.5px] font-medium bg-muted text-muted-foreground border border-border/80">
@@ -1256,7 +1287,7 @@ export function ParentSchedulePage() {
                           <div>
                             <span className="text-muted-foreground text-[11px] block">Giáo viên tiếp nhận & điểm danh:</span>
                             <span className="font-medium text-foreground">
-                              {checkIn?.teacher || data?.primaryTeacher?.fullName || 'Cô Nguyễn Thị Mai (Giáo viên chủ nhiệm)'}
+                              {checkIn?.teacher || data?.primaryTeacher?.fullName || 'Cô Nguyễn Thị Mai (Giáo viên phụ trách)'}
                             </span>
                           </div>
                           {checkIn?.note && (
@@ -1323,7 +1354,7 @@ export function ParentSchedulePage() {
                                 <span>Học sinh chưa có thông tin đón về · Đang sinh hoạt tại lớp</span>
                               </div>
                               <p className="text-muted-foreground text-[12px] leading-relaxed">
-                                Khung giờ đón trẻ buổi chiều theo quy định: <strong>15:30 – 16:30</strong>. Giáo viên chủ nhiệm sẽ ghi nhận thời gian đón, người đón và chụp ảnh xác nhận bàn giao ngay tại thời điểm phụ huynh đón bé.
+                                Khung giờ đón trẻ buổi chiều theo quy định: <strong>15:30 – 16:30</strong>. Giáo viên phụ trách sẽ ghi nhận thời gian đón, người đón và chụp ảnh xác nhận bàn giao ngay tại thời điểm phụ huynh đón bé.
                               </p>
                               <div className="pt-2 border-t border-blue-500/20 text-[11.5px] text-muted-foreground">
                                 Người được phép đón: <strong className="text-foreground">Phụ huynh chính thức (Bố, Mẹ)</strong> hoặc người có giấy ủy quyền đã duyệt.
@@ -1423,7 +1454,7 @@ export function ParentSchedulePage() {
                               <div className="col-span-2">
                                 <span className="text-muted-foreground text-[11px] block">Giáo viên bàn giao:</span>
                                 <span className="font-medium text-foreground">
-                                  {checkOut?.teacher || data?.primaryTeacher?.fullName || 'Cô Nguyễn Thị Mai (Giáo viên chủ nhiệm)'}
+                                  {checkOut?.teacher || data?.primaryTeacher?.fullName || 'Cô Nguyễn Thị Mai (Giáo viên phụ trách)'}
                                 </span>
                               </div>
                               {checkOut?.note && (

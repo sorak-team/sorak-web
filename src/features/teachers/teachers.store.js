@@ -107,6 +107,12 @@ function transformBackendTeacher(t) {
       ...ac,
       className: (ac.className || ac.class?.name || '').replace(/^Lớp\s+/i, '').trim(),
     })),
+    assignmentHistory: (t.assignmentHistory || []).map((h) => ({
+      ...h,
+      className: (h.className || '').replace(/^Lớp\s+/i, '').trim(),
+      assignedAtFormatted: h.assignedAt ? toDisplayDate(h.assignedAt) : '—',
+      leftAtFormatted: h.leftAt ? toDisplayDate(h.leftAt) : '—',
+    })),
   };
 }
 
@@ -232,76 +238,77 @@ export const useTeacherStore = create((set, get) => ({
     }),
 
   createTeacher: async (newTeacher) => {
-    // Call backend API
-    try {
-      const workStatus =
-        newTeacher.status === 'on_leave'
-          ? 'LEAVE_OF_ABSENCE'
-          : newTeacher.status === 'resigned'
-            ? 'RESIGNED'
-            : 'WORKING';
+    const workStatus =
+      newTeacher.status === 'on_leave'
+        ? 'LEAVE_OF_ABSENCE'
+        : newTeacher.status === 'resigned'
+          ? 'RESIGNED'
+          : 'WORKING';
 
-      await teachersApi.create({
-        employeeCode: newTeacher.employeeCode || `GV${String(Date.now()).slice(-4)}`,
-        fullName: newTeacher.fullName,
-        dateOfBirth: toIsoDate(newTeacher.dob),
-        gender: newTeacher.gender === 'Nam' ? 'MALE' : 'FEMALE',
-        citizenId: newTeacher.citizenId || `079${String(Date.now()).slice(-9)}`,
-        address: newTeacher.address || null,
-        position: newTeacher.role || 'Giáo viên',
-        workStatus,
-        startDate: toIsoDate(newTeacher.joinDate),
-        email: newTeacher.email,
-        phone: newTeacher.phone,
-        avatarUrl: newTeacher.avatar || undefined,
-      });
-    } catch (e) {
-      console.warn('API create teacher failed, keeping local:', e.message);
-    }
+    const res = await teachersApi.create({
+      employeeCode: newTeacher.employeeCode || undefined,
+      fullName: newTeacher.fullName,
+      dateOfBirth: toIsoDate(newTeacher.dob),
+      gender: newTeacher.gender === 'Nam' ? 'MALE' : 'FEMALE',
+      citizenId: newTeacher.citizenId || undefined,
+      address: newTeacher.address || null,
+      position: newTeacher.role || 'Giáo viên',
+      workStatus,
+      startDate: toIsoDate(newTeacher.joinDate),
+      email: newTeacher.email || undefined,
+      phone: newTeacher.phone || undefined,
+      avatarUrl: newTeacher.avatar || undefined,
+    });
 
-    const fullName = newTeacher.fullName || '';
-    const teacher = {
-      ...newTeacher,
-      id: String(Date.now()),
-      employeeCode: newTeacher.employeeCode || `GV${String(Date.now()).slice(-4)}`,
-      role: newTeacher.role || 'Giáo viên',
-      avatar: getTeacherAvatarUrl(newTeacher.avatar, fullName),
-    };
+    const created = res?.data || res;
+    const teacherData =
+      created && (created.id || created.publicId)
+        ? transformBackendTeacher(created)
+        : {
+            ...newTeacher,
+            id: String(Date.now()),
+            employeeCode: newTeacher.employeeCode || `CB${String(Date.now()).slice(-4)}`,
+            role: newTeacher.role || 'Giáo viên',
+            avatar: getTeacherAvatarUrl(newTeacher.avatar, newTeacher.fullName),
+          };
+
     set((state) => ({
-      teachers: [teacher, ...state.teachers],
+      teachers: [teacherData, ...state.teachers.filter((t) => t.id !== teacherData.id)],
       isDrawerOpen: false,
     }));
+    return teacherData;
   },
 
   updateTeacher: async (id, updatedFields) => {
-    try {
-      const payload = {};
-      if (updatedFields.fullName) payload.fullName = updatedFields.fullName;
-      if (updatedFields.dob) payload.dateOfBirth = toIsoDate(updatedFields.dob);
-      if (updatedFields.gender) payload.gender = updatedFields.gender === 'Nam' ? 'MALE' : 'FEMALE';
-      if (updatedFields.role) payload.position = updatedFields.role;
-      if (updatedFields.email) payload.email = updatedFields.email;
-      if (updatedFields.phone) payload.phone = updatedFields.phone;
-      if (updatedFields.citizenId) payload.citizenId = updatedFields.citizenId;
-      if (updatedFields.address) payload.address = updatedFields.address;
-      if (updatedFields.avatar !== undefined) payload.avatarUrl = updatedFields.avatar;
-      if (updatedFields.status) {
-        payload.workStatus =
-          updatedFields.status === 'on_leave'
-            ? 'LEAVE_OF_ABSENCE'
-            : updatedFields.status === 'resigned'
-              ? 'RESIGNED'
-              : 'WORKING';
-      }
-
-      await teachersApi.update(id, payload);
-    } catch (e) {
-      console.warn('API update teacher failed:', e.message);
+    const payload = {};
+    if (updatedFields.fullName) payload.fullName = updatedFields.fullName;
+    if (updatedFields.dob) payload.dateOfBirth = toIsoDate(updatedFields.dob);
+    if (updatedFields.gender) payload.gender = updatedFields.gender === 'Nam' ? 'MALE' : 'FEMALE';
+    if (updatedFields.role) payload.position = updatedFields.role;
+    if (updatedFields.email !== undefined) payload.email = updatedFields.email || null;
+    if (updatedFields.phone !== undefined) payload.phone = updatedFields.phone || null;
+    if (updatedFields.citizenId) payload.citizenId = updatedFields.citizenId;
+    if (updatedFields.address !== undefined) payload.address = updatedFields.address || null;
+    if (updatedFields.avatar !== undefined) payload.avatarUrl = updatedFields.avatar;
+    if (updatedFields.status) {
+      payload.workStatus =
+        updatedFields.status === 'on_leave'
+          ? 'LEAVE_OF_ABSENCE'
+          : updatedFields.status === 'resigned'
+            ? 'RESIGNED'
+            : 'WORKING';
     }
+
+    const res = await teachersApi.update(id, payload);
+    const updated = res?.data || res;
 
     set((state) => ({
       teachers: state.teachers.map((t) =>
-        t.id === id ? { ...t, ...updatedFields } : t,
+        t.id === id || (t.publicId && t.publicId === id)
+          ? updated && (updated.id || updated.publicId)
+            ? transformBackendTeacher(updated)
+            : { ...t, ...updatedFields }
+          : t,
       ),
       isDrawerOpen: false,
       editingTeacherId: null,
@@ -309,14 +316,9 @@ export const useTeacherStore = create((set, get) => ({
   },
 
   deleteTeacher: async (id) => {
-    try {
-      await teachersApi.delete(id);
-    } catch (e) {
-      console.warn('API delete teacher failed:', e.message);
-    }
-
+    await teachersApi.delete(id);
     set((state) => ({
-      teachers: state.teachers.filter((t) => t.id !== id),
+      teachers: state.teachers.filter((t) => t.id !== id && t.publicId !== id),
       isDeleteDialogOpen: false,
       deletingTeacherId: null,
     }));

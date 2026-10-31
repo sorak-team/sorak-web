@@ -30,6 +30,7 @@ import { AttendanceCheckInPanel, ChildDismissalPanel } from '@/features/attendan
 import { WeeklyAssessmentPanel } from '@/features/assessment/components/WeeklyAssessmentPanel';
 import { HealthMeasurementPanel } from '@/features/health/components/HealthMeasurementPanel';
 import { useAcademicYearStore } from '@/features/academic-years';
+import { useAuthStore } from '@/features/auth';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -43,6 +44,12 @@ export function DailyRoutinePage() {
   const isVi = (i18n?.language || 'vi').startsWith('vi');
   const { id } = useParams();
   const [searchParams] = useSearchParams();
+
+  const currentUser = useAuthStore((state) => state.user);
+  const isBgh = useMemo(() => {
+    const r = String(currentUser?.role || '').toUpperCase();
+    return r === 'PRINCIPAL_BGH' || r === 'PRINCIPAL' || r === 'VICE_PRINCIPAL' || r.includes('BGH') || r.includes('PRINCIPAL');
+  }, [currentUser]);
 
   const classes = useClassesStore((state) => state.classes) || [];
   const attachedClassId = useClassesStore((state) => state.attachedClassId);
@@ -260,18 +267,6 @@ export function DailyRoutinePage() {
   const handleSelectSlot = (slot, day) => {
     if (day?.isLocked) return;
     const resolvedFullDate = slot.fullDate || day?.fullDate;
-    const slotKey = slot.routineSlot || slot.routine_slot || slot.slotKey;
-
-    // Trả trẻ / Đón trẻ slot -> Mở thẳng Drawer ngày ở Tab Đón trẻ
-    if (slotKey === 'RETURN_CHILD' || (slot.title && slot.title.includes('Trả trẻ'))) {
-      const targetDay = day || currentDays.find((d) => d.key === (slot.dayKey || slot.day));
-      if (targetDay) {
-        handleSelectDay(targetDay, 'dismissal');
-      } else {
-        setDayTab('dismissal');
-      }
-      return;
-    }
 
     setActiveSlot({
       ...slot,
@@ -552,19 +547,23 @@ export function DailyRoutinePage() {
     }
 
     const weekDayKey = `${activeWeekObj.id}-${day.key}`;
-    const isToday = !isOutsideAcademicYear && Boolean(fullIsoDate ? fullIsoDate === todayIsoStr : (activeWeekObj?.isCurrentWeek && day.key === 'T4'));
+    const isWeekend = day.key === 'T7' || day.key === 'CN';
+    const isWeekendLocked = isWeekend && !hasWeekendSlots;
+    const isDayLocked = isOutsideAcademicYear || isWeekendLocked;
+
+    const isToday = Boolean(fullIsoDate ? fullIsoDate === todayIsoStr : (activeWeekObj?.isCurrentWeek && day.key === 'T4'));
     const isFuture = Boolean(fullIsoDate ? fullIsoDate > todayIsoStr : (selectedWeekIdx > currentWeekIdx));
 
     // Trạng thái điểm danh thật từ DB:
     // 1. Kiểm tra override nếu người dùng vừa bấm lưu trong phiên này
     // 2. Nếu lớp không có học sinh (ví dụ Nhà trẻ 2) -> luôn là false, không điểm danh
-    // 3. Nếu ngày trong tương lai (isFuture) hoặc ngoài năm học (isOutsideAcademicYear) -> luôn là false, không thể có điểm danh trước
+    // 3. Nếu ngày trong tương lai (isFuture) hoặc bị khóa (isDayLocked) -> luôn là false, không thể có điểm danh trước
     // 4. Nếu lớp có học sinh -> kiểm tra xem ngày đó có bản ghi điểm danh thật trong database hay không (data.attendanceDays)
     const hasStudents = (data?.classInfo?.studentCount ?? students.length) > 0;
     let isAttendanceRecorded = false;
     if (attendanceOverrides[weekDayKey] !== undefined) {
       isAttendanceRecorded = attendanceOverrides[weekDayKey];
-    } else if (!hasStudents || isFuture || isOutsideAcademicYear) {
+    } else if (!hasStudents || isFuture || isDayLocked) {
       isAttendanceRecorded = false;
     } else if (data?.attendanceDays && fullIsoDate) {
       isAttendanceRecorded = Boolean(data.attendanceDays[fullIsoDate]);
@@ -573,7 +572,7 @@ export function DailyRoutinePage() {
     let isHealthRecorded = false;
     if (healthOverrides[weekDayKey] !== undefined) {
       isHealthRecorded = healthOverrides[weekDayKey];
-    } else if (!hasStudents || isFuture || isOutsideAcademicYear) {
+    } else if (!hasStudents || isFuture || isDayLocked) {
       isHealthRecorded = false;
     } else if (data?.healthDays && fullIsoDate) {
       isHealthRecorded = Boolean(data.healthDays[fullIsoDate]);
@@ -582,7 +581,7 @@ export function DailyRoutinePage() {
     let isDismissalRecorded = false;
     if (fullIsoDate && dismissalOverrides[fullIsoDate] !== undefined) {
       isDismissalRecorded = dismissalOverrides[fullIsoDate];
-    } else if (!hasStudents || isFuture || isOutsideAcademicYear) {
+    } else if (!hasStudents || isFuture || isDayLocked) {
       isDismissalRecorded = false;
     } else if (data?.dismissalDays && fullIsoDate) {
       isDismissalRecorded = Boolean(data.dismissalDays[fullIsoDate]);
@@ -590,8 +589,11 @@ export function DailyRoutinePage() {
       isDismissalRecorded = Boolean(recordedDismissalDays[day.key]);
     }
 
+    const normalizedDayName = t(`days.${day.key}.name`, day.name);
+
     return {
       ...day,
+      name: normalizedDayName,
       date: formattedDate,
       fullDate: fullIsoDate,
       isToday,
@@ -599,9 +601,108 @@ export function DailyRoutinePage() {
       isAttendanceRecorded,
       isHealthRecorded,
       isDismissalRecorded,
-      isLocked: isOutsideAcademicYear,
+      isLocked: isDayLocked,
+      lockLabel: isWeekendLocked ? 'Ngày nghỉ' : 'Khóa',
     };
   });
+
+  // Tìm thông tin ngày hôm nay (trong tuần hiện tại hoặc fallback ngày thực tế)
+  const todayDay = useMemo(() => {
+    const inCurrent = currentDays.find((d) => d.isToday);
+    if (inCurrent) return inCurrent;
+
+    const dayNames = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+    const dayKeys = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+    const dayOfWeek = now.getDay();
+    const todayKey = dayKeys[dayOfWeek] || 'T6';
+    const dayName = t(`days.${todayKey}.name`, dayNames[dayOfWeek] || 'Thứ Sáu');
+    const formattedDate = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}`;
+    const fullDate = todayIsoStr;
+
+    const dt = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const isOutsideAcademicYear = dt < academicStartCutoff || dt > academicEndCutoff;
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    const isLocked = isOutsideAcademicYear || (isWeekend && !hasWeekendSlots);
+
+    return {
+      key: todayKey,
+      name: dayName,
+      date: formattedDate,
+      fullDate,
+      isToday: true,
+      isFuture: false,
+      isAttendanceRecorded: Boolean(data?.attendanceDays?.[fullDate]),
+      isHealthRecorded: Boolean(data?.healthDays?.[fullDate]),
+      isDismissalRecorded: Boolean(data?.dismissalDays?.[fullDate]),
+      isLocked,
+      lockLabel: isWeekend && !hasWeekendSlots ? 'Ngày nghỉ' : 'Khóa',
+    };
+  }, [currentDays, data, todayIsoStr, now, academicStartCutoff, academicEndCutoff, hasWeekendSlots, t]);
+
+  const isTodayLocked = Boolean(todayDay?.isLocked);
+
+  // Sĩ số và các chỉ số tức thì của hôm nay (Điểm danh, Đón trẻ, Sức khỏe)
+  const todayMetrics = useMemo(() => {
+    const totalStudents = data?.classInfo?.studentCount ?? students.length ?? 0;
+    const isAttDone = Boolean(todayDay?.isAttendanceRecorded);
+    const isDisDone = Boolean(todayDay?.isDismissalRecorded);
+    const isHlthDone = Boolean(todayDay?.isHealthRecorded);
+
+    const presentCount = isAttDone
+      ? (data?.stats?.presentCount ?? students.filter((s) => s.status === 'PRESENT').length ?? totalStudents)
+      : 0;
+    const absentCount = totalStudents > 0 && isAttDone ? Math.max(0, totalStudents - presentCount) : 0;
+
+    const dismissedCount = isDisDone
+      ? presentCount
+      : (data?.stats?.dismissedCount ?? students.filter((s) => s.status === 'PRESENT' && s.checkOutTime).length ?? 0);
+    const remainingCount = isAttDone ? Math.max(0, presentCount - dismissedCount) : 0;
+
+    const healthCount = isHlthDone
+      ? (data?.stats?.healthCount ?? students.filter((s) => s.height || s.weight || s.healthNote).length ?? totalStudents)
+      : 0;
+    const healthAttentionCount = students.filter((s) => s.healthNote && s.healthNote.trim()).length;
+
+    let classStatus = 'NOT_STARTED';
+    if (isTodayLocked) {
+      classStatus = 'LOCKED';
+    } else if (isDisDone || (isAttDone && presentCount > 0 && remainingCount === 0)) {
+      classStatus = 'COMPLETED';
+    } else if (isAttDone) {
+      if (dismissedCount > 0) {
+        classStatus = 'DISMISSING';
+      } else {
+        const curHour = now.getHours();
+        const curMin = now.getMinutes();
+        const isPickupTime = curHour > 15 || (curHour === 15 && curMin >= 30);
+        classStatus = isPickupTime ? 'DISMISSING' : 'IN_PROGRESS';
+      }
+    }
+
+    return {
+      totalStudents,
+      isAttDone,
+      presentCount,
+      absentCount,
+      isDisDone,
+      dismissedCount,
+      remainingCount,
+      isHlthDone,
+      healthCount,
+      healthAttentionCount,
+      classStatus,
+    };
+  }, [data, students, todayDay, now, isTodayLocked]);
+
+  const handleOpenTodayTab = (tab = 'attendance') => {
+    if (isTodayLocked) return;
+    if (!activeWeekObj?.isCurrentWeek) {
+      handleGoToCurrentWeek();
+    }
+    if (todayDay) {
+      handleSelectDay(todayDay, tab);
+    }
+  };
 
   // Danh sách các hoạt động trong cùng ngày của slot đang mở, sắp xếp theo trình tự thời gian và thứ tự thực hiện
   const activeDaySlots = useMemo(() => {
@@ -821,6 +922,182 @@ export function DailyRoutinePage() {
         </div>
       </div>
 
+      {/* 1.1 Thanh tổng quan hôm nay (Today's Pulse Strip: Tinh gọn, chuyên nghiệp, gắn liền với nhịp vận hành) */}
+      <div className="flex flex-wrap items-center justify-between gap-3 px-3.5 py-2 border border-border bg-card text-[12.5px] rounded-none select-none shadow-2xs">
+        {/* Khối bên trái: Hôm nay & Trạng thái hoạt động */}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="flex items-center gap-2 font-medium text-foreground">
+            <span
+              className={cn(
+                'size-2 rounded-full shrink-0',
+                isTodayLocked
+                  ? 'bg-muted-foreground/35'
+                  : todayMetrics.classStatus === 'COMPLETED'
+                  ? 'bg-emerald-500'
+                  : 'bg-[#1447e6] animate-pulse'
+              )}
+            />
+            <span className="text-[13px] font-semibold tracking-tight text-foreground">
+              {todayDay ? `${todayDay.name}, ${todayDay.date}` : `Hôm nay, ${pad(now.getDate())}/${pad(now.getMonth() + 1)}`}
+            </span>
+          </div>
+
+          <span
+            className={cn(
+              'text-[11px] px-2 py-0.5 border rounded-none whitespace-nowrap select-none font-medium',
+              isTodayLocked
+                ? 'bg-muted/75 text-muted-foreground border-border/80 font-normal'
+                : todayMetrics.classStatus === 'COMPLETED'
+                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200/90 dark:border-emerald-800/60'
+                : todayMetrics.classStatus === 'DISMISSING'
+                ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200/90 dark:border-amber-800/60'
+                : todayMetrics.classStatus === 'IN_PROGRESS'
+                ? 'bg-blue-50 text-[#1447e6] dark:bg-blue-950/40 dark:text-blue-300 border-blue-200/90 dark:border-blue-800/60'
+                : 'bg-muted/75 text-muted-foreground border-border font-normal'
+            )}
+          >
+            {isTodayLocked
+              ? (todayDay?.lockLabel || t('planning.locked', 'Đã khóa'))
+              : todayMetrics.classStatus === 'COMPLETED'
+              ? t('daily.statusClassCompleted', 'Đã kết thúc lớp')
+              : todayMetrics.classStatus === 'DISMISSING'
+              ? t('daily.statusDismissing', 'Đang đón trẻ')
+              : todayMetrics.classStatus === 'IN_PROGRESS'
+              ? t('daily.statusInProgress', 'Đang học ở lớp')
+              : t('daily.statusNotStarted', 'Chưa điểm danh')}
+          </span>
+        </div>
+
+        {/* Khối ở giữa: Segmented Metric Group (Thống nhất, phân tách bằng đường kẻ, tinh tế) */}
+        <div
+          className={cn(
+            'inline-flex items-center border border-border divide-x divide-border bg-background shadow-2xs rounded-none overflow-hidden',
+            isTodayLocked && 'opacity-60'
+          )}
+        >
+          {/* 1. Điểm danh / Sĩ số */}
+          <button
+            type="button"
+            disabled={isTodayLocked}
+            onClick={() => !isTodayLocked && handleOpenTodayTab('attendance')}
+            className={cn(
+              'inline-flex items-center gap-2 px-3 py-1.5 text-[12px] transition-colors',
+              isTodayLocked
+                ? 'cursor-not-allowed text-muted-foreground pointer-events-none'
+                : 'hover:bg-muted/60 cursor-pointer text-foreground'
+            )}
+            title={isTodayLocked ? t('daily.lockedDayTooltip', 'Ngày đã khóa') : t('attendance.quickCheckInTooltip', 'Nhấp để xem hoặc điểm danh hôm nay')}
+          >
+            <HugeiconsIcon icon={TaskDone01Icon} size={14} className="text-muted-foreground shrink-0" />
+            <span className="text-muted-foreground text-[11.5px] font-medium">{t('attendance.title', 'Điểm danh')}:</span>
+            {isTodayLocked ? (
+              <span className="text-muted-foreground/60">—</span>
+            ) : todayMetrics.isAttDone ? (
+              <span className="font-medium text-foreground tabular-nums">
+                {todayMetrics.presentCount}/{todayMetrics.totalStudents} <span className="font-normal text-muted-foreground">{t('attendance.presentUnit', 'có mặt')}</span>
+                {todayMetrics.absentCount > 0 && (
+                  <span className="ml-1 text-[11px] text-rose-600 dark:text-rose-400 font-medium">({todayMetrics.absentCount} {t('attendance.absentUnit', 'vắng')})</span>
+                )}
+              </span>
+            ) : (
+              <span className="text-muted-foreground font-normal">{t('attendance.notRecordedYet', 'Chưa điểm danh')}</span>
+            )}
+          </button>
+
+          {/* 2. Đón trẻ */}
+          <button
+            type="button"
+            disabled={isTodayLocked}
+            onClick={() => !isTodayLocked && handleOpenTodayTab('dismissal')}
+            className={cn(
+              'inline-flex items-center gap-2 px-3 py-1.5 text-[12px] transition-colors',
+              isTodayLocked
+                ? 'cursor-not-allowed text-muted-foreground pointer-events-none'
+                : 'hover:bg-muted/60 cursor-pointer text-foreground'
+            )}
+            title={isTodayLocked ? t('daily.lockedDayTooltip', 'Ngày đã khóa') : t('attendance.quickDismissalTooltip', 'Nhấp để xem hoặc ghi nhận đón trẻ hôm nay')}
+          >
+            <HugeiconsIcon icon={Door01Icon} size={14} className="text-muted-foreground shrink-0" />
+            <span className="text-muted-foreground text-[11.5px] font-medium">{t('attendance.tabDismissal', 'Đón trẻ')}:</span>
+            {isTodayLocked ? (
+              <span className="text-muted-foreground/60">—</span>
+            ) : todayMetrics.classStatus === 'COMPLETED' ? (
+              <span className="font-medium text-emerald-700 dark:text-emerald-400 tabular-nums">
+                {t('attendance.allDismissedDone', 'Đã đón hết')} ({todayMetrics.dismissedCount}/{todayMetrics.presentCount})
+              </span>
+            ) : todayMetrics.isAttDone ? (
+              <span className="font-medium text-foreground tabular-nums">
+                {todayMetrics.dismissedCount}/{todayMetrics.presentCount} <span className="font-normal text-muted-foreground">{t('attendance.dismissedUnit', 'đã về')}</span>
+                {todayMetrics.remainingCount > 0 && (
+                  <span className="ml-1 text-[11px] text-amber-700 dark:text-amber-400 font-medium">({t('attendance.remainingUnit', 'còn')} {todayMetrics.remainingCount})</span>
+                )}
+              </span>
+            ) : (
+              <span className="text-muted-foreground font-normal">{t('attendance.waitingAttendance', 'Chờ điểm danh')}</span>
+            )}
+          </button>
+
+          {/* 3. Sức khỏe */}
+          <button
+            type="button"
+            disabled={isTodayLocked}
+            onClick={() => !isTodayLocked && handleOpenTodayTab('health')}
+            className={cn(
+              'inline-flex items-center gap-2 px-3 py-1.5 text-[12px] transition-colors',
+              isTodayLocked
+                ? 'cursor-not-allowed text-muted-foreground pointer-events-none'
+                : 'hover:bg-muted/60 cursor-pointer text-foreground'
+            )}
+            title={isTodayLocked ? t('daily.lockedDayTooltip', 'Ngày đã khóa') : t('health.quickHealthTooltip', 'Nhấp để xem hoặc cập nhật sức khỏe hôm nay')}
+          >
+            <HugeiconsIcon icon={MedicalFileIcon} size={14} className="text-muted-foreground shrink-0" />
+            <span className="text-muted-foreground text-[11.5px] font-medium">{t('health.title', 'Sức khỏe')}:</span>
+            {isTodayLocked ? (
+              <span className="text-muted-foreground/60">—</span>
+            ) : todayMetrics.healthAttentionCount > 0 ? (
+              <span className="font-medium text-amber-700 dark:text-amber-400">
+                {todayMetrics.healthAttentionCount} {t('health.needAttentionUnit', 'bé cần lưu ý')}
+              </span>
+            ) : todayMetrics.isHlthDone ? (
+              <span className="font-medium text-foreground tabular-nums">
+                {todayMetrics.healthCount}/{todayMetrics.totalStudents} <span className="font-normal text-muted-foreground">{t('health.checkedUnit', 'đã kiểm tra')}</span>
+              </span>
+            ) : (
+              <span className="text-muted-foreground font-normal">{t('health.notRecordedYet', 'Chưa ghi nhận')}</span>
+            )}
+          </button>
+        </div>
+
+        {/* Khối bên phải: Nút thao tác mở nhật ký hôm nay */}
+        <div className="flex items-center gap-2">
+          {!activeWeekObj?.isCurrentWeek && !isTodayLocked && (
+            <span className="text-[11.5px] text-muted-foreground hidden xl:inline">
+              ({t('daily.viewingOtherWeek', 'Đang xem tuần khác')})
+            </span>
+          )}
+          {isTodayLocked ? (
+            <button
+              type="button"
+              disabled
+              className="inline-flex items-center gap-1.5 px-3 h-8 text-[12px] font-medium bg-muted/60 text-muted-foreground/45 border border-border/80 rounded-none cursor-not-allowed select-none shadow-none"
+              title={t('daily.todayLockedTooltip', 'Hôm nay đã bị khóa (ngày nghỉ hoặc ngoài năm học)')}
+            >
+              <span>{t('daily.openTodayJournal', 'Nhật ký hôm nay')}</span>
+              <HugeiconsIcon icon={ArrowRight02Icon} size={13} className="opacity-30" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => handleOpenTodayTab()}
+              className="inline-flex items-center gap-1.5 px-3.5 h-8 text-[12px] font-medium bg-[#1447e6] hover:bg-[#1447e6]/90 text-white rounded-none transition-colors cursor-pointer shadow-2xs select-none active:scale-[0.98]"
+            >
+              <span>{t('daily.openTodayJournal', 'Mở nhật ký hôm nay')}</span>
+              <HugeiconsIcon icon={ArrowRight02Icon} size={13} />
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* 2. Main Workspace: Full-width Timetable Grid (Không trùng lặp header bar) */}
       <TeacherTimetableGrid
         title={t('planning.tabTimetable', 'Thời khoá biểu')}
@@ -830,6 +1107,7 @@ export function DailyRoutinePage() {
         activeSlotId={activeSlot?.id}
         activeDayKey={activeDay?.key}
         mode="daily"
+        readOnly={isBgh}
         onSelectSlot={handleSelectSlot}
         onSelectDay={handleSelectDay}
         hideHeader={true}
@@ -837,70 +1115,60 @@ export function DailyRoutinePage() {
         onToggleWeekend={handleToggleWeekend}
       />
 
-      {/* 2.1 Hướng dẫn thao tác nhanh & Chú thích trạng thái (Gọn gàng, sạch sẽ đồng bộ với Kế hoạch tuần) */}
-      <div className="border border-border/80 bg-card/60 p-3.5 rounded-none select-none text-[12px] space-y-3">
-        <div className="flex items-center justify-between pb-2 border-b border-border/60 text-foreground font-medium text-[12.5px] flex-wrap gap-2">
-          <div className="flex items-center gap-2">
+      {/* 2.1 Chú thích trạng thái & Hướng dẫn thao tác (Gọn gàng, tinh tế, chuyên nghiệp) */}
+      <div className="border border-border/80 bg-card/60 px-4 py-2.5 rounded-none select-none text-[12px] flex flex-wrap items-center justify-between gap-x-6 gap-y-2.5">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          {/* Nhãn chú thích */}
+          <div className="flex items-center gap-1.5 text-foreground font-medium text-[12px] shrink-0">
             <Info className="size-3.5 text-muted-foreground shrink-0" />
-            <span>{t('daily.guideTitle', 'Hướng dẫn thao tác & Chú thích trạng thái nhật ký ngày')}</span>
+            <span>{t('daily.legendLabel', 'Chú thích:')}</span>
           </div>
-          <span className="text-[11px] font-normal text-muted-foreground select-none">
-            {t('planning.switchWeekKeyHint', 'Chuyển tuần: phím')} <kbd className="px-1.5 py-0.5 bg-muted border border-border text-[10.5px] font-mono text-foreground font-medium">←</kbd> / <kbd className="px-1.5 py-0.5 bg-muted border border-border text-[10.5px] font-mono text-foreground font-medium">→</kbd>
-          </span>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-muted-foreground">
-          {/* Cột 1: Điểm danh, Sức khỏe & Đón trẻ (Cột Thứ) */}
-          <div className="bg-muted/15 p-2.5 border border-border/50 space-y-2 flex flex-col justify-between">
-            <div className="space-y-1">
-              <div className="font-medium text-foreground text-[12px]">
-                {t('daily.attendanceHealthColTitle', '1. Điểm danh, Sức khỏe & Đón trẻ (Cột Thứ)')}
+          {/* Cột Thứ: Điểm danh & Đón */}
+          <div className="flex items-center gap-2 flex-wrap" title={t('daily.attendanceHealthTooltip', 'Nhấp tiêu đề cột Thứ để xem điểm danh, sức khoẻ hoặc đón trẻ')}>
+            <span className="text-[11.5px] text-muted-foreground font-medium">
+              {t('daily.colHeaderShort', 'Cột Thứ:')}
+            </span>
+            <div className="inline-flex items-center gap-1.5 flex-wrap">
+              <div className="flex items-center justify-center px-2 py-0.5 bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-[11px] shadow-2xs whitespace-nowrap">
+                <span className="font-medium text-[#1447e6] dark:text-blue-400">{t('daily.badgeToday', 'Hôm nay')}</span>
               </div>
-              <p className="text-[11.5px] leading-relaxed">
-                {t('daily.attendanceHealthColDesc', 'Nhấp tiêu đề cột Thứ (T2 – T6) hoặc ô tiết Trả trẻ để mở sổ điểm danh, theo dõi sức khỏe và quản lý đón trẻ:')}
-              </p>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-0.5">
-              <div className="flex items-center justify-center px-2 py-1 bg-card border border-border/70 border-t-2 !border-t-foreground text-[11px] shadow-2xs whitespace-nowrap">
-                <span className="font-semibold text-foreground">{t('daily.badgeToday', 'Hôm nay')}</span>
+              <div className="flex items-center justify-center px-2 py-0.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200/90 dark:border-amber-800/60 text-[11px] shadow-2xs whitespace-nowrap">
+                <span className="font-medium text-amber-700 dark:text-amber-300">{t('daily.badgeAttendanceDone', 'Đã điểm danh')}</span>
               </div>
-              <div className="flex items-center justify-center px-2 py-1 bg-card border border-border/70 border-t-2 !border-t-[#1447e6] text-[11px] shadow-2xs whitespace-nowrap">
-                <span className="font-medium text-[#1447e6] dark:text-blue-400">{t('daily.badgeAttendanceDone', 'Đã điểm danh')}</span>
+              <div className="flex items-center justify-center px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/90 dark:border-emerald-800/60 text-[11px] shadow-2xs whitespace-nowrap">
+                <span className="font-medium text-emerald-700 dark:text-emerald-300">{t('daily.badgeDismissalDone', 'Đã đón')}</span>
               </div>
-              <div className="flex items-center justify-center px-2 py-1 bg-card border border-border/70 border-t-2 !border-t-emerald-600 text-[11px] shadow-2xs whitespace-nowrap">
-                <span className="font-medium text-emerald-700 dark:text-emerald-400">{t('daily.badgeDismissalDone', 'Đã đón trẻ')}</span>
-              </div>
-              <div className="flex items-center justify-center px-2 py-1 bg-card border border-border/70 text-[11px] shadow-2xs whitespace-nowrap">
-                <span className="text-muted-foreground">{t('daily.badgeNotStarted', 'Chưa bắt đầu')}</span>
+              <div className="flex items-center justify-center px-2 py-0.5 bg-muted/75 border border-border/70 text-[11px] shadow-2xs whitespace-nowrap">
+                <span className="text-muted-foreground">{t('daily.badgeNotStarted', 'Chưa điểm danh')}</span>
               </div>
             </div>
           </div>
 
-          {/* Cột 2: Bài dạy & Đánh giá (Gộp trạng thái tiết & thao tác đánh giá) */}
-          <div className="bg-muted/15 p-2.5 border border-border/50 space-y-2 flex flex-col justify-between">
-            <div className="space-y-1">
-              <div className="font-medium text-foreground text-[12px]">
-                {t('daily.lessonEvalColTitle', '2. Bài dạy & Đánh giá tiết học (Thẻ hoạt động)')}
-              </div>
-              <p className="text-[11.5px] leading-relaxed">
-                {t('daily.lessonEvalColDesc', 'Nhấp vào thẻ tiết học để xem giáo án chi tiết và đánh giá trẻ. Viền màu bên trái thể hiện:')}
-              </p>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-0.5">
-              <div className="flex items-center justify-center gap-1 px-2 py-1 bg-card border border-border/70 border-l-2 !border-l-emerald-600 text-[11px] shadow-2xs whitespace-nowrap">
+          {/* Phân cách */}
+          <div className="hidden lg:block h-3.5 w-px bg-border/80" />
+
+          {/* Thẻ tiết học: Đánh giá */}
+          <div className="flex items-center gap-2 flex-wrap" title={t('daily.lessonEvalTooltip', 'Nhấp vào thẻ tiết học để xem giáo án chi tiết và đánh giá trẻ')}>
+            <span className="text-[11.5px] text-muted-foreground font-medium">
+              {t('daily.lessonSlotShort', 'Tiết học:')}
+            </span>
+            <div className="inline-flex items-center gap-1.5 flex-wrap">
+              <div className="flex items-center justify-center px-2 py-0.5 bg-emerald-500/[0.07] dark:bg-emerald-950/30 border border-emerald-600/30 border-l-2 !border-l-emerald-600 text-[11px] shadow-2xs whitespace-nowrap">
                 <span className="font-medium text-foreground">{t('daily.badgeEvaluated', 'Đã đánh giá')}</span>
               </div>
-              <div className="flex items-center justify-center gap-1 px-2 py-1 bg-card border border-border/70 border-l-2 !border-l-amber-500 text-[11px] shadow-2xs whitespace-nowrap">
-                <span className="font-medium text-foreground">{t('daily.badgeRescheduled', 'Đổi lịch')}</span>
-              </div>
-              <div className="flex items-center justify-center gap-1 px-2 py-1 bg-card border border-border/70 border-l-2 !border-l-rose-500 text-[11px] shadow-2xs whitespace-nowrap">
-                <span className="font-medium text-foreground">{t('daily.badgeCancelled', 'Đã hủy')}</span>
-              </div>
-              <div className="flex items-center justify-center gap-1 px-2 py-1 bg-card border border-border/70 text-[11px] shadow-2xs whitespace-nowrap">
+              <div className="flex items-center justify-center px-2 py-0.5 bg-card border border-border/70 text-[11px] shadow-2xs whitespace-nowrap">
                 <span className="text-muted-foreground">{t('daily.badgeNotEvaluated', 'Chưa đánh giá')}</span>
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Phím tắt chuyển tuần */}
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground shrink-0">
+          <span>{t('planning.switchWeekKeyHint', 'Chuyển tuần: phím')}</span>
+          <kbd className="px-1.5 py-0.5 bg-muted border border-border text-[10.5px] font-mono text-foreground font-medium">←</kbd>
+          <kbd className="px-1.5 py-0.5 bg-muted border border-border text-[10.5px] font-mono text-foreground font-medium">→</kbd>
         </div>
       </div>
 
@@ -1117,31 +1385,21 @@ export function DailyRoutinePage() {
                     'pb-2.5 px-1 font-medium border-b-2 transition-colors flex items-center gap-2 -mb-[1px]',
                     !activeDay?.isAttendanceRecorded
                       ? 'border-transparent text-muted-foreground/35 cursor-not-allowed'
-                      : activeDay?.isDismissalRecorded
-                      ? dayTab === 'dismissal'
-                        ? 'border-emerald-600 text-emerald-700 dark:text-emerald-400 font-semibold cursor-pointer'
-                        : 'border-transparent text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 font-medium cursor-pointer'
                       : dayTab === 'dismissal'
-                      ? 'border-primary text-foreground font-semibold cursor-pointer'
-                      : 'border-transparent text-muted-foreground hover:text-foreground cursor-pointer'
+                        ? 'border-primary text-foreground font-semibold cursor-pointer'
+                        : 'border-transparent text-muted-foreground hover:text-foreground cursor-pointer'
                   )}
                   title={
                     !activeDay?.isAttendanceRecorded
                       ? t('attendance.dismissalDisabledHint', 'Cần hoàn thành điểm danh ngày này trước khi đón trẻ')
-                      : activeDay?.isDismissalRecorded
-                      ? (isVi ? 'Đã hoàn thành đón tất cả trẻ' : 'All children dismissed')
                       : undefined
                   }
                 >
                   <HugeiconsIcon
                     icon={Door01Icon}
                     size={15}
-                    className={cn(activeDay?.isDismissalRecorded && 'text-emerald-600 dark:text-emerald-400')}
                   />
                   <span>{t('attendance.tabDismissal', 'Đón trẻ')}</span>
-                  {activeDay?.isDismissalRecorded && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                  )}
                 </button>
               </div>
             </div>
@@ -1154,6 +1412,7 @@ export function DailyRoutinePage() {
                   date={activeDay?.fullDate || '2026-10-13'}
                   initialStudents={students}
                   isRecorded={Boolean(activeDay?.isAttendanceRecorded)}
+                  readOnly={isBgh}
                   onTabChange={setDayTab}
                   onClose={handleCloseDay}
                   onSaveSuccess={(updated) => {
@@ -1207,6 +1466,7 @@ export function DailyRoutinePage() {
                   date={activeDay?.fullDate || '2026-10-12'}
                   initialStudents={students}
                   isRecorded={Boolean(activeDay && (recordedHealthDays[activeDay.key] || activeDay.isHealthRecorded))}
+                  readOnly={isBgh}
                   onTabChange={setDayTab}
                   onClose={handleCloseDay}
                   onSaveSuccess={(updated) => {
@@ -1233,6 +1493,7 @@ export function DailyRoutinePage() {
                   key={`${targetClassId}-${activeDay?.fullDate || '2026-10-13'}-${dismissalRefreshKey}`}
                   classId={targetClassId}
                   date={activeDay?.fullDate || '2026-10-13'}
+                  readOnly={isBgh}
                   onTabChange={setDayTab}
                   onClose={handleCloseDay}
                   onDismissalChange={handleDismissalChange}
@@ -1435,6 +1696,7 @@ export function DailyRoutinePage() {
                   activityDetails={activeSlot}
                   initialStudents={students}
                   isEvaluated={isSlotAssessed}
+                  readOnly={isBgh}
                   tab={activityTab}
                   onTabChange={setActivityTab}
                   onClose={handleCloseSlot}

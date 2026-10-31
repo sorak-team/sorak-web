@@ -196,7 +196,7 @@ export function ParentRequestsPage() {
             variant="outline"
             onClick={() => {
               toast.info('Thông báo xin nghỉ học', {
-                description: 'Vui lòng liên hệ trực tiếp GVCN hoặc gửi tin nhắn để cập nhật lý do nghỉ.',
+                description: 'Vui lòng liên hệ trực tiếp giáo viên phụ trách hoặc gửi tin nhắn để cập nhật lý do nghỉ.',
               });
             }}
             className="h-8.5 px-3 rounded-none border border-border text-[13px] font-medium bg-background hover:bg-muted text-foreground cursor-pointer self-start sm:self-auto shrink-0 transition-colors"

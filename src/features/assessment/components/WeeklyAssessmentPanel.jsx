@@ -342,11 +342,14 @@ export function WeeklyAssessmentPanel({
         '',
       expectedAssessment:
         rawCriteria.expectedAssessment ||
+        rawCriteria.evaluation_criteria ||
         rawCriteria.evaluationCriteria ||
         rawCriteria.evaluation ||
-        slot?.evaluation ||
+        slot?.evaluation_criteria ||
         slot?.evaluationCriteria ||
+        slot?.evaluation ||
         slot?.expectedAssessment ||
+        activityDetails?.evaluation_criteria ||
         activityDetails?.evaluationCriteria ||
         activityDetails?.expectedAssessment ||
         '',
@@ -472,7 +475,7 @@ export function WeeklyAssessmentPanel({
                     {t('assessment.objectivesAndRequirements', 'Mục đích yêu cầu')}
                   </div>
                   <div className="text-foreground leading-relaxed font-normal">
-                    {criteria.objective || (isVi ? 'Trẻ hứng thú tham gia hoạt động, rèn luyện kỹ năng vận động và hình thành thói quen tốt.' : '—')}
+                    {criteria.objective || '—'}
                   </div>
                 </div>
                 <div className="border border-border/70 p-3.5 bg-card rounded-none">
@@ -480,7 +483,7 @@ export function WeeklyAssessmentPanel({
                     {t('assessment.teachingPreparation', 'Chuẩn bị học cụ & giáo cụ')}
                   </div>
                   <div className="text-foreground leading-relaxed font-normal">
-                    {criteria.preparation || (isVi ? 'Đồ dùng học cụ đầy đủ, phòng học sạch sẽ, an toàn cho trẻ.' : '—')}
+                    {criteria.preparation || '—'}
                   </div>
                 </div>
                 <div className="border border-border/70 p-3.5 bg-card rounded-none">
@@ -488,7 +491,7 @@ export function WeeklyAssessmentPanel({
                     {t('assessment.activityOrganization', 'Tổ chức hoạt động')}
                   </div>
                   <div className="text-foreground leading-relaxed font-normal whitespace-pre-line">
-                    {criteria.procedure || (isVi ? '1. Ổn định và trò chuyện gây hứng thú.\n2. Hướng dẫn trẻ thực hành trải nghiệm.\n3. Nhận xét, động viên và tuyên dương trẻ.' : '—')}
+                    {criteria.procedure || '—'}
                   </div>
                 </div>
                 <div className="border border-border/70 p-3.5 bg-card rounded-none">
@@ -496,7 +499,7 @@ export function WeeklyAssessmentPanel({
                     {t('assessment.expectedAssessment', 'Đánh giá dự kiến')}
                   </div>
                   <div className="text-foreground leading-relaxed font-normal">
-                    {criteria.expectedAssessment || (isVi ? '100% trẻ tham gia hào hứng và hoàn thành yêu cầu cơ bản của hoạt động.' : '—')}
+                    {criteria.expectedAssessment || '—'}
                   </div>
                 </div>
               </div>

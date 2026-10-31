@@ -283,7 +283,26 @@ export function ParentPortalShell() {
           onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           onOpenLinkChildModal={() => setIsLinkChildModalOpen(true)}
           onOpenActivitySheet={() => setIsActivitySheetOpen(true)}
-          linkedAccounts={linkedAccounts}
+          linkedAccounts={
+            homeData?.siblings && homeData.siblings.length > 0
+              ? homeData.siblings.map((s) => ({
+                  user: {
+                    id: s.id,
+                    identifier: s.studentCode || s.username,
+                    name: s.fullName,
+                    fullName: s.fullName,
+                    student: {
+                      id: s.id,
+                      fullName: s.fullName,
+                      studentCode: s.studentCode,
+                      className: s.className,
+                      avatarUrl: s.avatarUrl,
+                    },
+                    avatarUrl: s.avatarUrl,
+                  },
+                }))
+              : linkedAccounts
+          }
           onSwitchAccount={handleSwitchChild}
           onLogout={handleLogout}
           // Class Switcher props

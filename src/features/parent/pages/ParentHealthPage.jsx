@@ -4,17 +4,14 @@ import {
   Heart,
   Activity,
   AlertCircle,
-  CheckCircle2,
-  Calendar,
   User,
   ShieldCheck,
   Scale,
   Ruler,
-  Info,
-  Apple,
 } from 'lucide-react';
 import { parentApi } from '../api/parent.api';
 import { cn } from '@/shared/lib/utils';
+import { evaluateChildGrowth } from '@/features/students/components/WhoGrowthCharts';
 
 export function ParentHealthPage() {
   const [searchParams] = useSearchParams();
@@ -48,14 +45,34 @@ export function ParentHealthPage() {
   };
 
   const healthHistory = data?.healthHistory || [];
-  const latestHealth = healthHistory[0] || {
-    date: 'Chưa đo',
-    height: 97.8,
-    weight: 14.95,
-    bmi: 15.63,
-    bmiCategory: 'Bình thường',
-    notes: 'Bé phát triển chiều cao và cân nặng cân đối theo lứa tuổi.',
-    recordedBy: 'Trần Thị Mai (Y tế học đường)',
+  const hasHistory = healthHistory.length > 0;
+  const latestHealth = hasHistory
+    ? healthHistory[0]
+    : {
+        date: 'Chưa có số liệu',
+        height: '—',
+        weight: '—',
+        bmi: '—',
+        bmiCategory: 'Chưa có số đo',
+        notes: 'Chưa có bản ghi đo thể chất.',
+        recordedBy: '—',
+      };
+
+  const latestEvaluation = hasHistory
+    ? evaluateChildGrowth({
+        heightZ: latestHealth.heightZscore,
+        weightZ: latestHealth.weightZscore,
+        bmiZ: latestHealth.bmiZscore,
+      })
+    : null;
+
+  const isOverallGood =
+    latestEvaluation?.heightEvaluation?.color === 'emerald' &&
+    latestEvaluation?.weightEvaluation?.color === 'emerald';
+
+  const cleanNotes = (notes) => {
+    if (!notes) return 'Thể trạng phát triển bình thường.';
+    return notes.replace(/^Khám sức khỏe định kỳ\s+[^:]+:\s*/i, '');
   };
 
   if (loading) {
@@ -75,189 +92,160 @@ export function ParentHealthPage() {
       data-node-id="5298:27110"
       data-name="FE-06E · Phụ huynh · Hồ sơ sức khỏe & Thể chất"
     >
-      {/* 1. Header Action Toolbar (No redundant H1, clean subtitle on left, tags on right) */}
-      <div className="flex items-center justify-between gap-3 pb-2 shrink-0 flex-wrap sm:flex-nowrap">
+      {/* 1. Header Action Toolbar (Clean subtitle on left, latest date tag on right) */}
+      <div className="flex items-center justify-between gap-3 pb-1 shrink-0 flex-wrap sm:flex-nowrap">
         <span className="text-[12.5px] text-muted-foreground font-normal hidden sm:inline-block">
-          Theo dõi định kỳ chiều cao, cân nặng, chỉ số thể trọng BMI và tiền sử y tế học đường
+          Theo dõi định kỳ chiều cao, cân nặng và thể trạng của bé theo chuẩn mầm non
         </span>
 
-        {/* Right Info Tags */}
-        <div className="flex items-center gap-2 ml-auto shrink-0 flex-wrap sm:flex-nowrap">
-          <div className="h-8 px-2.5 text-[12px] font-mono border border-border bg-background text-foreground flex items-center rounded-none shadow-2xs">
+        {hasHistory && (
+          <div className="h-8 px-2.5 text-[12px] font-mono border border-border bg-background text-foreground flex items-center rounded-none shadow-2xs ml-auto">
             <span className="text-muted-foreground mr-1.5">Đo gần nhất:</span>
             <strong className="font-semibold">{latestHealth.date}</strong>
           </div>
-
-          <div className="h-8 px-2.5 text-[12px] font-medium border rounded-none flex items-center gap-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 shadow-2xs">
-            <CheckCircle2 className="size-3.5" />
-            <span>Chuẩn WHO (0 SD) · Phát triển tốt</span>
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* 2. Key Physical Metrics Strip (4 metrics with hairline dividers) */}
+      {/* 2. Key Physical Metrics Strip (Bỏ BMI - Tập trung Chuẩn Chiều cao & Chuẩn Cân nặng) */}
       <div className="border border-border bg-card shadow-xs grid grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-border overflow-hidden">
-        {/* Height Metric */}
+        {/* Metric 1: Chiều cao hiện tại */}
         <div className="p-3.5 flex flex-col justify-between gap-2 bg-card">
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-[11.5px] font-medium">Chiều cao hiện tại</span>
+            <span className="text-[11.5px]">Chiều cao hiện tại</span>
             <Ruler className="size-4 text-blue-500" />
           </div>
           <div className="flex items-baseline gap-1.5">
-            <span className="text-3xl font-bold font-mono text-foreground">
+            <span className="text-2xl sm:text-3xl font-bold font-mono text-foreground">
               {latestHealth.height}
             </span>
-            <span className="text-[13px] font-mono text-muted-foreground">cm</span>
+            {hasHistory && <span className="text-[12.5px] font-mono text-muted-foreground">cm</span>}
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="px-2 py-0.5 text-[10.5px] font-semibold border rounded-none bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
-              Chuẩn WHO (0 SD) · Cân đối
+          <div>
+            <span
+              className={cn(
+                'px-2 py-0.5 text-[10.5px] font-semibold border rounded-none inline-block',
+                latestEvaluation?.heightEvaluation?.badgeClass ||
+                  'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+              )}
+            >
+              {latestEvaluation?.heightEvaluation?.label || 'Đạt chuẩn'}
             </span>
           </div>
         </div>
 
-        {/* Weight Metric */}
+        {/* Metric 2: Cân nặng hiện tại */}
         <div className="p-3.5 flex flex-col justify-between gap-2 bg-card">
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-[11.5px] font-medium">Cân nặng hiện tại</span>
+            <span className="text-[11.5px]">Cân nặng hiện tại</span>
             <Scale className="size-4 text-emerald-500" />
           </div>
           <div className="flex items-baseline gap-1.5">
-            <span className="text-3xl font-bold font-mono text-foreground">
+            <span className="text-2xl sm:text-3xl font-bold font-mono text-foreground">
               {latestHealth.weight}
             </span>
-            <span className="text-[13px] font-mono text-muted-foreground">kg</span>
+            {hasHistory && <span className="text-[12.5px] font-mono text-muted-foreground">kg</span>}
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="px-2 py-0.5 text-[10.5px] font-semibold border rounded-none bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
-              Chuẩn WHO · Cân đối
+          <div>
+            <span
+              className={cn(
+                'px-2 py-0.5 text-[10.5px] font-semibold border rounded-none inline-block',
+                latestEvaluation?.weightEvaluation?.badgeClass ||
+                  'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+              )}
+            >
+              {latestEvaluation?.weightEvaluation?.label || 'Đạt chuẩn'}
             </span>
           </div>
         </div>
 
-        {/* BMI Metric */}
+        {/* Metric 3: Đánh giá thể lực chung (thay thế cho BMI) */}
         <div className="p-3.5 flex flex-col justify-between gap-2 bg-card">
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-[11.5px] font-medium">Chỉ số thể trọng BMI</span>
-            <Activity className="size-4 text-primary" />
+            <span className="text-[11.5px]">Thể lực chung</span>
+            <Heart className="size-4 text-rose-500" />
           </div>
           <div className="flex items-baseline gap-1.5">
-            <span className="text-3xl font-bold font-mono text-primary">
-              {latestHealth.bmi}
+            <span className="text-xl sm:text-2xl font-bold text-foreground">
+              {hasHistory ? (isOverallGood ? 'Phát triển tốt' : 'Cần theo dõi') : '—'}
             </span>
-            <span className="text-[12px] font-mono text-muted-foreground">kg/m²</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="px-2 py-0.5 text-[10.5px] font-semibold border rounded-none bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20">
-              {latestHealth.bmiCategory || 'Thể trạng bình thường'}
+          <div>
+            <span
+              className={cn(
+                'px-2 py-0.5 text-[10.5px] font-semibold border rounded-none inline-block',
+                isOverallGood
+                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                  : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20'
+              )}
+            >
+              {hasHistory
+                ? isOverallGood
+                  ? 'Chiều cao & Cân nặng đạt chuẩn'
+                  : 'Có chỉ số cần lưu ý'
+                : 'Chưa có dữ liệu'}
             </span>
           </div>
         </div>
 
-        {/* Evaluator Officer */}
+        {/* Metric 4: Giáo viên thực hiện đo */}
         <div className="p-3.5 flex flex-col justify-between gap-2 bg-card">
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-[11.5px] font-medium">Cán bộ y tế khám</span>
+            <span className="text-[11.5px]">Giáo viên thực hiện đo</span>
             <User className="size-4 text-muted-foreground" />
           </div>
-          <div className="flex flex-col">
-            <span className="text-[14px] font-bold text-foreground truncate">
-              {latestHealth.recordedBy || 'Y tế học đường'}
-            </span>
-            <span className="text-[11.5px] text-muted-foreground truncate">
-              Trạm Y tế Hòn Tre
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-xl sm:text-2xl font-bold text-foreground truncate">
+              {latestHealth.recordedBy || 'Phạm Hoàng Anh'}
             </span>
           </div>
-          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-            <Info className="size-3 text-muted-foreground shrink-0" />
-            <span>Kỳ khám định kỳ đợt 1</span>
+          <div>
+            <span className="px-2 py-0.5 text-[10.5px] font-semibold border rounded-none bg-muted text-muted-foreground border-border inline-block">
+              Đo thể chất định kỳ
+            </span>
           </div>
         </div>
       </div>
 
-      {/* 3. Medical Warnings & Allergy Notes (2-Column Unified Container) */}
+      {/* 3. Medical & Allergy Notes (Clean 2-Column Container) */}
       <div className="border border-border bg-card shadow-xs grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border overflow-hidden">
+        {/* Medical History */}
+        <div className="p-3.5 flex flex-col gap-2 bg-card">
+          <div className="flex items-center gap-2 pb-1.5 border-b border-border">
+            <ShieldCheck className="size-4 text-emerald-600" />
+            <span className="text-[13px] font-semibold text-foreground">
+              Tiền sử bệnh lý & Tình trạng sức khỏe
+            </span>
+          </div>
+          <p className="text-[12.5px] text-muted-foreground leading-relaxed">
+            {student.medicalNotes || 'Sức khỏe tổng quát tốt, tiêm chủng đầy đủ theo chương trình tiêm chủng mở rộng.'}
+          </p>
+        </div>
+
         {/* Allergy Box */}
-        <div className="p-3.5 flex flex-col justify-between gap-2.5 bg-card">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2 pb-2 border-b border-border">
-              <AlertCircle className="size-4 text-amber-500" />
-              <span className="text-[13px] font-bold text-foreground">
-                Dị ứng thực phẩm / Dị ứng thuốc
-              </span>
-            </div>
-            <p className="text-[12.5px] text-muted-foreground leading-relaxed">
-              {student.allergyNotes || 'Không ghi nhận dị ứng thức ăn hay thuốc.'}
-            </p>
+        <div className="p-3.5 flex flex-col gap-2 bg-card">
+          <div className="flex items-center gap-2 pb-1.5 border-b border-border">
+            <AlertCircle className="size-4 text-amber-500" />
+            <span className="text-[13px] font-semibold text-foreground">
+              Ghi nhận dị ứng thực phẩm & thuốc
+            </span>
           </div>
-          <div className="text-[11px] text-muted-foreground bg-muted/15 p-2.5 border border-border">
-            ℹ️ Nếu gia đình phát hiện bé có dị ứng mới, vui lòng thông báo ngay cho GVCN để nhà trường điều chỉnh thực đơn bán trú.
-          </div>
-        </div>
-
-        {/* Medical History Box */}
-        <div className="p-3.5 flex flex-col justify-between gap-2.5 bg-card">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2 pb-2 border-b border-border">
-              <ShieldCheck className="size-4 text-emerald-600" />
-              <span className="text-[13px] font-bold text-foreground">
-                Tiền sử bệnh lý & Tình trạng sức khỏe
-              </span>
-            </div>
-            <p className="text-[12.5px] text-muted-foreground leading-relaxed">
-              {student.medicalNotes || 'Sức khỏe tổng quát tốt, tiêm chủng đầy đủ theo chương trình tiêm chủng mở rộng.'}
-            </p>
-          </div>
-          <div className="text-[11px] text-muted-foreground bg-muted/15 p-2.5 border border-border">
-            🩺 Bé được kiểm tra thể lực, thị lực, tai mũi họng và răng miệng định kỳ vào đầu mỗi học kỳ.
-          </div>
-        </div>
-      </div>
-
-      {/* 4. Nutrition & Daily Activity Guidance (3-Column Strip) */}
-      <div className="border border-border bg-card shadow-xs grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-border overflow-hidden">
-        <div className="p-3.5 flex flex-col gap-1.5 bg-card">
-          <div className="flex items-center gap-1.5 text-foreground font-semibold text-[12.5px]">
-            <Apple className="size-4 text-rose-500" />
-            <span>Bữa ăn bán trú</span>
-          </div>
-          <p className="text-[12px] text-muted-foreground leading-relaxed">
-            Thực đơn đầy đủ 4 nhóm chất (đạm, béo, bột đường, vitamin & khoáng chất). Bé ăn ngon miệng và tự xúc cơm gọn gàng.
-          </p>
-        </div>
-
-        <div className="p-3.5 flex flex-col gap-1.5 bg-card">
-          <div className="flex items-center gap-1.5 text-foreground font-semibold text-[12.5px]">
-            <Activity className="size-4 text-blue-500" />
-            <span>Vận động ngoài trời</span>
-          </div>
-          <p className="text-[12px] text-muted-foreground leading-relaxed">
-            Bé tham gia tích cực bài thể dục sáng và các trò chơi vận động phát triển thể lực ở sân trường theo thời khóa biểu.
-          </p>
-        </div>
-
-        <div className="p-3.5 flex flex-col gap-1.5 bg-card">
-          <div className="flex items-center gap-1.5 text-foreground font-semibold text-[12.5px]">
-            <Heart className="size-4 text-amber-500" />
-            <span>Giấc ngủ trưa</span>
-          </div>
-          <p className="text-[12px] text-muted-foreground leading-relaxed">
-            Ngủ sâu giấc từ 11:45 đến 14:00 tại phòng ngủ thoáng mát, thức dậy vui vẻ, sảng khoái sẵn sàng hoạt động chiều.
+          <p className="text-[12.5px] text-muted-foreground leading-relaxed">
+            {student.allergyNotes || 'Không ghi nhận dị ứng thức ăn hay thuốc.'}
           </p>
         </div>
       </div>
 
-      {/* 5. Health History Table (Full-Width Clean Table Matching Timetable Style) */}
+      {/* 4. Health History Table (Bỏ cột BMI - Chia rõ Chuẩn Chiều cao & Chuẩn Cân nặng) */}
       <div className="border border-border bg-card shadow-xs overflow-hidden flex flex-col">
         <div className="p-3.5 border-b border-border flex items-center justify-between bg-card">
           <div className="flex items-center gap-2">
             <Activity className="size-4 text-primary" />
-            <span className="text-[13px] font-bold text-foreground">
-              Lịch sử các đợt khám & Đo thể chất định kỳ
+            <span className="text-[13px] font-semibold text-foreground">
+              Lịch sử các đợt đo thể chất định kỳ
             </span>
           </div>
           <span className="text-[11.5px] font-mono text-muted-foreground">
-            {healthHistory.length} đợt khám
+            {healthHistory.length} đợt đo
           </span>
         </div>
 
@@ -265,13 +253,13 @@ export function ParentHealthPage() {
           <table className="w-full text-left border-collapse text-[12.5px]">
             <thead>
               <tr className="border-b border-border bg-muted/15 text-muted-foreground text-[11px] font-semibold uppercase tracking-tight">
-                <th className="py-2.5 px-3.5">Ngày khám</th>
+                <th className="py-2.5 px-3.5">Ngày đo</th>
                 <th className="py-2.5 px-3.5">Chiều cao</th>
+                <th className="py-2.5 px-3.5">Chuẩn chiều cao</th>
                 <th className="py-2.5 px-3.5">Cân nặng</th>
-                <th className="py-2.5 px-3.5">Chỉ số BMI</th>
-                <th className="py-2.5 px-3.5">Đánh giá WHO</th>
-                <th className="py-2.5 px-3.5">Nhận xét & Kết luận</th>
-                <th className="py-2.5 px-3.5 text-right">Người thực hiện</th>
+                <th className="py-2.5 px-3.5">Chuẩn cân nặng</th>
+                <th className="py-2.5 px-3.5">Nhận xét kết luận</th>
+                <th className="py-2.5 px-3.5 text-right">Giáo viên đo</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -282,38 +270,63 @@ export function ParentHealthPage() {
                   </td>
                 </tr>
               ) : (
-                healthHistory.map((h) => (
-                  <tr key={h.id} className="hover:bg-muted/15 transition-colors">
-                    <td className="py-2.5 px-3.5 font-mono font-medium text-foreground whitespace-nowrap">
-                      {h.date}
-                    </td>
-                    <td className="py-2.5 px-3.5 font-mono whitespace-nowrap">
-                      <strong className="text-foreground">{h.height}</strong> cm
-                    </td>
-                    <td className="py-2.5 px-3.5 font-mono whitespace-nowrap">
-                      <strong className="text-foreground">{h.weight}</strong> kg
-                    </td>
-                    <td className="py-2.5 px-3.5 font-mono font-bold text-primary whitespace-nowrap">
-                      {h.bmi}
-                    </td>
-                    <td className="py-2.5 px-3.5 whitespace-nowrap">
-                      <span className="px-2 py-0.5 text-[10.5px] font-semibold border rounded-none bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
-                        {h.bmiCategory || 'Bình thường'}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3.5 text-[12px] text-muted-foreground max-w-[280px]">
-                      {h.notes || 'Thể trạng phát triển tốt.'}
-                    </td>
-                    <td className="py-2.5 px-3.5 text-right text-muted-foreground whitespace-nowrap text-[11px] font-mono">
-                      {h.recordedBy || 'Y tế học đường'}
-                    </td>
-                  </tr>
-                ))
+                healthHistory.map((h) => {
+                  const { heightEvaluation, weightEvaluation } = evaluateChildGrowth({
+                    heightZ: h.heightZscore,
+                    weightZ: h.weightZscore,
+                    bmiZ: h.bmiZscore,
+                  });
+
+                  return (
+                    <tr key={h.id} className="hover:bg-muted/15 transition-colors">
+                      <td className="py-2.5 px-3.5 font-mono font-medium text-foreground whitespace-nowrap">
+                        {h.date}
+                      </td>
+                      <td className="py-2.5 px-3.5 font-mono whitespace-nowrap">
+                        <strong className="text-foreground">{h.height}</strong> cm
+                      </td>
+                      <td className="py-2.5 px-3.5 whitespace-nowrap">
+                        <span
+                          className={cn(
+                            'px-2 py-0.5 text-[10.5px] font-semibold border rounded-none inline-block',
+                            heightEvaluation.badgeClass
+                          )}
+                        >
+                          {heightEvaluation.label}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-3.5 font-mono whitespace-nowrap">
+                        <strong className="text-foreground">{h.weight}</strong> kg
+                      </td>
+                      <td className="py-2.5 px-3.5 whitespace-nowrap">
+                        <span
+                          className={cn(
+                            'px-2 py-0.5 text-[10.5px] font-semibold border rounded-none inline-block',
+                            weightEvaluation.badgeClass
+                          )}
+                        >
+                          {weightEvaluation.label}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-3.5 text-[12px] text-muted-foreground max-w-[320px]">
+                        {cleanNotes(h.notes)}
+                      </td>
+                      <td className="py-2.5 px-3.5 text-right text-muted-foreground whitespace-nowrap text-[11px] font-mono">
+                        {h.recordedBy || 'Giáo viên phụ trách'}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* 5. Minimalist Reference Note */}
+      <p className="text-[11.5px] text-muted-foreground text-center pt-1">
+        Tiêu chuẩn Chiều cao theo tuổi và Cân nặng theo tuổi được đối chiếu theo bảng chuẩn tăng trưởng của Tổ chức Y tế Thế giới (WHO).
+      </p>
     </div>
   );
 }

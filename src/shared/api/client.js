@@ -36,9 +36,36 @@ const processQueue = (error, token = null) => {
   failedQueue = [];
 };
 
+const sanitizeBrMessage = (msg) => {
+  if (typeof msg !== 'string') return msg;
+  return msg
+    .replace(/\s*\([A-Z]*\s*BR[-_ ]?\d+[^)]*\)/gi, '')
+    .replace(/\s*\[[A-Z]*\s*BR[-_ ]?\d+[^\]]*\]/gi, '')
+    .replace(/Theo quy định BR[-_ ]?\d+,\s*/gi, 'Theo quy định, ')
+    .replace(/quy định BR[-_ ]?\d+/gi, 'quy định')
+    .replace(/\bBR[-_]\d+\b/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+};
+
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (response?.data?.message && typeof response.data.message === 'string') {
+      response.data.message = sanitizeBrMessage(response.data.message);
+    }
+    return response;
+  },
   async (error) => {
+    if (error?.response?.data?.message && typeof error.response.data.message === 'string') {
+      error.response.data.message = sanitizeBrMessage(error.response.data.message);
+    }
+    if (Array.isArray(error?.response?.data?.details)) {
+      error.response.data.details = error.response.data.details.map((d) =>
+        d && typeof d === 'object' && d.message
+          ? { ...d, message: sanitizeBrMessage(d.message) }
+          : d,
+      );
+    }
     const originalRequest = error.config;
 
     // Do not attempt refresh on auth endpoints (login, refresh, forgot-password, etc.)

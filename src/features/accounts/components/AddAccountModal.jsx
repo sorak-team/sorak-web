@@ -557,7 +557,7 @@ export function AddAccountDrawer() {
           <div className="text-[12px] text-muted-foreground">
             {selectedCount > 0 ? (
               <span>
-                {t('account.willCreateAccounts', 'Sẽ cấp {{count}} tài khoản (mật khẩu mặc định: 123456)', {
+                {t('account.willCreateAccounts', 'Sẽ cấp {{count}} tài khoản (mật khẩu mặc định: Sorak@2026)', {
                   count: selectedCount,
                 })}
               </span>

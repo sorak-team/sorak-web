@@ -79,6 +79,7 @@ export function ChildDismissalPanel({
   classId = '5',
   date,
   slot,
+  readOnly = false,
   onClose,
   onTabChange,
   onDismissalChange,
@@ -182,7 +183,7 @@ export function ChildDismissalPanel({
   // (Trong thời gian ủy quyền mặc định chọn người ủy quyền, nhưng nếu giáo viên chọn Mẹ đón thì các ngày sau mặc định chọn Mẹ)
   const getStudentDefaultPerson = useCallback(
     (student) => {
-      const validParents = (student.parents || []).filter((p) => p.canPickup !== false);
+      const validParents = student.parents || [];
       const validAuths = student.authorizations || [];
       const activeAuth = validAuths[0];
       const saved = defaultsMap[student.id];
@@ -378,7 +379,7 @@ export function ChildDismissalPanel({
 
   // Quick 1-click dismissal using default choice
   const handleQuickDismissal = async (student, person) => {
-    if (!student.isPresent) return;
+    if (readOnly || !student.isPresent) return;
 
     const now = new Date();
     const currentTime = now.toLocaleTimeString('vi-VN', {
@@ -447,12 +448,14 @@ export function ChildDismissalPanel({
 
   // Switch default person & immediately record dismissal
   const handleSelectAndSwitchDefault = async (student, person) => {
+    if (readOnly) return;
     saveStudentDefault(student.id, person);
     await handleQuickDismissal(student, person);
   };
 
   // Open modal with pre-selected person
   const handleOpenPickupModal = (student, preselectedPerson = null) => {
+    if (readOnly) return;
     if (!student.isPresent) {
       toast.error(
         isVi
@@ -721,7 +724,7 @@ export function ChildDismissalPanel({
 
   // Undo / Cancel Dismissal
   const handleCancelDismissal = async (student) => {
-    if (!student.isDismissed) return;
+    if (readOnly || !student.isDismissed) return;
 
     // Instant local rollback
     setStudents((prev) =>
@@ -760,6 +763,7 @@ export function ChildDismissalPanel({
 
   // Inline note change in table
   const handleNoteChange = (id, newNote) => {
+    if (readOnly) return;
     setStudents((prev) =>
       prev.map((s) => (s.id === id ? { ...s, pickupNote: newNote } : s))
     );
@@ -767,6 +771,7 @@ export function ChildDismissalPanel({
 
   // Handle Save All Dismissals (called after user confirms in dialog)
   const handleConfirmSaveAll = async () => {
+    if (readOnly) return;
     setShowSaveConfirmDialog(false);
     if (isSaving || isCleaning) return;
     setIsSaving(true);
@@ -802,7 +807,7 @@ export function ChildDismissalPanel({
 
         // Apply default person for undismissed students (strictly from student's actual parents)
         const defPerson = getStudentDefaultPerson(s);
-        const validParents = (s.parents || []).filter((p) => p.canPickup !== false);
+        const validParents = s.parents || [];
         const firstActual = (s.authorizations || [])[0] || validParents[0];
 
         const chosen =
@@ -1080,7 +1085,7 @@ export function ChildDismissalPanel({
               </tr>
             ) : (
               filteredStudents.map((st) => {
-                const validParents = (st.parents || []).filter((p) => p.canPickup !== false);
+                const validParents = st.parents || [];
                 const activeAuths = (st.authorizations || []).map((a) => ({ ...a, isAuth: true }));
                 // Phụ huynh của trẻ xếp trước, người được ủy quyền luôn luôn nằm ở cuối cùng
                 let availablePickups = [];
@@ -1381,36 +1386,56 @@ export function ChildDismissalPanel({
         </div>
 
         <div className="flex items-center gap-2">
-          {onClose && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="rounded-none h-9 text-[13px] px-4 cursor-pointer"
-            >
-              {t('common.cancel', 'Huỷ')}
-            </Button>
+          {readOnly ? (
+            <>
+              <span className="px-2.5 py-1 text-[11.5px] font-medium bg-muted text-muted-foreground border border-border select-none">
+                Chế độ xem (BGH)
+              </span>
+              {onClose && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onClose}
+                  className="rounded-none h-9 text-[13px] px-4 cursor-pointer"
+                >
+                  {t('common.close', 'Đóng')}
+                </Button>
+              )}
+            </>
+          ) : (
+            <>
+              {onClose && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onClose}
+                  className="rounded-none h-9 text-[13px] px-4 cursor-pointer"
+                >
+                  {t('common.cancel', 'Huỷ')}
+                </Button>
+              )}
+              <Button
+                type="button"
+                onClick={() => {
+                  if (presentCount === 0) {
+                    toast.warning(isVi ? 'Không có học sinh nào có mặt hôm nay.' : 'No students present today.');
+                    return;
+                  }
+                  setShowSaveConfirmDialog(true);
+                }}
+                disabled={presentCount === 0 || isSaving || isCleaning}
+                className={cn(
+                  'rounded-none h-9 text-[13px] px-5 font-medium transition-colors shadow-none',
+                  presentCount > 0 && !isSaving && !isCleaning
+                    ? 'bg-[#1447e6] hover:bg-[#123ec4] text-white cursor-pointer'
+                    : 'bg-muted/80 text-muted-foreground border border-border/80 cursor-not-allowed opacity-60'
+                )}
+                title={presentCount === 0 ? (isVi ? 'Không có học sinh có mặt để lưu' : 'No students present') : undefined}
+              >
+                {isSaving ? t('common.saving', 'Đang lưu...') : t('dismissal.saveDismissal', 'Lưu đón trẻ')}
+              </Button>
+            </>
           )}
-          <Button
-            type="button"
-            onClick={() => {
-              if (presentCount === 0) {
-                toast.warning(isVi ? 'Không có học sinh nào có mặt hôm nay.' : 'No students present today.');
-                return;
-              }
-              setShowSaveConfirmDialog(true);
-            }}
-            disabled={presentCount === 0 || isSaving || isCleaning}
-            className={cn(
-              'rounded-none h-9 text-[13px] px-5 font-medium transition-colors shadow-none',
-              presentCount > 0 && !isSaving && !isCleaning
-                ? 'bg-[#1447e6] hover:bg-[#123ec4] text-white cursor-pointer'
-                : 'bg-muted/80 text-muted-foreground border border-border/80 cursor-not-allowed opacity-60'
-            )}
-            title={presentCount === 0 ? (isVi ? 'Không có học sinh có mặt để lưu' : 'No students present') : undefined}
-          >
-            {isSaving ? t('common.saving', 'Đang lưu...') : t('dismissal.saveDismissal', 'Lưu đón trẻ')}
-          </Button>
         </div>
       </div>
 

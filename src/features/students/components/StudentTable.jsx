@@ -19,10 +19,14 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { useStudentStore, getStudentAvatarUrl, toDisplayDate } from '../students.store';
+import { useAuthStore } from '@/features/auth';
+import { cn } from '@/shared/lib/utils';
 
 export function StudentTable({ paginatedStudents, hideClassColumn = false, classId = null }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const user = useAuthStore((state) => state.user);
+  const isTeacher = user?.role === 'TEACHER_GV' || user?.role === 'TEACHER' || user?.role === 'teacher';
 
   const visibleColumns = useStudentStore((state) => state.visibleColumns);
   const isLoading = useStudentStore((state) => state.isLoading);
@@ -384,13 +388,23 @@ export function StudentTable({ paginatedStudents, hideClassColumn = false, class
                         <span>{t('classes.reports', 'Xem báo cáo')}</span>
                       </DropdownMenuItem>
 
-                      <DropdownMenuItem
-                        onClick={() => openEditDrawer(student.id)}
-                        className="flex items-center gap-2 h-8 px-2 text-[13px] cursor-pointer rounded-none hover:bg-muted/60"
-                      >
-                        <HugeiconsIcon icon={PencilEdit02Icon} size={15} />
-                        <span>{t('common.edit', 'Chỉnh sửa')}</span>
-                      </DropdownMenuItem>
+                      {!isTeacher && (
+                        <DropdownMenuItem
+                          disabled={student.status === 'graduated'}
+                          onClick={() => {
+                            if (student.status === 'graduated') return;
+                            openEditDrawer(student.id);
+                          }}
+                          className={cn(
+                            'flex items-center gap-2 h-8 px-2 text-[13px] cursor-pointer rounded-none hover:bg-muted/60',
+                            student.status === 'graduated' && 'opacity-40 cursor-not-allowed hover:bg-transparent'
+                          )}
+                          title={student.status === 'graduated' ? 'Học sinh đã tốt nghiệp, không thể chỉnh sửa' : undefined}
+                        >
+                          <HugeiconsIcon icon={PencilEdit02Icon} size={15} />
+                          <span>{t('common.edit', 'Chỉnh sửa')}</span>
+                        </DropdownMenuItem>
+                      )}
 
                       <DropdownMenuItem
                         onClick={() => openTransferDialog(student)}
@@ -400,15 +414,18 @@ export function StudentTable({ paginatedStudents, hideClassColumn = false, class
                         <span>{t('student.transferRequestAction', 'Yêu cầu chuyển lớp')}</span>
                       </DropdownMenuItem>
 
-                      <DropdownMenuSeparator className="my-1 border-t border-border" />
-
-                      <DropdownMenuItem
-                        onClick={() => openDeleteDialog(student)}
-                        className="flex items-center gap-2 h-8 px-2 text-[13px] text-destructive hover:text-destructive hover:bg-destructive/10 focus:text-destructive focus:bg-destructive/10 cursor-pointer rounded-none"
-                      >
-                        <HugeiconsIcon icon={Delete02Icon} size={15} />
-                        <span>{t('common.delete', 'Xóa')}</span>
-                      </DropdownMenuItem>
+                      {!isTeacher && (
+                        <>
+                          <DropdownMenuSeparator className="my-1 border-t border-border" />
+                          <DropdownMenuItem
+                            onClick={() => openDeleteDialog(student)}
+                            className="flex items-center gap-2 h-8 px-2 text-[13px] text-destructive hover:text-destructive hover:bg-destructive/10 focus:text-destructive focus:bg-destructive/10 cursor-pointer rounded-none"
+                          >
+                            <HugeiconsIcon icon={Delete02Icon} size={15} />
+                            <span>{t('common.delete', 'Xóa')}</span>
+                          </DropdownMenuItem>
+                        </>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </td>

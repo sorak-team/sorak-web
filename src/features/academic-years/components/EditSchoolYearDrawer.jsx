@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { academicYearsApi } from '../academic-years.api';
 
 export function EditSchoolYearDrawer({ isOpen, onClose, year, onSuccess }) {
+  const isCompleted = year?.status === 'COMPLETED';
   const [name, setName] = useState('');
   const [status, setStatus] = useState('ACTIVE');
   const [startDate, setStartDate] = useState('');
@@ -25,6 +26,10 @@ export function EditSchoolYearDrawer({ isOpen, onClose, year, onSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isCompleted) {
+      toast.error('Năm học đã kết thúc không thể chỉnh sửa.');
+      return;
+    }
     if (!name.trim()) {
       toast.error('Vui lòng nhập tên năm học.');
       return;
@@ -84,6 +89,11 @@ export function EditSchoolYearDrawer({ isOpen, onClose, year, onSuccess }) {
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 text-[13px]">
+          {isCompleted && (
+            <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 text-amber-800 dark:text-amber-200 text-[12.5px] rounded-none">
+              Năm học này đã kết thúc và được lưu trữ lịch sử, không thể chỉnh sửa.
+            </div>
+          )}
           <div>
             <label className="block font-medium text-foreground mb-1.5 text-[13px]">
               Tên năm học <span className="text-destructive">*</span>
@@ -91,10 +101,11 @@ export function EditSchoolYearDrawer({ isOpen, onClose, year, onSuccess }) {
             <input
               type="text"
               required
+              disabled={isCompleted}
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Năm học 2026–2027"
-              className="w-full h-9 px-3 text-[13px] rounded-none border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-[#1447e6]"
+              className="w-full h-9 px-3 text-[13px] rounded-none border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-[#1447e6] disabled:opacity-60 disabled:cursor-not-allowed"
             />
           </div>
 
@@ -104,8 +115,9 @@ export function EditSchoolYearDrawer({ isOpen, onClose, year, onSuccess }) {
             </label>
             <select
               value={status}
+              disabled={isCompleted}
               onChange={(e) => setStatus(e.target.value)}
-              className="w-full h-9 px-3 text-[13px] rounded-none border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-[#1447e6]"
+              className="w-full h-9 px-3 text-[13px] rounded-none border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-[#1447e6] disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <option value="ACTIVE">Đang hoạt động</option>
               <option value="UPCOMING">Sắp diễn ra</option>
@@ -171,16 +183,18 @@ export function EditSchoolYearDrawer({ isOpen, onClose, year, onSuccess }) {
             onClick={onClose}
             className="h-8.5 px-4 text-[13px] font-medium rounded-none border border-border bg-background hover:bg-muted text-foreground cursor-pointer transition-colors"
           >
-            Hủy
+            {isCompleted ? 'Đóng' : 'Hủy'}
           </button>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="h-8.5 px-4 text-[13px] font-medium rounded-none bg-[#1447e6] hover:bg-[#123ecc] text-white cursor-pointer transition-colors disabled:opacity-50 shadow-xs"
-          >
-            {isSubmitting ? 'Đang lưu...' : 'Lưu thay đổi'}
-          </button>
+          {!isCompleted && (
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="h-8.5 px-4 text-[13px] font-medium rounded-none bg-[#1447e6] hover:bg-[#123ecc] text-white cursor-pointer transition-colors disabled:opacity-50 shadow-xs"
+            >
+              {isSubmitting ? 'Đang lưu...' : 'Lưu thay đổi'}
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -23,6 +23,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { cn } from '@/shared/lib/utils';
+import { useAuthStore, isBghRole } from '@/features/auth';
 import { assessmentApi } from '../assessment.api';
 import { SemesterAssessmentDrawer } from './SemesterAssessmentDrawer';
 
@@ -36,6 +37,8 @@ const DOMAIN_TOTALS = {
 
 export function SemesterAssessmentTab({ targetClassId, currentClass }) {
   const { t } = useTranslation();
+  const currentUser = useAuthStore((state) => state.user);
+  const isBgh = isBghRole(currentUser?.role);
 
   const [selectedSemester, setSelectedSemester] = useState('SEMESTER_1');
   const [classInfo, setClassInfo] = useState(null);
@@ -48,34 +51,16 @@ export function SemesterAssessmentTab({ targetClassId, currentClass }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isCalculating, setIsCalculating] = useState(false);
 
-  // Load semester assessment data from local cache or backend
+  // Load semester assessment data from backend (with quick cache hydration)
   const loadData = async (recalculate = false) => {
     const cacheKey = `sorak_semester_calc_${targetClassId}_${selectedSemester}`;
 
-    // Read from client-side cache first if not recalculating (Instant load, save server resources)
-    if (!recalculate) {
-      try {
-        const cachedStr = localStorage.getItem(cacheKey);
-        if (cachedStr) {
-          const cached = JSON.parse(cachedStr);
-          if (cached?.students?.length > 0) {
-            setClassInfo(cached.classInfo || null);
-            setStudents(cached.students);
-            setInitialStudents(JSON.parse(JSON.stringify(cached.students)));
-            setIsLoading(false);
-            return;
-          }
-        }
-      } catch (err) {
-        console.warn('Failed to parse cached semester data:', err);
-      }
-    }
-
     if (recalculate) {
       setIsCalculating(true);
-    } else {
+    } else if (students.length === 0) {
       setIsLoading(true);
     }
+
     try {
       const res = await assessmentApi.getSemesterAssessments(targetClassId, {
         semester: selectedSemester,
@@ -104,7 +89,7 @@ export function SemesterAssessmentTab({ targetClassId, currentClass }) {
       if (recalculate) {
         const untilDate = info?.calculatedUntilVN || '14/10/2026';
         const fromDate = info?.calculatedFromVN || '07/09/2026';
-        toast.success(`Đã tính toán thành công dữ liệu học kỳ từ ngày ${fromDate} đến ngày ${untilDate}! Dữ liệu đã được lưu bộ nhớ đệm.`);
+        toast.success(`Đã tính toán thành công dữ liệu học kỳ từ ngày ${fromDate} đến ngày ${untilDate}!`);
       }
     } catch (err) {
       console.warn('Failed to load semester assessment data:', err);
@@ -445,21 +430,28 @@ export function SemesterAssessmentTab({ targetClassId, currentClass }) {
             </Button>
           </div>
 
-          {/* 4. Save Button */}
-          <Button
-            type="button"
-            onClick={handleSaveAll}
-            disabled={!isDirty || isSavingAll || !classInfo?.isStarted}
-            className={cn(
-              'h-8 px-3 text-[12.5px] font-medium rounded-none shadow-none flex items-center justify-center gap-1.5 transition-colors shrink-0',
-              isDirty && classInfo?.isStarted
-                ? 'bg-[#1447e6] hover:bg-[#1447e6]/90 text-white cursor-pointer'
-                : 'bg-muted text-muted-foreground border border-border cursor-not-allowed opacity-60'
-            )}
-          >
-            <HugeiconsIcon icon={FloppyDiskIcon} size={14} />
-            <span>{isSavingAll ? t('common.saving', 'Đang lưu...') : isDirty ? t('common.saveChanges', 'Lưu thay đổi') : t('common.saved', 'Đã lưu')}</span>
-          </Button>
+          {/* 4. Action: Save Button for Teacher or View Badge for Principal (BGH) */}
+          {isBgh ? (
+            <div className="h-8 px-3 text-[12px] font-medium bg-muted/40 border border-border flex items-center gap-1.5 text-muted-foreground shrink-0 select-none">
+              <span className="size-1.5 rounded-full bg-primary" />
+              <span>{t('assessment.bghViewOnly', 'Chế độ xem (Ban Giám Hiệu)')}</span>
+            </div>
+          ) : (
+            <Button
+              type="button"
+              onClick={handleSaveAll}
+              disabled={!isDirty || isSavingAll || !classInfo?.isStarted}
+              className={cn(
+                'h-8 px-3 text-[12.5px] font-medium rounded-none shadow-none flex items-center justify-center gap-1.5 transition-colors shrink-0',
+                isDirty && classInfo?.isStarted
+                  ? 'bg-[#1447e6] hover:bg-[#1447e6]/90 text-white cursor-pointer'
+                  : 'bg-muted text-muted-foreground border border-border cursor-not-allowed opacity-60'
+              )}
+            >
+              <HugeiconsIcon icon={FloppyDiskIcon} size={14} />
+              <span>{isSavingAll ? t('common.saving', 'Đang lưu...') : isDirty ? t('common.saveChanges', 'Lưu thay đổi') : t('common.saved', 'Đã lưu')}</span>
+            </Button>
+          )}
         </div>
 
         {/* Thông báo Học kỳ 2 chưa bắt đầu */}
@@ -579,120 +571,138 @@ export function SemesterAssessmentTab({ targetClassId, currentClass }) {
                         </div>
                       </td>
 
-                      {/* 2. % Thể chất */}
-                      <td className="px-2 py-2 text-center border-r border-border/60">
-                        {st.domains?.physical !== null && st.domains?.physical !== undefined ? (
-                          <div className="flex flex-col items-center justify-center">
-                            <span
-                              className={cn(
-                                'font-mono text-[12.5px] font-semibold leading-tight',
-                                st.domains.physical >= 90
-                                  ? 'text-emerald-600 dark:text-emerald-400'
-                                  : 'text-foreground'
-                              )}
-                            >
-                              {st.domains.physical}%
-                            </span>
-                            <span className="text-[10.5px] font-mono text-muted-foreground leading-tight">
-                              {st.domainBreakdown?.physical?.achieved ?? Math.round((st.domains.physical / 100) * DOMAIN_TOTALS.physical)}/{DOMAIN_TOTALS.physical}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground/40 font-mono text-[13px]">—</span>
-                        )}
-                      </td>
+                      {/* 2-6. 5 Lĩnh vực phát triển: Hiển thị "Chưa có dữ liệu đánh giá" nếu chưa đánh giá mục tiêu */}
+                      {!Boolean(
+                        st.hasEvaluatedGoals ||
+                        (st.domains?.physical !== null && st.domains?.physical !== undefined) ||
+                        (st.domains?.cognitive !== null && st.domains?.cognitive !== undefined) ||
+                        (st.domains?.language !== null && st.domains?.language !== undefined) ||
+                        (st.domains?.socioEmotional !== null && st.domains?.socioEmotional !== undefined) ||
+                        (st.domains?.aesthetic !== null && st.domains?.aesthetic !== undefined)
+                      ) ? (
+                        <td colSpan={5} className="px-3 py-2 text-center border-r border-border/60 bg-muted/5">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11.5px] font-medium text-muted-foreground bg-muted/50 border border-border/60 select-none">
+                            {t('assessment.noEvaluationData', 'Chưa có dữ liệu đánh giá')}
+                          </span>
+                        </td>
+                      ) : (
+                        <>
+                          {/* 2. % Thể chất */}
+                          <td className="px-2 py-2 text-center border-r border-border/60">
+                            {st.domains?.physical !== null && st.domains?.physical !== undefined ? (
+                              <div className="flex flex-col items-center justify-center">
+                                <span
+                                  className={cn(
+                                    'font-mono text-[12.5px] font-semibold leading-tight',
+                                    st.domains.physical >= 90
+                                      ? 'text-emerald-600 dark:text-emerald-400'
+                                      : 'text-foreground'
+                                  )}
+                                >
+                                  {st.domains.physical}%
+                                </span>
+                                <span className="text-[10.5px] font-mono text-muted-foreground leading-tight">
+                                  {st.domainBreakdown?.physical?.achieved ?? Math.round((st.domains.physical / 100) * DOMAIN_TOTALS.physical)}/{st.domainBreakdown?.physical?.total || DOMAIN_TOTALS.physical}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground/40 font-mono text-[13px]">—</span>
+                            )}
+                          </td>
 
-                      {/* 3. % Nhận thức */}
-                      <td className="px-2 py-2 text-center border-r border-border/60">
-                        {st.domains?.cognitive !== null && st.domains?.cognitive !== undefined ? (
-                          <div className="flex flex-col items-center justify-center">
-                            <span
-                              className={cn(
-                                'font-mono text-[12.5px] font-semibold leading-tight',
-                                st.domains.cognitive >= 90
-                                  ? 'text-emerald-600 dark:text-emerald-400'
-                                  : 'text-foreground'
-                              )}
-                            >
-                              {st.domains.cognitive}%
-                            </span>
-                            <span className="text-[10.5px] font-mono text-muted-foreground leading-tight">
-                              {st.domainBreakdown?.cognitive?.achieved ?? Math.round((st.domains.cognitive / 100) * DOMAIN_TOTALS.cognitive)}/{DOMAIN_TOTALS.cognitive}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground/40 font-mono text-[13px]">—</span>
-                        )}
-                      </td>
+                          {/* 3. % Nhận thức */}
+                          <td className="px-2 py-2 text-center border-r border-border/60">
+                            {st.domains?.cognitive !== null && st.domains?.cognitive !== undefined ? (
+                              <div className="flex flex-col items-center justify-center">
+                                <span
+                                  className={cn(
+                                    'font-mono text-[12.5px] font-semibold leading-tight',
+                                    st.domains.cognitive >= 90
+                                      ? 'text-emerald-600 dark:text-emerald-400'
+                                      : 'text-foreground'
+                                  )}
+                                >
+                                  {st.domains.cognitive}%
+                                </span>
+                                <span className="text-[10.5px] font-mono text-muted-foreground leading-tight">
+                                  {st.domainBreakdown?.cognitive?.achieved ?? Math.round((st.domains.cognitive / 100) * DOMAIN_TOTALS.cognitive)}/{st.domainBreakdown?.cognitive?.total || DOMAIN_TOTALS.cognitive}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground/40 font-mono text-[13px]">—</span>
+                            )}
+                          </td>
 
-                      {/* 4. % Ngôn ngữ */}
-                      <td className="px-2 py-2 text-center border-r border-border/60">
-                        {st.domains?.language !== null && st.domains?.language !== undefined ? (
-                          <div className="flex flex-col items-center justify-center">
-                            <span
-                              className={cn(
-                                'font-mono text-[12.5px] font-semibold leading-tight',
-                                st.domains.language >= 90
-                                  ? 'text-emerald-600 dark:text-emerald-400'
-                                  : 'text-foreground'
-                              )}
-                            >
-                              {st.domains.language}%
-                            </span>
-                            <span className="text-[10.5px] font-mono text-muted-foreground leading-tight">
-                              {st.domainBreakdown?.language?.achieved ?? Math.round((st.domains.language / 100) * DOMAIN_TOTALS.language)}/{DOMAIN_TOTALS.language}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground/40 font-mono text-[13px]">—</span>
-                        )}
-                      </td>
+                          {/* 4. % Ngôn ngữ */}
+                          <td className="px-2 py-2 text-center border-r border-border/60">
+                            {st.domains?.language !== null && st.domains?.language !== undefined ? (
+                              <div className="flex flex-col items-center justify-center">
+                                <span
+                                  className={cn(
+                                    'font-mono text-[12.5px] font-semibold leading-tight',
+                                    st.domains.language >= 90
+                                      ? 'text-emerald-600 dark:text-emerald-400'
+                                      : 'text-foreground'
+                                  )}
+                                >
+                                  {st.domains.language}%
+                                </span>
+                                <span className="text-[10.5px] font-mono text-muted-foreground leading-tight">
+                                  {st.domainBreakdown?.language?.achieved ?? Math.round((st.domains.language / 100) * DOMAIN_TOTALS.language)}/{st.domainBreakdown?.language?.total || DOMAIN_TOTALS.language}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground/40 font-mono text-[13px]">—</span>
+                            )}
+                          </td>
 
-                      {/* 5. % Tình cảm & Kỹ năng xã hội */}
-                      <td className="px-2 py-2 text-center border-r border-border/60">
-                        {st.domains?.socioEmotional !== null && st.domains?.socioEmotional !== undefined ? (
-                          <div className="flex flex-col items-center justify-center">
-                            <span
-                              className={cn(
-                                'font-mono text-[12.5px] font-semibold leading-tight',
-                                st.domains.socioEmotional >= 90
-                                  ? 'text-emerald-600 dark:text-emerald-400'
-                                  : 'text-foreground'
-                              )}
-                            >
-                              {st.domains.socioEmotional}%
-                            </span>
-                            <span className="text-[10.5px] font-mono text-muted-foreground leading-tight">
-                              {st.domainBreakdown?.socioEmotional?.achieved ?? Math.round((st.domains.socioEmotional / 100) * DOMAIN_TOTALS.socioEmotional)}/{DOMAIN_TOTALS.socioEmotional}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground/40 font-mono text-[13px]">—</span>
-                        )}
-                      </td>
+                          {/* 5. % Tình cảm & Kỹ năng xã hội */}
+                          <td className="px-2 py-2 text-center border-r border-border/60">
+                            {st.domains?.socioEmotional !== null && st.domains?.socioEmotional !== undefined ? (
+                              <div className="flex flex-col items-center justify-center">
+                                <span
+                                  className={cn(
+                                    'font-mono text-[12.5px] font-semibold leading-tight',
+                                    st.domains.socioEmotional >= 90
+                                      ? 'text-emerald-600 dark:text-emerald-400'
+                                      : 'text-foreground'
+                                  )}
+                                >
+                                  {st.domains.socioEmotional}%
+                                </span>
+                                <span className="text-[10.5px] font-mono text-muted-foreground leading-tight">
+                                  {st.domainBreakdown?.socioEmotional?.achieved ?? Math.round((st.domains.socioEmotional / 100) * DOMAIN_TOTALS.socioEmotional)}/{st.domainBreakdown?.socioEmotional?.total || DOMAIN_TOTALS.socioEmotional}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground/40 font-mono text-[13px]">—</span>
+                            )}
+                          </td>
 
-                      {/* 6. % Thẩm mỹ */}
-                      <td className="px-2 py-2 text-center border-r border-border/60">
-                        {st.domains?.aesthetic !== null && st.domains?.aesthetic !== undefined ? (
-                          <div className="flex flex-col items-center justify-center">
-                            <span
-                              className={cn(
-                                'font-mono text-[12.5px] font-semibold leading-tight',
-                                st.domains.aesthetic >= 90
-                                  ? 'text-emerald-600 dark:text-emerald-400'
-                                  : 'text-foreground'
-                              )}
-                            >
-                              {st.domains.aesthetic}%
-                            </span>
-                            <span className="text-[10.5px] font-mono text-muted-foreground leading-tight">
-                              {st.domainBreakdown?.aesthetic?.achieved ?? Math.round((st.domains.aesthetic / 100) * DOMAIN_TOTALS.aesthetic)}/{DOMAIN_TOTALS.aesthetic}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground/40 font-mono text-[13px]">—</span>
-                        )}
-                      </td>
+                          {/* 6. % Thẩm mỹ */}
+                          <td className="px-2 py-2 text-center border-r border-border/60">
+                            {st.domains?.aesthetic !== null && st.domains?.aesthetic !== undefined ? (
+                              <div className="flex flex-col items-center justify-center">
+                                <span
+                                  className={cn(
+                                    'font-mono text-[12.5px] font-semibold leading-tight',
+                                    st.domains.aesthetic >= 90
+                                      ? 'text-emerald-600 dark:text-emerald-400'
+                                      : 'text-foreground'
+                                  )}
+                                >
+                                  {st.domains.aesthetic}%
+                                </span>
+                                <span className="text-[10.5px] font-mono text-muted-foreground leading-tight">
+                                  {st.domainBreakdown?.aesthetic?.achieved ?? Math.round((st.domains.aesthetic / 100) * DOMAIN_TOTALS.aesthetic)}/{st.domainBreakdown?.aesthetic?.total || DOMAIN_TOTALS.aesthetic}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground/40 font-mono text-[13px]">—</span>
+                            )}
+                          </td>
+                        </>
+                      )}
 
                       {/* 7. % Đi học đủ của kỳ đó */}
                       <td className="px-3 py-2 text-center border-r border-border/60">
@@ -740,18 +750,21 @@ export function SemesterAssessmentTab({ targetClassId, currentClass }) {
                         <input
                           type="text"
                           value={st.teacherNotes || ''}
-                          disabled={!classInfo?.isStarted}
+                          disabled={!classInfo?.isStarted || isBgh}
+                          readOnly={isBgh}
                           onChange={(e) => handleNotesChange(st.id, e.target.value)}
                           placeholder={
                             !classInfo?.isStarted
                               ? 'Học kỳ 2 chưa bắt đầu...'
+                              : isBgh
+                              ? (st.teacherNotes ? '' : t('assessment.teacherNotCommented', 'Giáo viên chưa nhập nhận xét'))
                               : t('assessment.semesterNotePlaceholder', 'Ghi nhận xét đánh giá cuối kỳ...')
                           }
                           className={cn(
                             'w-full h-9 px-2.5 text-[13px] text-foreground bg-transparent border border-transparent rounded-none transition-colors truncate focus:outline-none placeholder:text-muted-foreground/40',
-                            classInfo?.isStarted
+                            classInfo?.isStarted && !isBgh
                               ? 'hover:border-border focus:border-[#1447e6] focus:bg-background'
-                              : 'cursor-not-allowed opacity-60'
+                              : 'cursor-default opacity-80'
                           )}
                         />
                       </td>

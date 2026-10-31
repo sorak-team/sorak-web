@@ -17,6 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import { toast } from 'sonner';
 import { useAccountStore, getAccountAvatarUrl } from '../accounts.store';
 import { useAuthStore } from '@/features/auth';
 import { cn } from '@/shared/lib/utils';
@@ -41,6 +42,20 @@ export function AccountTable({ paginatedAccounts }) {
   );
   const toggleAccountStatus = useAccountStore(
     (state) => state.toggleAccountStatus,
+  );
+  const openLockConfirm = useAccountStore(
+    (state) => state.openLockConfirm,
+  );
+
+  const isAccountSelf = (acc) => Boolean(
+    user &&
+    acc &&
+    (
+      String(user.id) === String(acc.id) ||
+      (user.accountId && String(user.accountId) === String(acc.id)) ||
+      (user.username && acc.username && user.username.toLowerCase() === acc.username.toLowerCase()) ||
+      (user.identifier && acc.username && user.identifier.toLowerCase() === acc.username.toLowerCase())
+    )
   );
 
   const getRoleLabel = (role) => {
@@ -308,8 +323,21 @@ export function AccountTable({ paginatedAccounts }) {
                     </DropdownMenuItem>
                     <DropdownMenuSeparator className="my-1 border-t border-border" />
                     <DropdownMenuItem
-                      onClick={() => toggleAccountStatus(account.id)}
-                      className="flex items-center gap-2 h-8 px-2 text-[13px] cursor-pointer rounded-none hover:bg-muted/60"
+                      onClick={() => {
+                        if (isAccountSelf(account)) {
+                          toast.error('Không thể tự khóa tài khoản của chính mình');
+                          return;
+                        }
+                        if (account.accountStatus === 'active') {
+                          openLockConfirm(account);
+                        } else {
+                          toggleAccountStatus(account.id)
+                            .then(() => toast.success('Đã mở khóa tài khoản thành công'))
+                            .catch((err) => toast.error(err.message || 'Mở khóa tài khoản thất bại'));
+                        }
+                      }}
+                      disabled={isAccountSelf(account)}
+                      className="flex items-center gap-2 h-8 px-2 text-[13px] cursor-pointer rounded-none hover:bg-muted/60 disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       <HugeiconsIcon
                         icon={account.accountStatus === 'active' ? UserBlock01Icon : UserCheck01Icon}

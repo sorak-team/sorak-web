@@ -61,11 +61,15 @@ export function ClassOverviewPage() {
   const attachedClassId = useClassesStore((state) => state.attachedClassId);
   const attachClass = useClassesStore((state) => state.attachClass);
   const fetchClasses = useClassesStore((state) => state.fetchClasses);
+  const hasLoadedClasses = useClassesStore((state) => state.hasLoaded);
+  const isClassesLoading = useClassesStore((state) => state.isLoading);
 
   // Classroom resolution
   const currentClass = id
     ? classes.find((c) => c.id === id || c.publicId === id)
-    : classes.find((c) => c.id === attachedClassId) || classes[0];
+    : classes.find((c) => c.id === attachedClassId) ||
+      classes.find((c) => (c.studentCount || 0) > 0) ||
+      classes[0];
 
   const targetClassId = currentClass?.id || id || (classes[0]?.id ?? '');
 
@@ -88,10 +92,10 @@ export function ClassOverviewPage() {
   const [previewPhoto, setPreviewPhoto] = useState(null);
 
   useEffect(() => {
-    if (classes.length === 0) {
+    if (!hasLoadedClasses && !isClassesLoading) {
       fetchClasses();
     }
-  }, [classes.length, fetchClasses]);
+  }, [hasLoadedClasses, isClassesLoading, fetchClasses]);
 
   useEffect(() => {
     if (id && attachedClassId !== id) {
@@ -252,7 +256,6 @@ export function ClassOverviewPage() {
           fullName: currentStudent.parentName,
           phone: currentStudent.parentPhone || '',
           relationship: currentStudent.parentRelationship || 'Phụ huynh',
-          canPickup: true,
         },
       ];
     }
@@ -309,7 +312,32 @@ export function ClassOverviewPage() {
         <div className="container mx-auto px-4 py-2.5 sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 shrink-0">
-              <span className="text-xs font-medium text-muted-foreground shrink-0">Học sinh:</span>
+              <span className="text-xs font-medium text-muted-foreground shrink-0">Lớp:</span>
+              <div className="relative shrink-0">
+                <select
+                  value={currentClass?.id || ''}
+                  onChange={(e) => {
+                    const newId = e.target.value;
+                    const found = classes.find((c) => c.id === newId || c.publicId === newId);
+                    if (found) {
+                      attachClass(found.id);
+                      setSelectedStudentId(null);
+                      if (id) {
+                        navigate(`/classes/${found.id}/reports`);
+                      }
+                    }
+                  }}
+                  className="inline-flex items-center justify-between border border-border bg-background hover:bg-muted/70 transition-colors h-8 px-2.5 rounded-none text-[13px] font-medium text-foreground cursor-pointer shadow-2xs select-none focus:outline-none"
+                >
+                  {classes.map((cls) => (
+                    <option key={cls.id} value={cls.id}>
+                      {cls.name} {cls.studentCount ? `(${cls.studentCount} HS)` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <span className="text-xs font-medium text-muted-foreground shrink-0 ml-1">Học sinh:</span>
 
               {/* Student Dropdown Command Menu (matching ClassCommandMenu design) */}
               <div className="relative shrink-0" ref={studentDropdownRef}>
@@ -933,13 +961,12 @@ export function ClassOverviewPage() {
                         <th className="px-4 py-2.5">Họ và tên</th>
                         <th className="px-4 py-2.5">Quan hệ với trẻ</th>
                         <th className="px-4 py-2.5">Số điện thoại</th>
-                        <th className="px-4 py-2.5">Quyền đón trẻ</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
                       {studentParents.length === 0 ? (
                         <tr>
-                          <td colSpan={4} className="py-8 text-center text-muted-foreground">
+                          <td colSpan={3} className="py-8 text-center text-muted-foreground">
                             Chưa có thông tin phụ huynh hoặc người giám hộ cho học sinh này.
                           </td>
                         </tr>
@@ -956,17 +983,6 @@ export function ClassOverviewPage() {
                             </td>
                             <td className="px-4 py-3 font-mono text-foreground font-medium">
                               {p.phone || '—'}
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              {p.canPickup !== false ? (
-                                <span className="inline-flex items-center px-2 py-0.5 text-[11.5px] font-medium rounded-none bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50">
-                                  Được đón bé
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center px-2 py-0.5 text-[11.5px] font-medium rounded-none bg-muted text-muted-foreground border border-border">
-                                  Chưa đăng ký đón
-                                </span>
-                              )}
                             </td>
                           </tr>
                         ))

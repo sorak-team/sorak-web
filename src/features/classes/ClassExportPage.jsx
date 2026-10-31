@@ -14,6 +14,8 @@ export function ClassExportPage() {
   const classes = useClassesStore((state) => state.classes) || [];
   const selectedYearId = useAcademicYearStore((state) => state.selectedYearId);
   const fetchClasses = useClassesStore((state) => state.fetchClasses);
+  const hasLoadedClasses = useClassesStore((state) => state.hasLoaded);
+  const isClassesLoading = useClassesStore((state) => state.isLoading);
   const attachedClassId = useClassesStore((state) => state.attachedClassId);
   const attachClass = useClassesStore((state) => state.attachClass);
 
@@ -33,10 +35,10 @@ export function ClassExportPage() {
   }, [id, classes, teacherClass]);
 
   useEffect(() => {
-    if (classes.length === 0) {
+    if (!hasLoadedClasses && !isClassesLoading) {
       fetchClasses(selectedYearId);
     }
-  }, [classes.length, fetchClasses, selectedYearId]);
+  }, [hasLoadedClasses, isClassesLoading, fetchClasses, selectedYearId]);
 
   useEffect(() => {
     if (currentClass?.id && attachedClassId !== currentClass.id) {

@@ -21,10 +21,16 @@ export function DeleteStudentDialog({ onSuccess }) {
 
   if (!studentToDelete) return null;
 
-  const handleConfirm = () => {
-    deleteStudent(studentToDelete.id);
-    toast.success(t('student.toastDeleted', 'Đã xóa hồ sơ học sinh'));
-    if (onSuccess) onSuccess();
+  const handleConfirm = async () => {
+    try {
+      await deleteStudent(studentToDelete.id);
+      toast.success(t('student.toastDeleted', 'Đã xóa hồ sơ học sinh'));
+      if (onSuccess) onSuccess();
+    } catch (err) {
+      console.error('Delete student failed:', err);
+      const msg = err.response?.data?.message || err.message || 'Xóa học sinh không thành công';
+      toast.error(msg);
+    }
   };
 
   return (
@@ -37,7 +43,7 @@ export function DeleteStudentDialog({ onSuccess }) {
           <DialogDescription className="text-[13px] text-muted-foreground pt-2">
             {t(
               'student.deleteDesc',
-              'Bạn có chắc chắn muốn xóa hồ sơ học sinh {{name}}? Hành động này sẽ chuyển trạng thái học sinh thành thôi học.',
+              'Bạn có chắc chắn muốn xóa hồ sơ học sinh {{name}}? Hành động này không thể hoàn tác và chỉ có thể thực hiện khi học sinh chưa có dữ liệu học tập liên quan.',
               { name: studentToDelete.fullName || '' },
             )}
           </DialogDescription>
