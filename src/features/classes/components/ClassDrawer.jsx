@@ -99,7 +99,6 @@ export function ClassDrawer() {
           name: cleanName,
           grade: formData.grade,
           room: formData.room.trim(),
-          teacher: formData.teacher.trim(),
           description: formData.description.trim(),
         });
         toast.success(t('classes.updateSuccess', 'Đã cập nhật thông tin lớp học thành công!'));
@@ -108,7 +107,6 @@ export function ClassDrawer() {
           ...formData,
           name: cleanName,
           room: formData.room.trim(),
-          teacher: formData.teacher.trim(),
           description: formData.description.trim(),
           studentCount: 0,
         });
@@ -263,7 +261,7 @@ export function ClassDrawer() {
                     disabled
                     readOnly
                     placeholder="Chưa phân công giáo viên"
-                    className="h-9 text-[13px] rounded-none border-border bg-muted/50 cursor-not-allowed text-muted-foreground opacity-90 select-none"
+                    className="h-9 text-[13px] rounded-none border-border bg-muted/50 cursor-not-allowed text-muted-foreground opacity-90 select-none pointer-events-none"
                   />
                   <p className="text-[11px] text-muted-foreground mt-1">
                     Giáo viên phụ trách chỉ được thay đổi thông qua chức năng Phân công giáo viên.

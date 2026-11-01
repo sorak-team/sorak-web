@@ -468,7 +468,8 @@ export function StudentDrawer({
         const editPayload = {
           ...payload,
           status: isInClassContext ? undefined : payload.status,
-          classId: isInClassContext ? (currentStudent?.currentClass?.classId || classId || null) : (classId || null),
+          classId: undefined,
+          currentClass: undefined,
         };
         await updateStudent(editingStudentId, editPayload);
         if (onSuccess) {
@@ -690,7 +691,7 @@ export function StudentDrawer({
                         disabled={drawerMode === 'edit' || isTeacher || isInClassContext}
                         className={cn(
                           'w-full h-9 px-3 bg-background border border-border rounded-none text-[13px] text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer',
-                          (drawerMode === 'edit' || isTeacher || isInClassContext) && 'bg-muted cursor-not-allowed opacity-90'
+                          (drawerMode === 'edit' || isTeacher || isInClassContext) && 'bg-muted cursor-not-allowed opacity-90 pointer-events-none'
                         )}
                       >
                         <option value="">-- Chưa phân lớp --</option>
