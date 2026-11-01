@@ -401,134 +401,67 @@ export const useStudentStore = create((set, get) => ({
 
   // API Integration: Create Student
   createStudent: async (payload) => {
-    try {
-      const backendPayload = {
-        studentCode: payload.studentCode,
-        fullName: payload.fullName,
-        dateOfBirth: toIsoDate(payload.dob),
-        gender: payload.gender === 'Nam' ? 'MALE' : 'FEMALE',
-        ethnic: payload.ethnic || 'Kinh',
-        nationality: payload.nationality || 'Việt Nam',
-        placeOfBirth: payload.placeOfBirth,
-        permanentResidence: payload.permanentResidence,
-        currentResidence: payload.currentResidence,
-        status: (payload.status || 'studying').toUpperCase(),
-        enrollmentDate: toIsoDate(payload.joinDate),
-        allergyNotes: payload.allergyNotes,
-        medicalNotes: payload.medicalNotes,
-        previousSchool: payload.previousSchool || payload.notes || undefined,
-        classId: payload.classId || undefined,
-        parents: payload.parents || [],
-        avatarUrl: payload.avatar || getStudentAvatarUrl(null, payload.studentCode || payload.fullName),
-      };
-
-      const result = await studentsApi.create(backendPayload);
-      if (result) {
-        const transformed = transformBackendStudent(result);
-        set((state) => ({
-          students: [transformed, ...state.students],
-          isDrawerOpen: false,
-        }));
-        return;
-      }
-    } catch (err) {
-      console.warn('Backend API create failed, saving to local store:', err);
-    }
-
-    // Local fallback
-    const newStudent = {
-      id: String(Date.now()),
-      studentCode: payload.studentCode || `HS${String(Date.now()).slice(-3)}`,
+    const backendPayload = {
+      studentCode: payload.studentCode,
       fullName: payload.fullName,
-      dob: payload.dob || '01/01/2023',
       dateOfBirth: toIsoDate(payload.dob),
-      gender: payload.gender || 'Nam',
+      gender: payload.gender === 'Nam' ? 'MALE' : 'FEMALE',
       ethnic: payload.ethnic || 'Kinh',
       nationality: payload.nationality || 'Việt Nam',
-      placeOfBirth: payload.placeOfBirth || '',
-      permanentResidence: payload.permanentResidence || '',
-      currentResidence: payload.currentResidence || '',
-      status: payload.status || 'studying',
-      joinDate: payload.joinDate || '01/09/2026',
+      placeOfBirth: payload.placeOfBirth,
+      permanentResidence: payload.permanentResidence,
+      currentResidence: payload.currentResidence,
+      status: (payload.status || 'studying').toUpperCase(),
       enrollmentDate: toIsoDate(payload.joinDate),
-      allergyNotes: payload.allergyNotes || '',
-      medicalNotes: payload.medicalNotes || '',
-      previousSchool: payload.previousSchool || payload.notes || '',
-      notes: payload.previousSchool || payload.notes || '',
-      avatar: payload.avatar || getStudentAvatarUrl(null, payload.studentCode || payload.fullName),
-      currentClass: payload.currentClass || null,
-      primaryParent: payload.parents?.[0] || null,
+      allergyNotes: payload.allergyNotes,
+      medicalNotes: payload.medicalNotes,
+      previousSchool: payload.previousSchool || payload.notes || undefined,
+      classId: payload.classId || undefined,
       parents: payload.parents || [],
+      avatarUrl: payload.avatar || getStudentAvatarUrl(null, payload.studentCode || payload.fullName),
     };
 
-    set((state) => ({
-      students: [newStudent, ...state.students],
-      isDrawerOpen: false,
-    }));
+    const result = await studentsApi.create(backendPayload);
+    if (result) {
+      const transformed = transformBackendStudent(result);
+      set((state) => ({
+        students: [transformed, ...state.students],
+        isDrawerOpen: false,
+      }));
+      return transformed;
+    }
   },
 
   // API Integration: Update Student
   updateStudent: async (id, payload) => {
-    try {
-      const backendPayload = {
-        fullName: payload.fullName,
-        dateOfBirth: payload.dob ? toIsoDate(payload.dob) : undefined,
-        gender: payload.gender ? (payload.gender === 'Nam' ? 'MALE' : 'FEMALE') : undefined,
-        ethnic: payload.ethnic,
-        nationality: payload.nationality,
-        placeOfBirth: payload.placeOfBirth,
-        permanentResidence: payload.permanentResidence,
-        currentResidence: payload.currentResidence,
-        status: payload.status ? payload.status.toUpperCase() : undefined,
-        enrollmentDate: payload.joinDate ? toIsoDate(payload.joinDate) : undefined,
-        allergyNotes: payload.allergyNotes,
-        medicalNotes: payload.medicalNotes,
-        previousSchool: payload.previousSchool !== undefined ? payload.previousSchool : payload.notes,
-        avatarUrl: payload.avatar,
-        parents: payload.parents || undefined,
-      };
+    const backendPayload = {
+      fullName: payload.fullName,
+      dateOfBirth: payload.dob ? toIsoDate(payload.dob) : undefined,
+      gender: payload.gender ? (payload.gender === 'Nam' ? 'MALE' : 'FEMALE') : undefined,
+      ethnic: payload.ethnic,
+      nationality: payload.nationality,
+      placeOfBirth: payload.placeOfBirth,
+      permanentResidence: payload.permanentResidence,
+      currentResidence: payload.currentResidence,
+      status: payload.status ? payload.status.toUpperCase() : undefined,
+      enrollmentDate: payload.joinDate ? toIsoDate(payload.joinDate) : undefined,
+      allergyNotes: payload.allergyNotes,
+      medicalNotes: payload.medicalNotes,
+      previousSchool: payload.previousSchool !== undefined ? payload.previousSchool : payload.notes,
+      avatarUrl: payload.avatar,
+      parents: payload.parents || undefined,
+    };
 
-      const result = await studentsApi.update(id, backendPayload);
-      if (result) {
-        const transformed = transformBackendStudent(result);
-        set((state) => ({
-          students: state.students.map((item) => (item.id === id || item.publicId === id ? transformed : item)),
-          detailStudent: (state.detailStudent?.id === id || state.detailStudent?.publicId === id) ? transformed : state.detailStudent,
-          isDrawerOpen: false,
-        }));
-        return transformed;
-      }
-    } catch (err) {
-      console.warn('Backend API update failed, updating local store:', err);
+    const result = await studentsApi.update(id, backendPayload);
+    if (result) {
+      const transformed = transformBackendStudent(result);
+      set((state) => ({
+        students: state.students.map((item) => (item.id === id || item.publicId === id ? transformed : item)),
+        detailStudent: (state.detailStudent?.id === id || state.detailStudent?.publicId === id) ? transformed : state.detailStudent,
+        isDrawerOpen: false,
+      }));
+      return transformed;
     }
-
-    // Local fallback
-    set((state) => ({
-      students: state.students.map((item) => {
-        if (item.id === id || item.publicId === id) {
-          return {
-            ...item,
-            ...payload,
-            parents: payload.parents !== undefined ? payload.parents : item.parents,
-            primaryParent: payload.parents?.[0] !== undefined ? payload.parents[0] : item.primaryParent,
-            dateOfBirth: payload.dob ? toIsoDate(payload.dob) : item.dateOfBirth,
-            enrollmentDate: payload.joinDate ? toIsoDate(payload.joinDate) : item.enrollmentDate,
-          };
-        }
-        return item;
-      }),
-      detailStudent: (state.detailStudent?.id === id || state.detailStudent?.publicId === id)
-        ? {
-            ...state.detailStudent,
-            ...payload,
-            parents: payload.parents !== undefined ? payload.parents : state.detailStudent.parents,
-            primaryParent: payload.parents?.[0] !== undefined ? payload.parents[0] : state.detailStudent.primaryParent,
-            dateOfBirth: payload.dob ? toIsoDate(payload.dob) : state.detailStudent.dateOfBirth,
-            enrollmentDate: payload.joinDate ? toIsoDate(payload.joinDate) : state.detailStudent.enrollmentDate,
-          }
-        : state.detailStudent,
-      isDrawerOpen: false,
-    }));
   },
 
   // API Integration: Delete Student

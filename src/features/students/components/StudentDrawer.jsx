@@ -484,7 +484,20 @@ export function StudentDrawer({
         toast.success('Đã thêm hồ sơ học sinh mới thành công');
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || err.message || 'Lưu hồ sơ học sinh thất bại');
+      console.error('Save student failed:', err);
+      const errorMsg =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        'Lưu hồ sơ học sinh thất bại';
+      toast.error(errorMsg);
+      if (
+        errorMsg.toLowerCase().includes('cccd') ||
+        errorMsg.toLowerCase().includes('phụ huynh') ||
+        errorMsg.toLowerCase().includes('parent')
+      ) {
+        setActiveTab('parents');
+      }
     }
   };
 
