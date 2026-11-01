@@ -687,10 +687,10 @@ export function StudentDrawer({
                       <select
                         value={classId}
                         onChange={(e) => setClassId(e.target.value)}
-                        disabled={isTeacher || isInClassContext}
+                        disabled={drawerMode === 'edit' || isTeacher || isInClassContext}
                         className={cn(
                           'w-full h-9 px-3 bg-background border border-border rounded-none text-[13px] text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer',
-                          (isTeacher || isInClassContext) && 'bg-muted cursor-not-allowed opacity-90'
+                          (drawerMode === 'edit' || isTeacher || isInClassContext) && 'bg-muted cursor-not-allowed opacity-90'
                         )}
                       >
                         <option value="">-- Chưa phân lớp --</option>
@@ -700,6 +700,11 @@ export function StudentDrawer({
                           </option>
                         ))}
                       </select>
+                      {drawerMode === 'edit' && (
+                        <p className="text-[11px] text-muted-foreground mt-1">
+                          Lớp học không thể thay đổi tại đây. Vui lòng sử dụng tính năng Chuyển lớp hoặc Phân lớp.
+                        </p>
+                      )}
                     </div>
 
                     <div className="space-y-1.5">

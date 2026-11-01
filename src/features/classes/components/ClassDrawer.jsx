@@ -252,18 +252,22 @@ export function ClassDrawer() {
                   />
                 </div>
 
-                {/* Giáo viên phụ trách (Khớp quan hệ teacher_classes trong DB schema) */}
+                {/* Giáo viên phụ trách (Chỉ phân công qua tính năng Phân công giáo viên) */}
                 <div className="space-y-1.5">
                   <Label className="text-[12px] font-medium text-foreground">
                     {t('classes.fieldTeacher', 'Giáo viên phụ trách')}
                   </Label>
                   <Input
                     type="text"
-                    value={formData.teacher}
-                    onChange={(e) => setFormData({ ...formData, teacher: e.target.value })}
-                    placeholder="VD: Cô Nguyễn Thị Lan"
-                    className="h-9 text-[13px] rounded-none border-border"
+                    value={formData.teacher || 'Chưa phân công'}
+                    disabled
+                    readOnly
+                    placeholder="Chưa phân công giáo viên"
+                    className="h-9 text-[13px] rounded-none border-border bg-muted/50 cursor-not-allowed text-muted-foreground opacity-90 select-none"
                   />
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Giáo viên phụ trách chỉ được thay đổi thông qua chức năng Phân công giáo viên.
+                  </p>
                 </div>
               </div>
 
