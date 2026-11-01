@@ -264,7 +264,7 @@ export function ClassDrawer() {
                     className="h-9 text-[13px] rounded-none border-border bg-muted/50 cursor-not-allowed text-muted-foreground opacity-90 select-none pointer-events-none"
                   />
                   <p className="text-[11px] text-muted-foreground mt-1">
-                    Giáo viên phụ trách chỉ được thay đổi thông qua chức năng Phân công giáo viên.
+                    Trường Giáo viên phụ trách chỉ hiển thị thông tin hiện tại, không cho nhập hoặc sửa trực tiếp. Để thay đổi giáo viên phụ trách, thì sử dụng chức năng Phân công giáo viên.
                   </p>
                 </div>
               </div>

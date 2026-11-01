@@ -698,26 +698,43 @@ export function StudentDrawer({
                       <Label className="text-[12px] font-medium text-foreground">
                         Lớp học
                       </Label>
-                      <select
-                        value={classId}
-                        onChange={(e) => setClassId(e.target.value)}
-                        disabled={drawerMode === 'edit' || isTeacher || isInClassContext}
-                        className={cn(
-                          'w-full h-9 px-3 bg-background border border-border rounded-none text-[13px] text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer',
-                          (drawerMode === 'edit' || isTeacher || isInClassContext) && 'bg-muted cursor-not-allowed opacity-90 pointer-events-none'
-                        )}
-                      >
-                        <option value="">-- Chưa phân lớp --</option>
-                        {(classes || []).map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.name} {c.room ? `(${c.room})` : ''}
-                          </option>
-                        ))}
-                      </select>
-                      {drawerMode === 'edit' && (
-                        <p className="text-[11px] text-muted-foreground mt-1">
-                          Lớp học không thể thay đổi tại đây. Vui lòng sử dụng tính năng Chuyển lớp hoặc Phân lớp.
-                        </p>
+                      {drawerMode === 'edit' ? (
+                        <div>
+                          <Input
+                            type="text"
+                            value={(() => {
+                              const selectedClass = (classes || []).find((c) => String(c.id) === String(classId));
+                              return selectedClass
+                                ? `${selectedClass.name}${selectedClass.room ? ` (${selectedClass.room})` : ''}`
+                                : currentStudent?.currentClass?.className
+                                  ? `${currentStudent.currentClass.className}${currentStudent.currentClass.roomNumber ? ` (${currentStudent.currentClass.roomNumber})` : ''}`
+                                  : 'Chưa phân lớp';
+                            })()}
+                            disabled
+                            readOnly
+                            className="h-9 text-[13px] rounded-none border-border bg-muted/50 cursor-not-allowed text-muted-foreground opacity-90 select-none pointer-events-none"
+                          />
+                          <p className="text-[11px] text-muted-foreground mt-1">
+                            Trường Lớp học chỉ hiển thị lớp hiện tại, không cho chọn lớp khác hoặc chọn &quot;Chưa phân lớp&quot;. Việc phân lớp phải thực hiện qua chức năng Phân lớp học sinh; việc đổi lớp phải qua chức năng Chuyển lớp.
+                          </p>
+                        </div>
+                      ) : (
+                        <select
+                          value={classId}
+                          onChange={(e) => setClassId(e.target.value)}
+                          disabled={isTeacher || isInClassContext}
+                          className={cn(
+                            'w-full h-9 px-3 bg-background border border-border rounded-none text-[13px] text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer',
+                            (isTeacher || isInClassContext) && 'bg-muted cursor-not-allowed opacity-90 pointer-events-none'
+                          )}
+                        >
+                          <option value="">-- Chưa phân lớp --</option>
+                          {(classes || []).map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.name} {c.room ? `(${c.room})` : ''}
+                            </option>
+                          ))}
+                        </select>
                       )}
                     </div>
 
