@@ -27,7 +27,7 @@ const DOMAIN_LABELS = {
   PHYSICAL: 'Phát triển thể chất',
   COGNITIVE: 'Phát triển nhận thức',
   LANGUAGE: 'Phát triển ngôn ngữ',
-  SOCIO_EMOTIONAL: 'Phát triển tình cảm - kỹ năng xã hội',
+  SOCIO_EMOTIONAL: 'Phát triển tình cảm - KNXH',
   AESTHETIC: 'Phát triển thẩm mỹ',
 };
 
@@ -434,7 +434,7 @@ export function CurriculumSingleGoalDetailPage() {
                 {t('planning.devDomainLabel', 'Lĩnh vực phát triển')}
               </span>
               <span className="text-[13.5px] font-semibold text-foreground truncate">
-                {goal?.domainLabel || t('domains.physical', 'Phát triển thể chất')}
+                {DOMAIN_LABELS[goal?.domain] || goal?.domainLabel || t('domains.physical', 'Phát triển thể chất')}
               </span>
             </div>
 
