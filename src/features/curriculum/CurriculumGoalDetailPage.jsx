@@ -40,20 +40,21 @@ const DOMAIN_OPTIONS = [
   { value: 'AESTHETIC', label: 'Thẩm mỹ' },
 ];
 
-// Helper: auto-generate sequential goal codes (MT 1, MT 2, MT 3...) from top to bottom
+// Helper: normalize goals and domain counts while preserving database goal codes (MT01, MT02...)
 const reindexGoalTree = (domains) => {
-  let counter = 1;
   return domains.map((domain) => {
     const rawGoals = domain.children || [];
     const directGoals = rawGoals.flatMap((item) => (item.children ? item.children : [item]));
-    const reindexed = directGoals.map((g) => ({
+    const normalized = directGoals.map((g) => ({
       ...g,
-      code: `MT ${counter++}`,
+      code: g.code || g.goal_code || g.goalCode || 'MT',
+      domain: g.domain || domain.domain,
+      domainLabel: g.domainLabel || domain.domainLabel,
     }));
     return {
       ...domain,
-      children: reindexed,
-      count: reindexed.length,
+      children: normalized,
+      count: normalized.length,
     };
   });
 };
