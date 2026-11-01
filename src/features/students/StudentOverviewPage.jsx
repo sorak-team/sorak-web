@@ -514,8 +514,11 @@ export function StudentOverviewPage() {
                           {p.relationship ? `${p.relationship}: ` : ''}{p.fullName}
                         </strong>
                       </span>
-                      <span className="text-[13px] text-muted-foreground">
-                        SĐT: <span className="font-semibold text-foreground font-mono">{p.phone || '—'}</span>
+                      <span className="text-[13px] text-muted-foreground flex items-center gap-2 flex-wrap">
+                        <span>SĐT: <span className="font-semibold text-foreground font-mono">{p.phone || '—'}</span></span>
+                        {p.citizenId && (
+                          <span>• CCCD: <span className="font-semibold text-foreground font-mono">{p.citizenId}</span></span>
+                        )}
                       </span>
                     </div>
                   </div>
