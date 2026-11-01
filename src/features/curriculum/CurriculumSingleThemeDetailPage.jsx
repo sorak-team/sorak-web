@@ -525,19 +525,12 @@ export function CurriculumSingleThemeDetailPage() {
     [subThemes, startDate, endDate],
   );
 
-  // Kiểm tra chủ đề đã phân bổ đủ nhánh (phủ kín thời gian đến endDate)
+  // Kiểm tra chủ đề đã phân bổ đủ nhánh (tối đa 10 nhánh)
   const isThemeFull = useMemo(() => {
-    if (!endDate || !Array.isArray(subThemes) || subThemes.length === 0) return false;
-    const lastBranch = subThemes[subThemes.length - 1];
-    if (lastBranch?.endDate && lastBranch.endDate >= endDate) {
-      return true;
-    }
-    if (lastBranch?.endDate) {
-      const nextStart = addDaysToDate(lastBranch.endDate, 1);
-      if (nextStart > endDate) return true;
-    }
+    if (!Array.isArray(subThemes)) return false;
+    if (subThemes.length >= 10) return true;
     return false;
-  }, [subThemes, endDate]);
+  }, [subThemes]);
 
   // Handlers for branch topics (Chủ đề nhánh)
   const handleAddSubTheme = () => {
@@ -550,7 +543,7 @@ export function CurriculumSingleThemeDetailPage() {
       return;
     }
     if (isThemeFull) {
-      toast.warning(`Chủ đề đã phân bổ đủ thời gian (đến hết ngày ${formatDateVn(endDate)}). Không thể thêm nhánh mới.`);
+      toast.warning('Một chủ đề lớn tối đa 10 chủ đề nhánh.');
       return;
     }
 
