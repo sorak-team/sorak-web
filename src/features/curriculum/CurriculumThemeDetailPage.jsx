@@ -559,20 +559,7 @@ export function CurriculumThemeDetailPage() {
 
   // Khung thời gian năm học (để phân biệt ngày trong năm học vs ngoài năm học)
   const academicYearBounds = useMemo(() => {
-    // 1. Ưu tiên ngày bắt đầu/kết thúc năm học từ API themeSetInfo (nếu hợp lệ YYYY-MM-DD với năm >= 2000)
-    if (
-      themeSetInfo?.startDate &&
-      themeSetInfo?.endDate &&
-      /^\d{4}-\d{2}-\d{2}$/.test(themeSetInfo.startDate) &&
-      /^\d{4}-\d{2}-\d{2}$/.test(themeSetInfo.endDate)
-    ) {
-      return {
-        start: themeSetInfo.startDate,
-        end: themeSetInfo.endDate,
-      };
-    }
-
-    // 2. Fallback theo chuỗi năm học (phân tích năm 4 chữ số, mặc định 05/09 đến 31/05)
+    // 1. Phân tích năm từ yearId (ví dụ "2026-2027" -> 2026 và 2027)
     const yearMatch = (yearId || '').match(/\d{4}/g);
     let startYear = 2026;
     let endYear = 2027;
@@ -584,30 +571,32 @@ export function CurriculumThemeDetailPage() {
       endYear = startYear + 1;
     }
 
+    // Nếu themeSetInfo có startDate / endDate và khớp năm học được chọn
+    if (
+      themeSetInfo?.startDate &&
+      themeSetInfo?.endDate &&
+      /^\d{4}-\d{2}-\d{2}$/.test(themeSetInfo.startDate) &&
+      /^\d{4}-\d{2}-\d{2}$/.test(themeSetInfo.endDate) &&
+      parseInt(themeSetInfo.endDate.slice(0, 4), 10) >= endYear
+    ) {
+      return {
+        start: themeSetInfo.startDate,
+        end: themeSetInfo.endDate,
+      };
+    }
+
     return {
       start: `${startYear}-09-01`,
       end: `${endYear}-05-31`,
     };
   }, [yearId, themeSetInfo]);
 
-  // Kiểm tra đã phủ kín toàn bộ năm học (chủ đề cuối cùng đã chạm hoặc vượt ngày kết thúc năm học)
+  // Kiểm tra đã đạt tối đa số lượng chủ đề lớn trong năm học (tối đa 20 chủ đề)
   const isAcademicYearFull = useMemo(() => {
     if (!themes || themes.length === 0) return false;
-    // Tối đa 15 chủ đề lớn trong một năm học
-    if (themes.length >= 15) return true;
-
-    const lastTheme = themes[themes.length - 1];
-    const yearEnd = academicYearBounds.end || '2027-05-31';
-    if (!lastTheme?.endDate) return false;
-
-    // Chỉ coi là phủ kín khi chủ đề cuối cùng chạm hoặc vượt ngày kết thúc năm học thực sự (cuối tháng 5)
-    if (lastTheme.endDate >= yearEnd) return true;
-
-    const nextStart = addDaysToDate(lastTheme.endDate, 1);
-    if (nextStart > yearEnd) return true;
-
+    if (themes.length >= 20) return true;
     return false;
-  }, [themes, academicYearBounds]);
+  }, [themes]);
 
   // Giới hạn các ngày hữu dụng cho chủ đề đang chọn (themeDateBounds)
   const themeDateBounds = useMemo(() => {
@@ -1021,9 +1010,7 @@ export function CurriculumThemeDetailPage() {
       return;
     }
     if (isAcademicYearFull) {
-      toast.warning(
-        `Các chủ đề đã phân bổ đủ cho toàn bộ năm học (đến ngày ${formatDateVn(academicYearBounds.end)}). Không thể thêm chủ đề mới.`,
-      );
+      toast.warning('Một năm học tối đa 20 chủ đề lớn.');
       return;
     }
     const nextCode = String(themes.length + 1).padStart(2, '0');
@@ -1216,12 +1203,12 @@ export function CurriculumThemeDetailPage() {
                 isAllPublished
                   ? 'Vui lòng gỡ công bố để thêm chủ đề mới'
                   : isAcademicYearFull
-                  ? `Đã phân bổ kín toàn bộ năm học (đến ngày ${formatDateVn(academicYearBounds.end)}). Không thể thêm chủ đề mới.`
+                  ? 'Đã đạt tối đa 20 chủ đề trong một năm học'
                   : t('curriculum.createTheme')
               }
             >
               <HugeiconsIcon icon={PlusSignIcon} size={14} />
-              <span>{isAcademicYearFull ? 'Đã đủ chủ đề năm học' : t('curriculum.createTheme')}</span>
+              <span>{isAcademicYearFull ? 'Đã đủ tối đa 20 chủ đề' : t('curriculum.createTheme')}</span>
             </Button>
           </div>
 

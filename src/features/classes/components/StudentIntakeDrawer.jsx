@@ -259,7 +259,14 @@ export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }
   const endItem = Math.min(filteredStudents.length, currentPage * pageSize);
 
   // Selection handlers
-  const handleToggleSelect = (id) => {
+  const handleToggleSelect = (st) => {
+    if (!st || st.hasAccount === false) {
+      toast.warning(
+        `Hồ sơ học sinh "${st?.fullName || 'này'}" chưa được liên kết tài khoản. Vui lòng liên kết tài khoản cho học sinh trước khi phân lớp.`
+      );
+      return;
+    }
+    const id = st.id;
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -271,20 +278,25 @@ export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }
     });
   };
 
+  const eligibleOnCurrentPage = useMemo(() => {
+    return pagedStudents.filter((s) => s.hasAccount !== false);
+  }, [pagedStudents]);
+
   const isAllCurrentPageSelected =
-    pagedStudents.length > 0 && pagedStudents.every((s) => selectedIds.has(s.id));
+    eligibleOnCurrentPage.length > 0 &&
+    eligibleOnCurrentPage.every((s) => selectedIds.has(s.id));
 
   const handleSelectAll = () => {
     if (isAllCurrentPageSelected) {
       setSelectedIds((prev) => {
         const next = new Set(prev);
-        pagedStudents.forEach((s) => next.delete(s.id));
+        eligibleOnCurrentPage.forEach((s) => next.delete(s.id));
         return next;
       });
     } else {
       setSelectedIds((prev) => {
         const next = new Set(prev);
-        pagedStudents.forEach((s) => next.add(s.id));
+        eligibleOnCurrentPage.forEach((s) => next.add(s.id));
         return next;
       });
     }
@@ -293,6 +305,20 @@ export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }
   // Batch intake allocation
   const handleAllocate = async () => {
     if (selectedIds.size === 0) return;
+
+    // Double-check no unlinked student is selected
+    const unlinkedSelected = Array.from(selectedIds)
+      .map((id) => students.find((s) => s.id === id))
+      .filter((s) => s && s.hasAccount === false);
+
+    if (unlinkedSelected.length > 0) {
+      const names = unlinkedSelected.map((s) => s.fullName).join(', ');
+      toast.error(
+        `Hồ sơ học sinh (${names}) chưa được liên kết tài khoản. Vui lòng liên kết tài khoản cho học sinh trước khi phân lớp.`
+      );
+      return;
+    }
+
     setIsAllocating(true);
     try {
       const ids = Array.from(selectedIds);
@@ -457,6 +483,7 @@ export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }
                   ) : (
                     pagedStudents.map((st) => {
                       const isSelected = selectedIds.has(st.id);
+                      const isUnlinked = st.hasAccount === false;
                       const hasOldClass = Boolean(
                         st.previousClass &&
                         st.previousClass.trim() !== '' &&
@@ -466,9 +493,12 @@ export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }
                       return (
                         <tr
                           key={st.id}
-                          onClick={() => handleToggleSelect(st.id)}
+                          onClick={() => handleToggleSelect(st)}
                           className={cn(
-                            'h-[60px] hover:bg-muted/40 transition-colors cursor-pointer group',
+                            'h-[60px] transition-colors group',
+                            isUnlinked
+                              ? 'opacity-70 bg-muted/10 cursor-not-allowed hover:bg-amber-50/20'
+                              : 'hover:bg-muted/40 cursor-pointer',
                             isSelected && 'bg-primary/5',
                           )}
                         >
@@ -477,12 +507,23 @@ export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }
                             <input
                               type="checkbox"
                               checked={isSelected}
-                              onChange={() => handleToggleSelect(st.id)}
-                              className="size-4 rounded-none accent-[#1447e6] cursor-pointer align-middle"
+                              disabled={isUnlinked}
+                              onChange={() => handleToggleSelect(st)}
+                              title={
+                                isUnlinked
+                                  ? 'Vui lòng liên kết tài khoản cho học sinh trước khi phân lớp'
+                                  : isSelected
+                                    ? 'Bỏ chọn'
+                                    : 'Chọn học sinh'
+                              }
+                              className={cn(
+                                'size-4 rounded-none accent-[#1447e6] align-middle',
+                                isUnlinked ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'
+                              )}
                             />
                           </td>
 
-                          {/* 2. Cột Học sinh (Hình kèm Tên & Mã học sinh) */}
+                          {/* 2. Cột Học sinh (Hình kèm Tên & Mã học sinh & Trạng thái tài khoản) */}
                           <td className="px-3">
                             <div className="flex items-center gap-3">
                               <div className="size-8 shrink-0 rounded-none overflow-hidden border border-border/80 bg-muted/40">
@@ -496,9 +537,20 @@ export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }
                                 />
                               </div>
                               <div className="flex flex-col min-w-0 leading-tight">
-                                <span className="text-[14px] font-medium text-foreground truncate">
-                                  {st.fullName}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[14px] font-medium text-foreground truncate">
+                                    {st.fullName}
+                                  </span>
+                                  {isUnlinked ? (
+                                    <span className="inline-flex items-center px-1.5 py-0.2 text-[10.5px] font-medium bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200/80 rounded-none shrink-0">
+                                      Chưa liên kết tài khoản
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center px-1.5 py-0.2 text-[10.5px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200/80 rounded-none shrink-0">
+                                      Đã liên kết
+                                    </span>
+                                  )}
+                                </div>
                                 <span className="text-[12px] text-muted-foreground truncate font-mono">
                                   {st.studentCode || '—'}
                                 </span>
