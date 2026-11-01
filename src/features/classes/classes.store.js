@@ -326,6 +326,7 @@ export const useClassesStore = create((set, get) => ({
       await classesApi.update(id, payload);
     } catch (e) {
       console.warn('API update class failed:', e.message);
+      throw e;
     }
 
     set((state) => ({
