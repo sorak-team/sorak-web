@@ -10,7 +10,8 @@ import {
   ArrowReloadHorizontalIcon,
 } from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
-import { useTeacherStore, getTeacherAvatarUrl } from './teachers.store';
+import { useTeacherStore, getTeacherAvatarUrl, transformBackendTeacher } from './teachers.store';
+import { teachersApi } from './teachers.api';
 import { TeacherDrawer } from './components/TeacherDrawer';
 import { DeleteTeacherDialog } from './components/DeleteTeacherDialog';
 import { uploadApi } from '@/shared/api/upload.api';
@@ -36,14 +37,39 @@ export function TeacherOverviewPage() {
 
   const fileInputRef = useRef(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [detailTeacher, setDetailTeacher] = useState(null);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
 
   React.useEffect(() => {
     fetchTeachers();
   }, [fetchTeachers]);
 
-  const teacher = teachers.find((item) => item.id === id || item.employeeCode === id);
+  React.useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    async function loadDetail() {
+      setIsDetailLoading(true);
+      try {
+        const raw = await teachersApi.getById(id);
+        if (!cancelled && raw) {
+          setDetailTeacher(transformBackendTeacher(raw));
+        }
+      } catch (err) {
+        console.warn('Failed to load teacher detail profile:', err);
+      } finally {
+        if (!cancelled) setIsDetailLoading(false);
+      }
+    }
+    loadDetail();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
-  if (isLoading && !teacher) {
+  const listTeacher = teachers.find((item) => item.id === id || item.employeeCode === id);
+  const teacher = detailTeacher || listTeacher;
+
+  if ((isLoading || isDetailLoading) && !teacher) {
     return (
       <div className="flex flex-col gap-6 animate-pulse">
         <div className="h-28 border border-border bg-card p-6 rounded-none flex items-center gap-4">

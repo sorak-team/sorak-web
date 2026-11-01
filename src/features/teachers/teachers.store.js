@@ -75,7 +75,7 @@ export function generateTeacherCode(existingTeachers = [], joinDate) {
 
 export const initialTeachers = [];
 
-function transformBackendTeacher(t) {
+export function transformBackendTeacher(t) {
   const status =
     t.workStatus === 'WORKING'
       ? 'active'
@@ -107,7 +107,19 @@ function transformBackendTeacher(t) {
       ...ac,
       className: (ac.className || ac.class?.name || '').replace(/^Lớp\s+/i, '').trim(),
     })),
-    assignmentHistory: (t.assignmentHistory || []).map((h) => ({
+    assignmentHistory: (
+      Array.isArray(t.assignmentHistory) && t.assignmentHistory.length > 0
+        ? t.assignmentHistory
+        : (t.assignedClasses || []).map((ac) => ({
+            allocationId: ac.allocationId,
+            classId: ac.classId,
+            className: ac.className,
+            schoolYear: ac.schoolYearName || ac.schoolYear,
+            assignedAt: ac.assignedAt,
+            leftAt: null,
+            isActive: true,
+          }))
+    ).map((h) => ({
       ...h,
       className: (h.className || '').replace(/^Lớp\s+/i, '').trim(),
       assignedAtFormatted: h.assignedAt ? toDisplayDate(h.assignedAt) : '—',

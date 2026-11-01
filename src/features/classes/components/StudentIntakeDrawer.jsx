@@ -131,6 +131,44 @@ export const getExpectedPreviousTier = (targetClass) => {
   return 'ALL';
 };
 
+/**
+ * Check whether a student meets the age requirements for the target class:
+ * - Nhà trẻ: Từ đủ 24 tháng đến dưới 36 tháng
+ * - Mầm: Từ đủ 36 tháng đến dưới 48 tháng
+ * - Chồi: Từ đủ 48 tháng đến dưới 60 tháng
+ * - Lá: Từ đủ 60 tháng đến dưới 72 tháng
+ */
+export const checkIsAgeEligible = (student, targetClass) => {
+  if (student?.isAgeEligible !== undefined) {
+    return student.isAgeEligible;
+  }
+  if (!student?.dateOfBirth) return false;
+  const birth = new Date(student.dateOfBirth);
+  if (isNaN(birth.getTime())) return false;
+
+  const ref = targetClass?.schoolYear?.startDate
+    ? new Date(targetClass.schoolYear.startDate)
+    : new Date('2026-09-01');
+
+  let months = (ref.getFullYear() - birth.getFullYear()) * 12 + (ref.getMonth() - birth.getMonth());
+  if (ref.getDate() < birth.getDate()) months--;
+
+  const group = (targetClass?.ageGroup || targetClass?.name || '').toUpperCase();
+  if (group.includes('NHA_TRE') || group.includes('NHATRE') || group.includes('NHÀ TRẺ')) {
+    return months >= 24 && months < 36;
+  }
+  if (group.includes('MAM') || group.includes('MẦM')) {
+    return months >= 36 && months < 48;
+  }
+  if (group.includes('CHOI') || group.includes('CHỒI')) {
+    return months >= 48 && months < 60;
+  }
+  if (group.includes('LA') || group.includes('LÁ')) {
+    return months >= 60 && months < 72;
+  }
+  return true;
+};
+
 export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }) {
   const { t } = useTranslation();
   const fetchGlobalClasses = useClassesStore((state) => state.fetchClasses);
@@ -266,6 +304,11 @@ export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }
       );
       return;
     }
+    const isAgeEligible = checkIsAgeEligible(st, currentClass);
+    if (!isAgeEligible) {
+      toast.warning('Độ tuổi học sinh không phù hợp với khối lớp được chọn.');
+      return;
+    }
     const id = st.id;
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -279,8 +322,10 @@ export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }
   };
 
   const eligibleOnCurrentPage = useMemo(() => {
-    return pagedStudents.filter((s) => s.hasAccount !== false);
-  }, [pagedStudents]);
+    return pagedStudents.filter(
+      (s) => s.hasAccount !== false && checkIsAgeEligible(s, currentClass)
+    );
+  }, [pagedStudents, currentClass]);
 
   const isAllCurrentPageSelected =
     eligibleOnCurrentPage.length > 0 &&
@@ -316,6 +361,16 @@ export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }
       toast.error(
         `Hồ sơ học sinh (${names}) chưa được liên kết tài khoản. Vui lòng liên kết tài khoản cho học sinh trước khi phân lớp.`
       );
+      return;
+    }
+
+    // Double-check no age-ineligible student is selected
+    const ineligibleSelected = Array.from(selectedIds)
+      .map((id) => students.find((s) => s.id === id))
+      .filter((s) => s && !checkIsAgeEligible(s, currentClass));
+
+    if (ineligibleSelected.length > 0) {
+      toast.error('Độ tuổi học sinh không phù hợp với khối lớp được chọn.');
       return;
     }
 
@@ -484,6 +539,8 @@ export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }
                     pagedStudents.map((st) => {
                       const isSelected = selectedIds.has(st.id);
                       const isUnlinked = st.hasAccount === false;
+                      const isAgeEligible = checkIsAgeEligible(st, currentClass);
+                      const isSelectable = !isUnlinked && isAgeEligible;
                       const hasOldClass = Boolean(
                         st.previousClass &&
                         st.previousClass.trim() !== '' &&
@@ -496,7 +553,7 @@ export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }
                           onClick={() => handleToggleSelect(st)}
                           className={cn(
                             'h-[60px] transition-colors group',
-                            isUnlinked
+                            !isSelectable
                               ? 'opacity-70 bg-muted/10 cursor-not-allowed hover:bg-amber-50/20'
                               : 'hover:bg-muted/40 cursor-pointer',
                             isSelected && 'bg-primary/5',
@@ -507,23 +564,25 @@ export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }
                             <input
                               type="checkbox"
                               checked={isSelected}
-                              disabled={isUnlinked}
+                              disabled={!isSelectable}
                               onChange={() => handleToggleSelect(st)}
                               title={
-                                isUnlinked
-                                  ? 'Vui lòng liên kết tài khoản cho học sinh trước khi phân lớp'
-                                  : isSelected
-                                    ? 'Bỏ chọn'
-                                    : 'Chọn học sinh'
+                                !isAgeEligible
+                                  ? 'Độ tuổi học sinh không phù hợp với khối lớp được chọn'
+                                  : isUnlinked
+                                    ? 'Vui lòng liên kết tài khoản cho học sinh trước khi phân lớp'
+                                    : isSelected
+                                      ? 'Bỏ chọn'
+                                      : 'Chọn học sinh'
                               }
                               className={cn(
                                 'size-4 rounded-none accent-[#1447e6] align-middle',
-                                isUnlinked ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'
+                                !isSelectable ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'
                               )}
                             />
                           </td>
 
-                          {/* 2. Cột Học sinh (Hình kèm Tên & Mã học sinh & Trạng thái tài khoản) */}
+                          {/* 2. Cột Học sinh (Hình kèm Tên & Mã học sinh & Trạng thái tài khoản & Độ tuổi) */}
                           <td className="px-3">
                             <div className="flex items-center gap-3">
                               <div className="size-8 shrink-0 rounded-none overflow-hidden border border-border/80 bg-muted/40">
@@ -537,10 +596,18 @@ export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }
                                 />
                               </div>
                               <div className="flex flex-col min-w-0 leading-tight">
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                   <span className="text-[14px] font-medium text-foreground truncate">
                                     {st.fullName}
                                   </span>
+                                  {!isAgeEligible && (
+                                    <span
+                                      className="inline-flex items-center px-1.5 py-0.2 text-[10.5px] font-medium bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border border-rose-200/80 rounded-none shrink-0"
+                                      title="Độ tuổi học sinh không phù hợp với khối lớp được chọn"
+                                    >
+                                      Sai độ tuổi khối
+                                    </span>
+                                  )}
                                   {isUnlinked ? (
                                     <span className="inline-flex items-center px-1.5 py-0.2 text-[10.5px] font-medium bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200/80 rounded-none shrink-0">
                                       Chưa liên kết tài khoản
