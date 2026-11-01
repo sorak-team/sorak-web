@@ -80,6 +80,16 @@ export function ClassStudentsPage() {
     fetchStudents(selectedYearId ? { schoolYearId: selectedYearId } : {});
   }, [fetchStudents, selectedYearId]);
 
+  // Always reset pagination and filters on mount or class switch
+  useEffect(() => {
+    useStudentStore.setState({
+      currentPage: 1,
+      searchQuery: '',
+      statusFilter: 'all',
+      genderFilter: 'all',
+    });
+  }, [targetClassId]);
+
   // Filtered Students strictly for this teacher's class and active year
   const filteredStudents = useMemo(() => {
     let list = [...students];
@@ -181,11 +191,14 @@ export function ClassStudentsPage() {
     return list;
   }, [students, targetClassId, searchQuery, statusFilter, genderFilter, isPastYear]);
 
-  // Pagination calculation
+  // Safe pagination calculation (clamps currentPage to totalPages)
+  const totalPages = Math.max(1, Math.ceil(filteredStudents.length / pageSize));
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+
   const paginatedStudents = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
+    const start = (safeCurrentPage - 1) * pageSize;
     return filteredStudents.slice(start, start + pageSize);
-  }, [filteredStudents, currentPage, pageSize]);
+  }, [filteredStudents, safeCurrentPage, pageSize]);
 
   if (id && /^\d+$/.test(String(id))) {
     return <NotFoundPage />;
@@ -318,7 +331,7 @@ export function ClassStudentsPage() {
 
       {/* Pagination Footer */}
       <TablePagination
-        currentPage={currentPage}
+        currentPage={safeCurrentPage}
         totalItems={filteredStudents.length}
         onPageChange={setCurrentPage}
         itemLabel={t('student.studentUnit', 'học sinh')}

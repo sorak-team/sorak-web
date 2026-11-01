@@ -128,7 +128,7 @@ export function StudentGrid({ paginatedStudents, classId = null }) {
     }
   };
 
-  if (!paginatedStudents || paginatedStudents.length === 0) {
+  if (!isLoading && (!paginatedStudents || paginatedStudents.length === 0)) {
     return (
       <div className="w-full border border-border bg-card p-12 text-center text-muted-foreground rounded-none">
         <p className="text-[14px]">Không tìm thấy học sinh nào phù hợp.</p>
