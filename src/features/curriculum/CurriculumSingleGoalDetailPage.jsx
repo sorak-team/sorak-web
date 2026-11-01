@@ -210,15 +210,16 @@ export function CurriculumSingleGoalDetailPage() {
     const validContents = contents.filter((c) => c.title && c.title.trim() !== '');
 
     try {
-      await curriculumApi.updateGoalContents({
+      const res = await curriculumApi.updateGoalContents({
         year: yearId.replace('-', '–'),
         ageGroup,
         goalId: goal.id,
         contents: validContents,
       });
 
-      setContents(validContents);
-      setOriginalContents(JSON.parse(JSON.stringify(validContents)));
+      const updatedContents = res?.contents || validContents;
+      setContents(updatedContents);
+      setOriginalContents(JSON.parse(JSON.stringify(updatedContents)));
 
       toast.success('Đã lưu nội dung giáo dục thành công!');
     } catch (err) {

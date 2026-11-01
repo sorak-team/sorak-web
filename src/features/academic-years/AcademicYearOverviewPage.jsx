@@ -81,23 +81,24 @@ export function AcademicYearOverviewPage() {
   }, [isTransitionDisabled, activeTab]);
 
   useEffect(() => {
-    if (year?.id) {
+    const targetId = year?.id || id;
+    if (targetId) {
       academicYearsApi
-        .getById(year.id)
+        .getById(targetId)
         .then((res) => {
           if (res) setYearDetail(res);
         })
         .catch(console.error);
 
       academicYearsApi
-        .listHolidays(year.id)
+        .listHolidays(targetId)
         .then((res) => {
           if (res?.counters) setCalendarCounters(res.counters);
           if (res?.items) setUpcomingHolidays(res.items);
         })
         .catch(console.error);
     }
-  }, [year?.id]);
+  }, [year?.id, id]);
 
   if (!year) {
     if (isLoading) {
@@ -462,7 +463,11 @@ export function AcademicYearOverviewPage() {
 
                       <div className="text-left sm:text-right shrink-0">
                         <span className="text-[12px] text-muted-foreground">
-                          {teachersUnassigned > 0 ? `${teachersUnassigned} GV dự phòng` : 'Đã nhận lớp 100%'}
+                          {totalTeachersCount === 0
+                            ? 'Chưa có dữ liệu giáo viên'
+                            : teachersUnassigned > 0
+                            ? `${teachersUnassigned} GV chưa nhận lớp`
+                            : 'Đã nhận lớp 100%'}
                         </span>
                       </div>
                     </div>

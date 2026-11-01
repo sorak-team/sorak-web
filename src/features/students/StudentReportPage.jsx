@@ -1215,6 +1215,14 @@ export function StudentReportPage() {
                           <span className="font-mono text-foreground font-medium">
                             {p.phone || '—'}
                           </span>
+                          {p.citizenId && (
+                            <span className="ml-3">
+                              CCCD:{' '}
+                              <span className="font-mono text-foreground font-medium">
+                                {p.citizenId}
+                              </span>
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>

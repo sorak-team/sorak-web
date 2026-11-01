@@ -196,6 +196,7 @@ export function StudentDrawer({
               fullName: p.fullName || '',
               relationship: p.relationship || '',
               phone: p.phone || '',
+              citizenId: p.citizenId || p.citizen_id || '',
             })),
           );
         } else {
@@ -240,6 +241,7 @@ export function StudentDrawer({
                   fullName: p.fullName || '',
                   relationship: p.relationship || '',
                   phone: p.phone || '',
+                  citizenId: p.citizenId || p.citizen_id || '',
                 })),
               );
             }
@@ -326,6 +328,7 @@ export function StudentDrawer({
         fullName: '',
         relationship: '',
         phone: '',
+        citizenId: '',
       },
     ]);
   };
@@ -390,11 +393,12 @@ export function StudentDrawer({
 
     const validParents = parents
       .map((p) => ({
-        fullName: p.fullName.trim(),
-        relationship: p.relationship.trim() || 'Người giám hộ',
-        phone: p.phone.trim(),
+        fullName: p.fullName?.trim() || '',
+        relationship: p.relationship?.trim() || 'Người giám hộ',
+        phone: p.phone?.trim() || '',
+        citizenId: p.citizenId?.trim() || '',
       }))
-      .filter((p) => p.fullName || p.phone);
+      .filter((p) => p.fullName || p.phone || p.citizenId);
 
     // Validate parent info only if user actually added a parent
     if (validParents.length > 0) {
@@ -409,6 +413,20 @@ export function StudentDrawer({
           setActiveTab('parents');
           return;
         }
+        if (p.citizenId && !/^[0-9]{9,12}$/.test(p.citizenId)) {
+          toast.error('Số CCCD của phụ huynh phải có từ 9 đến 12 chữ số');
+          setActiveTab('parents');
+          return;
+        }
+      }
+
+      // Check duplicate CCCDs
+      const cccds = validParents.map((p) => p.citizenId).filter(Boolean);
+      const duplicateCccd = cccds.find((cid, idx) => cccds.indexOf(cid) !== idx);
+      if (duplicateCccd) {
+        toast.error(`Số CCCD '${duplicateCccd}' bị trùng giữa các phụ huynh`);
+        setActiveTab('parents');
+        return;
       }
     }
 
@@ -936,16 +954,31 @@ export function StudentDrawer({
                           </div>
                         </div>
 
-                        <div className="space-y-1.5">
-                          <Label className="text-[12px] font-medium text-foreground">
-                            {t('student.parentPhone', 'Số điện thoại')} <span className="text-destructive">*</span>
-                          </Label>
-                          <Input
-                            value={p.phone}
-                            onChange={(e) => handleUpdateParent(idx, 'phone', e.target.value)}
-                            placeholder="Ví dụ: 0901234567"
-                            className="h-9 text-[13px] rounded-none border-border font-mono"
-                          />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                          <div className="space-y-1.5">
+                            <Label className="text-[12px] font-medium text-foreground">
+                              {t('student.parentPhone', 'Số điện thoại')} <span className="text-destructive">*</span>
+                            </Label>
+                            <Input
+                              value={p.phone}
+                              onChange={(e) => handleUpdateParent(idx, 'phone', e.target.value)}
+                              placeholder="Ví dụ: 0901234567"
+                              className="h-9 text-[13px] rounded-none border-border font-mono"
+                            />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <Label className="text-[12px] font-medium text-foreground">
+                              Số CCCD / Định danh
+                            </Label>
+                            <Input
+                              value={p.citizenId || ''}
+                              onChange={(e) => handleUpdateParent(idx, 'citizenId', e.target.value)}
+                              placeholder="Ví dụ: 079185001111 (12 số)"
+                              maxLength={12}
+                              className="h-9 text-[13px] rounded-none border-border font-mono"
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
