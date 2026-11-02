@@ -57,7 +57,8 @@ const ROUTINE_SLOT_LABELS = {
 };
 
 export function EducationalActivitiesTab({ classId = '1' }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isVi = (i18n?.language || 'vi').startsWith('vi');
   const [searchParams, setSearchParams] = useSearchParams();
   const currentUser = useAuthStore((state) => state.user);
   const isBgh = Boolean(
