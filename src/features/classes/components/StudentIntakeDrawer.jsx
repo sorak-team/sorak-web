@@ -138,6 +138,20 @@ export const getExpectedPreviousTier = (targetClass) => {
  * - Chồi: Từ đủ 48 tháng đến dưới 60 tháng
  * - Lá: Từ đủ 60 tháng đến dưới 72 tháng
  */
+export const normalizeGradeKey = (str) => {
+  if (!str) return '';
+  const clean = String(str)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .replace(/[^A-Z]/g, '');
+  if (clean.includes('NHATRE')) return 'NHATRE';
+  if (clean.includes('MAM')) return 'MAM';
+  if (clean.includes('CHOI')) return 'CHOI';
+  if (clean.includes('LA')) return 'LA';
+  return clean;
+};
+
 export const checkIsAgeEligible = (student, targetClass) => {
   if (student?.isAgeEligible !== undefined) {
     return student.isAgeEligible;
@@ -153,20 +167,20 @@ export const checkIsAgeEligible = (student, targetClass) => {
   let months = (ref.getFullYear() - birth.getFullYear()) * 12 + (ref.getMonth() - birth.getMonth());
   if (ref.getDate() < birth.getDate()) months--;
 
-  const group = (targetClass?.ageGroup || targetClass?.name || '').toUpperCase();
-  if (group.includes('NHA_TRE') || group.includes('NHATRE') || group.includes('NHÀ TRẺ')) {
+  const group = normalizeGradeKey(targetClass?.ageGroup || targetClass?.grade || targetClass?.name || '');
+  if (group === 'NHATRE') {
     return months >= 24 && months < 36;
   }
-  if (group.includes('MAM') || group.includes('MẦM')) {
+  if (group === 'MAM') {
     return months >= 36 && months < 48;
   }
-  if (group.includes('CHOI') || group.includes('CHỒI')) {
+  if (group === 'CHOI') {
     return months >= 48 && months < 60;
   }
-  if (group.includes('LA') || group.includes('LÁ')) {
+  if (group === 'LA') {
     return months >= 60 && months < 72;
   }
-  return true;
+  return false;
 };
 
 export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }) {

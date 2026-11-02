@@ -103,14 +103,14 @@ export function transformBackendTeacher(t) {
     joinDate: toDisplayDate(t.startDate),
     avatar,
     account: t.account || null,
-    assignedClasses: (t.assignedClasses || []).map((ac) => ({
+    assignedClasses: (t.assignedClasses || t.activeClasses || []).map((ac) => ({
       ...ac,
       className: (ac.className || ac.class?.name || '').replace(/^Lớp\s+/i, '').trim(),
     })),
     assignmentHistory: (
       Array.isArray(t.assignmentHistory) && t.assignmentHistory.length > 0
         ? t.assignmentHistory
-        : (t.assignedClasses || []).map((ac) => ({
+        : (t.assignedClasses || t.activeClasses || []).map((ac) => ({
             allocationId: ac.allocationId,
             classId: ac.classId,
             className: ac.className,

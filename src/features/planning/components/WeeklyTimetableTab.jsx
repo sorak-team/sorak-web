@@ -1203,6 +1203,7 @@ export function WeeklyTimetableTab({ classId = '1' }) {
         onClose={() => setPickerCell(null)}
         targetCell={pickerCell}
         goals={hierarchicalGoals}
+        themeAllocations={timetableData?.themeAllocations || []}
         onSelectActivity={handleAssignActivityToSlot}
         currentActivityId={pickerCell?.currentActivityId}
       />

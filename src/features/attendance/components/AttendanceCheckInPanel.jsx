@@ -78,14 +78,17 @@ export function AttendanceCheckInPanel({
         } else {
           st = 'PRESENT';
         }
+        const attNote = s.attendanceNote !== undefined ? s.attendanceNote : (s.note || s.notes || s.reason || '');
         return {
           ...s,
           status: st,
-          note: s.note || s.notes || s.reason || '',
+          note: attNote,
+          attendanceNote: attNote,
+          healthNote: s.healthNote !== undefined ? s.healthNote : '',
         };
       });
       setStudents(mapped);
-      setInitialSnapshot(JSON.stringify(mapped.map((s) => ({ id: s.id, status: s.status, note: s.note || '' }))));
+      setInitialSnapshot(JSON.stringify(mapped.map((s) => ({ id: s.id, status: s.status, note: s.attendanceNote || s.note || '' }))));
     }
   }, [initialStudents]);
 
@@ -117,7 +120,7 @@ export function AttendanceCheckInPanel({
   const handleNoteChange = (id, newNote) => {
     if (readOnly) return;
     setStudents((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, note: newNote } : s))
+      prev.map((s) => (s.id === id ? { ...s, note: newNote, attendanceNote: newNote } : s))
     );
   };
 
@@ -427,7 +430,7 @@ export function AttendanceCheckInPanel({
                       placeholder={
                         isExcused || isUnexcused
                           ? (isVi ? 'Lý do vắng...' : 'Absence reason...')
-                          : (isVi ? 'Ghi chú đón trẻ...' : 'Note...')
+                          : (isVi ? 'Ghi chú điểm danh...' : 'Attendance note...')
                       }
                       className={cn(
                         "w-full h-7 px-2.5 text-[11.5px] border border-border bg-background text-foreground rounded-none focus:outline-hidden focus:border-[#1447e6]",

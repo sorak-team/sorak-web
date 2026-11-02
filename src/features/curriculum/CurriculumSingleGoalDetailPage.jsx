@@ -31,6 +31,35 @@ const DOMAIN_LABELS = {
   AESTHETIC: 'Phát triển thẩm mỹ',
 };
 
+const STANDARD_GOAL_FALLBACKS = {
+  MT01: 'Trẻ thực hiện được các động tác trong bài tập thể dục theo cô.',
+  MT02: 'Trẻ làm được một số việc tự phục vụ đơn giản với sự hỗ trợ của người lớn.',
+  MT03: 'Trẻ nhận biết và tránh một số vật dụng, nơi nguy hiểm khi được nhắc nhở.',
+  MT04: 'Trẻ chọn và phân nhóm đồ vật theo một dấu hiệu nổi bật.',
+  MT05: 'Trẻ nhận biết số lượng một và nhiều.',
+  MT06: 'Trẻ tham gia hoạt động đơn giản và bước đầu chơi cạnh bạn.',
+  MT07: 'Trẻ nhận biết, gọi tên đồ vật, con vật và hành động quen thuộc.',
+  MT08: 'Trẻ đọc được bài thơ, đồng dao ngắn với sự giúp đỡ của cô.',
+  MT09: 'Trẻ hiểu câu hỏi đơn giản và dùng lời nói để thể hiện nhu cầu.',
+  MT10: 'Trẻ thực hiện một số yêu cầu đơn giản và bước đầu biết nhường đồ chơi.',
+  MT11: 'Trẻ thích nghe hát, vận động theo nhạc và tham gia tạo hình đơn giản.',
+};
+
+const cleanDisplayGoalTitle = (g) => {
+  if (!g) return '';
+  const title = g.title || '';
+  if (!title.includes('?')) return title;
+  const raw = String(g.code || g.goal_code || g.goalCode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  let norm = raw;
+  if (raw.startsWith('MT')) {
+    const num = raw.replace(/^MT/, '');
+    norm = num.length === 1 ? `MT0${num}` : `MT${num}`;
+  } else if (/^\d+$/.test(raw)) {
+    norm = raw.length === 1 ? `MT0${raw}` : `MT${raw}`;
+  }
+  return STANDARD_GOAL_FALLBACKS[norm] || title;
+};
+
 export function CurriculumSingleGoalDetailPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -63,7 +92,13 @@ export function CurriculumSingleGoalDetailPage() {
         goalId,
       });
 
-      const fetchedGoal = data.goal || null;
+      const fetchedGoal = data.goal
+        ? {
+            ...data.goal,
+            title: cleanDisplayGoalTitle(data.goal),
+            domainLabel: DOMAIN_LABELS[data.goal.domain] || data.goal.domainLabel || 'Phát triển thể chất',
+          }
+        : null;
       setGoal(fetchedGoal);
       setAllGoals(data.allGoals || []);
       if (fetchedGoal) {

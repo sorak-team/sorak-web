@@ -77,12 +77,55 @@ export function HierarchicalActivityPickerModal({
   onClose,
   targetCell, // { day, slotDef }
   goals = [], // Hierarchical tree: Domain -> Goal -> Content -> Activities
+  themeAllocations = [], // List of themes with date ranges and allocatedGoalIds
   onSelectActivity,
   currentActivityId = null,
 }) {
   const { t } = useTranslation();
 
   const targetSlotKey = targetCell?.slotDef?.key;
+
+  // Resolve target date in ISO format (YYYY-MM-DD)
+  const targetDateIso = useMemo(() => {
+    if (!targetCell?.day) return null;
+    const d = targetCell.day;
+    if (d.dateStr) return d.dateStr;
+    if (d.fullDate) return d.fullDate;
+    if (d.date && typeof d.date === 'string') {
+      const trimmed = d.date.trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+      if (/^\d{1,2}\/\d{1,2}$/.test(trimmed)) {
+        const [dayNum, mNum] = trimmed.split('/');
+        return `2026-${mNum.padStart(2, '0')}-${dayNum.padStart(2, '0')}`;
+      }
+      if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(trimmed)) {
+        const [dayNum, mNum, yNum] = trimmed.split('/');
+        return `${yNum}-${mNum.padStart(2, '0')}-${dayNum.padStart(2, '0')}`;
+      }
+    }
+    return null;
+  }, [targetCell]);
+
+  // Determine active theme covering target date
+  const activeThemeForDate = useMemo(() => {
+    if (!targetDateIso || !themeAllocations?.length) return null;
+    return themeAllocations.find(
+      (th) => targetDateIso >= th.startDate && targetDateIso <= th.endDate
+    );
+  }, [targetDateIso, themeAllocations]);
+
+  // Set of goal IDs & codes allocated to this theme
+  const allowedGoalSet = useMemo(() => {
+    if (!activeThemeForDate) return null;
+    const set = new Set();
+    (activeThemeForDate.goalIds || []).forEach((id) => set.add(String(id)));
+    (activeThemeForDate.goalCodes || []).forEach((code) => {
+      const clean = String(code).split('(')[0].trim().toUpperCase();
+      if (clean) set.add(clean);
+      set.add(String(code).trim().toUpperCase());
+    });
+    return set;
+  }, [activeThemeForDate]);
 
   // Search & filter states
   const [selectedDomain, setSelectedDomain] = useState('ALL');
@@ -132,6 +175,7 @@ export function HierarchicalActivityPickerModal({
         (content.activities || []).forEach((act) => {
           list.push({
             ...act,
+            goalId: goal.id,
             domain: goal.domain || act.domain,
             domainLabel: goal.domainLabel || act.domainLabel,
             goalCode: goal.goalCode || act.goalCode,
@@ -145,11 +189,23 @@ export function HierarchicalActivityPickerModal({
     return list;
   }, [goals]);
 
-  // Filter activities: ALWAYS strictly matches the clicked routine slot
+  // Filter activities: strictly matches the clicked routine slot & theme allocated goals for this date
   const filteredActivities = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
 
     return allActivities.filter((act) => {
+      // 0. Luôn lọc theo mục tiêu đã phân bổ cho chủ đề tương ứng với ngày đang chọn
+      if (allowedGoalSet) {
+        const cleanGoalCode = (act.goalCode || '').split('(')[0].trim().toUpperCase();
+        const isGoalAllowed =
+          (act.goalId && allowedGoalSet.has(String(act.goalId))) ||
+          (cleanGoalCode && allowedGoalSet.has(cleanGoalCode)) ||
+          (act.goalCode && allowedGoalSet.has(String(act.goalCode).trim().toUpperCase()));
+        if (!isGoalAllowed) {
+          return false;
+        }
+      }
+
       // 1. Luôn lọc chính xác theo Routine Slot của ô được chọn
       if (targetSlotKey && act.routineSlot !== targetSlotKey) {
         return false;
@@ -173,7 +229,7 @@ export function HierarchicalActivityPickerModal({
 
       return true;
     });
-  }, [allActivities, targetSlotKey, selectedDomain, searchQuery]);
+  }, [allActivities, allowedGoalSet, targetSlotKey, selectedDomain, searchQuery]);
 
   // Nhóm hoạt động theo từng lĩnh vực (chuẩn xác như bảng cấu trúc mục tiêu)
   const groupedByDomain = useMemo(() => {
@@ -219,6 +275,14 @@ export function HierarchicalActivityPickerModal({
               <span className="text-foreground/90 font-medium">{slotDef.name}</span>
               {slotDef.defaultTime && (
                 <span className="text-muted-foreground">({slotDef.defaultTime})</span>
+              )}
+              {activeThemeForDate && (
+                <>
+                  <span>·</span>
+                  <span className="inline-flex items-center gap-1 text-[11px] text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 border border-blue-200 dark:border-blue-800 font-medium">
+                    Chủ đề: {activeThemeForDate.themeName}
+                  </span>
+                </>
               )}
             </p>
           </div>

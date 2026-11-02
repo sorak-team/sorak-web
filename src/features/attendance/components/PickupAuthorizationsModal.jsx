@@ -232,25 +232,31 @@ export function PickupAuthorizationsModal({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isStudentDropdownOpen, previewPhoto]);
 
-  // Lọc học sinh theo tên, mã HS (bỏ phụ huynh)
+  // Lọc học sinh theo tên, mã HS và loại bỏ học sinh đã chuyển lớp
+  const activeStudents = useMemo(() => {
+    return (students || []).filter(
+      (s) => !s.isTransferred && !s.leftAt && s.status !== 'TRANSFERRED' && s.status !== 'TRANSFERRED_CLASS'
+    );
+  }, [students]);
+
   const filteredStudentsList = useMemo(() => {
-    if (!studentSearchQuery.trim()) return students;
+    if (!studentSearchQuery.trim()) return activeStudents;
     const q = studentSearchQuery.toLowerCase().trim();
-    return students.filter(
+    return activeStudents.filter(
       (s) =>
         (s.name && s.name.toLowerCase().includes(q)) ||
         (s.code && s.code.toLowerCase().includes(q))
     );
-  }, [students, studentSearchQuery]);
+  }, [activeStudents, studentSearchQuery]);
 
   const selectedStudent = useMemo(() => {
-    return students.find((s) => String(s.id) === String(createForm.studentId));
-  }, [students, createForm.studentId]);
+    return activeStudents.find((s) => String(s.id) === String(createForm.studentId)) || null;
+  }, [activeStudents, createForm.studentId]);
 
   const handleOpenCreate = () => {
     const initialDateDmy = toDmyString(targetDate || new Date().toISOString().slice(0, 10));
     setCreateForm({
-      studentId: students[0]?.id ? String(students[0].id) : '',
+      studentId: activeStudents[0]?.id ? String(activeStudents[0].id) : '',
       pickupPersonName: '',
       relationship: 'Dì',
       pickupPersonPhone: '',

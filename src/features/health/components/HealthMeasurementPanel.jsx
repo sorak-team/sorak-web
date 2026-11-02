@@ -62,7 +62,8 @@ export function HealthMeasurementPanel({
         height: s.height || '',
         weight: s.weight || '',
         bmi: s.bmi || calculateBmi(s.height, s.weight),
-        note: s.note || (s.code === 'HS005' ? 'Theo dõi' : ''),
+        healthNote: s.healthNote !== undefined ? s.healthNote : (s.health_note || ''),
+        note: s.healthNote !== undefined ? s.healthNote : (s.health_note || ''),
       }));
       setStudents(mapped);
       setInitialSnapshot(
@@ -71,7 +72,7 @@ export function HealthMeasurementPanel({
             id: s.id,
             height: s.height || '',
             weight: s.weight || '',
-            note: s.note || '',
+            note: s.healthNote || '',
           }))
         )
       );
@@ -86,7 +87,7 @@ export function HealthMeasurementPanel({
         id: s.id,
         height: s.height || '',
         weight: s.weight || '',
-        note: s.note || '',
+        note: s.healthNote || '',
       }))
     );
     return current !== initialSnapshot;
@@ -107,6 +108,9 @@ export function HealthMeasurementPanel({
       prev.map((s) => {
         if (s.id !== id) return s;
         const updated = { ...s, [field]: value };
+        if (field === 'note') {
+          updated.healthNote = value;
+        }
         if (field === 'height' || field === 'weight') {
           updated.bmi = calculateBmi(
             field === 'height' ? value : s.height,
@@ -161,7 +165,7 @@ export function HealthMeasurementPanel({
             height: parseFloat(s.height) || 0,
             weight: parseFloat(s.weight) || 0,
             bmi: parseFloat(s.bmi) || 0,
-            note: s.note || '',
+            note: s.healthNote !== undefined ? s.healthNote : (s.note || ''),
           })),
       });
       toast.success(t('health.saveSuccess', 'Lưu số đo sức khoẻ thành công!'));
@@ -171,11 +175,19 @@ export function HealthMeasurementPanel({
             id: s.id,
             height: s.height || '',
             weight: s.weight || '',
-            note: s.note || '',
+            note: s.healthNote || '',
           }))
         )
       );
-      if (onSaveSuccess) onSaveSuccess(students);
+      if (onSaveSuccess) {
+        onSaveSuccess(
+          students.map((s) => ({
+            ...s,
+            note: s.attendanceNote !== undefined ? s.attendanceNote : s.note,
+            healthNote: s.healthNote,
+          }))
+        );
+      }
     } catch {
       toast.error(t('health.saveError', 'Không thể lưu số đo sức khoẻ.'));
     } finally {

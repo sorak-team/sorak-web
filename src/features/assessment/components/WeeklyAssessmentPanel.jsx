@@ -13,13 +13,32 @@ import {
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/shared/lib/utils';
+import { useAuthStore } from '@/features/auth';
 import { assessmentApi } from '../assessment.api';
+
+function formatIsoDate(rawDate) {
+  if (!rawDate) return null;
+  if (typeof rawDate === 'string') {
+    const trimmed = rawDate.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+    if (/^\d{1,2}\/\d{1,2}$/.test(trimmed)) {
+      const [d, m] = trimmed.split('/');
+      return `2026-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+    }
+    if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(trimmed)) {
+      const [d, m, y] = trimmed.split('/');
+      return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+    }
+  }
+  return null;
+}
 
 export function WeeklyAssessmentPanel({
   classId,
   slot,
   activityDetails,
   initialStudents = [],
+  readOnly = false,
   tab = 'content',
   isEvaluated = false,
   onTabChange,
@@ -35,6 +54,16 @@ export function WeeklyAssessmentPanel({
 }) {
   const { t, i18n } = useTranslation();
   const isVi = (i18n.language || 'vi').startsWith('vi');
+  const user = useAuthStore((s) => s.user);
+  const isPrincipal = Boolean(
+    user?.role === 'PRINCIPAL_BGH' ||
+    user?.role === 'PRINCIPAL' ||
+    user?.role === 'VICE_PRINCIPAL' ||
+    user?.role?.toLowerCase()?.includes('principal') ||
+    user?.role?.toLowerCase()?.includes('bgh')
+  );
+  const effectiveReadOnly = Boolean(readOnly || isPrincipal);
+
   const targetClassId = classId || slot?.classId || slot?.class_id || '5';
   const [students, setStudents] = useState([]);
   const [initialSnapshot, setInitialSnapshot] = useState('');
@@ -54,28 +83,63 @@ export function WeeklyAssessmentPanel({
     );
   }, [students, searchQuery]);
 
+  // Load saved assessments specifically for this slot, activity, and date
   useEffect(() => {
-    if (initialStudents && initialStudents.length > 0) {
-      const mapped = initialStudents.map((s) => ({
-        ...s,
-        // Mặc định tất cả học sinh trên UI đều là 'ACHIEVED' (Đạt) để giáo viên chấm nhanh
-        status: ['ACHIEVED', 'NOT_ACHIEVED', 'OUTSTANDING'].includes(s.status)
-          ? s.status
-          : 'ACHIEVED',
-        note: s.note || '',
-      }));
-      setStudents(mapped);
-      setInitialSnapshot(
-        JSON.stringify(
-          mapped.map((s) => ({
-            id: s.id,
-            status: s.status,
-            note: s.note || '',
-          }))
-        )
-      );
-    }
-  }, [initialStudents]);
+    let isMounted = true;
+    const fetchSlotAssessments = async () => {
+      const targetDate = formatIsoDate(slot?.fullDate || slot?.date);
+      const activityId = slot?.activityId || slot?.activity_id;
+      const slotId = slot?.id;
+
+      let savedRecordsMap = new Map();
+      if (targetClassId && (activityId || slotId) && targetDate) {
+        try {
+          const res = await assessmentApi.getSlotAssessmentRecords(targetClassId, {
+            slotId,
+            activityId,
+            date: targetDate,
+          });
+          const recs = res?.records || [];
+          recs.forEach((r) => {
+            if (r.studentId) savedRecordsMap.set(String(r.studentId), r);
+            if (r.studentCode) savedRecordsMap.set(String(r.studentCode), r);
+          });
+        } catch (err) {
+          console.warn('Failed to fetch slot assessment records:', err);
+        }
+      }
+
+      if (!isMounted) return;
+
+      if (initialStudents && initialStudents.length > 0) {
+        const mapped = initialStudents.map((s) => {
+          const saved = savedRecordsMap.get(String(s.id)) ||
+                        savedRecordsMap.get(String(s.publicId)) ||
+                        savedRecordsMap.get(String(s.code));
+          return {
+            ...s,
+            status: saved?.status || 'ACHIEVED',
+            note: saved?.note || '',
+          };
+        });
+        setStudents(mapped);
+        setInitialSnapshot(
+          JSON.stringify(
+            mapped.map((s) => ({
+              id: s.id,
+              status: s.status,
+              note: s.note || '',
+            }))
+          )
+        );
+      }
+    };
+
+    fetchSlotAssessments();
+    return () => {
+      isMounted = false;
+    };
+  }, [initialStudents, slot?.id, slot?.fullDate, slot?.date, slot?.activityId, slot?.activity_id, targetClassId]);
 
   // Kiểm tra xem giáo viên có thay đổi đánh giá học sinh so với ban đầu hay không
   const isDirty = useMemo(() => {
@@ -91,18 +155,21 @@ export function WeeklyAssessmentPanel({
   }, [students, initialSnapshot]);
 
   const handleToggleStatus = (id, newStatus) => {
+    if (effectiveReadOnly) return;
     setStudents((prev) =>
       prev.map((s) => (s.id === id ? { ...s, status: newStatus } : s))
     );
   };
 
   const handleSetAllStatus = (newStatus) => {
+    if (effectiveReadOnly) return;
     setStudents((prev) =>
       prev.map((s) => ({ ...s, status: newStatus }))
     );
   };
 
   const handleNoteChange = (id, note) => {
+    if (effectiveReadOnly) return;
     setStudents((prev) =>
       prev.map((s) => (s.id === id ? { ...s, note } : s))
     );
@@ -112,7 +179,7 @@ export function WeeklyAssessmentPanel({
   const notAchievedCount = students.filter((s) => s.status === 'NOT_ACHIEVED').length;
   const outstandingCount = students.filter((s) => s.status === 'OUTSTANDING').length;
 
-  const canSave = !isAssessed || isDirty;
+  const canSave = !effectiveReadOnly && (!isAssessed || isDirty);
 
   const handleSave = async () => {
     if (!canSave) return;
@@ -391,26 +458,28 @@ export function WeeklyAssessmentPanel({
             </p>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className="size-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-none transition-colors cursor-pointer shrink-0"
-                  title="Tùy chọn khác"
-                >
-                  <HugeiconsIcon icon={MoreHorizontalIcon} size={16} />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52 rounded-none shadow-md">
-                <DropdownMenuItem
-                  disabled={!isAssessed || isCleaning}
-                  onClick={handleClean}
-                  className="cursor-pointer text-[12.5px] py-2 px-3 text-foreground rounded-none disabled:opacity-35 disabled:cursor-not-allowed"
-                >
-                  <span>{isVi ? 'Xoá đánh giá tiết này' : 'Delete assessment'}</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {!effectiveReadOnly && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="size-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-none transition-colors cursor-pointer shrink-0"
+                    title="Tùy chọn khác"
+                  >
+                    <HugeiconsIcon icon={MoreHorizontalIcon} size={16} />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52 rounded-none shadow-md">
+                  <DropdownMenuItem
+                    disabled={!isAssessed || isCleaning}
+                    onClick={handleClean}
+                    className="cursor-pointer text-[12.5px] py-2 px-3 text-foreground rounded-none disabled:opacity-35 disabled:cursor-not-allowed"
+                  >
+                    <span>{isVi ? 'Xoá đánh giá tiết này' : 'Delete assessment'}</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             {onClose && (
               <button
                 type="button"
@@ -611,9 +680,11 @@ export function WeeklyAssessmentPanel({
                           {/* 1. Chưa đạt */}
                           <button
                             type="button"
+                            disabled={effectiveReadOnly}
                             onClick={() => handleToggleStatus(st.id, 'NOT_ACHIEVED')}
                             className={cn(
-                              'size-7 flex items-center justify-center transition-colors cursor-pointer rounded-none',
+                              'size-7 flex items-center justify-center transition-colors rounded-none',
+                              effectiveReadOnly ? 'cursor-default opacity-85' : 'cursor-pointer',
                               isNotAchieved
                                 ? 'bg-rose-600 text-white shadow-2xs'
                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -626,9 +697,11 @@ export function WeeklyAssessmentPanel({
                           {/* 2. Đạt (Mặc định) */}
                           <button
                             type="button"
+                            disabled={effectiveReadOnly}
                             onClick={() => handleToggleStatus(st.id, 'ACHIEVED')}
                             className={cn(
-                              'size-7 flex items-center justify-center transition-colors cursor-pointer rounded-none border-x border-border/60',
+                              'size-7 flex items-center justify-center transition-colors rounded-none border-x border-border/60',
+                              effectiveReadOnly ? 'cursor-default opacity-85' : 'cursor-pointer',
                               isAchieved
                                 ? 'bg-[#1447e6] text-white shadow-2xs'
                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -641,9 +714,11 @@ export function WeeklyAssessmentPanel({
                           {/* 3. Vượt trội */}
                           <button
                             type="button"
+                            disabled={effectiveReadOnly}
                             onClick={() => handleToggleStatus(st.id, 'OUTSTANDING')}
                             className={cn(
-                              'size-7 flex items-center justify-center transition-colors cursor-pointer rounded-none',
+                              'size-7 flex items-center justify-center transition-colors rounded-none',
+                              effectiveReadOnly ? 'cursor-default opacity-85' : 'cursor-pointer',
                               isOutstanding
                                 ? 'bg-purple-600 text-white shadow-2xs'
                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -659,10 +734,15 @@ export function WeeklyAssessmentPanel({
                       <td className="py-1 pl-3">
                         <input
                           type="text"
+                          disabled={effectiveReadOnly}
+                          readOnly={effectiveReadOnly}
                           value={st.note}
                           onChange={(e) => handleNoteChange(st.id, e.target.value)}
-                          placeholder={t('assessment.notePlaceholder', 'Ghi chú đánh giá...')}
-                          className="w-full h-7 px-2.5 text-[11.5px] border border-border bg-background text-foreground rounded-none focus:outline-hidden focus:border-[#1447e6]"
+                          placeholder={effectiveReadOnly ? '' : t('assessment.notePlaceholder', 'Ghi chú đánh giá...')}
+                          className={cn(
+                            "w-full h-7 px-2.5 text-[11.5px] border border-border bg-background text-foreground rounded-none focus:outline-hidden focus:border-[#1447e6]",
+                            effectiveReadOnly && "bg-muted/40 cursor-default opacity-90 border-transparent"
+                          )}
                         />
                       </td>
                     </tr>
@@ -743,9 +823,20 @@ export function WeeklyAssessmentPanel({
                 onClick={() => onTabChange && onTabChange('assessment')}
                 className="rounded-none h-9 text-[13px] px-5 bg-[#1447e6] hover:bg-[#123ec4] text-white font-medium cursor-pointer"
               >
-                {t('assessment.switchToAssessment', 'Chuyển sang chấm điểm →')}
+                {effectiveReadOnly
+                  ? (isVi ? 'Xem kết quả đánh giá →' : 'View assessment →')
+                  : t('assessment.switchToAssessment', 'Chuyển sang chấm điểm →')}
               </Button>
             </>
+          ) : effectiveReadOnly ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="rounded-none h-9 text-[13px] px-5 cursor-pointer bg-card hover:bg-muted text-foreground"
+            >
+              {t('common.close', 'Đóng')}
+            </Button>
           ) : (
             <>
               <Button

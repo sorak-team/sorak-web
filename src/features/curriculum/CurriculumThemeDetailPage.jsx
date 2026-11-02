@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { cn } from '@/shared/lib/utils';
 import { toast } from 'sonner';
+import { useAuthStore, isBghRole } from '@/features/auth';
 import { curriculumApi } from './curriculum.api';
 
 // Days of the week in VN matching WeekPickerCalendar
@@ -145,6 +146,9 @@ export function CurriculumThemeDetailPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { yearId = '2025-2026', ageGroup = 'nhatre' } = useParams();
+
+  const currentUser = useAuthStore((state) => state.user);
+  const isBgh = isBghRole(currentUser?.role);
 
   const [isLoading, setIsLoading] = useState(true);
   const [themeSetInfo, setThemeSetInfo] = useState(null);
@@ -527,6 +531,7 @@ export function CurriculumThemeDetailPage() {
     () => themes.length > 0 && themes.every((t) => t.status === 'PUBLISHED'),
     [themes],
   );
+  const isReadOnly = Boolean(isAllPublished || isBgh);
 
   // Kiểm tra có thay đổi so với dữ liệu gốc của chủ đề đang chọn hay không
   const hasChanges = useMemo(() => {
@@ -794,11 +799,11 @@ export function CurriculumThemeDetailPage() {
   }, [startDate, endDate, subThemes]);
 
   // Nút lưu thay đổi chỉ bấm được khi còn là bản nháp, có thay đổi, và không còn ngày nào chưa được xếp
-  const canSave = !isAllPublished && hasChanges && (subThemes.length === 0 || !hasUnassignedDaysInTheme);
+  const canSave = !isReadOnly && hasChanges && (subThemes.length === 0 || !hasUnassignedDaysInTheme);
 
   // Save changes to current topic
   const handleSaveTopic = async () => {
-    if (!canSave) return;
+    if (isBgh || !canSave) return;
     if (subThemes.length > 0 && hasUnassignedDaysInTheme) {
       toast.error(
         `Vui lòng phân bổ đầy đủ tất cả các ngày trong chủ đề (từ ${formatDateVn(startDate)} đến ${formatDateVn(endDate)}) cho các nhánh trước khi lưu.`,

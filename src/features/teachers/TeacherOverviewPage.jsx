@@ -18,6 +18,17 @@ import { uploadApi } from '@/shared/api/upload.api';
 import { NotFoundPage } from '@/features/error';
 import { cn } from '@/shared/lib/utils';
 
+const toDisplayDate = (val) => {
+  if (!val) return '—';
+  if (typeof val === 'string' && val.includes('/')) return val;
+  const d = new Date(val);
+  if (isNaN(d.getTime())) return String(val);
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+};
+
 export function TeacherOverviewPage() {
   const { id } = useParams();
 
@@ -67,7 +78,34 @@ export function TeacherOverviewPage() {
   }, [id]);
 
   const listTeacher = teachers.find((item) => item.id === id || item.employeeCode === id);
-  const teacher = detailTeacher || listTeacher;
+  const teacher = React.useMemo(() => {
+    if (!detailTeacher) return listTeacher;
+    if (!listTeacher) return detailTeacher;
+    return {
+      ...listTeacher,
+      ...detailTeacher,
+      assignedClasses:
+        detailTeacher.assignedClasses?.length > 0
+          ? detailTeacher.assignedClasses
+          : listTeacher.assignedClasses || [],
+      assignmentHistory: (() => {
+        if (detailTeacher.assignmentHistory?.length > 0) return detailTeacher.assignmentHistory;
+        if (listTeacher.assignmentHistory?.length > 0) return listTeacher.assignmentHistory;
+        const classesToMap = detailTeacher.assignedClasses?.length > 0
+          ? detailTeacher.assignedClasses
+          : listTeacher.assignedClasses || [];
+        return classesToMap.map((ac, idx) => ({
+          allocationId: ac.allocationId || `alloc-${idx}`,
+          classId: ac.classId,
+          className: ac.className,
+          schoolYear: ac.schoolYearName || ac.schoolYear || '2026-2027',
+          assignedAtFormatted: ac.assignedAt ? toDisplayDate(ac.assignedAt) : '01/08/2026',
+          leftAtFormatted: '—',
+          isActive: true,
+        }));
+      })(),
+    };
+  }, [detailTeacher, listTeacher]);
 
   if ((isLoading || isDetailLoading) && !teacher) {
     return (

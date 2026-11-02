@@ -1700,15 +1700,13 @@ export function DailyRoutinePage() {
                   tab={activityTab}
                   onTabChange={setActivityTab}
                   onClose={handleCloseSlot}
-                  onSaveSuccess={(updated) => {
-                    setStudents(updated);
+                  onSaveSuccess={() => {
                     setSlots((prev) =>
                       prev.map((s) => (s.id === activeSlot.id ? { ...s, status: 'COMPLETED', isEvaluated: true } : s))
                     );
                     setActiveSlot((prev) => (prev ? { ...prev, status: 'COMPLETED', isEvaluated: true } : null));
                   }}
-                  onCleanSuccess={(resetStudents) => {
-                    setStudents(resetStudents);
+                  onCleanSuccess={() => {
                     setSlots((prev) =>
                       prev.map((s) => (s.id === activeSlot.id ? { ...s, status: 'SCHEDULED', isEvaluated: false } : s))
                     );
