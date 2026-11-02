@@ -10,6 +10,14 @@ export const assessmentApi = {
   },
 
   /**
+   * Get student developmental assessments for a specific slot/date
+   */
+  async getSlotAssessmentRecords(classId = '1', params = {}) {
+    const response = await apiClient.get(`/assessment/classes/${classId}/records`, { params });
+    return response.data?.data || response.data;
+  },
+
+  /**
    * Save student developmental assessments
    */
   async saveAssessmentRecords(classId = '1', payload = {}) {

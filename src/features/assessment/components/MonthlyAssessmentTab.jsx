@@ -26,6 +26,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { cn } from '@/shared/lib/utils';
+import { useAuthStore } from '@/features/auth';
 import { assessmentApi } from '../assessment.api';
 import { ParentFeedbackModal } from './ParentFeedbackModal';
 
@@ -52,6 +53,14 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
   const [statusFilter, setStatusFilter] = useState('ALL');
 
   const [searchParams, setSearchParams] = useSearchParams();
+  const currentUser = useAuthStore((state) => state.user);
+  const isPrincipal = Boolean(
+    currentUser?.role === 'PRINCIPAL_BGH' ||
+    currentUser?.role === 'PRINCIPAL' ||
+    currentUser?.role === 'VICE_PRINCIPAL' ||
+    currentUser?.role?.toLowerCase()?.includes('principal') ||
+    currentUser?.role?.toLowerCase()?.includes('bgh')
+  );
   const validTabs = ['week1', 'week2', 'week3', 'week4', 'week5', 'summary'];
   const paramSubTab = searchParams.get('subTab') || searchParams.get('week');
   const [activeTab, setActiveTabState] = useState(() => {
@@ -146,7 +155,7 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
   const [suggestionCriteria, setSuggestionCriteria] = useState({
     minAttendanceRate: 80, // % chuyên cần (>= 80%)
     minGoalsRate: 70, // % mục tiêu bài học (>= 70%)
-    allowedHealthStatuses: ['Bình thường', 'Theo dõi nhẹ cân'], // sức khoẻ giáo viên chọn được
+    allowedHealthStatuses: ['Bình thường', 'Tốt', 'Chưa đánh giá', 'Theo dõi nhẹ cân'], // sức khoẻ giáo viên chọn được
   });
   const [isConfigDrawerOpen, setIsConfigDrawerOpen] = useState(false);
 
@@ -247,18 +256,17 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
     const w4Rose = Boolean(st.week4Rose);
     const w5Rose = Boolean(st.week5Rose);
 
-    const hasAnyRose = w1Rose || w2Rose || w3Rose || w4Rose || w5Rose;
-    const w1Att = w1Rose ? 5 : (hasAnyRose ? 4 : 0);
-    const w2Att = w2Rose ? 5 : (hasAnyRose ? 4 : 0);
-    const w3Att = w3Rose ? 5 : (hasAnyRose ? 4 : 0);
-    const w4Att = w4Rose ? 5 : (hasAnyRose ? 4 : 0);
-    const w5Att = w5Rose ? 5 : (hasAnyRose ? 4 : 0);
+    const w1Att = w1Rose ? 5 : 4;
+    const w2Att = w2Rose ? 5 : 4;
+    const w3Att = w3Rose ? 5 : 4;
+    const w4Att = w4Rose ? (isSept ? 3 : 5) : (isSept ? 3 : 4);
+    const w5Att = w5Rose ? 5 : 4;
 
-    const w1Goal = w1Rose ? 4 : (hasAnyRose ? 3 : 0);
-    const w2Goal = w2Rose ? 4 : (hasAnyRose ? 3 : 0);
-    const w3Goal = w3Rose ? 4 : (hasAnyRose ? 3 : 0);
-    const w4Goal = w4Rose ? 4 : (hasAnyRose ? 3 : 0);
-    const w5Goal = w5Rose ? 4 : (hasAnyRose ? 3 : 0);
+    const w1Goal = w1Rose ? 4 : 3;
+    const w2Goal = w2Rose ? 4 : 3;
+    const w3Goal = w3Rose ? 4 : 3;
+    const w4Goal = w4Rose ? 4 : 3;
+    const w5Goal = w5Rose ? 4 : 3;
 
     // Trạng thái sức khỏe cơ bản ban đầu: Mặc định 'Bình thường', không bao giờ mặc định thừa cân/béo phì
     const initialStatus = 'Bình thường';
@@ -414,6 +422,7 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
 
   // Handle toggling weekly rose on table
   const handleToggleWeekRose = (studentId, weekNum) => {
+    if (isPrincipal || !selectedMonthObj?.isEnded) return;
     setStudents((prev) =>
       prev.map((s) => {
         if (s.id !== studentId) return s;
@@ -441,6 +450,7 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
 
   // Auto-suggest roses using teacher's configured criteria
   const handleAutoSuggestRoses = (targetWeeks, customCriteria = null) => {
+    if (isPrincipal || !selectedMonthObj?.isEnded) return;
     const criteria = customCriteria || suggestionCriteria;
     const weeksToProcess = Array.isArray(targetWeeks) ? targetWeeks : [targetWeeks];
 
@@ -451,13 +461,18 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
 
         weeksToProcess.forEach((wkNum) => {
           const stats = s.weeklyStats?.[`week${wkNum}`];
-          if (!stats) return;
+          const attRate = stats?.attendanceRate !== undefined ? stats.attendanceRate : 80;
+          const gRate = stats?.goalsRate !== undefined ? stats.goalsRate : 75;
+          const hStatus = stats?.healthStatus || 'Bình thường';
 
-          const meetsAttendance = stats.attendanceRate >= criteria.minAttendanceRate;
-          const meetsGoals = stats.goalsRate >= criteria.minGoalsRate;
+          const meetsAttendance = attRate >= criteria.minAttendanceRate;
+          const meetsGoals = gRate >= criteria.minGoalsRate;
           const meetsHealth =
             criteria.allowedHealthStatuses.length === 0 ||
-            criteria.allowedHealthStatuses.includes(stats.healthStatus || 'Bình thường');
+            criteria.allowedHealthStatuses.includes(hStatus) ||
+            hStatus === 'Bình thường' ||
+            hStatus === 'Tốt' ||
+            hStatus === 'Chưa đánh giá';
 
           const isEligible = meetsAttendance && meetsGoals && meetsHealth;
           const key = `week${wkNum}Rose`;
@@ -487,12 +502,13 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
         ? `Tuần ${weeksToProcess[0]}`
         : `cả ${weeksToProcess.length} tuần trong tháng`;
     toast.success(
-      `Đã gợi ý tặng hoa ${weekText}!`
+      `Đã gợi ý tặng hoa ${weekText}! (${totalAwarded} lượt hoa được trao)`
     );
   };
 
   // Handle inline teacher comment change
   const handleNotesChange = (studentId, teacherNotes) => {
+    if (isPrincipal || !selectedMonthObj?.isEnded) return;
     setStudents((prev) =>
       prev.map((s) => (s.id === studentId ? { ...s, teacherNotes } : s))
     );
@@ -797,42 +813,54 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
             </DropdownMenu>
 
             {/* Auto-Suggest Roses Button */}
-            <Button
-              type="button"
-              variant="outline"
-              disabled={!selectedMonthObj?.isEnded}
-              onClick={() => handleAutoSuggestRoses(monthWeeks)}
-              className="h-8 px-3 text-[13px] font-medium rounded-none border-border bg-card hover:bg-muted text-foreground flex items-center justify-center gap-1.5 cursor-pointer shadow-none shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
-              title={`Tự động xét và trao hoa cả ${monthWeeks.length} tuần theo tiêu chí đã cấu hình`}
-            >
-              <span>{t('assessment.flowerSuggest', 'Gợi ý tặng hoa')}</span>
-            </Button>
+            {!isPrincipal && (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={!selectedMonthObj?.isEnded}
+                onClick={() => handleAutoSuggestRoses(monthWeeks)}
+                className="h-8 px-3 text-[13px] font-medium rounded-none border-border bg-card hover:bg-muted text-foreground flex items-center justify-center gap-1.5 cursor-pointer shadow-none shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                title={`Tự động xét và trao hoa cả ${monthWeeks.length} tuần theo tiêu chí đã cấu hình`}
+              >
+                <span>{t('assessment.flowerSuggest', 'Gợi ý tặng hoa')}</span>
+              </Button>
+            )}
 
             {/* Config Button (Icon only, directly to the right of Auto-Suggest button) */}
-            <button
-              type="button"
-              onClick={() => setIsConfigDrawerOpen(true)}
-              className="size-8 flex items-center justify-center border border-border bg-card hover:bg-muted text-foreground rounded-none transition-colors cursor-pointer shrink-0"
-              title={t('assessment.configSuggestTooltip', 'Cấu hình tiêu chí gợi ý tặng hoa')}
-            >
-              <HugeiconsIcon icon={Settings01Icon} size={15} className="text-muted-foreground" />
-            </button>
+            {!isPrincipal && (
+              <button
+                type="button"
+                onClick={() => setIsConfigDrawerOpen(true)}
+                className="size-8 flex items-center justify-center border border-border bg-card hover:bg-muted text-foreground rounded-none transition-colors cursor-pointer shrink-0"
+                title={t('assessment.configSuggestTooltip', 'Cấu hình tiêu chí gợi ý tặng hoa')}
+              >
+                <HugeiconsIcon icon={Settings01Icon} size={15} className="text-muted-foreground" />
+              </button>
+            )}
 
-            {/* Save Button: Same fixed width w-[124px] to ensure zero layout shift between states */}
-            <Button
-              type="button"
-              onClick={handleSaveAll}
-              disabled={!isDirty || isSavingAll}
-              className={cn(
-                'h-8 w-[124px] px-0 text-[13px] font-medium rounded-none shadow-none flex items-center justify-center gap-1.5 transition-colors shrink-0',
-                isDirty
-                  ? 'bg-[#1447e6] hover:bg-[#1447e6]/90 text-white cursor-pointer'
-                  : 'bg-muted text-muted-foreground border border-border cursor-not-allowed opacity-60'
-              )}
-            >
-              <HugeiconsIcon icon={FloppyDiskIcon} size={14} />
-              <span>{isSavingAll ? t('common.saving', 'Đang lưu...') : isDirty ? t('common.saveChanges', 'Lưu thay đổi') : t('common.saved', 'Đã lưu')}</span>
-            </Button>
+            {/* Save Button */}
+            {!isPrincipal && (
+              <Button
+                type="button"
+                onClick={handleSaveAll}
+                disabled={!isDirty || isSavingAll}
+                className={cn(
+                  'h-8 w-[124px] px-0 text-[13px] font-medium rounded-none shadow-none flex items-center justify-center gap-1.5 transition-colors shrink-0',
+                  isDirty
+                    ? 'bg-[#1447e6] hover:bg-[#1447e6]/90 text-white cursor-pointer'
+                    : 'bg-muted text-muted-foreground border border-border cursor-not-allowed opacity-60'
+                )}
+              >
+                <HugeiconsIcon icon={FloppyDiskIcon} size={14} />
+                <span>{isSavingAll ? t('common.saving', 'Đang lưu...') : isDirty ? t('common.saveChanges', 'Lưu thay đổi') : t('common.saved', 'Đã lưu')}</span>
+              </Button>
+            )}
+
+            {isPrincipal && (
+              <span className="text-[12px] text-muted-foreground italic bg-muted/40 px-2.5 py-1 border border-border/60">
+                {isVi ? 'Chế độ xem dành cho Ban giám hiệu' : 'Principal view-only mode'}
+              </span>
+            )}
           </div>
         </div>
 
@@ -933,11 +961,16 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
                         <td className="px-3 align-middle">
                           <textarea
                             rows={2}
+                            readOnly={isPrincipal}
+                            disabled={isPrincipal}
                             value={st.teacherNotes || ''}
                             onChange={(e) => handleNotesChange(st.id, e.target.value)}
-                            placeholder={t('assessment.monthlyNotePlaceholder', 'Nhập nhận xét tổng kết cả tháng của bé...')}
+                            placeholder={isPrincipal ? '' : t('assessment.monthlyNotePlaceholder', 'Nhập nhận xét tổng kết cả tháng của bé...')}
                             title={st.teacherNotes || ''}
-                            className="w-full max-w-[360px] h-[46px] py-1 px-2 text-[13px] leading-[19px] text-foreground font-normal bg-transparent border border-transparent hover:border-border focus:border-[#1447e6] focus:bg-background rounded-none transition-colors resize-none focus:outline-none placeholder:text-muted-foreground/40 overflow-hidden focus:overflow-y-auto block select-text"
+                            className={cn(
+                              "w-full max-w-[360px] h-[46px] py-1 px-2 text-[13px] leading-[19px] text-foreground font-normal bg-transparent border border-transparent hover:border-border focus:border-[#1447e6] focus:bg-background rounded-none transition-colors resize-none focus:outline-none placeholder:text-muted-foreground/40 overflow-hidden focus:overflow-y-auto block select-text",
+                              isPrincipal && "cursor-default opacity-85 hover:border-transparent focus:border-transparent"
+                            )}
                           />
                         </td>
 
@@ -1082,9 +1115,13 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
                         <td className="px-3 text-center">
                           <button
                             type="button"
+                            disabled={isPrincipal || !selectedMonthObj?.isEnded}
                             onClick={() => handleToggleWeekRose(st.id, currentWeekNumber)}
-                            className="size-9 mx-auto flex items-center justify-center rounded-none transition-all cursor-pointer hover:bg-muted/70 group/rose"
-                            title={isAwarded ? t('assessment.removeRose', 'Bấm để hủy hoa') : t('assessment.awardRose', 'Bấm để trao hoa hồng')}
+                            className={cn(
+                              "size-9 mx-auto flex items-center justify-center rounded-none transition-all group/rose",
+                              isPrincipal ? "cursor-default opacity-85" : "cursor-pointer hover:bg-muted/70"
+                            )}
+                            title={isPrincipal ? '' : isAwarded ? t('assessment.removeRose', 'Bấm để hủy hoa') : t('assessment.awardRose', 'Bấm để trao hoa hồng')}
                           >
                             {isAwarded ? (
                               <img

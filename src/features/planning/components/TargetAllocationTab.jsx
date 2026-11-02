@@ -54,6 +54,35 @@ const DOMAIN_FULL_LABELS = {
   AESTHETIC: 'Phát triển thẩm mỹ',
 };
 
+const STANDARD_GOAL_FALLBACKS = {
+  MT01: 'Trẻ thực hiện được các động tác trong bài tập thể dục theo cô.',
+  MT02: 'Trẻ làm được một số việc tự phục vụ đơn giản với sự hỗ trợ của người lớn.',
+  MT03: 'Trẻ nhận biết và tránh một số vật dụng, nơi nguy hiểm khi được nhắc nhở.',
+  MT04: 'Trẻ chọn và phân nhóm đồ vật theo một dấu hiệu nổi bật.',
+  MT05: 'Trẻ nhận biết số lượng một và nhiều.',
+  MT06: 'Trẻ tham gia hoạt động đơn giản và bước đầu chơi cạnh bạn.',
+  MT07: 'Trẻ nhận biết, gọi tên đồ vật, con vật và hành động quen thuộc.',
+  MT08: 'Trẻ đọc được bài thơ, đồng dao ngắn với sự giúp đỡ của cô.',
+  MT09: 'Trẻ hiểu câu hỏi đơn giản và dùng lời nói để thể hiện nhu cầu.',
+  MT10: 'Trẻ thực hiện một số yêu cầu đơn giản và bước đầu biết nhường đồ chơi.',
+  MT11: 'Trẻ thích nghe hát, vận động theo nhạc và tham gia tạo hình đơn giản.',
+};
+
+export const cleanDisplayGoalTitle = (goal) => {
+  if (!goal) return '';
+  const title = goal.title || '';
+  if (!title.includes('?')) return title;
+  const raw = String(goal.code || goal.goalCode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  let norm = raw;
+  if (raw.startsWith('MT')) {
+    const num = raw.replace(/^MT/, '');
+    norm = num.length === 1 ? `MT0${num}` : `MT${num}`;
+  } else if (/^\d+$/.test(raw)) {
+    norm = raw.length === 1 ? `MT0${raw}` : `MT${raw}`;
+  }
+  return STANDARD_GOAL_FALLBACKS[norm] || title;
+};
+
 
 // Format ISO date (YYYY-MM-DD) to VN format (DD/MM/YYYY)
 const formatDateVn = (dateStr) => {
@@ -200,10 +229,36 @@ export function TargetAllocationTab({ classId = '1' }) {
     }
   }, [currentTheme?.startDate, currentTheme?.code]);
 
-  // Set of goal IDs allocated to the current main theme
-  const currentThemeGoalIds = useMemo(() => {
-    return new Set((currentTheme?.allocatedGoals || []).map((g) => g.id));
+  // Set of goal IDs, public IDs, and clean codes allocated to the current main theme
+  const currentThemeGoalSet = useMemo(() => {
+    const set = new Set();
+    (currentTheme?.allocatedGoals || []).forEach((g) => {
+      if (g.id) set.add(String(g.id));
+      if (g.publicId) set.add(String(g.publicId));
+      if (g.goalId) set.add(String(g.goalId));
+      const cleanCode = (g.code || g.goalCode || '').split('(')[0].trim().toUpperCase();
+      if (cleanCode) set.add(cleanCode);
+    });
+    return set;
   }, [currentTheme]);
+
+  const checkIsGoalSelected = useCallback(
+    (goal) => {
+      if (!goal) return false;
+      if (goal.id && currentThemeGoalSet.has(String(goal.id))) return true;
+      if (goal.publicId && currentThemeGoalSet.has(String(goal.publicId))) return true;
+      if (goal.goalId && currentThemeGoalSet.has(String(goal.goalId))) return true;
+      const cleanCode = (goal.code || goal.goalCode || '').split('(')[0].trim().toUpperCase();
+      if (cleanCode && currentThemeGoalSet.has(cleanCode)) return true;
+      return false;
+    },
+    [currentThemeGoalSet]
+  );
+
+  // Exact count of allocated goals that match active allGoals
+  const actualSelectedCount = useMemo(() => {
+    return allGoals.filter((g) => checkIsGoalSelected(g)).length;
+  }, [allGoals, checkIsGoalSelected]);
 
   // Select a theme from Column 1
   const handleSelectTheme = (th) => {
@@ -245,19 +300,32 @@ export function TargetAllocationTab({ classId = '1' }) {
   // Toggle selection of a goal for the active theme
   const handleToggleGoalAllocation = async (goalId) => {
     if (isBgh || !currentTheme) return;
-    const isAlreadyAllocated = currentThemeGoalIds.has(goalId);
+    const goalToAdd = allGoals.find((g) => g.id === goalId || String(g.id) === String(goalId));
+    const isAlreadyAllocated = checkIsGoalSelected(goalToAdd || { id: goalId });
 
     let newAllocatedGoals;
     if (isAlreadyAllocated) {
-      newAllocatedGoals = (currentTheme.allocatedGoals || []).filter((g) => g.id !== goalId);
+      newAllocatedGoals = (currentTheme.allocatedGoals || []).filter((g) => {
+        if (g.id === goalId || String(g.id) === String(goalId)) return false;
+        if (goalToAdd) {
+          if (g.publicId && goalToAdd.publicId && g.publicId === goalToAdd.publicId) return false;
+          if (g.goalId && goalToAdd.goalId && String(g.goalId) === String(goalToAdd.goalId)) return false;
+          const c1 = (g.code || g.goalCode || '').split('(')[0].trim().toUpperCase();
+          const c2 = (goalToAdd.code || goalToAdd.goalCode || '').split('(')[0].trim().toUpperCase();
+          if (c1 && c2 && c1 === c2) return false;
+        }
+        return true;
+      });
     } else {
-      const goalToAdd = allGoals.find((g) => g.id === goalId);
       if (!goalToAdd) return;
       newAllocatedGoals = [
         ...(currentTheme.allocatedGoals || []),
         {
           id: goalToAdd.id,
+          goalId: goalToAdd.goalId || goalToAdd.id,
+          publicId: goalToAdd.publicId || goalToAdd.id,
           code: goalToAdd.code,
+          goalCode: goalToAdd.goalCode || goalToAdd.code,
           title: goalToAdd.title,
           domain: goalToAdd.domain,
           domainLabel: goalToAdd.domainLabel,
@@ -529,7 +597,7 @@ export function TargetAllocationTab({ classId = '1' }) {
           {/* Đã chọn bao nhiêu sang phải */}
           <div className="text-right shrink-0">
             <span className="text-[13px] text-muted-foreground">
-              Đã chọn <strong className="text-foreground font-semibold text-[14px]">{currentTheme?.allocatedGoals?.length || 0}</strong> / {allGoals.length} mục tiêu
+              Đã chọn <strong className="text-foreground font-semibold text-[14px]">{actualSelectedCount}</strong> / {allGoals.length} mục tiêu
             </span>
           </div>
         </div>
@@ -659,7 +727,7 @@ export function TargetAllocationTab({ classId = '1' }) {
         {/* Unified Goal List: Hiển thị tất cả mục tiêu và tích chọn trực tiếp */}
         <div className="flex-1 overflow-y-auto p-4 space-y-2">
           {filteredGoals.map((goal) => {
-            const isSelected = currentThemeGoalIds.has(goal.id);
+            const isSelected = checkIsGoalSelected(goal);
             const otherThemes = themes.filter(
               (th) =>
                 th.code !== currentTheme?.code &&
@@ -712,7 +780,7 @@ export function TargetAllocationTab({ classId = '1' }) {
                       isSelected ? 'text-foreground font-medium' : 'text-foreground/85 font-normal',
                     )}
                   >
-                    {goal.title}
+                    {cleanDisplayGoalTitle(goal)}
                   </p>
 
                   {/* Nội dung giáo dục chi tiết */}
