@@ -42,7 +42,8 @@ const getDefaultAssessmentPeriod = () => {
 };
 
 export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isVi = (i18n?.language || 'vi').startsWith('vi');
 
   const initialPeriod = useMemo(() => getDefaultAssessmentPeriod(), []);
   const [selectedMonth, setSelectedMonth] = useState(initialPeriod.month);

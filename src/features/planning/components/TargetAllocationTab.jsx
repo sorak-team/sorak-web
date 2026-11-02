@@ -10,6 +10,7 @@ import {
   Cancel01Icon,
   FilterHorizontalIcon,
   CheckmarkSquare02Icon,
+  Calendar03Icon,
 } from '@hugeicons/core-free-icons';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import {
@@ -68,18 +69,82 @@ const STANDARD_GOAL_FALLBACKS = {
   MT11: 'Trẻ thích nghe hát, vận động theo nhạc và tham gia tạo hình đơn giản.',
 };
 
+export const normalizeGoalCode = (code) => {
+  if (!code) return '';
+  const raw = String(code).toUpperCase().trim();
+  const digitsMatch = raw.match(/\d+/);
+  if (digitsMatch) {
+    const num = parseInt(digitsMatch[0], 10);
+    if (!isNaN(num)) {
+      return num < 10 ? `MT0${num}` : `MT${num}`;
+    }
+  }
+  return raw.replace(/[^A-Z0-9]/g, '');
+};
+
 export const cleanDisplayGoalTitle = (goal) => {
   if (!goal) return '';
   const title = goal.title || '';
   if (!title.includes('?')) return title;
-  const raw = String(goal.code || goal.goalCode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-  let norm = raw;
-  if (raw.startsWith('MT')) {
-    const num = raw.replace(/^MT/, '');
-    norm = num.length === 1 ? `MT0${num}` : `MT${num}`;
-  } else if (/^\d+$/.test(raw)) {
-    norm = raw.length === 1 ? `MT0${raw}` : `MT${raw}`;
+
+  // 1. Semantic pattern repair for legacy seeded corrupted strings
+  if (title.includes('ph?t tri?n') && title.includes('nh?m c?')) {
+    return 'Trẻ thực hiện được các động tác phát triển các nhóm cơ và hệ thần kinh vững chắc.';
   }
+  if (title.includes('v?n đ?ng th?') || title.includes('v?n đ?ng tinh')) {
+    return 'Trẻ thực hiện được các động tác vận động thô và vận động tinh cơ bản.';
+  }
+  if (title.includes('nguy hi?m')) {
+    return 'Trẻ nhận biết một số tình huống nguy hiểm và lựa chọn cách xử lý phù hợp.';
+  }
+  if (title.includes('ph?n lo?i')) {
+    return 'Trẻ phân loại được một số đối tượng theo đặc điểm chung và gọi tên nhóm.';
+  }
+  if (title.includes('t?ch') || title.includes('ph?m vi 10')) {
+    return 'Trẻ đếm, so sánh và thực hiện tách, gộp nhóm đối tượng trong phạm vi 10.';
+  }
+  if (title.includes('giao ti?p') || title.includes('l?ch s?')) {
+    return 'Trẻ nghe hiểu câu hỏi, diễn đạt rõ ý và sử dụng lời nói lịch sự trong giao tiếp.';
+  }
+  if (title.includes('ch? c?i')) {
+    return 'Trẻ nhận biết và gọi tên một số chữ cái đã học trong từ gần gũi.';
+  }
+  if (title.includes('chia s?') || title.includes('ch? đ?n l??t')) {
+    return 'Trẻ thực hiện được một số quy định chung, biết chờ đến lượt và chia sẻ với bạn.';
+  }
+  if (title.includes('?m nh?c') || title.includes('t?o h?nh')) {
+    return 'Trẻ thể hiện cảm xúc và ý tưởng thông qua âm nhạc, tạo hình.';
+  }
+  if (title.includes('tham gia') && (title.includes('nhi?m v?') || title.includes('ch? đ?ng'))) {
+    return 'Trẻ chủ động tham gia, phối hợp với bạn và cố gắng hoàn thành nhiệm vụ được giao.';
+  }
+  if (title.includes('bi?u c?m') || title.includes('đ?ng dao')) {
+    return 'Trẻ đọc biểu cảm bài thơ, đồng dao phù hợp với độ tuổi.';
+  }
+  if (title.includes('nh??ng đ? ch?i')) {
+    return 'Trẻ thực hiện một số yêu cầu đơn giản và bước đầu biết nhường đồ chơi.';
+  }
+  if (title.includes('th? d?c theo c?')) {
+    return 'Trẻ thực hiện được các động tác trong bài tập thể dục theo cô.';
+  }
+  if (title.includes('t? ph?c v?')) {
+    return 'Trẻ làm được một số việc tự phục vụ đơn giản với sự hỗ trợ của người lớn.';
+  }
+  if (title.includes('m?t v? nhi?u')) {
+    return 'Trẻ nhận biết số lượng một và nhiều.';
+  }
+  if (title.includes('đ? v?t, con v?t')) {
+    return 'Trẻ nhận biết, gọi tên đồ vật, con vật và hành động quen thuộc.';
+  }
+  if (title.includes('ch?i c?nh b?n')) {
+    return 'Trẻ tham gia hoạt động đơn giản và bước đầu chơi cạnh bạn.';
+  }
+  if (title.includes('th? hi?n nhu c?u')) {
+    return 'Trẻ hiểu câu hỏi đơn giản và dùng lời nói để thể hiện nhu cầu.';
+  }
+
+  // 2. Fallback to standard ministry goal by goal code
+  const norm = normalizeGoalCode(goal.code || goal.goalCode || goal.id);
   return STANDARD_GOAL_FALLBACKS[norm] || title;
 };
 
@@ -176,6 +241,8 @@ export function TargetAllocationTab({ classId = '1' }) {
   const [selectedDomainFilter, setSelectedDomainFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [showContents, setShowContents] = useState(true);
+  const [onlySelected, setOnlySelected] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
 
   // Calendar year & month state
@@ -417,12 +484,18 @@ export function TargetAllocationTab({ classId = '1' }) {
     return formatDateVn(new Date().toISOString().slice(0, 10));
   }, []);
 
-  // Filtered goals for the unified list in Column 2 (theo lĩnh vực phát triển & tìm kiếm từ khóa)
+  // Filtered goals for the unified list in Column 2 (theo lĩnh vực phát triển & tìm kiếm từ khóa & chỉ xem đã chọn)
   const filteredGoals = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return allGoals.filter((g) => {
+      // 1. Lọc theo trạng thái đã chọn (nếu bật onlySelected)
+      if (onlySelected && !checkIsGoalSelected(g)) return false;
+
+      // 2. Lọc theo lĩnh vực
       const matchDomain = selectedDomainFilter === 'ALL' || g.domain === selectedDomainFilter;
       if (!matchDomain) return false;
+
+      // 3. Lọc theo từ khóa tìm kiếm
       if (!q) return true;
       const matchGoal =
         g.code?.toLowerCase().includes(q) ||
@@ -430,7 +503,7 @@ export function TargetAllocationTab({ classId = '1' }) {
         (g.contents && g.contents.some((c) => c.title?.toLowerCase().includes(q)));
       return matchGoal;
     });
-  }, [allGoals, selectedDomainFilter, searchQuery]);
+  }, [allGoals, selectedDomainFilter, searchQuery, onlySelected, checkIsGoalSelected]);
 
   // Calendar calculations
   const month2Year = calendarMonth === 11 ? calendarYear + 1 : calendarYear;
@@ -546,7 +619,7 @@ export function TargetAllocationTab({ classId = '1' }) {
                 key={th.code}
                 onClick={() => handleSelectTheme(th)}
                 className={cn(
-                  'flex items-center gap-3 px-3.5 py-3 cursor-pointer transition-colors select-none text-left',
+                  'flex items-center gap-3 px-3.5 py-2.5 cursor-pointer transition-colors select-none text-left',
                   isSelected
                     ? 'bg-muted/70 font-semibold'
                     : 'hover:bg-muted/40 text-foreground',
@@ -566,12 +639,15 @@ export function TargetAllocationTab({ classId = '1' }) {
 
                 {/* Topic info: Name + Date Range */}
                 <div className="flex flex-col min-w-0 flex-1 leading-tight">
-                  <span className="text-[13.5px] truncate text-foreground font-medium">
+                  <span className="text-[13px] truncate text-foreground font-medium">
                     {th.name}
                   </span>
-                  <span className="text-[11.5px] text-muted-foreground font-normal mt-0.5">
-                    {formatDateRangeDdMm(th.startDate, th.endDate)}
-                  </span>
+                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-normal mt-0.5">
+                    <span>{formatDateRangeDdMm(th.startDate, th.endDate)}</span>
+                    {th.subThemes && th.subThemes.length > 0 && (
+                      <span className="text-muted-foreground/70">· {th.subThemes.length} nhánh</span>
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -583,246 +659,306 @@ export function TargetAllocationTab({ classId = '1' }) {
           COLUMN 2: MỤC TIÊU GIÁO DỤC (DANH SÁCH DUY NHẤT & SELECT TRỰC TIẾP)
          ========================================================================= */}
       <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
-        {/* Header: Tiêu đề chủ đề + Description + Đã chọn bao nhiêu sang phải */}
-        <div className="px-5 py-3.5 border-b border-border bg-card flex items-end justify-between gap-4 shrink-0 select-none">
-          <div className="min-w-0 space-y-0.5">
-            <h1 className="text-[18px] font-semibold text-foreground tracking-tight truncate">
+        {/* HÀNG 1: Header Bar tinh gọn (Chủ đề chính, Các nhánh con, Tiến độ & Nút lưu) */}
+        <div className="px-4 py-2.5 border-b border-border bg-card flex items-center justify-between gap-3 shrink-0 select-none">
+          {/* Cụm bên trái: Mã CĐ + Tên chủ đề + Thời gian + Các chủ đề nhánh inline */}
+          <div className="flex items-center gap-2 flex-wrap min-w-0">
+            <span className="font-mono text-[11px] font-bold px-1.5 py-0.5 bg-foreground text-background shrink-0">
+              CĐ {currentTheme?.code}
+            </span>
+            <h1 className="text-[15px] font-bold text-foreground tracking-tight truncate">
               {currentTheme?.name || 'Chủ đề năm học'}
             </h1>
-            <p className="text-[13px] text-muted-foreground font-normal mt-0.5">
-              Lựa chọn các mục tiêu giáo dục cần đạt vào chủ đề này
-            </p>
+            {currentTheme?.startDate && (
+              <span className="text-[11.5px] text-muted-foreground font-normal shrink-0">
+                ({formatDateRangeDdMm(currentTheme.startDate, currentTheme.endDate)})
+              </span>
+            )}
+
+            {/* Dải nhánh con: Gọn gàng, tinh tế, ngăn cách bằng dấu gạch dọc, không trùng lặp */}
+            {currentTheme?.subThemes && currentTheme.subThemes.length > 0 && (
+              <>
+                <span className="text-muted-foreground/40 font-light select-none hidden md:inline">|</span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[11.5px] text-muted-foreground font-medium">Nhánh:</span>
+                  {currentTheme.subThemes.map((st, idx) => (
+                    <span
+                      key={st.id || idx}
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-muted text-[11.5px] text-foreground border border-border/80 font-medium"
+                      title={`${st.name} (${formatDateRangeDdMm(st.startDate, st.endDate)})`}
+                    >
+                      <strong className="text-[#1447e6] font-mono text-[10.5px]">N{idx + 1}</strong>
+                      <span className="truncate max-w-[130px] lg:max-w-[160px]">{st.name}</span>
+                    </span>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
 
-          {/* Đã chọn bao nhiêu sang phải */}
-          <div className="text-right shrink-0">
-            <span className="text-[13px] text-muted-foreground">
-              Đã chọn <strong className="text-foreground font-semibold text-[14px]">{actualSelectedCount}</strong> / {allGoals.length} mục tiêu
+          {/* Cụm bên phải: Tiến độ chọn mục tiêu & Nút lưu thay đổi */}
+          <div className="flex items-center gap-3 shrink-0">
+            <span className="text-[12px] text-muted-foreground whitespace-nowrap">
+              Đã chọn <strong className="text-foreground font-bold text-[13px]">{actualSelectedCount}</strong> / {allGoals.length} mục tiêu
             </span>
+
+            {!isBgh && (
+              <Button
+                type="button"
+                onClick={handleSaveAllocation}
+                disabled={isSaving}
+                className="h-7 px-3 bg-[#1447e6] hover:bg-[#1447e6]/90 text-white text-[12px] font-medium rounded-none shadow-none cursor-pointer flex items-center gap-1.5 transition-colors"
+              >
+                <HugeiconsIcon icon={CheckmarkCircle01Icon} size={13} />
+                <span>{isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}</span>
+              </Button>
+            )}
           </div>
         </div>
 
-        {/* Toolbar: Search input, Active Filter Chip & Filter Dropdown + Toggle View */}
-        <div className="px-5 py-2.5 border-b border-border bg-muted/20 flex items-center justify-between gap-3 shrink-0 select-none">
-          {/* Left: Search input & Active Filter Indicator */}
-          <div className="flex items-center gap-2.5 flex-1 min-w-0">
-            {/* Search Input */}
-            <div className="relative w-56 sm:w-64 max-w-full">
+        {/* HÀNG 2: Tab 5 Lĩnh vực bên trái + Bộ lọc & Công cụ bên phải (Gom chung 1 hàng siêu gọn) */}
+        <div className="px-4 py-1.5 border-b border-border bg-muted/20 flex items-center justify-between gap-3 shrink-0 select-none">
+          {/* Bên trái: Tab 5 Lĩnh vực có đếm số lượng */}
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+            {DOMAIN_OPTIONS.map((item) => {
+              const isAll = item.key === 'ALL';
+              const domainGoals = isAll ? allGoals : allGoals.filter((g) => g.domain === item.key);
+              const domainSelectedCount = domainGoals.filter((g) => checkIsGoalSelected(g)).length;
+              const isTabActive = selectedDomainFilter === item.key;
+
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setSelectedDomainFilter(item.key)}
+                  className={cn(
+                    'h-7 px-2.5 text-[11.5px] font-medium rounded-none transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap border shrink-0',
+                    isTabActive
+                      ? 'bg-primary text-primary-foreground border-primary font-semibold shadow-2xs'
+                      : 'bg-background hover:bg-muted/70 text-muted-foreground hover:text-foreground border-border'
+                  )}
+                >
+                  <span>{item.label}</span>
+                  <span
+                    className={cn(
+                      'text-[10px] font-mono px-1 py-0.2 rounded-none leading-none',
+                      isTabActive
+                        ? 'bg-primary-foreground/20 text-primary-foreground font-bold'
+                        : domainSelectedCount > 0
+                        ? 'bg-primary/10 text-primary font-bold'
+                        : 'text-muted-foreground/70'
+                    )}
+                  >
+                    {domainSelectedCount}/{domainGoals.length}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Bên phải: Tìm kiếm & Các nút bật tắt công cụ */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* Input tìm kiếm gọn gàng */}
+            <div className="relative w-36 sm:w-44 lg:w-48">
               <HugeiconsIcon
                 icon={Search01Icon}
-                size={14}
+                size={13}
                 className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
               />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Tìm kiếm mục tiêu, nội dung..."
-                className="w-full h-8 pl-8 pr-7 bg-background border border-border text-[12.5px] text-foreground placeholder:text-muted-foreground rounded-none outline-none focus:border-primary transition-colors"
+                placeholder="Tìm mã, nội dung..."
+                className="w-full h-7 pl-7 pr-6 bg-background border border-border text-[11.5px] text-foreground placeholder:text-muted-foreground rounded-none outline-none focus:border-primary transition-colors"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
                   title="Xóa tìm kiếm"
                 >
-                  <HugeiconsIcon icon={Cancel01Icon} size={12} />
+                  <HugeiconsIcon icon={Cancel01Icon} size={11} />
                 </button>
               )}
             </div>
 
-            {/* Active domain indicator badge (when a specific domain is filtered) */}
-            {selectedDomainFilter !== 'ALL' && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-muted border border-border text-foreground text-[12px] font-medium animate-in fade-in">
-                <span>
-                  {DOMAIN_FULL_LABELS[selectedDomainFilter] || DOMAIN_SHORT_LABELS[selectedDomainFilter] || selectedDomainFilter} (
-                  {allGoals.filter((g) => g.domain === selectedDomainFilter).length})
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setSelectedDomainFilter('ALL')}
-                  className="hover:text-foreground cursor-pointer text-muted-foreground hover:text-foreground transition-colors ml-0.5"
-                  title="Bỏ lọc, hiện tất cả"
-                >
-                  <HugeiconsIcon icon={Cancel01Icon} size={11} />
-                </button>
-              </div>
-            )}
-          </div>
+            {/* Nút lọc: Chỉ hiện đã chọn */}
+            <button
+              type="button"
+              onClick={() => setOnlySelected((prev) => !prev)}
+              className={cn(
+                'h-7 px-2 text-[11.5px] font-medium border rounded-none transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap select-none',
+                onlySelected
+                  ? 'bg-[#1447e6] text-white border-[#1447e6] font-semibold'
+                  : 'bg-background border-border text-foreground hover:bg-muted/60'
+              )}
+              title="Chỉ xem các mục tiêu đã chọn trong chủ đề này"
+            >
+              <HugeiconsIcon icon={CheckmarkSquare02Icon} size={13} />
+              <span>Đã chọn ({actualSelectedCount})</span>
+            </button>
 
-          {/* Right: Filter dropdown button (Image 2) & Toggle Educational Contents */}
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Filter Dropdown (Khớp 100% hình 2 của người dùng) */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className={cn(
-                    'size-8 bg-background border border-border text-foreground hover:bg-muted/50 rounded-none flex items-center justify-center transition-colors cursor-pointer select-none',
-                    selectedDomainFilter !== 'ALL' && 'border-primary text-primary bg-primary/5 font-semibold',
-                  )}
-                  title="Lọc theo lĩnh vực phát triển"
-                  aria-label="Lọc theo lĩnh vực phát triển"
-                >
-                  <HugeiconsIcon icon={FilterHorizontalIcon} size={16} />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="w-56 p-1.5 rounded-none border border-border bg-card shadow-xl z-50 text-foreground"
-              >
-                <DropdownMenuLabel className="px-2 py-1 text-[12px] font-medium text-muted-foreground">
-                  Lĩnh vực phát triển
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator className="my-1 border-t border-border" />
-                {DOMAIN_OPTIONS.map((item) => {
-                  const count =
-                    item.key === 'ALL'
-                      ? allGoals.length
-                      : allGoals.filter((g) => g.domain === item.key).length;
-                  const isChecked = selectedDomainFilter === item.key;
-                  return (
-                    <DropdownMenuItem
-                      key={item.key}
-                      onClick={() => setSelectedDomainFilter(item.key)}
-                      className={cn(
-                        'flex items-center justify-between h-8 px-2 text-[13px] cursor-pointer rounded-none hover:bg-muted/60 transition-colors',
-                        isChecked && 'font-medium text-primary',
-                      )}
-                    >
-                      <span>
-                        {item.label} ({count})
-                      </span>
-                      {isChecked && (
-                        <HugeiconsIcon
-                          icon={CheckmarkSquare02Icon}
-                          size={15}
-                          className="text-primary shrink-0"
-                        />
-                      )}
-                    </DropdownMenuItem>
-                  );
-                })}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Toggle Show Educational Contents Button */}
+            {/* Toggle Show/Hide Educational Contents */}
             <button
               type="button"
               onClick={() => setShowContents((prev) => !prev)}
               className={cn(
-                'h-8 px-3 text-[12px] font-medium border rounded-none transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap select-none',
+                'h-7 px-2 text-[11.5px] font-medium border rounded-none transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap select-none',
                 showContents
-                  ? 'bg-muted border-border text-foreground font-semibold shadow-none'
-                  : 'bg-card border-border text-muted-foreground hover:text-foreground hover:bg-muted/50',
+                  ? 'bg-muted border-border text-foreground font-medium'
+                  : 'bg-background border-border text-muted-foreground hover:text-foreground'
               )}
               title={showContents ? 'Thu gọn nội dung giáo dục' : 'Hiện nội dung giáo dục'}
             >
-              <span>{showContents ? 'Hiện nội dung GD' : 'Thu gọn nội dung GD'}</span>
+              <span>{showContents ? 'Ẩn nội dung' : 'Hiện nội dung'}</span>
+            </button>
+
+            {/* Toggle Show/Hide Calendar Sidebar */}
+            <button
+              type="button"
+              onClick={() => setShowCalendar((prev) => !prev)}
+              className={cn(
+                'h-7 px-2 text-[11.5px] font-medium border rounded-none transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap select-none',
+                showCalendar
+                  ? 'bg-muted border-border text-foreground font-medium'
+                  : 'bg-background border-border text-muted-foreground hover:text-foreground'
+              )}
+              title={showCalendar ? 'Thu gọn cột lịch' : 'Hiện cột lịch 2 tháng'}
+            >
+              <HugeiconsIcon icon={Calendar03Icon} size={13} />
+              <span>{showCalendar ? 'Ẩn lịch' : 'Hiện lịch'}</span>
             </button>
           </div>
         </div>
 
-        {/* Unified Goal List: Hiển thị tất cả mục tiêu và tích chọn trực tiếp */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
-          {filteredGoals.map((goal) => {
-            const isSelected = checkIsGoalSelected(goal);
-            const otherThemes = themes.filter(
-              (th) =>
-                th.code !== currentTheme?.code &&
-                (th.allocatedGoals || []).some((g) => g.id === goal.id),
-            );
-
-            return (
-              <div
-                key={goal.id}
-                onClick={() => !isBgh && handleToggleGoalAllocation(goal.id)}
-                className={cn(
-                  'flex items-start gap-3 p-3 border transition-colors select-none text-[12.5px] rounded-none bg-card',
-                  isBgh ? 'cursor-default' : 'cursor-pointer',
-                  isSelected
-                    ? 'border-border bg-card'
-                    : isBgh ? 'border-border/60' : 'border-border/70 hover:border-border hover:bg-muted/30',
+        {/* Unified Goal List: Hiển thị mục tiêu và tích chọn trực tiếp */}
+        <div className="flex-1 overflow-y-auto p-3.5 space-y-2">
+          {/* Chỉ hiện dòng thông báo khi đang tìm kiếm hoặc lọc đặc biệt */}
+          {(searchQuery || onlySelected) && (
+            <div className="flex items-center justify-between text-[11.5px] text-muted-foreground pb-0.5 px-1">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span>
+                  Đang lọc <strong className="text-foreground">{filteredGoals.length}</strong> mục tiêu:
+                </span>
+                {onlySelected && (
+                  <span className="text-[#1447e6] font-medium font-mono">[Đã chọn]</span>
                 )}
+                {searchQuery && (
+                  <span>từ khóa &quot;{searchQuery}&quot;</span>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setOnlySelected(false);
+                  setSearchQuery('');
+                }}
+                className="text-[#1447e6] hover:underline cursor-pointer text-[11px]"
               >
-                {/* Checkbox to select/deselect directly */}
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  disabled={isBgh}
-                  onChange={() => !isBgh && handleToggleGoalAllocation(goal.id)}
-                  onClick={(e) => e.stopPropagation()}
+                Xóa bộ lọc
+              </button>
+            </div>
+          )}
+
+          {/* Grid or List of cards */}
+          <div className={cn(
+            'grid gap-2',
+            !showCalendar ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-1'
+          )}>
+            {filteredGoals.map((goal) => {
+              const isSelected = checkIsGoalSelected(goal);
+              const otherThemes = themes.filter(
+                (th) =>
+                  th.code !== currentTheme?.code &&
+                  (th.allocatedGoals || []).some((g) => g.id === goal.id),
+              );
+
+              return (
+                <div
+                  key={goal.id}
+                  onClick={() => !isBgh && handleToggleGoalAllocation(goal.id)}
                   className={cn(
-                    "size-4 rounded-none accent-[#1447e6] mt-0.5 shrink-0",
-                    isBgh ? "cursor-default opacity-80" : "cursor-pointer"
+                    'flex items-start gap-3 p-3 border transition-colors select-none text-[12.5px] rounded-none bg-card',
+                    isBgh ? 'cursor-default' : 'cursor-pointer',
+                    isSelected
+                      ? 'border-border bg-blue-50/15 dark:bg-blue-950/20 border-l-2 !border-l-[#1447e6]'
+                      : isBgh ? 'border-border/60' : 'border-border/70 hover:border-border hover:bg-muted/30',
                   )}
-                />
-
-                <div className="flex-1 min-w-0 space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-mono font-semibold text-foreground text-[12.5px]">
-                      {goal.code}
-                    </span>
-                    <span className="text-[12px] text-muted-foreground font-normal">
-                      · {DOMAIN_FULL_LABELS[goal.domain] || DOMAIN_SHORT_LABELS[goal.domain] || goal.domain}
-                    </span>
-                    {otherThemes.length > 0 && (
-                      <span className="text-[11px] text-muted-foreground/80 italic">
-                        (Đã có ở CĐ {otherThemes.map((t) => t.code).join(', ')})
-                      </span>
-                    )}
-                  </div>
-
-                  <p
+                >
+                  {/* Checkbox to select/deselect directly */}
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    disabled={isBgh}
+                    onChange={() => !isBgh && handleToggleGoalAllocation(goal.id)}
+                    onClick={(e) => e.stopPropagation()}
                     className={cn(
-                      'text-[13px] leading-relaxed',
-                      isSelected ? 'text-foreground font-medium' : 'text-foreground/85 font-normal',
+                      "size-4 rounded-none accent-[#1447e6] mt-0.5 shrink-0",
+                      isBgh ? "cursor-default opacity-80" : "cursor-pointer"
                     )}
-                  >
-                    {cleanDisplayGoalTitle(goal)}
-                  </p>
+                  />
 
-                  {/* Nội dung giáo dục chi tiết */}
-                  {showContents && goal.contents && goal.contents.length > 0 && (
-                    <div className="mt-2.5 pt-2 border-t border-border/50 space-y-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[11px] font-semibold text-foreground/75 tracking-tight uppercase">
-                          Nội dung giáo dục
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-mono font-bold text-foreground text-[12.5px]">
+                        {goal.code}
+                      </span>
+                      {selectedDomainFilter === 'ALL' && (
+                        <span className="text-[12px] text-muted-foreground font-normal">
+                          · {DOMAIN_SHORT_LABELS[goal.domain] || goal.domain}
                         </span>
-                        <span className="text-[10px] px-1.5 py-0.2 bg-muted/80 border border-border/60 text-muted-foreground font-mono font-medium leading-none">
-                          {goal.contents.length}
+                      )}
+                      {otherThemes.length > 0 && (
+                        <span className="text-[11px] text-muted-foreground/80 italic">
+                          (Đã có ở CĐ {otherThemes.map((t) => t.code).join(', ')})
+                        </span>
+                      )}
+                    </div>
+
+                    <p
+                      className={cn(
+                        'text-[13px] leading-relaxed',
+                        isSelected ? 'text-foreground font-medium' : 'text-foreground/85 font-normal',
+                      )}
+                    >
+                      {cleanDisplayGoalTitle(goal)}
+                    </p>
+
+                    {/* Nội dung giáo dục chi tiết (gọn gàng, không lặp lại tiêu đề rườm rà) */}
+                    {showContents && goal.contents && goal.contents.length > 0 && (
+                      <div className="mt-1.5 pt-1.5 border-t border-border/40">
+                        <ul className="space-y-0.5 pl-4 list-disc text-[12px] marker:text-muted-foreground/60 leading-relaxed text-muted-foreground">
+                          {goal.contents.map((cnt, cIdx) => (
+                            <li
+                              key={cnt.id || cIdx}
+                              className={cn(
+                                'leading-snug transition-colors',
+                                isSelected
+                                  ? 'text-foreground/90 font-normal'
+                                  : 'text-muted-foreground hover:text-foreground',
+                              )}
+                            >
+                              {cnt.title}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {!showContents && goal.contents && goal.contents.length > 0 && (
+                      <div className="pt-0.5">
+                        <span className="text-[11px] text-muted-foreground/75 italic">
+                          · {goal.contents.length} nội dung giáo dục
                         </span>
                       </div>
-                      <ul className="space-y-1 pl-4 list-disc text-[12px] marker:text-muted-foreground/60 leading-relaxed">
-                        {goal.contents.map((cnt, cIdx) => (
-                          <li
-                            key={cnt.id || cIdx}
-                            className={cn(
-                              'leading-snug transition-colors',
-                              isSelected
-                                ? 'text-foreground/90 font-normal'
-                                : 'text-muted-foreground hover:text-foreground',
-                            )}
-                          >
-                            {cnt.title}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {!showContents && goal.contents && goal.contents.length > 0 && (
-                    <div className="pt-0.5">
-                      <span className="text-[11px] text-muted-foreground/75 italic">
-                        · {goal.contents.length} nội dung giáo dục
-                      </span>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
 
           {filteredGoals.length === 0 && (
             <div className="h-48 flex flex-col items-center justify-center text-center p-6 space-y-1.5 text-muted-foreground">
@@ -830,10 +966,25 @@ export function TargetAllocationTab({ classId = '1' }) {
                 Không tìm thấy mục tiêu nào phù hợp
               </p>
               <p className="text-[12px]">
-                {searchQuery
+                {onlySelected
+                  ? 'Chủ đề này chưa có mục tiêu nào được chọn trong lĩnh vực hiện tại.'
+                  : searchQuery
                   ? `Không có kết quả nào cho từ khóa "${searchQuery}".`
                   : 'Thử chọn bộ lọc "Tất cả" hoặc lĩnh vực phát triển khác.'}
               </p>
+              {(onlySelected || selectedDomainFilter !== 'ALL' || searchQuery) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedDomainFilter('ALL');
+                    setOnlySelected(false);
+                    setSearchQuery('');
+                  }}
+                  className="mt-2 text-[12px] text-[#1447e6] hover:underline cursor-pointer"
+                >
+                  Xem tất cả {allGoals.length} mục tiêu
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -842,6 +993,7 @@ export function TargetAllocationTab({ classId = '1' }) {
       {/* =========================================================================
           COLUMN 3: LỊCH 2 THÁNG LIÊN TIẾP (CHUẨN 100% TRANG BỘ CHỦ ĐỀ)
          ========================================================================= */}
+      {showCalendar && (
       <div className="w-[330px] shrink-0 border-l border-border bg-card overflow-y-auto h-full select-none">
         <div className="p-3.5 space-y-3">
           {/* Month Header Toolbar: Hiển thị 2 tháng liên tiếp */}
@@ -1180,6 +1332,7 @@ export function TargetAllocationTab({ classId = '1' }) {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }

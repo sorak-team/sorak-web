@@ -1623,6 +1623,10 @@
     }
   },
   "daily": {
+    "theme": "Theme",
+    "subTheme": "Sub-theme",
+    "noTheme": "No theme",
+    "noSubTheme": "No sub-theme",
     "guideTitle": "Daily Routine Guide & Status Legend",
     "legendLabel": "Legend:",
     "colHeaderShort": "Day Column:",

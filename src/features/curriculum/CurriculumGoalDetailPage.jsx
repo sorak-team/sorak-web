@@ -54,18 +54,81 @@ const STANDARD_GOAL_FALLBACKS = {
   MT11: 'Trẻ thích nghe hát, vận động theo nhạc và tham gia tạo hình đơn giản.',
 };
 
+const normalizeGoalCode = (code) => {
+  if (!code) return '';
+  const raw = String(code).toUpperCase().trim();
+  const digitsMatch = raw.match(/\d+/);
+  if (digitsMatch) {
+    const num = parseInt(digitsMatch[0], 10);
+    if (!isNaN(num)) {
+      return num < 10 ? `MT0${num}` : `MT${num}`;
+    }
+  }
+  return raw.replace(/[^A-Z0-9]/g, '');
+};
+
 const cleanDisplayGoalTitle = (g) => {
   if (!g) return '';
   const title = g.title || '';
   if (!title.includes('?')) return title;
-  const raw = String(g.code || g.goal_code || g.goalCode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-  let norm = raw;
-  if (raw.startsWith('MT')) {
-    const num = raw.replace(/^MT/, '');
-    norm = num.length === 1 ? `MT0${num}` : `MT${num}`;
-  } else if (/^\d+$/.test(raw)) {
-    norm = raw.length === 1 ? `MT0${raw}` : `MT${raw}`;
+
+  // 1. Semantic pattern repair for legacy seeded corrupted strings
+  if (title.includes('ph?t tri?n') && title.includes('nh?m c?')) {
+    return 'Trẻ thực hiện được các động tác phát triển các nhóm cơ và hệ thần kinh vững chắc.';
   }
+  if (title.includes('v?n đ?ng th?') || title.includes('v?n đ?ng tinh')) {
+    return 'Trẻ thực hiện được các động tác vận động thô và vận động tinh cơ bản.';
+  }
+  if (title.includes('nguy hi?m')) {
+    return 'Trẻ nhận biết một số tình huống nguy hiểm và lựa chọn cách xử lý phù hợp.';
+  }
+  if (title.includes('ph?n lo?i')) {
+    return 'Trẻ phân loại được một số đối tượng theo đặc điểm chung và gọi tên nhóm.';
+  }
+  if (title.includes('t?ch') || title.includes('ph?m vi 10')) {
+    return 'Trẻ đếm, so sánh và thực hiện tách, gộp nhóm đối tượng trong phạm vi 10.';
+  }
+  if (title.includes('giao ti?p') || title.includes('l?ch s?')) {
+    return 'Trẻ nghe hiểu câu hỏi, diễn đạt rõ ý và sử dụng lời nói lịch sự trong giao tiếp.';
+  }
+  if (title.includes('ch? c?i')) {
+    return 'Trẻ nhận biết và gọi tên một số chữ cái đã học trong từ gần gũi.';
+  }
+  if (title.includes('chia s?') || title.includes('ch? đ?n l??t')) {
+    return 'Trẻ thực hiện được một số quy định chung, biết chờ đến lượt và chia sẻ với bạn.';
+  }
+  if (title.includes('?m nh?c') || title.includes('t?o h?nh')) {
+    return 'Trẻ thể hiện cảm xúc và ý tưởng thông qua âm nhạc, tạo hình.';
+  }
+  if (title.includes('tham gia') && (title.includes('nhi?m v?') || title.includes('ch? đ?ng'))) {
+    return 'Trẻ chủ động tham gia, phối hợp với bạn và cố gắng hoàn thành nhiệm vụ được giao.';
+  }
+  if (title.includes('bi?u c?m') || title.includes('đ?ng dao')) {
+    return 'Trẻ đọc biểu cảm bài thơ, đồng dao phù hợp với độ tuổi.';
+  }
+  if (title.includes('nh??ng đ? ch?i')) {
+    return 'Trẻ thực hiện một số yêu cầu đơn giản và bước đầu biết nhường đồ chơi.';
+  }
+  if (title.includes('th? d?c theo c?')) {
+    return 'Trẻ thực hiện được các động tác trong bài tập thể dục theo cô.';
+  }
+  if (title.includes('t? ph?c v?')) {
+    return 'Trẻ làm được một số việc tự phục vụ đơn giản với sự hỗ trợ của người lớn.';
+  }
+  if (title.includes('m?t v? nhi?u')) {
+    return 'Trẻ nhận biết số lượng một và nhiều.';
+  }
+  if (title.includes('đ? v?t, con v?t')) {
+    return 'Trẻ nhận biết, gọi tên đồ vật, con vật và hành động quen thuộc.';
+  }
+  if (title.includes('ch?i c?nh b?n')) {
+    return 'Trẻ tham gia hoạt động đơn giản và bước đầu chơi cạnh bạn.';
+  }
+  if (title.includes('th? hi?n nhu c?u')) {
+    return 'Trẻ hiểu câu hỏi đơn giản và dùng lời nói để thể hiện nhu cầu.';
+  }
+
+  const norm = normalizeGoalCode(g.code || g.goal_code || g.goalCode || g.id);
   return STANDARD_GOAL_FALLBACKS[norm] || title;
 };
 
