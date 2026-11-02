@@ -374,6 +374,7 @@ export function DailyRoutinePage() {
   const [recordedDismissalDays, setRecordedDismissalDays] = useState({});
   const [dismissalRefreshKey, setDismissalRefreshKey] = useState(0);
   const [cleanConfirmDialog, setCleanConfirmDialog] = useState(null);
+  const [dismissalStatsOverride, setDismissalStatsOverride] = useState(null);
 
   const handleDismissalChange = useCallback((res) => {
     const students = res?.students || [];
@@ -395,6 +396,15 @@ export function DailyRoutinePage() {
         ...prev,
         [dateStr]: isFullDismissed,
       }));
+    }
+    if (res?.summary) {
+      setDismissalStatsOverride({
+        dateStr,
+        dismissedCount: res.summary.dismissedCount,
+        presentCount: res.summary.presentCount,
+        remainingInClassCount: res.summary.remainingInClassCount,
+        totalStudents: res.summary.totalStudents,
+      });
     }
     if (activeDay?.key) {
       setRecordedDismissalDays((prev) => {
@@ -675,14 +685,19 @@ export function DailyRoutinePage() {
     const isDisDone = Boolean(todayDay?.isDismissalRecorded);
     const isHlthDone = Boolean(todayDay?.isHealthRecorded);
 
-    const presentCount = isAttDone
-      ? (data?.stats?.presentCount ?? students.filter((s) => s.status === 'PRESENT').length ?? totalStudents)
-      : 0;
+    const isOverrideActive = dismissalStatsOverride && dismissalStatsOverride.dateStr === todayIsoStr;
+    const activePresentCount = isOverrideActive && dismissalStatsOverride.presentCount !== undefined
+      ? dismissalStatsOverride.presentCount
+      : (data?.stats?.presentCount ?? students.filter((s) => s.status === 'PRESENT').length ?? totalStudents);
+    const presentCount = isAttDone ? activePresentCount : 0;
     const absentCount = totalStudents > 0 && isAttDone ? Math.max(0, totalStudents - presentCount) : 0;
 
+    const activeDismissedCount = isOverrideActive && dismissalStatsOverride.dismissedCount !== undefined
+      ? dismissalStatsOverride.dismissedCount
+      : (data?.stats?.dismissedCount ?? students.filter((s) => s.status === 'PRESENT' && s.checkOutTime).length ?? 0);
     const dismissedCount = isDisDone
       ? presentCount
-      : (data?.stats?.dismissedCount ?? students.filter((s) => s.status === 'PRESENT' && s.checkOutTime).length ?? 0);
+      : activeDismissedCount;
     const remainingCount = isAttDone ? Math.max(0, presentCount - dismissedCount) : 0;
 
     const healthCount = isHlthDone
@@ -719,7 +734,7 @@ export function DailyRoutinePage() {
       healthAttentionCount,
       classStatus,
     };
-  }, [data, students, todayDay, now, isTodayLocked]);
+  }, [data, students, todayDay, now, isTodayLocked, dismissalStatsOverride, todayIsoStr]);
 
   const handleOpenTodayTab = (tab = 'attendance') => {
     if (isTodayLocked) return;

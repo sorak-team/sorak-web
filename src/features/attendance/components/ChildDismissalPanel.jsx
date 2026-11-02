@@ -305,10 +305,12 @@ export function ChildDismissalPanel({
       setLoading(true);
       const res = await attendanceApi.getDismissalOverview(classId, { date });
       setData(res);
-      const mapped = (res?.students || []).map((s) => ({
-        ...s,
-        pickupNote: s.pickupNote || '',
-      }));
+      const mapped = (res?.students || [])
+        .filter((s) => !s.isTransferred && !s.leftAt && s.status !== 'TRANSFERRED' && s.status !== 'TRANSFERRED_CLASS')
+        .map((s) => ({
+          ...s,
+          pickupNote: s.pickupNote || '',
+        }));
       setStudents(mapped);
       setInitialSnapshot(
         JSON.stringify(
@@ -1369,8 +1371,10 @@ export function ChildDismissalPanel({
               <span className="size-1.5 rounded-full bg-emerald-500 shrink-0" />
               <span>
                 {isVi
-                  ? `Đã đón trẻ (${dismissedCount}/${students.length})`
-                  : `Dismissed (${dismissedCount}/${students.length})`}
+                  ? (dismissedCount === presentCount && presentCount > 0
+                      ? `Đã đón hết (${dismissedCount}/${presentCount})`
+                      : `Đã đón trẻ (${dismissedCount}/${presentCount || students.length})`)
+                  : `Dismissed (${dismissedCount}/${presentCount || students.length})`}
               </span>
             </span>
           ) : (
@@ -1378,8 +1382,8 @@ export function ChildDismissalPanel({
               <span className="size-1.5 rounded-full bg-muted-foreground/60 shrink-0" />
               <span>
                 {isVi
-                  ? `Chưa đón trẻ (0/${students.length})`
-                  : `Not dismissed (0/${students.length})`}
+                  ? `Chưa đón trẻ (0/${presentCount || students.length})`
+                  : `Not dismissed (0/${presentCount || students.length})`}
               </span>
             </span>
           )}

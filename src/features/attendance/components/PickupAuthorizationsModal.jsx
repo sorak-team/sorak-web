@@ -235,7 +235,14 @@ export function PickupAuthorizationsModal({
   // Lọc học sinh theo tên, mã HS và loại bỏ học sinh đã chuyển lớp
   const activeStudents = useMemo(() => {
     return (students || []).filter(
-      (s) => !s.isTransferred && !s.leftAt && s.status !== 'TRANSFERRED' && s.status !== 'TRANSFERRED_CLASS'
+      (s) =>
+        !s.isTransferred &&
+        !s.leftAt &&
+        s.status !== 'TRANSFERRED' &&
+        s.status !== 'TRANSFERRED_CLASS' &&
+        s.status !== 'TRANSFERRED_SCHOOL' &&
+        s.status !== 'DROPPED_OUT' &&
+        (!s.enrollmentStatus || s.enrollmentStatus === 'ENROLLED')
     );
   }, [students]);
 
