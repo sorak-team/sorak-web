@@ -192,13 +192,16 @@ export function ClassStudentsPage() {
   }, [students, targetClassId, searchQuery, statusFilter, genderFilter, isPastYear]);
 
   // Safe pagination calculation (clamps currentPage to totalPages)
-  const totalPages = Math.max(1, Math.ceil(filteredStudents.length / pageSize));
-  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+  const validPageSize = Math.max(1, Number(pageSize) || 10);
+  const totalPages = Math.max(1, Math.ceil(filteredStudents.length / validPageSize));
+  const safeCurrentPage = Math.min(Math.max(1, Number(currentPage) || 1), totalPages);
 
   const paginatedStudents = useMemo(() => {
-    const start = (safeCurrentPage - 1) * pageSize;
-    return filteredStudents.slice(start, start + pageSize);
-  }, [filteredStudents, safeCurrentPage, pageSize]);
+    if (!filteredStudents || filteredStudents.length === 0) return [];
+    const start = (safeCurrentPage - 1) * validPageSize;
+    const slice = filteredStudents.slice(start, start + validPageSize);
+    return slice.length > 0 ? slice : filteredStudents.slice(0, validPageSize);
+  }, [filteredStudents, safeCurrentPage, validPageSize]);
 
   if (id && /^\d+$/.test(String(id))) {
     return <NotFoundPage />;

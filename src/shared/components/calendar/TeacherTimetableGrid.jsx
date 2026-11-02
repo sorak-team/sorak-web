@@ -111,6 +111,8 @@ export const getScheduledStatusLabel = (status, t = (k, def) => def) => {
 export function TeacherTimetableGrid({
   title,
   dateRange = '28/09/2026 – 04/10/2026',
+  themeName = null,
+  subThemeName = null,
   days = DEFAULT_DAYS,
   slots = [],
   activeSlotId = null,
@@ -241,25 +243,47 @@ export function TeacherTimetableGrid({
     >
       {/* 1. Header Bar */}
       {!hideHeader && (
-        <div className="flex items-center justify-between px-3.5 py-2 border-b border-border bg-card gap-2 flex-wrap min-h-11">
-          <div className="flex items-center gap-2">
-            <span className="text-[14px] font-semibold text-foreground tracking-tight">
+        <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-border bg-card gap-3 flex-wrap min-h-11">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="text-[13.5px] font-semibold text-foreground tracking-tight">
               {displayTitle}
             </span>
-            {!headerActions && dateRange && (
-              <span className="text-[12.5px] text-muted-foreground font-normal">
-                · {dateRange}
+            {dateRange && (
+              <span className="text-[12px] text-muted-foreground font-normal">
+                ({dateRange})
               </span>
+            )}
+            {(themeName || subThemeName) && (
+              <>
+                <span className="text-muted-foreground/35 select-none">•</span>
+                <span className="text-[12.5px] text-muted-foreground font-normal">
+                  {t('daily.theme', 'Chủ đề')}:{' '}
+                  <span className="font-semibold text-foreground">
+                    {themeName || t('daily.noTheme', 'Chưa có chủ đề')}
+                  </span>
+                </span>
+                {subThemeName && (
+                  <>
+                    <span className="text-muted-foreground/35 select-none">•</span>
+                    <span className="text-[12.5px] text-muted-foreground font-normal">
+                      {t('daily.subTheme', 'Chủ đề nhánh')}:{' '}
+                      <span className="font-semibold text-primary">
+                        {subThemeName}
+                      </span>
+                    </span>
+                  </>
+                )}
+              </>
             )}
           </div>
 
           {headerActions ? (
-            <div className="flex items-center gap-2">{headerActions}</div>
-          ) : (
-            <span className="text-[13px] text-muted-foreground font-normal">
+            <div className="flex items-center gap-2 shrink-0">{headerActions}</div>
+          ) : dateRange ? (
+            <span className="text-[12.5px] text-muted-foreground font-normal hidden sm:inline">
               {dateRange}
             </span>
-          )}
+          ) : null}
         </div>
       )}
 

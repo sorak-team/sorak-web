@@ -1621,6 +1621,10 @@
     }
   },
   "daily": {
+    "theme": "Chủ đề",
+    "subTheme": "Chủ đề nhánh",
+    "noTheme": "Chưa có chủ đề",
+    "noSubTheme": "Chưa có chủ đề nhánh",
     "guideTitle": "Hướng dẫn thao tác & Chú thích trạng thái nhật ký ngày",
     "legendLabel": "Chú thích:",
     "colHeaderShort": "Cột Thứ:",

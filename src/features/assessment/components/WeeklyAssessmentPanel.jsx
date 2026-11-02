@@ -529,6 +529,18 @@ export function WeeklyAssessmentPanel({
                   <span className="text-muted-foreground font-normal">{t('assessment.content', 'Nội dung:')}{' '}</span>
                   <span className="text-foreground font-medium">{criteria.content || slotTitle || (isVi ? 'Nội dung theo chủ đề tuần' : '—')}</span>
                 </div>
+                {(slot?.themeName || slot?.theme?.name) && (
+                  <div>
+                    <span className="text-muted-foreground font-normal">{t('assessment.theme', 'Chủ đề:')}{' '}</span>
+                    <span className="text-foreground font-medium">{slot.themeName || slot.theme?.name}</span>
+                  </div>
+                )}
+                {(slot?.subThemeName || slot?.subTheme?.name) && (
+                  <div>
+                    <span className="text-muted-foreground font-normal">{t('assessment.subTheme', 'Chủ đề nhánh:')}{' '}</span>
+                    <span className="text-foreground font-semibold text-primary">{slot.subThemeName || slot.subTheme?.name}</span>
+                  </div>
+                )}
               </div>
             </div>
 

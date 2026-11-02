@@ -71,6 +71,33 @@ export function DailyRoutinePage() {
   const [activeSlot, setActiveSlot] = useState(null);
   const [activeDay, setActiveDay] = useState(null);
 
+  // Lấy thông tin Chủ đề & Chủ đề nhánh của tuần đang chọn
+  const activeTheme = useMemo(() => {
+    return data?.theme || data?.selectedTheme || null;
+  }, [data]);
+
+  const activeSubTheme = useMemo(() => {
+    return data?.subTheme || data?.selectedSubTheme || null;
+  }, [data]);
+
+  const currentThemeName = useMemo(() => {
+    return (
+      activeTheme?.name ||
+      data?.classInfo?.themeName ||
+      slots.find((s) => s.themeName)?.themeName ||
+      ''
+    );
+  }, [activeTheme, data?.classInfo?.themeName, slots]);
+
+  const currentSubThemeName = useMemo(() => {
+    return (
+      activeSubTheme?.name ||
+      data?.classInfo?.subThemeName ||
+      slots.find((s) => s.subThemeName)?.subThemeName ||
+      ''
+    );
+  }, [activeSubTheme, data?.classInfo?.subThemeName, slots]);
+
   // Trạng thái đã điểm danh theo ngày (mặc định các ngày T2, T3 đã được ghi nhận, T4 hôm nay chưa điểm danh)
   const [attendanceOverrides, setAttendanceOverrides] = useState({});
   const [recordedAttendanceDays, setRecordedAttendanceDays] = useState({
@@ -924,36 +951,40 @@ export function DailyRoutinePage() {
 
       {/* 1.1 Thanh tổng quan hôm nay (Today's Pulse Strip: Tinh gọn, chuyên nghiệp, gắn liền với nhịp vận hành) */}
       <div className="flex flex-wrap items-center justify-between gap-3 px-3.5 py-2 border border-border bg-card text-[12.5px] rounded-none select-none shadow-2xs">
-        {/* Khối bên trái: Hôm nay & Trạng thái hoạt động */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <div className="flex items-center gap-2 font-medium text-foreground">
-            <span
-              className={cn(
-                'size-2 rounded-full shrink-0',
-                isTodayLocked
-                  ? 'bg-muted-foreground/35'
-                  : todayMetrics.classStatus === 'COMPLETED'
-                  ? 'bg-emerald-500'
-                  : 'bg-[#1447e6] animate-pulse'
-              )}
-            />
-            <span className="text-[13px] font-semibold tracking-tight text-foreground">
-              {todayDay ? `${todayDay.name}, ${todayDay.date}` : `Hôm nay, ${pad(now.getDate())}/${pad(now.getMonth() + 1)}`}
-            </span>
-          </div>
+        {/* Khối bên trái: Hôm nay & Trạng thái hoạt động (chữ to rõ, không dùng badge để giáo viên nhìn biết ngay) */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span
+            className={cn(
+              'size-2.5 rounded-full shrink-0',
+              isTodayLocked
+                ? 'bg-muted-foreground/35'
+                : todayMetrics.classStatus === 'COMPLETED'
+                ? 'bg-emerald-500'
+                : todayMetrics.classStatus === 'DISMISSING'
+                ? 'bg-amber-500 animate-pulse'
+                : todayMetrics.classStatus === 'IN_PROGRESS'
+                ? 'bg-[#1447e6] animate-pulse'
+                : 'bg-muted-foreground/40'
+            )}
+          />
+          <span className="text-[15px] font-bold tracking-tight text-foreground">
+            {todayDay ? `${todayDay.name}, ${todayDay.date}` : `Hôm nay, ${pad(now.getDate())}/${pad(now.getMonth() + 1)}`}
+          </span>
+
+          <span className="text-muted-foreground/40 font-normal select-none">—</span>
 
           <span
             className={cn(
-              'text-[11px] px-2 py-0.5 border rounded-none whitespace-nowrap select-none font-medium',
+              'text-[15px] font-bold tracking-tight select-none',
               isTodayLocked
-                ? 'bg-muted/75 text-muted-foreground border-border/80 font-normal'
+                ? 'text-muted-foreground font-medium'
                 : todayMetrics.classStatus === 'COMPLETED'
-                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200/90 dark:border-emerald-800/60'
+                ? 'text-emerald-700 dark:text-emerald-400'
                 : todayMetrics.classStatus === 'DISMISSING'
-                ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200/90 dark:border-amber-800/60'
+                ? 'text-amber-700 dark:text-amber-400'
                 : todayMetrics.classStatus === 'IN_PROGRESS'
-                ? 'bg-blue-50 text-[#1447e6] dark:bg-blue-950/40 dark:text-blue-300 border-blue-200/90 dark:border-blue-800/60'
-                : 'bg-muted/75 text-muted-foreground border-border font-normal'
+                ? 'text-[#1447e6] dark:text-blue-400'
+                : 'text-muted-foreground font-medium'
             )}
           >
             {isTodayLocked
@@ -1098,10 +1129,12 @@ export function DailyRoutinePage() {
         </div>
       </div>
 
-      {/* 2. Main Workspace: Full-width Timetable Grid (Không trùng lặp header bar) */}
+      {/* 2. Main Workspace: Full-width Timetable Grid với Header Bar tích hợp Chủ đề & Chủ đề nhánh */}
       <TeacherTimetableGrid
         title={t('planning.tabTimetable', 'Thời khoá biểu')}
         dateRange={activeWeekObj?.label || '28/09/2026 – 04/10/2026'}
+        themeName={currentThemeName}
+        subThemeName={currentSubThemeName}
         days={currentDays}
         slots={slots}
         activeSlotId={activeSlot?.id}
@@ -1110,7 +1143,7 @@ export function DailyRoutinePage() {
         readOnly={isBgh}
         onSelectSlot={handleSelectSlot}
         onSelectDay={handleSelectDay}
-        hideHeader={true}
+        hideHeader={false}
         showWeekend={showWeekend}
         onToggleWeekend={handleToggleWeekend}
       />
@@ -1584,6 +1617,22 @@ export function DailyRoutinePage() {
                         </span>
                       )}
                     </div>
+                    {/* Thể hiện Chủ đề & Chủ đề nhánh của tiết hoạt động */}
+                    {(activeSlot.subThemeName || currentSubThemeName || activeSlot.themeName || currentThemeName) && (
+                      <div className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground flex-wrap">
+                        <span className="font-medium text-foreground">
+                          {activeSlot.themeName || currentThemeName}
+                        </span>
+                        {(activeSlot.subThemeName || currentSubThemeName) && (
+                          <>
+                            <span className="text-muted-foreground/60">•</span>
+                            <span className="font-semibold text-primary">
+                              {activeSlot.subThemeName || currentSubThemeName}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    )}
                     <p className="text-[12px] text-muted-foreground font-normal">
                       {t('daily.activitySlotDrawerDesc', 'Kế hoạch hoạt động và đánh giá kết quả học sinh')}
                     </p>
@@ -1690,6 +1739,8 @@ export function DailyRoutinePage() {
                   classId={targetClassId}
                   slot={{
                     ...activeSlot,
+                    themeName: activeSlot.themeName || currentThemeName,
+                    subThemeName: activeSlot.subThemeName || currentSubThemeName,
                     fullDate: activeSlot.fullDate || slotDayObj?.fullDate,
                     date: activeSlot.fullDate || slotDayObj?.fullDate || activeSlot.date,
                   }}

@@ -1041,6 +1041,8 @@ export function WeeklyTimetableTab({ classId = '1' }) {
       <TeacherTimetableGrid
         title={t('planning.tabTimetable', 'Thời khoá biểu')}
         dateRange={activeWeekObj?.label || '05/10 – 11/10/2026'}
+        themeName={timetableData?.selectedTheme?.name || timetableData?.theme?.name}
+        subThemeName={timetableData?.selectedSubTheme?.name}
         days={currentDays}
         slots={slots}
         activeSlotId={selectedSlotForPopover?.slot?.id}
@@ -1072,7 +1074,7 @@ export function WeeklyTimetableTab({ classId = '1' }) {
         }}
         onMoveSlot={handleMoveSlot}
         readOnly={isReadOnly}
-        hideHeader={true}
+        hideHeader={false}
       />
 
       {/* 2.1 Hướng dẫn thao tác nhanh (Đơn giản, dễ hiểu) */}
