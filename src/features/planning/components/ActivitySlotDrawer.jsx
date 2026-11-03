@@ -397,9 +397,9 @@ export function ActivitySlotDrawer({ isOpen, onClose, initialSlot, allocatedThem
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => {
+                  onClick={async () => {
                     if (initialSlot?.id) {
-                      onDelete(initialSlot.id);
+                      await onDelete(initialSlot.id);
                       onClose();
                     }
                   }}
