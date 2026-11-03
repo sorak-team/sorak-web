@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { cn } from '@/shared/lib/utils';
 import { toast } from 'sonner';
-import { useAuthStore, isBghRole } from '@/features/auth';
+import { useAuthStore, isTeacherRole } from '@/features/auth';
 import { curriculumApi } from './curriculum.api';
 
 // Days of the week in VN matching WeekPickerCalendar
@@ -148,7 +148,7 @@ export function CurriculumThemeDetailPage() {
   const { yearId = '2025-2026', ageGroup = 'nhatre' } = useParams();
 
   const currentUser = useAuthStore((state) => state.user);
-  const isBgh = isBghRole(currentUser?.role);
+  const isTeacher = isTeacherRole(currentUser?.role);
 
   const [isLoading, setIsLoading] = useState(true);
   const [themeSetInfo, setThemeSetInfo] = useState(null);
@@ -351,6 +351,43 @@ export function CurriculumThemeDetailPage() {
     setSubThemes((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // Tự động phân bổ lại thời gian các nhánh khớp chính xác khoảng thời gian của chủ đề lớn
+  const handleAutoAlignSubThemes = () => {
+    if (isAllPublished || isReadOnly) return;
+    if (!startDate || !endDate) {
+      toast.warning('Vui lòng thiết lập ngày bắt đầu và kết thúc của chủ đề chính trước.');
+      return;
+    }
+    if (!Array.isArray(subThemes) || subThemes.length === 0) return;
+
+    const count = subThemes.length;
+    const totalDays = Math.round((new Date(endDate) - new Date(startDate)) / 86400000) + 1;
+    if (totalDays < count) {
+      toast.error('Khoảng thời gian chủ đề không đủ để chia cho số lượng nhánh hiện tại.');
+      return;
+    }
+
+    const daysPerBranch = Math.floor(totalDays / count);
+    let remainder = totalDays % count;
+
+    let curStart = startDate;
+    const aligned = subThemes.map((st, idx) => {
+      const days = daysPerBranch + (remainder > 0 ? 1 : 0);
+      if (remainder > 0) remainder--;
+      const curEnd = idx === count - 1 ? endDate : addDaysToDate(curStart, days - 1);
+      const updated = {
+        ...st,
+        startDate: curStart,
+        endDate: curEnd,
+      };
+      curStart = addDaysToDate(curEnd, 1);
+      return updated;
+    });
+
+    setSubThemes(aligned);
+    toast.success('Đã tự động căn chỉnh thời gian các chủ đề nhánh khớp với chủ đề chính');
+  };
+
   // Kích hoạt / Tắt chế độ chọn ngày trên lịch cho một nhánh
   const handleToggleSelectSubThemeOnCalendar = (bIdx) => {
     if (isAllPublished) {
@@ -531,7 +568,7 @@ export function CurriculumThemeDetailPage() {
     () => themes.length > 0 && themes.every((t) => t.status === 'PUBLISHED'),
     [themes],
   );
-  const isReadOnly = Boolean(isAllPublished || isBgh);
+  const isReadOnly = Boolean(isAllPublished || isTeacher);
 
   // Kiểm tra có thay đổi so với dữ liệu gốc của chủ đề đang chọn hay không
   const hasChanges = useMemo(() => {
@@ -622,20 +659,16 @@ export function CurriculumThemeDetailPage() {
     }
 
     // 2. maxAllowedEnd:
-    // - Trước chủ đề liền sau (nextTopic.startDate - 1 ngày).
-    // - Nếu là chủ đề cuối cùng: đến ngày kết thúc năm học (academicYearEnd).
+    // - Khi đã xuất bản (isAllPublished): chặn chặt chẽ trước chủ đề liền sau (nextTopic.startDate - 1 ngày).
+    // - Khi là BẢN NHÁP (!isAllPublished): Cho phép chọn ngày kết thúc xuyên tháng trong phạm vi năm học (academicYearEnd),
+    //   đáp ứng yêu cầu thời lượng 2–6 tuần (14–42 ngày). Khi lưu, hệ thống sẽ tự động tịnh tiến các chủ đề bản nháp liền sau.
     let maxAllowedEnd = academicYearEnd;
-    if (nextTopic?.startDate) {
+    if (isAllPublished && nextTopic?.startDate) {
       maxAllowedEnd = addDaysToDate(nextTopic.startDate, -1);
       if (maxAllowedEnd > academicYearEnd) maxAllowedEnd = academicYearEnd;
     }
 
     // 3. Ràng buộc với các chủ đề nhánh con đã có:
-    // - Nhánh đầu tiên: chủ đề chính không thể bắt đầu sau nhánh đầu tiên.
-    // - Nhánh cuối cùng: chủ đề chính không thể kết thúc trước nhánh cuối cùng.
-    const firstSubStart = subThemes[0]?.startDate;
-    const lastSubEnd = subThemes[subThemes.length - 1]?.endDate;
-
     let maxAllowedStart = endDate || maxAllowedEnd;
     if (maxAllowedEnd && maxAllowedStart > maxAllowedEnd) {
       maxAllowedStart = maxAllowedEnd;
@@ -663,7 +696,7 @@ export function CurriculumThemeDetailPage() {
       nextTopicName: nextTopic?.name,
       nextTopicStartDate: nextTopic?.startDate,
     };
-  }, [academicYearBounds, selectedTopicIndex, themes, subThemes, startDate, endDate]);
+  }, [academicYearBounds, selectedTopicIndex, themes, subThemes, startDate, endDate, isAllPublished]);
 
   const handleStartDateChange = (val) => {
     if (isAllPublished) return;
@@ -704,8 +737,8 @@ export function CurriculumThemeDetailPage() {
       return;
     }
 
-    // 3. Ngoại lệ: Đè lên hoặc sau chủ đề tiếp theo
-    if (themeDateBounds.nextTopicStartDate && val >= themeDateBounds.nextTopicStartDate) {
+    // 3. Ngoại lệ: Đè lên hoặc sau chủ đề tiếp theo (chỉ kiểm tra khi đã xuất bản)
+    if (isAllPublished && themeDateBounds.nextTopicStartDate && val >= themeDateBounds.nextTopicStartDate) {
       toast.error(
         `Ngày bắt đầu không được đè lên hoặc sau chủ đề tiếp theo ("${themeDateBounds.nextTopicName}" bắt đầu ngày ${formatDateVn(themeDateBounds.nextTopicStartDate)}).`,
       );
@@ -718,6 +751,16 @@ export function CurriculumThemeDetailPage() {
         `Ngày bắt đầu (${formatDateVn(val)}) không được sau ngày kết thúc (${formatDateVn(endDate)}).`,
       );
       return;
+    }
+
+    // 5. Kiểm tra thời lượng chủ đề nếu đã có ngày kết thúc (tối thiểu 14 ngày, tối đa 42 ngày)
+    if (endDate && val) {
+      const diffDays = Math.round((new Date(endDate) - new Date(val)) / 86400000) + 1;
+      if (diffDays < 14) {
+        toast.warning(`Thời lượng chủ đề tối thiểu là 2 tuần (14 ngày). Hiện tại là ${diffDays} ngày.`);
+      } else if (diffDays > 42) {
+        toast.warning(`Thời lượng chủ đề tối đa là 6 tuần (42 ngày). Hiện tại là ${diffDays} ngày.`);
+      }
     }
 
     setStartDate(val);
@@ -762,8 +805,8 @@ export function CurriculumThemeDetailPage() {
       return;
     }
 
-    // 3. Ngoại lệ: Đè lên hoặc sau chủ đề tiếp theo
-    if (themeDateBounds.nextTopicStartDate && val >= themeDateBounds.nextTopicStartDate) {
+    // 3. Ngoại lệ: Đè lên hoặc sau chủ đề tiếp theo (chỉ kiểm tra khi đã xuất bản)
+    if (isAllPublished && themeDateBounds.nextTopicStartDate && val >= themeDateBounds.nextTopicStartDate) {
       toast.error(
         `Ngày kết thúc không được đè lên hoặc sau chủ đề tiếp theo ("${themeDateBounds.nextTopicName}" bắt đầu ngày ${formatDateVn(themeDateBounds.nextTopicStartDate)}). Ngày muộn nhất cho phép là ${formatDateVn(themeDateBounds.maxAllowedEnd)}.`,
       );
@@ -776,6 +819,16 @@ export function CurriculumThemeDetailPage() {
         `Ngày kết thúc không được nằm trong hoặc trước chủ đề trước ("${themeDateBounds.prevTopicName}" kết thúc ngày ${formatDateVn(themeDateBounds.prevTopicEndDate)}).`,
       );
       return;
+    }
+
+    // 5. Kiểm tra thời lượng chủ đề tối thiểu 2 tuần (14 ngày), tối đa 6 tuần (42 ngày)
+    if (startDate && val) {
+      const diffDays = Math.round((new Date(val) - new Date(startDate)) / 86400000) + 1;
+      if (diffDays < 14) {
+        toast.warning(`Thời lượng chủ đề tối thiểu là 2 tuần (14 ngày). Hiện tại là ${diffDays} ngày.`);
+      } else if (diffDays > 42) {
+        toast.warning(`Thời lượng chủ đề tối đa là 6 tuần (42 ngày). Hiện tại là ${diffDays} ngày.`);
+      }
     }
 
     setEndDate(val);
@@ -805,7 +858,7 @@ export function CurriculumThemeDetailPage() {
 
   // Save changes to current topic
   const handleSaveTopic = async () => {
-    if (isBgh || !canSave) return;
+    if (isTeacher || !canSave) return;
     if (subThemes.length > 0 && hasUnassignedDaysInTheme) {
       toast.error(
         `Vui lòng phân bổ đầy đủ tất cả các ngày trong chủ đề (từ ${formatDateVn(startDate)} đến ${formatDateVn(endDate)}) cho các nhánh trước khi lưu.`,
@@ -816,8 +869,33 @@ export function CurriculumThemeDetailPage() {
       toast.error('Tên chủ đề không được để trống.');
       return;
     }
-    if (startDate && endDate && startDate > endDate) {
+    if (!startDate || !endDate) {
+      toast.error('Vui lòng chọn đầy đủ ngày bắt đầu và ngày kết thúc.');
+      return;
+    }
+    if (startDate > endDate) {
       toast.error('Ngày bắt đầu không được sau ngày kết thúc.');
+      return;
+    }
+
+    // Ngoại lệ: Nằm ngoài năm học
+    if (themeDateBounds.academicYearStart && startDate < themeDateBounds.academicYearStart) {
+      toast.error(`Ngày bắt đầu (${formatDateVn(startDate)}) không được trước ngày bắt đầu năm học (${formatDateVn(themeDateBounds.academicYearStart)}).`);
+      return;
+    }
+    if (themeDateBounds.academicYearEnd && endDate > themeDateBounds.academicYearEnd) {
+      toast.error(`Ngày kết thúc (${formatDateVn(endDate)}) không được sau ngày kết thúc năm học (${formatDateVn(themeDateBounds.academicYearEnd)}).`);
+      return;
+    }
+
+    // Kiểm tra thời lượng chủ đề tối thiểu 2 tuần (14 ngày), tối đa 6 tuần (42 ngày)
+    const diffDays = Math.round((new Date(endDate) - new Date(startDate)) / 86400000) + 1;
+    if (diffDays < 14) {
+      toast.error(`Thời lượng chủ đề tối thiểu là 2 tuần (14 ngày). Hiện tại là ${diffDays} ngày.`);
+      return;
+    }
+    if (diffDays > 42) {
+      toast.error(`Thời lượng chủ đề tối đa là 6 tuần (42 ngày). Hiện tại là ${diffDays} ngày.`);
       return;
     }
 
@@ -829,7 +907,7 @@ export function CurriculumThemeDetailPage() {
       return;
     }
 
-    if (themeDateBounds.maxAllowedEnd && endDate > themeDateBounds.maxAllowedEnd) {
+    if (isAllPublished && themeDateBounds.maxAllowedEnd && endDate > themeDateBounds.maxAllowedEnd) {
       toast.error(
         `Ngày kết thúc (${formatDateVn(endDate)}) không được sau ${formatDateVn(themeDateBounds.maxAllowedEnd)}${themeDateBounds.nextTopicName ? ` (trước chủ đề "${themeDateBounds.nextTopicName}")` : ''
         }.`,
@@ -891,6 +969,60 @@ export function CurriculumThemeDetailPage() {
         subThemes: sortedSubThemes,
         note,
       };
+
+      // Tự động điều chỉnh các chủ đề bản nháp liền sau nếu ngày kết thúc của chủ đề này đè lên
+      let curEnd = endDate;
+      for (let i = selectedTopicIndex + 1; i < updatedThemes.length; i++) {
+        const nextT = updatedThemes[i];
+        if (nextT.startDate && nextT.startDate <= curEnd) {
+          const oldDur = nextT.endDate && nextT.startDate
+            ? Math.max(13, Math.round((new Date(nextT.endDate) - new Date(nextT.startDate)) / 86400000))
+            : 27; // Mặc định 4 tuần (28 ngày)
+          const newStart = addDaysToDate(curEnd, 1);
+          let newEnd = addDaysToDate(newStart, oldDur);
+          const maxAcademicEnd = academicYearBounds.end || '2027-05-31';
+          if (newEnd > maxAcademicEnd) {
+            newEnd = maxAcademicEnd;
+          }
+          // Điều chỉnh subThemes của chủ đề tiếp theo nếu có
+          let nextSubs = nextT.subThemes;
+          if (Array.isArray(nextSubs) && nextSubs.length > 0) {
+            if (nextSubs.length === 1) {
+              nextSubs = [{
+                ...nextSubs[0],
+                startDate: newStart,
+                endDate: newEnd,
+              }];
+            } else {
+              const deltaMs = new Date(newStart) - new Date(nextT.startDate);
+              const deltaDays = Math.round(deltaMs / 86400000);
+              nextSubs = nextSubs.map((st, idx) => {
+                const stStart = addDaysToDate(st.startDate, deltaDays);
+                let stEnd = addDaysToDate(st.endDate, deltaDays);
+                if (idx === nextSubs.length - 1 && stEnd !== newEnd) {
+                  stEnd = newEnd;
+                }
+                return {
+                  ...st,
+                  startDate: stStart,
+                  endDate: stEnd,
+                };
+              });
+            }
+          }
+
+          updatedThemes[i] = {
+            ...nextT,
+            startDate: newStart,
+            endDate: newEnd,
+            subThemes: nextSubs,
+          };
+          curEnd = newEnd;
+        } else {
+          break;
+        }
+      }
+
       setThemes(updatedThemes);
       setSubThemes(sortedSubThemes);
       setUpdatedAt(new Date().toLocaleDateString('vi-VN'));
@@ -1390,9 +1522,20 @@ export function CurriculumThemeDetailPage() {
                 </div>
 
                 {Array.isArray(subThemes) && subThemes.length > 0 && hasUnassignedDaysInTheme && (
-                  <p className="text-[12px] text-amber-600 dark:text-amber-400 pt-0.5 select-none">
-                    Thời gian chủ đề chưa khớp với các chủ đề nhánh. Vui lòng điều chỉnh lại thời gian các nhánh trước khi lưu.
-                  </p>
+                  <div className="flex flex-wrap items-center gap-2 pt-0.5 select-none">
+                    <p className="text-[12px] text-amber-600 dark:text-amber-400">
+                      Thời gian chủ đề chưa khớp với các chủ đề nhánh.
+                    </p>
+                    {!isReadOnly && (
+                      <button
+                        type="button"
+                        onClick={handleAutoAlignSubThemes}
+                        className="text-[12px] text-primary hover:underline font-medium cursor-pointer"
+                      >
+                        Tự động căn chỉnh các nhánh khớp thời gian chủ đề
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -1411,6 +1554,19 @@ export function CurriculumThemeDetailPage() {
 
                 {/* Nút cài đặt chủ đề nhánh (icon bánh răng) & Nút Thêm nhánh */}
                 <div className="flex items-center gap-2 shrink-0">
+                  {subThemes.length > 0 && hasUnassignedDaysInTheme && !isReadOnly && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAutoAlignSubThemes}
+                      className="h-8 px-2.5 text-[12px] font-medium border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30 rounded-none cursor-pointer shadow-none flex items-center gap-1.5"
+                      title="Tự động phân bổ lại thời gian các nhánh khớp chính xác với chủ đề lớn"
+                    >
+                      <HugeiconsIcon icon={Calendar03Icon} size={14} />
+                      <span>Căn chỉnh nhánh</span>
+                    </Button>
+                  )}
                   <Button
                     type="button"
                     variant="outline"

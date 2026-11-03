@@ -321,11 +321,16 @@ export function EducationalActivitiesTab({ classId = '1' }) {
       await planningApi.deleteEducationalActivity(classId, activityId);
       setData((prev) => {
         if (!prev) return prev;
+        const targetActId = String(activityId).trim();
         const newGoals = prev.goals.map((g) => ({
           ...g,
           contents: g.contents.map((c) => {
             const nextActs = c.activities.filter(
-              (a) => a.id !== activityId && String(a.id) !== String(activityId)
+              (a) =>
+                a.id !== activityId &&
+                String(a.id) !== targetActId &&
+                String(a.public_id || '') !== targetActId &&
+                String(a.activity_id || '') !== targetActId
             );
             return {
               ...c,
@@ -336,7 +341,10 @@ export function EducationalActivitiesTab({ classId = '1' }) {
         }));
         return { ...prev, goals: newGoals };
       });
-      toast.success('Đã xóa hoạt động giáo dục');
+      setIsDrawerOpen(false);
+      toast.success('Đã xóa hoạt động giáo dục thành công');
+      // Background re-fetch to keep 100% in sync with database
+      planningApi.getThemeActivities(classId, {}).then(setData).catch(() => {});
     } catch (err) {
       const errMsg = err?.response?.data?.message || err?.message || 'Không thể xóa hoạt động';
       toast.error(errMsg);
@@ -376,16 +384,24 @@ export function EducationalActivitiesTab({ classId = '1' }) {
 
       setData((prev) => {
         if (!prev) return prev;
-        const targetContentId = payload.contentId;
+        const targetContentId = String(payload.contentId);
         const newGoals = prev.goals.map((g) => ({
           ...g,
           contents: g.contents.map((c) => {
-            if (c.id === targetContentId) {
-              const exists = c.activities.some((a) => a.id === savedActivity.id || (payload.id && a.id === payload.id));
+            if (String(c.id) === targetContentId) {
+              const exists = c.activities.some(
+                (a) =>
+                  a.id === savedActivity.id ||
+                  (payload.id && (a.id === payload.id || String(a.id) === String(payload.id)))
+              );
               return {
                 ...c,
                 activities: exists
-                  ? c.activities.map((a) => ((a.id === savedActivity.id || (payload.id && a.id === payload.id)) ? savedActivity : a))
+                  ? c.activities.map((a) =>
+                      a.id === savedActivity.id || (payload.id && (a.id === payload.id || String(a.id) === String(payload.id)))
+                        ? savedActivity
+                        : a,
+                    )
                   : [...c.activities, savedActivity],
               };
             }
@@ -397,6 +413,8 @@ export function EducationalActivitiesTab({ classId = '1' }) {
 
       setIsDrawerOpen(false);
       toast.success('Đã lưu hoạt động giáo dục thành công');
+      // Background re-fetch to keep 100% in sync with database
+      planningApi.getThemeActivities(classId, {}).then(setData).catch(() => {});
     } catch (err) {
       console.warn('Failed to save activity:', err);
       toast.error('Không thể lưu hoạt động');
@@ -686,26 +704,12 @@ export function EducationalActivitiesTab({ classId = '1' }) {
                               {!isBgh && (
                                 <button
                                   type="button"
-                                  disabled={act.isScheduled || act.slotsCount > 0}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    if (act.isScheduled || act.slotsCount > 0) {
-                                      toast.warning('Hoạt động giáo dục đã được sử dụng trong kế hoạch tuần, không thể xóa.');
-                                      return;
-                                    }
                                     handleDeleteActivity(act.id);
                                   }}
-                                  className={cn(
-                                    'size-7 flex items-center justify-center rounded-none border transition-colors',
-                                    (act.isScheduled || act.slotsCount > 0)
-                                      ? 'opacity-40 cursor-not-allowed bg-muted/20 text-muted-foreground border-border/60'
-                                      : 'bg-destructive/5 hover:bg-destructive/15 text-destructive border-destructive/20 hover:border-destructive/30 cursor-pointer'
-                                  )}
-                                  title={
-                                    (act.isScheduled || act.slotsCount > 0)
-                                      ? 'Hoạt động đã được sử dụng trong kế hoạch tuần, không thể xóa'
-                                      : t('common.delete', 'Xóa hoạt động')
-                                  }
+                                  className="size-7 flex items-center justify-center rounded-none border transition-colors bg-destructive/5 hover:bg-destructive/15 text-destructive border-destructive/20 hover:border-destructive/30 cursor-pointer"
+                                  title={t('common.delete', 'Xóa hoạt động')}
                                   aria-label="Xóa hoạt động"
                                 >
                                   <HugeiconsIcon icon={Delete02Icon} size={14} />
@@ -726,16 +730,15 @@ export function EducationalActivitiesTab({ classId = '1' }) {
             </div>
           </div>
 
-          {/* Bottom Bar: Nút Lưu thay đổi (disabled) khớp 100% Image 1 */}
+          {/* Bottom Bar: Tự động lưu */}
           <div className="flex justify-end pt-2">
-            <Button
-              type="button"
-              disabled
+            <div
+              className="h-9 px-4 text-[13px] font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/50 flex items-center gap-1.5 select-none"
               title={t('planning.autoSavedNotice', 'Mọi hoạt động giáo dục (thêm, sửa, xóa) được lưu tự động lên hệ thống.')}
-              className="h-9 px-4 text-[13px] font-medium bg-muted text-muted-foreground border border-border rounded-none shadow-none cursor-not-allowed opacity-60"
             >
-              {t('common.saveChanges', 'Lưu thay đổi')}
-            </Button>
+              <HugeiconsIcon icon={CheckmarkCircle01Icon} size={15} className="text-emerald-600 dark:text-emerald-400" />
+              <span>{t('common.saved', 'Đã lưu thay đổi')}</span>
+            </div>
           </div>
         </div>
 
