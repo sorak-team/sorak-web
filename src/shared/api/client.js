@@ -9,12 +9,17 @@ export const apiClient = axios.create({
   timeout: 30_000,
 });
 
-// Request Interceptor: Attach Bearer access token
+// Ensure common defaults do not leak stale Authorization across user accounts
+delete apiClient.defaults.headers.common.Authorization;
+
+// Request Interceptor: Attach Bearer access token dynamically from active auth store
 apiClient.interceptors.request.use(
   (config) => {
     const token = useAuthStore.getState().accessToken;
-    if (token && !config.headers.Authorization) {
+    if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      delete config.headers.Authorization;
     }
     return config;
   },
@@ -100,12 +105,13 @@ apiClient.interceptors.response.use(
         const newAccessToken = data.data?.accessToken;
         if (newAccessToken) {
           useAuthStore.getState().setAccessToken(newAccessToken);
-          apiClient.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
+          delete apiClient.defaults.headers.common.Authorization;
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
           processQueue(null, newAccessToken);
           return apiClient(originalRequest);
         }
       } catch (refreshError) {
+        delete apiClient.defaults.headers.common.Authorization;
         processQueue(refreshError, null);
         useAuthStore.getState().logout();
         return Promise.reject(refreshError);
