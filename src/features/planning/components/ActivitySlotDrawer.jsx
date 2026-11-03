@@ -71,7 +71,7 @@ export function ActivitySlotDrawer({ isOpen, onClose, initialSlot, allocatedThem
       )
     : Boolean(title.trim());
 
-  const canSave = Boolean(title.trim()) && isDirty;
+  const canSave = Boolean(title.trim()) && isDirty && (allocatedThemes.length === 0 || Boolean(selectedThemeId));
 
   if (!isOpen) return null;
 

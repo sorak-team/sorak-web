@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Smile, Meh, Star } from 'lucide-react';
+import { Smile, Meh, Star, AlertCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Search01Icon, Cancel01Icon, MoreHorizontalIcon } from '@hugeicons/core-free-icons';
@@ -39,6 +39,7 @@ export function WeeklyAssessmentPanel({
   activityDetails,
   initialStudents = [],
   readOnly = false,
+  isAttendanceRecorded: isAttendanceRecordedProp,
   tab = 'content',
   isEvaluated = false,
   onTabChange,
@@ -64,6 +65,7 @@ export function WeeklyAssessmentPanel({
   );
   const effectiveReadOnly = Boolean(readOnly || isPrincipal);
 
+  const isAttendanceRecorded = isAttendanceRecordedProp ?? slot?.isAttendanceRecorded ?? true;
   const targetClassId = classId || slot?.classId || slot?.class_id || '5';
   const [students, setStudents] = useState([]);
   const [initialSnapshot, setInitialSnapshot] = useState('');
@@ -116,8 +118,10 @@ export function WeeklyAssessmentPanel({
           const saved = savedRecordsMap.get(String(s.id)) ||
                         savedRecordsMap.get(String(s.publicId)) ||
                         savedRecordsMap.get(String(s.code));
+          const attendanceStatus = s.attendanceStatus || s.rawStatus || s.status;
           return {
             ...s,
+            attendanceStatus,
             status: saved?.status || 'ACHIEVED',
             note: saved?.note || '',
           };
@@ -175,11 +179,17 @@ export function WeeklyAssessmentPanel({
     );
   };
 
-  const achievedCount = students.filter((s) => s.status === 'ACHIEVED').length;
-  const notAchievedCount = students.filter((s) => s.status === 'NOT_ACHIEVED').length;
-  const outstandingCount = students.filter((s) => s.status === 'OUTSTANDING').length;
+  const presentStudents = useMemo(() => {
+    return students.filter(
+      (s) => s.attendanceStatus !== 'EXCUSED_ABSENCE' && s.attendanceStatus !== 'UNEXCUSED_ABSENCE'
+    );
+  }, [students]);
 
-  const canSave = !effectiveReadOnly && (!isAssessed || isDirty);
+  const achievedCount = presentStudents.filter((s) => s.status === 'ACHIEVED').length;
+  const notAchievedCount = presentStudents.filter((s) => s.status === 'NOT_ACHIEVED').length;
+  const outstandingCount = presentStudents.filter((s) => s.status === 'OUTSTANDING').length;
+
+  const canSave = !effectiveReadOnly && isAttendanceRecorded && (!isAssessed || isDirty);
 
   const handleSave = async () => {
     if (!canSave) return;
@@ -202,11 +212,13 @@ export function WeeklyAssessmentPanel({
         slotId: slot?.id,
         activityId: slot?.activityId || slot?.activity_id,
         date: targetDate,
-        records: students.map((s) => ({
-          studentId: s.id,
-          status: s.status,
-          note: s.note,
-        })),
+        records: students
+          .filter((s) => s.attendanceStatus !== 'EXCUSED_ABSENCE' && s.attendanceStatus !== 'UNEXCUSED_ABSENCE')
+          .map((s) => ({
+            studentId: s.id,
+            status: s.status,
+            note: s.note,
+          })),
       });
       toast.success(t('assessment.saveSuccess', 'Lưu kết quả đánh giá thành công!'));
       setInitialSnapshot(
@@ -285,6 +297,29 @@ export function WeeklyAssessmentPanel({
 
   const slotTitle = slot?.title || activityDetails?.title || '';
   const slotTime = slot?.startTime && slot?.endTime ? `${slot.startTime} – ${slot.endTime}` : '';
+
+  const now = new Date();
+  const padTwo = (n) => String(n).padStart(2, '0');
+  const todayIso = `${now.getFullYear()}-${padTwo(now.getMonth() + 1)}-${padTwo(now.getDate())}`;
+
+  const isSlotToday = Boolean(
+    slot?.isToday ||
+    (slot?.fullDate && slot.fullDate === todayIso) ||
+    (slot?.date && slot.date === `${padTwo(now.getDate())}/${padTwo(now.getMonth() + 1)}`)
+  );
+
+  const slotDateText = useMemo(() => {
+    if (slot?.dayName && slot?.date) {
+      return `${slot.dayName}, ${slot.date}`;
+    }
+    if (slot?.fullDate) {
+      return slot.fullDate;
+    }
+    if (slot?.date) {
+      return slot.date;
+    }
+    return '';
+  }, [slot?.dayName, slot?.date, slot?.fullDate]);
 
   // Phân loại "Loại hoạt động" và nội dung tiêu chí sư phạm phù hợp cho từng hoạt động
   const { activityType, criteria } = useMemo(() => {
@@ -450,9 +485,21 @@ export function WeeklyAssessmentPanel({
       {!hideHeader && (
         <div className="p-4 border-b border-border bg-card flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="text-[17px] font-semibold text-foreground tracking-tight truncate">
-              {slotTitle}
-            </h2>
+            <div className="flex items-center gap-2 flex-wrap mb-1">
+              <h2 className="text-[17px] font-semibold text-foreground tracking-tight truncate">
+                {slotTitle}
+              </h2>
+              {isSlotToday && (
+                <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-semibold bg-blue-500/10 text-[#1447e6] dark:text-blue-400 border border-blue-500/20">
+                  {t('daily.badgeToday', 'Hôm nay')}
+                </span>
+              )}
+              {slotDateText && (
+                <span className="inline-flex items-center px-1.5 py-0.5 text-[11px] font-medium bg-muted/80 text-foreground border border-border/80">
+                  {slotDateText}
+                </span>
+              )}
+            </div>
             <p className="text-[12.5px] text-muted-foreground mt-0.5">
               {slotTime}
             </p>
@@ -505,6 +552,20 @@ export function WeeklyAssessmentPanel({
               </span>
 
               <div className="grid grid-cols-1 gap-2 text-[13px] bg-muted/20 border border-border/80 p-3.5 rounded-none">
+                {(slotDateText || isSlotToday || slotTime) && (
+                  <div>
+                    <span className="text-muted-foreground font-normal">{t('assessment.executionTime', 'Thời gian thực hiện:')}{' '}</span>
+                    <span className="text-foreground font-medium">
+                      {isSlotToday && (
+                        <span className="text-[#1447e6] dark:text-blue-400 font-semibold">
+                          {t('daily.badgeToday', 'Hôm nay')}{slotDateText ? ', ' : ''}
+                        </span>
+                      )}
+                      {slotDateText || ''}
+                      {slotTime ? ` (${slotTime})` : ''}
+                    </span>
+                  </div>
+                )}
                 <div>
                   <span className="text-muted-foreground font-normal">{t('assessment.activityType', 'Loại hoạt động:')}{' '}</span>
                   <span className="text-foreground font-semibold text-[#1447e6] dark:text-blue-400">
@@ -590,6 +651,12 @@ export function WeeklyAssessmentPanel({
 
         {tab === 'assessment' && (
           <div className="flex flex-col">
+            {!isAttendanceRecorded && (
+              <div className="mb-3.5 p-3 bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-[12.5px] flex items-center gap-2 select-none">
+                <AlertCircle className="size-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                <span>{t('assessment.attendanceRequiredWarning', 'Vui lòng hoàn tất điểm danh trước khi đánh giá trẻ.')}</span>
+              </div>
+            )}
             {/* Chú thích biểu tượng đánh giá & Tìm kiếm mini ở phía trên */}
             <div className="flex items-center justify-between gap-3 text-[12px] text-muted-foreground select-none pb-2.5 mb-2.5 border-b border-border/60">
               <div className="flex items-center gap-2 flex-wrap min-w-0">
@@ -661,105 +728,121 @@ export function WeeklyAssessmentPanel({
                   </tr>
                 ) : (
                   filteredStudents.map((st) => {
-                  const isAchieved = st.status === 'ACHIEVED';
-                  const isNotAchieved = st.status === 'NOT_ACHIEVED';
-                  const isOutstanding = st.status === 'OUTSTANDING';
+                    const rawAttendance = st.attendanceStatus || st.rawStatus;
+                    const isExcusedAbsence = rawAttendance === 'EXCUSED_ABSENCE';
+                    const isUnexcusedAbsence = rawAttendance === 'UNEXCUSED_ABSENCE';
+                    const isAbsent = isExcusedAbsence || isUnexcusedAbsence;
+                    const isAchieved = st.status === 'ACHIEVED';
+                    const isNotAchieved = st.status === 'NOT_ACHIEVED';
+                    const isOutstanding = st.status === 'OUTSTANDING';
+                    const isRowDisabled = effectiveReadOnly || !isAttendanceRecorded || isAbsent;
 
-                  return (
-                    <tr key={st.id} className="h-12 hover:bg-muted/30 transition-colors">
-                      {/* Student Info */}
-                      <td className="py-1.5 pr-2">
-                        <div className="flex items-center gap-2">
-                          <img
-                            src={`https://api.dicebear.com/10.x/critters/svg?seed=${encodeURIComponent(st.code)}&backgroundColor=ff2e63,00c2a8,ffb300,3d5afe,8e24aa,00e676`}
-                            alt={st.name}
-                            className="size-7 rounded-none border border-border/80 object-cover shrink-0"
-                          />
-                          <div className="flex flex-col min-w-0">
-                            <span className="font-medium text-foreground text-[12px] truncate max-w-[150px]">
-                              {st.name}
-                            </span>
-                            <span className="text-[10.5px] text-muted-foreground font-mono">
-                              {st.code}
-                            </span>
+                    return (
+                      <tr key={st.id} className={cn('h-12 transition-colors', isAbsent ? 'bg-muted/15 opacity-70' : 'hover:bg-muted/30')}>
+                        {/* Student Info */}
+                        <td className="py-1.5 pr-2">
+                          <div className="flex items-center gap-2">
+                            <img
+                              src={`https://api.dicebear.com/10.x/critters/svg?seed=${encodeURIComponent(st.code)}&backgroundColor=ff2e63,00c2a8,ffb300,3d5afe,8e24aa,00e676`}
+                              alt={st.name}
+                              className="size-7 rounded-none border border-border/80 object-cover shrink-0"
+                            />
+                            <div className="flex flex-col min-w-0">
+                              <span className="font-medium text-foreground text-[12px] truncate max-w-[150px]">
+                                {st.name}
+                              </span>
+                              <span className="text-[10.5px] text-muted-foreground font-mono">
+                                {st.code}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* 3-way Icon Segment Toggle: [ 😐 Chưa đạt ] [ 🙂 Đạt ] [ ⭐ Vượt trội ] */}
-                      <td className="py-1 px-1 text-center">
-                        <div className="inline-flex items-center border border-border bg-background rounded-none p-0.5 shadow-2xs">
-                          {/* 1. Chưa đạt */}
-                          <button
-                            type="button"
-                            disabled={effectiveReadOnly}
-                            onClick={() => handleToggleStatus(st.id, 'NOT_ACHIEVED')}
-                            className={cn(
-                              'size-7 flex items-center justify-center transition-colors rounded-none',
-                              effectiveReadOnly ? 'cursor-default opacity-85' : 'cursor-pointer',
-                              isNotAchieved
-                                ? 'bg-rose-600 text-white shadow-2xs'
-                                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                            )}
-                            title={t('assessment.notAchieved', 'Chưa đạt')}
-                          >
-                            <Meh className="size-4" />
-                          </button>
+                        {/* 3-way Icon Segment Toggle or Absence Badge */}
+                        <td className="py-1 px-1 text-center">
+                          {isAbsent ? (
+                            <span className={cn(
+                              'inline-flex items-center px-2 py-0.5 text-[11px] font-semibold border rounded-none whitespace-nowrap select-none',
+                              isExcusedAbsence
+                                ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30'
+                                : 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30'
+                            )}>
+                              {isExcusedAbsence ? t('attendance.excusedBadge', 'Nghỉ có phép') : t('attendance.unexcusedBadge', 'Nghỉ không phép')}
+                            </span>
+                          ) : (
+                            <div className="inline-flex items-center border border-border bg-background rounded-none p-0.5 shadow-2xs">
+                              {/* 1. Chưa đạt */}
+                              <button
+                                type="button"
+                                disabled={isRowDisabled}
+                                onClick={() => handleToggleStatus(st.id, 'NOT_ACHIEVED')}
+                                className={cn(
+                                  'size-7 flex items-center justify-center transition-colors rounded-none',
+                                  isRowDisabled ? 'cursor-default opacity-85' : 'cursor-pointer',
+                                  isNotAchieved
+                                    ? 'bg-rose-600 text-white shadow-2xs'
+                                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                                )}
+                                title={t('assessment.notAchieved', 'Chưa đạt')}
+                              >
+                                <Meh className="size-4" />
+                              </button>
 
-                          {/* 2. Đạt (Mặc định) */}
-                          <button
-                            type="button"
-                            disabled={effectiveReadOnly}
-                            onClick={() => handleToggleStatus(st.id, 'ACHIEVED')}
-                            className={cn(
-                              'size-7 flex items-center justify-center transition-colors rounded-none border-x border-border/60',
-                              effectiveReadOnly ? 'cursor-default opacity-85' : 'cursor-pointer',
-                              isAchieved
-                                ? 'bg-[#1447e6] text-white shadow-2xs'
-                                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                            )}
-                            title={t('assessment.achieved', 'Đạt')}
-                          >
-                            <Smile className="size-4" />
-                          </button>
+                              {/* 2. Đạt (Mặc định) */}
+                              <button
+                                type="button"
+                                disabled={isRowDisabled}
+                                onClick={() => handleToggleStatus(st.id, 'ACHIEVED')}
+                                className={cn(
+                                  'size-7 flex items-center justify-center transition-colors rounded-none border-x border-border/60',
+                                  isRowDisabled ? 'cursor-default opacity-85' : 'cursor-pointer',
+                                  isAchieved
+                                    ? 'bg-[#1447e6] text-white shadow-2xs'
+                                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                                )}
+                                title={t('assessment.achieved', 'Đạt')}
+                              >
+                                <Smile className="size-4" />
+                              </button>
 
-                          {/* 3. Vượt trội */}
-                          <button
-                            type="button"
-                            disabled={effectiveReadOnly}
-                            onClick={() => handleToggleStatus(st.id, 'OUTSTANDING')}
-                            className={cn(
-                              'size-7 flex items-center justify-center transition-colors rounded-none',
-                              effectiveReadOnly ? 'cursor-default opacity-85' : 'cursor-pointer',
-                              isOutstanding
-                                ? 'bg-purple-600 text-white shadow-2xs'
-                                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                            )}
-                            title={t('assessment.outstanding', 'Vượt trội')}
-                          >
-                            <Star className={cn('size-4', isOutstanding && 'fill-current')} />
-                          </button>
-                        </div>
-                      </td>
-
-                      {/* Ghi chú */}
-                      <td className="py-1 pl-3">
-                        <input
-                          type="text"
-                          disabled={effectiveReadOnly}
-                          readOnly={effectiveReadOnly}
-                          value={st.note}
-                          onChange={(e) => handleNoteChange(st.id, e.target.value)}
-                          placeholder={effectiveReadOnly ? '' : t('assessment.notePlaceholder', 'Ghi chú đánh giá...')}
-                          className={cn(
-                            "w-full h-7 px-2.5 text-[11.5px] border border-border bg-background text-foreground rounded-none focus:outline-hidden focus:border-[#1447e6]",
-                            effectiveReadOnly && "bg-muted/40 cursor-default opacity-90 border-transparent"
+                              {/* 3. Vượt trội */}
+                              <button
+                                type="button"
+                                disabled={isRowDisabled}
+                                onClick={() => handleToggleStatus(st.id, 'OUTSTANDING')}
+                                className={cn(
+                                  'size-7 flex items-center justify-center transition-colors rounded-none',
+                                  isRowDisabled ? 'cursor-default opacity-85' : 'cursor-pointer',
+                                  isOutstanding
+                                    ? 'bg-purple-600 text-white shadow-2xs'
+                                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                                )}
+                                title={t('assessment.outstanding', 'Vượt trội')}
+                              >
+                                <Star className={cn('size-4', isOutstanding && 'fill-current')} />
+                              </button>
+                            </div>
                           )}
-                        />
-                      </td>
-                    </tr>
-                  );
-                }))}
+                        </td>
+
+                        {/* Ghi chú */}
+                        <td className="py-1 pl-3">
+                          <input
+                            type="text"
+                            disabled={isRowDisabled}
+                            readOnly={isRowDisabled}
+                            value={st.note || ''}
+                            onChange={(e) => handleNoteChange(st.id, e.target.value)}
+                            placeholder={isAbsent ? (isVi ? 'Trẻ vắng mặt' : 'Student absent') : (effectiveReadOnly ? '' : t('assessment.notePlaceholder', 'Ghi chú đánh giá...'))}
+                            className={cn(
+                              "w-full h-7 px-2.5 text-[11.5px] border border-border bg-background text-foreground rounded-none focus:outline-hidden focus:border-[#1447e6]",
+                              isRowDisabled && "bg-muted/40 cursor-default opacity-90 border-transparent"
+                            )}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  }))}
               </tbody>
             </table>
           </div>
@@ -869,7 +952,7 @@ export function WeeklyAssessmentPanel({
                     ? 'bg-[#1447e6] hover:bg-[#123ec4] text-white cursor-pointer'
                     : 'bg-muted/80 text-muted-foreground border border-border/80 cursor-not-allowed opacity-60'
                 )}
-                title={!canSave ? t('assessment.noChangesToSave', 'Chưa có thay đổi nào để lưu') : undefined}
+                title={!isAttendanceRecorded ? t('assessment.attendanceRequiredWarning', 'Vui lòng hoàn tất điểm danh trước khi đánh giá trẻ.') : (!canSave ? t('assessment.noChangesToSave', 'Chưa có thay đổi nào để lưu') : undefined)}
               >
                 {isSaving ? t('common.saving', 'Đang lưu...') : t('assessment.saveAssessment', 'Lưu đánh giá')}
               </Button>

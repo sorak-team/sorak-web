@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Copy } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
@@ -139,6 +139,7 @@ export function TeacherTimetableGrid({
   onCancelClipboard,
   showWeekend = undefined,
   onToggleWeekend,
+  isDrawerOpen = false,
 }) {
   const { t } = useTranslation();
   const displayTitle = title || t('planning.tabTimetable', 'Kế hoạch tuần');
@@ -197,11 +198,22 @@ export function TeacherTimetableGrid({
   const isWeekendVisible =
     showWeekend !== undefined ? showWeekend : internalShowWeekend || hasWeekendSlots;
 
-  // T7 and CN are shown if isWeekendVisible is true (which defaults to true when weekend slots exist)
-  const visibleDays = (days || DEFAULT_DAYS).filter((day) => {
-    if (day.key === 'T7' || day.key === 'CN') return isWeekendVisible;
-    return true;
-  });
+  const isSingleDayFocus = Boolean(isDrawerOpen && activeDayKey);
+
+  // Khi mở Drawer: Focus hiển thị duy nhất cột ngày đang được chọn cạnh cột Tiết học (Single-Day Focus View)
+  const visibleDays = useMemo(() => {
+    const allDays = (days || DEFAULT_DAYS).filter((day) => {
+      if (day.key === 'T7' || day.key === 'CN') return isWeekendVisible;
+      return true;
+    });
+
+    if (isSingleDayFocus) {
+      const matched = allDays.filter((d) => d.key === activeDayKey);
+      if (matched.length > 0) return matched;
+    }
+
+    return allDays;
+  }, [days, isWeekendVisible, isSingleDayFocus, activeDayKey]);
 
   const getCellSlots = (dayInput, routineSlotKey, fallbackTime) => {
     const dayKey = typeof dayInput === 'object' && dayInput !== null ? dayInput.key : dayInput;
@@ -236,7 +248,8 @@ export function TeacherTimetableGrid({
   return (
     <div
       className={cn(
-        'flex-1 flex flex-col border border-border bg-card rounded-none overflow-hidden select-none',
+        'flex-1 flex flex-col border border-border bg-card rounded-none overflow-hidden select-none transition-all duration-200',
+        isSingleDayFocus && 'lg:max-w-[min(calc(100%-755px),540px)]',
         className
       )}
       data-name="TeacherTimetableGrid"
@@ -289,7 +302,7 @@ export function TeacherTimetableGrid({
 
       {/* 2. Grid Table */}
       <div className="flex-1 overflow-x-auto overflow-y-auto">
-        <table className="w-full min-w-[820px] border-collapse text-[12.5px] table-fixed">
+        <table className={cn('w-full border-collapse text-[12.5px] table-fixed', !isSingleDayFocus && 'min-w-[820px]')}>
           {/* Day Columns Header */}
           <thead className="sticky top-0 z-10 bg-card">
             <tr className="border-b border-border text-center bg-card">
@@ -303,6 +316,7 @@ export function TeacherTimetableGrid({
                 const isFuture = day.isFuture !== undefined
                   ? Boolean(day.isFuture)
                   : (todayIdx >= 0 && dIdx > todayIdx);
+                const isTodayColumn = (mode === 'daily' || mode === 'attendance') && Boolean(day.isToday) && !day.isLocked;
 
                 const borderTopClass = 'border-t-2 border-t-transparent';
 
@@ -351,23 +365,16 @@ export function TeacherTimetableGrid({
                 return (
                   <th
                     key={day.key}
+                    data-day-key={day.key}
                     onClick={() => isClickable && !day.isLocked && onSelectDay(day)}
                     className={cn(
                       'p-2.5 border-r last:border-r-0 border-border font-normal text-center relative transition-colors select-none',
                       day.isLocked && 'bg-muted/15 opacity-60 cursor-default',
                       isClickable && !day.isLocked && 'cursor-pointer hover:bg-muted/40 group',
                       borderTopClass,
-                      isDaySelected && !day.isLocked && (
-                        mode === 'planning'
-                          ? 'ring-1 ring-border ring-inset bg-muted/25'
-                          : isDismissalDone
-                            ? 'ring-1 ring-emerald-600 ring-inset bg-emerald-50/20 dark:bg-emerald-950/20'
-                            : isAttendanceDone
-                              ? 'ring-1 ring-amber-500 ring-inset bg-amber-50/30 dark:bg-amber-950/30'
-                              : day.isToday
-                                ? 'ring-1 ring-[#1447e6] ring-inset bg-blue-50/30 dark:bg-blue-900/30'
-                                : 'ring-1 ring-foreground/20 ring-inset bg-muted/20'
-                      )
+                      isTodayColumn && 'bg-blue-50/70 dark:bg-blue-950/35',
+                      isClickable && !day.isLocked && isTodayColumn && 'hover:bg-blue-100/60 dark:hover:bg-blue-900/40',
+                      isDaySelected && !day.isLocked && 'ring-1 ring-[#1447e6] ring-inset dark:ring-blue-400 z-10'
                     )}
                     title={
                       day.isLocked
@@ -386,7 +393,7 @@ export function TeacherTimetableGrid({
                             dayNameColorClass
                           )}
                         >
-                          {t(`days.${day.key}.short`, day.shortName || day.name)}
+                          {t(`days.${day.key}.short`, day.shortName || day.key)}
                         </span>
                       </div>
                       <div
@@ -490,6 +497,7 @@ export function TeacherTimetableGrid({
                   {visibleDays.map((day) => {
                     const cellSlots = getCellSlots(day, slotDef.key, slotDef.fallbackTime);
                     const isSunday = day.key === 'CN';
+                    const isTodayCell = (mode === 'daily' || mode === 'attendance') && Boolean(day.isToday) && !day.isLocked;
 
                     const isSourceCell = Boolean(
                       draggedItem &&
@@ -604,6 +612,7 @@ export function TeacherTimetableGrid({
                         }}
                         className={cn(
                           'p-1.5 border-r last:border-r-0 border-border align-top min-h-[105px] h-[105px] transition-all relative',
+                          isTodayCell && 'bg-blue-50/40 dark:bg-blue-950/20',
                           isSunday && cellSlots.length === 0 && 'bg-muted/5',
                           // Highlight Available Target Cell
                           isAvailableTarget && !isCellDragOver && 'border-2 border-dashed border-[#1447e6]/50 bg-blue-500/[0.04]',
@@ -699,7 +708,9 @@ export function TeacherTimetableGrid({
                                         ? 'border-2 border-dashed border-primary bg-primary/[0.08] shadow-xs'
                                         : isItemSelected
                                           ? 'border-foreground/70 ring-1 ring-foreground/20 shadow-xs'
-                                          : 'border-border/80 hover:border-foreground/30 hover:shadow-2xs',
+                                          : isTodayCell
+                                            ? 'border-blue-200/90 dark:border-blue-800/70 bg-card/95 hover:border-[#1447e6]/60 hover:shadow-2xs'
+                                            : 'border-border/80 hover:border-foreground/30 hover:shadow-2xs',
                                     mode !== 'planning' && getScheduledStatusBorder(itemSlot.status)
                                   )}
                                 >
@@ -779,7 +790,9 @@ export function TeacherTimetableGrid({
                                       ? 'border-2 border-dashed border-primary bg-primary/[0.08] shadow-xs'
                                       : isSelected
                                         ? 'border-foreground/70 ring-1 ring-foreground/20 shadow-xs'
-                                        : 'border-border/80 hover:border-foreground/30 hover:shadow-2xs',
+                                        : isTodayCell
+                                          ? 'border-blue-200/90 dark:border-blue-800/70 bg-card/95 hover:border-[#1447e6]/60 hover:shadow-2xs'
+                                          : 'border-border/80 hover:border-foreground/30 hover:shadow-2xs',
                                   mode !== 'planning' && getScheduledStatusBorder(slot.status)
                                 )}
                               >
