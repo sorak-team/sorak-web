@@ -640,16 +640,10 @@ export function CurriculumThemeDetailPage() {
     if (maxAllowedEnd && maxAllowedStart > maxAllowedEnd) {
       maxAllowedStart = maxAllowedEnd;
     }
-    if (firstSubStart && maxAllowedStart > firstSubStart) {
-      maxAllowedStart = firstSubStart;
-    }
 
     let minAllowedEnd = startDate || minAllowedStart;
     if (minAllowedStart && minAllowedEnd < minAllowedStart) {
       minAllowedEnd = minAllowedStart;
-    }
-    if (lastSubEnd && minAllowedEnd < lastSubEnd) {
-      minAllowedEnd = lastSubEnd;
     }
 
     // Đảm bảo không bao giờ minAllowedEnd > maxAllowedEnd do lỗi dữ liệu
@@ -673,15 +667,19 @@ export function CurriculumThemeDetailPage() {
 
   const handleStartDateChange = (val) => {
     if (isAllPublished) return;
-    if (Array.isArray(subThemes) && subThemes.length > 0) {
-      toast.warning(
-        `Chủ đề đã có ${subThemes.length} chủ đề nhánh. Khung thời gian chủ đề được cố định theo các nhánh con (từ ${formatDateVn(startDate)} đến ${formatDateVn(endDate)}). Vui lòng xóa các nhánh nếu muốn thiết lập lại thời gian chủ đề lớn.`,
-      );
-      return;
-    }
     if (!val) {
       setStartDate('');
       return;
+    }
+
+    // Cảnh báo nếu thay đổi làm thời gian nhánh nằm ngoài chủ đề lớn
+    if (val && Array.isArray(subThemes) && subThemes.length > 0) {
+      const hasBranchOutside = subThemes.some((b) => (b.startDate && b.startDate < val) || (b.endDate && b.endDate < val));
+      if (hasBranchOutside) {
+        toast.warning(
+          'Ngày bắt đầu chủ đề lớn đã thay đổi. Có chủ đề nhánh nằm ngoài khoảng thời gian này, vui lòng điều chỉnh lại thời gian các chủ đề nhánh.',
+        );
+      }
     }
 
     // 1. Ngoại lệ: Nằm ngoài năm học
@@ -727,15 +725,19 @@ export function CurriculumThemeDetailPage() {
 
   const handleEndDateChange = (val) => {
     if (isAllPublished) return;
-    if (Array.isArray(subThemes) && subThemes.length > 0) {
-      toast.warning(
-        `Chủ đề đã có ${subThemes.length} chủ đề nhánh. Khung thời gian chủ đề được cố định theo các nhánh con (từ ${formatDateVn(startDate)} đến ${formatDateVn(endDate)}). Vui lòng xóa các nhánh nếu muốn thiết lập lại thời gian chủ đề lớn.`,
-      );
-      return;
-    }
     if (!val) {
       setEndDate('');
       return;
+    }
+
+    // Cảnh báo nếu thay đổi làm thời gian nhánh nằm ngoài chủ đề lớn
+    if (val && Array.isArray(subThemes) && subThemes.length > 0) {
+      const hasBranchOutside = subThemes.some((b) => (b.startDate && b.startDate > val) || (b.endDate && b.endDate > val));
+      if (hasBranchOutside) {
+        toast.warning(
+          'Ngày kết thúc chủ đề lớn đã thay đổi. Có chủ đề nhánh nằm ngoài khoảng thời gian này, vui lòng điều chỉnh lại thời gian các chủ đề nhánh.',
+        );
+      }
     }
 
     // 1. Ngoại lệ: Nằm ngoài năm học
@@ -1360,11 +1362,10 @@ export function CurriculumThemeDetailPage() {
                       min={themeDateBounds.minAllowedStart || undefined}
                       max={themeDateBounds.maxAllowedStart || undefined}
                       onChange={(e) => handleStartDateChange(e.target.value)}
-                      disabled={isAllPublished || (Array.isArray(subThemes) && subThemes.length > 0)}
+                      disabled={isAllPublished}
                       className={cn(
                         'w-full h-8 px-3 bg-background border border-border text-[13px] font-mono text-foreground rounded-none outline-none focus:border-primary transition-colors',
-                        (isAllPublished || (Array.isArray(subThemes) && subThemes.length > 0)) &&
-                          'bg-muted/40 text-muted-foreground cursor-not-allowed',
+                        isAllPublished && 'bg-muted/40 text-muted-foreground cursor-not-allowed',
                       )}
                     />
                   </div>
@@ -1379,19 +1380,18 @@ export function CurriculumThemeDetailPage() {
                       min={themeDateBounds.minAllowedEnd || undefined}
                       max={themeDateBounds.maxAllowedEnd || undefined}
                       onChange={(e) => handleEndDateChange(e.target.value)}
-                      disabled={isAllPublished || (Array.isArray(subThemes) && subThemes.length > 0)}
+                      disabled={isAllPublished}
                       className={cn(
                         'w-full h-8 px-3 bg-background border border-border text-[13px] font-mono text-foreground rounded-none outline-none focus:border-primary transition-colors',
-                        (isAllPublished || (Array.isArray(subThemes) && subThemes.length > 0)) &&
-                          'bg-muted/40 text-muted-foreground cursor-not-allowed',
+                        isAllPublished && 'bg-muted/40 text-muted-foreground cursor-not-allowed',
                       )}
                     />
                   </div>
                 </div>
 
-                {Array.isArray(subThemes) && subThemes.length > 0 && (
-                  <p className="text-[12px] text-muted-foreground pt-0.5 select-none">
-                    Thời gian chủ đề được khóa tự động theo {subThemes.length} chủ đề nhánh.
+                {Array.isArray(subThemes) && subThemes.length > 0 && hasUnassignedDaysInTheme && (
+                  <p className="text-[12px] text-amber-600 dark:text-amber-400 pt-0.5 select-none">
+                    Thời gian chủ đề chưa khớp với các chủ đề nhánh. Vui lòng điều chỉnh lại thời gian các nhánh trước khi lưu.
                   </p>
                 )}
               </div>
