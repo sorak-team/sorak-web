@@ -43,7 +43,15 @@ export const useAuthStore = create(
       linkedAccounts: [], // Array of { user, accessToken } for multi-child accounts
 
       setAuth: (user, accessToken = null) => {
-        const token = accessToken ?? get().accessToken;
+        if (!user) {
+          set({ user: null, accessToken: null, linkedAccounts: [] });
+          return;
+        }
+
+        const isDifferentUser =
+          get().user &&
+          (get().user.id !== user.id || get().user.identifier !== user.identifier);
+        const token = isDifferentUser ? accessToken : (accessToken ?? get().accessToken);
         let accounts = get().linkedAccounts || [];
 
         // If PARENT_PH, maintain linkedAccounts list
