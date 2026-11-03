@@ -215,11 +215,33 @@ export function AttendanceCheckInPanel({
       {!hideHeader && (
         <div className="p-4 border-b border-border bg-card flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-[17px] font-semibold text-foreground tracking-tight">
-              {t('attendance.checkInTitle', 'Điểm danh học sinh')}
-            </h2>
+            <div className="flex items-center gap-2 flex-wrap mb-1">
+              <h2 className="text-[17px] font-semibold text-foreground tracking-tight">
+                {t('attendance.checkInTitle', 'Điểm danh học sinh')}
+              </h2>
+              {(() => {
+                const now = new Date();
+                const padTwo = (n) => String(n).padStart(2, '0');
+                const todayIso = `${now.getFullYear()}-${padTwo(now.getMonth() + 1)}-${padTwo(now.getDate())}`;
+                const isDateToday = Boolean(date && date === todayIso);
+                return (
+                  <>
+                    {isDateToday && (
+                      <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-semibold bg-blue-500/10 text-[#1447e6] dark:text-blue-400 border border-blue-500/20">
+                        {t('daily.badgeToday', 'Hôm nay')}
+                      </span>
+                    )}
+                    {date && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 text-[11px] font-medium bg-muted/80 text-foreground border border-border/80">
+                        {date}
+                      </span>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
             <p className="text-[12.5px] text-muted-foreground mt-0.5">
-              {slotTitle} · {slotTime} · Nhà trẻ 1
+              {slotTitle} · {slotTime}
             </p>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">

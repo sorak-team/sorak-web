@@ -272,12 +272,35 @@ export function EducationalActivitiesTab({ classId = '1' }) {
     setActiveGoalContext(goal);
     setActiveContentContext(content);
     const allocThemes = goal?.allocatedThemes || [];
-    const defaultThemeId = allocThemes.length === 1 ? (allocThemes[0].id || allocThemes[0].themeId) : '';
+    let defaultThemeId = '';
+    let defaultThemeName = '';
+    if (selectedThemeFilter && selectedThemeFilter !== 'ALL') {
+      const filterStr = String(selectedThemeFilter).trim();
+      const matched = allocThemes.find(
+        (th) =>
+          String(th.id || '').trim() === filterStr ||
+          String(th.themeId || '').trim() === filterStr ||
+          String(th._theme_id || '').trim() === filterStr ||
+          String(th.code || '').trim() === filterStr
+      );
+      if (matched) {
+        defaultThemeId = matched.id || matched.themeId;
+        defaultThemeName = matched.name || matched.themeName || '';
+      } else if (allocThemes.length === 1) {
+        defaultThemeId = allocThemes[0].id || allocThemes[0].themeId;
+        defaultThemeName = allocThemes[0].name || allocThemes[0].themeName || '';
+      }
+    } else if (allocThemes.length === 1) {
+      defaultThemeId = allocThemes[0].id || allocThemes[0].themeId;
+      defaultThemeName = allocThemes[0].name || allocThemes[0].themeName || '';
+    }
+
     setDrawerInitialSlot({
       title: '',
       contentId: content?.id,
       themeId: defaultThemeId,
       theme_id: defaultThemeId,
+      themeName: defaultThemeName,
       routineSlot: 'DIRECTED_STUDY',
       objective: '',
       preparation: '',
@@ -389,19 +412,16 @@ export function EducationalActivitiesTab({ classId = '1' }) {
           ...g,
           contents: g.contents.map((c) => {
             if (String(c.id) === targetContentId) {
-              const exists = c.activities.some(
-                (a) =>
-                  a.id === savedActivity.id ||
-                  (payload.id && (a.id === payload.id || String(a.id) === String(payload.id)))
-              );
+              const isMatch = (a) =>
+                a.id === savedActivity.id ||
+                String(a.id) === String(savedActivity.id) ||
+                (savedActivity.public_id && String(a.public_id || '') === String(savedActivity.public_id)) ||
+                (payload.id && (String(a.id) === String(payload.id) || String(a.public_id || '') === String(payload.id)));
+              const exists = c.activities.some(isMatch);
               return {
                 ...c,
                 activities: exists
-                  ? c.activities.map((a) =>
-                      a.id === savedActivity.id || (payload.id && (a.id === payload.id || String(a.id) === String(payload.id)))
-                        ? savedActivity
-                        : a,
-                    )
+                  ? c.activities.map((a) => (isMatch(a) ? savedActivity : a))
                   : [...c.activities, savedActivity],
               };
             }
@@ -412,7 +432,24 @@ export function EducationalActivitiesTab({ classId = '1' }) {
       });
 
       setIsDrawerOpen(false);
-      toast.success('Đã lưu hoạt động giáo dục thành công');
+      const savedThemeId = payload.themeId || payload.theme_id;
+      const isFilteredOtherTheme =
+        !isEditing &&
+        selectedThemeFilter &&
+        selectedThemeFilter !== 'ALL' &&
+        savedThemeId &&
+        String(savedThemeId) !== String(selectedThemeFilter);
+
+      if (isFilteredOtherTheme) {
+        toast.success(`Đã thêm hoạt động vào chủ đề "${payload.themeName || 'đã chọn'}"`, {
+          action: {
+            label: 'Xem hoạt động',
+            onClick: () => setSelectedThemeFilter(savedThemeId),
+          },
+        });
+      } else {
+        toast.success(isEditing ? 'Đã cập nhật hoạt động giáo dục thành công' : 'Đã thêm hoạt động giáo dục thành công');
+      }
       // Background re-fetch to keep 100% in sync with database
       planningApi.getThemeActivities(classId, {}).then(setData).catch(() => {});
     } catch (err) {
