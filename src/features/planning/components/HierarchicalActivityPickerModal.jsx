@@ -94,13 +94,15 @@ export function HierarchicalActivityPickerModal({
     if (d.date && typeof d.date === 'string') {
       const trimmed = d.date.trim();
       if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
-      if (/^\d{1,2}\/\d{1,2}$/.test(trimmed)) {
-        const [dayNum, mNum] = trimmed.split('/');
-        return `2026-${mNum.padStart(2, '0')}-${dayNum.padStart(2, '0')}`;
-      }
       if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(trimmed)) {
         const [dayNum, mNum, yNum] = trimmed.split('/');
         return `${yNum}-${mNum.padStart(2, '0')}-${dayNum.padStart(2, '0')}`;
+      }
+      if (/^\d{1,2}\/\d{1,2}$/.test(trimmed)) {
+        const [dayNum, mNum] = trimmed.split('/');
+        const month = parseInt(mNum, 10);
+        const year = month >= 8 ? 2026 : 2027;
+        return `${year}-${mNum.padStart(2, '0')}-${dayNum.padStart(2, '0')}`;
       }
     }
     return null;
@@ -120,9 +122,16 @@ export function HierarchicalActivityPickerModal({
     const set = new Set();
     (activeThemeForDate.goalIds || []).forEach((id) => set.add(String(id)));
     (activeThemeForDate.goalCodes || []).forEach((code) => {
-      const clean = String(code).split('(')[0].trim().toUpperCase();
-      if (clean) set.add(clean);
-      set.add(String(code).trim().toUpperCase());
+      const raw = String(code).trim().toUpperCase();
+      set.add(raw);
+      const clean = raw.split('(')[0].trim();
+      set.add(clean);
+      const digits = clean.replace(/\D/g, '');
+      if (digits) {
+        set.add(digits);
+        set.add(String(parseInt(digits, 10)));
+        set.add(String(parseInt(digits, 10)).padStart(2, '0'));
+      }
     });
     return set;
   }, [activeThemeForDate]);
@@ -195,28 +204,72 @@ export function HierarchicalActivityPickerModal({
 
     return allActivities.filter((act) => {
       // 0. Luôn lọc theo mục tiêu đã phân bổ cho chủ đề tương ứng với ngày đang chọn
-      if (allowedGoalSet) {
-        const cleanGoalCode = (act.goalCode || '').split('(')[0].trim().toUpperCase();
+      if (allowedGoalSet && allowedGoalSet.size > 0) {
+        const rawCode = String(act.goalCode || '').trim().toUpperCase();
+        const cleanGoalCode = rawCode.split('(')[0].trim();
+        const digits = cleanGoalCode.replace(/\D/g, '');
+        const normNum = digits ? String(parseInt(digits, 10)) : '';
+        const normPadded = digits ? normNum.padStart(2, '0') : '';
+
         const isGoalAllowed =
           (act.goalId && allowedGoalSet.has(String(act.goalId))) ||
           (cleanGoalCode && allowedGoalSet.has(cleanGoalCode)) ||
-          (act.goalCode && allowedGoalSet.has(String(act.goalCode).trim().toUpperCase()));
+          (rawCode && allowedGoalSet.has(rawCode)) ||
+          (normNum && allowedGoalSet.has(normNum)) ||
+          (normPadded && allowedGoalSet.has(normPadded));
         if (!isGoalAllowed) {
           return false;
         }
       }
 
       // 1. Luôn lọc chính xác theo Routine Slot của ô được chọn
-      if (targetSlotKey && act.routineSlot !== targetSlotKey) {
+      const actRoutineSlot = act.routineSlot || act.routine_slot;
+      if (targetSlotKey && actRoutineSlot && actRoutineSlot !== targetSlotKey) {
         return false;
       }
 
-      // 2. Lọc theo lĩnh vực đã chọn
+      // 2. Luôn lọc chính xác theo Chủ đề tương ứng với ngày đang chọn (Bắt buộc không hiển thị hoạt động của chủ đề khác)
+      if (activeThemeForDate) {
+        const activeThemeIdStr = String(activeThemeForDate.themeId || activeThemeForDate.id || '').trim();
+        const activeThemeNumId = activeThemeForDate._theme_id ? String(activeThemeForDate._theme_id).trim() : '';
+        const actThemeIdStr = String(act.themeId || act.theme_id || '').trim();
+        const actThemeNumId = act._theme_id ? String(act._theme_id).trim() : '';
+        const actThemeName = (act.themeName || '').trim().toLowerCase();
+        const activeThemeName = (activeThemeForDate.themeName || '').trim().toLowerCase();
+
+        if (actThemeIdStr || actThemeNumId) {
+          const matchId =
+            (actThemeIdStr && (actThemeIdStr === activeThemeIdStr || actThemeIdStr === activeThemeNumId)) ||
+            (actThemeNumId && (actThemeNumId === activeThemeIdStr || actThemeNumId === activeThemeNumId));
+          const matchName = actThemeName && activeThemeName && actThemeName === activeThemeName;
+
+          if (!matchId && !matchName) {
+            return false;
+          }
+        } else {
+          // Heuristic kiểm tra tiêu đề nếu hoạt động cũ chưa được gán theme_id trong DB
+          const titleLower = (act.title || '').toLowerCase();
+          const isGiaDinhTheme = activeThemeName.includes('gia đình');
+          const isBanThanTheme = activeThemeName.includes('bản thân');
+          const isTruongMamNonTheme = activeThemeName.includes('trường mầm non');
+
+          const mentionsGiaDinh = titleLower.includes('gia đình') || titleLower.includes('nhà bà') || titleLower.includes('ông bà') || titleLower.includes('người thân') || titleLower.includes('ngôi nhà');
+          const mentionsBanThan = titleLower.includes('bản thân') || titleLower.includes('cơ thể') || titleLower.includes('sở thích') || titleLower.includes('thẻ tên');
+          const mentionsTruongMamNon = titleLower.includes('trường mầm non') || titleLower.includes('cô giáo') || titleLower.includes('búp bê') || titleLower.includes('góc chơi');
+
+          if (isBanThanTheme && mentionsGiaDinh && !mentionsBanThan) return false;
+          if (isBanThanTheme && mentionsTruongMamNon && !mentionsBanThan) return false;
+          if (isGiaDinhTheme && (mentionsBanThan || mentionsTruongMamNon) && !mentionsGiaDinh) return false;
+          if (isTruongMamNonTheme && (mentionsGiaDinh || mentionsBanThan) && !mentionsTruongMamNon) return false;
+        }
+      }
+
+      // 3. Lọc theo lĩnh vực đã chọn
       if (selectedDomain !== 'ALL' && act.domain !== selectedDomain) {
         return false;
       }
 
-      // 3. Tìm kiếm theo từ khóa
+      // 4. Tìm kiếm theo từ khóa
       if (q) {
         const matchTitle = act.title?.toLowerCase().includes(q);
         const matchGoal =
@@ -229,7 +282,7 @@ export function HierarchicalActivityPickerModal({
 
       return true;
     });
-  }, [allActivities, allowedGoalSet, targetSlotKey, selectedDomain, searchQuery]);
+  }, [allActivities, allowedGoalSet, targetSlotKey, activeThemeForDate, selectedDomain, searchQuery]);
 
   // Nhóm hoạt động theo từng lĩnh vực (chuẩn xác như bảng cấu trúc mục tiêu)
   const groupedByDomain = useMemo(() => {
@@ -445,6 +498,12 @@ export function HierarchicalActivityPickerModal({
                                         <span className="text-[13.5px] font-medium text-foreground group-hover/row:text-[#1447e6] transition-colors">
                                           {act.title}
                                         </span>
+
+                                        {act.themeName && (
+                                          <span className="inline-flex items-center px-1.5 py-0.5 text-[11px] font-medium bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-900/50 select-none">
+                                            Chủ đề: {act.themeName}
+                                          </span>
+                                        )}
 
                                         {isCurrent ? (
                                           <div className="flex items-center gap-1.5 flex-wrap">

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
   Cancel01Icon,
+  Delete02Icon,
   SparklesIcon,
   UserIcon,
 } from '@hugeicons/core-free-icons';
@@ -21,10 +22,11 @@ const ROUTINE_SLOT_OPTIONS = [
   { value: 'RETURN_CHILD', key: 'slotReturnChild', label: 'Trả trẻ' },
 ];
 
-export function ActivitySlotDrawer({ isOpen, onClose, initialSlot, onSave, readOnly = false, lockRoutineSlot = false }) {
+export function ActivitySlotDrawer({ isOpen, onClose, initialSlot, allocatedThemes = [], onSave, onDelete, readOnly = false, lockRoutineSlot = false }) {
   const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const [routineSlot, setRoutineSlot] = useState('DIRECTED_STUDY');
+  const [selectedThemeId, setSelectedThemeId] = useState('');
   const [objective, setObjective] = useState('');
   const [preparation, setPreparation] = useState('');
   const [procedure, setProcedure] = useState('');
@@ -35,6 +37,8 @@ export function ActivitySlotDrawer({ isOpen, onClose, initialSlot, onSave, readO
     if (initialSlot) {
       setTitle(initialSlot.title || '');
       setRoutineSlot(initialSlot.routineSlot || initialSlot.routine_slot || 'DIRECTED_STUDY');
+      const curThemeId = initialSlot.themeId || initialSlot.theme_id || '';
+      setSelectedThemeId(curThemeId || (allocatedThemes.length === 1 ? (allocatedThemes[0].id || allocatedThemes[0].themeId) : ''));
       setObjective(initialSlot.objective || '');
       setPreparation(initialSlot.preparation || '');
       setProcedure(initialSlot.procedure || '');
@@ -44,19 +48,22 @@ export function ActivitySlotDrawer({ isOpen, onClose, initialSlot, onSave, readO
     } else {
       setTitle('');
       setRoutineSlot('DIRECTED_STUDY');
+      setSelectedThemeId(allocatedThemes.length === 1 ? (allocatedThemes[0].id || allocatedThemes[0].themeId) : '');
       setObjective('');
       setPreparation('');
       setProcedure('');
       setEvaluationCriteria('');
     }
-  }, [initialSlot, isOpen]);
+  }, [initialSlot, isOpen, allocatedThemes]);
 
   // Kiểm tra có thay đổi dữ liệu so với ban đầu hay không
   const isEditing = Boolean(initialSlot && (initialSlot.id || initialSlot.title));
+  const initialThemeId = initialSlot?.themeId || initialSlot?.theme_id || '';
   const isDirty = isEditing
     ? (
         title.trim() !== (initialSlot.title || '').trim() ||
         (!lockRoutineSlot && routineSlot !== (initialSlot.routineSlot || initialSlot.routine_slot || 'DIRECTED_STUDY')) ||
+        (allocatedThemes.length > 0 && String(selectedThemeId) !== String(initialThemeId)) ||
         objective.trim() !== (initialSlot.objective || '').trim() ||
         preparation.trim() !== (initialSlot.preparation || '').trim() ||
         procedure.trim() !== (initialSlot.procedure || '').trim() ||
@@ -112,11 +119,21 @@ export function ActivitySlotDrawer({ isOpen, onClose, initialSlot, onSave, readO
       return;
     }
 
+    if (allocatedThemes.length > 0 && !selectedThemeId) {
+      toast.error('Vui lòng chọn chủ đề giáo dục cho hoạt động');
+      return;
+    }
+
+    const matchedTheme = allocatedThemes.find((th) => String(th.id || th.themeId) === String(selectedThemeId));
+
     const payload = {
       ...(initialSlot || {}),
       title: title.trim(),
       routineSlot,
       routine_slot: routineSlot,
+      themeId: selectedThemeId || initialSlot?.themeId || null,
+      theme_id: selectedThemeId || initialSlot?.theme_id || null,
+      themeName: matchedTheme?.name || matchedTheme?.themeName || initialSlot?.themeName || null,
       objective: objective.trim(),
       preparation: preparation.trim(),
       procedure: procedure.trim(),
@@ -257,6 +274,37 @@ export function ActivitySlotDrawer({ isOpen, onClose, initialSlot, onSave, readO
             </select>
           </div>
 
+          {/* 3. Chủ đề giáo dục (Bắt buộc theo Comment 1) */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-[12.5px] font-medium text-foreground">
+                {t('planning.themeLabel', 'Chủ đề giáo dục')} {!readOnly && <span className="text-destructive">*</span>}
+              </label>
+              {allocatedThemes.length > 0 && (
+                <span className="text-[11px] text-muted-foreground italic">
+                  {allocatedThemes.length} chủ đề phân bổ cho mục tiêu
+                </span>
+              )}
+            </div>
+            <select
+              value={selectedThemeId}
+              disabled={readOnly}
+              onChange={(e) => setSelectedThemeId(e.target.value)}
+              className={cn(
+                "w-full h-8 px-2.5 bg-background border border-border text-[13px] text-foreground rounded-none outline-none focus:border-primary cursor-pointer",
+                readOnly && "bg-muted/40 text-muted-foreground cursor-not-allowed opacity-90 focus:border-border",
+                !selectedThemeId && "text-muted-foreground"
+              )}
+            >
+              <option value="">-- Chọn chủ đề giáo dục --</option>
+              {allocatedThemes.map((th) => (
+                <option key={th.id || th.themeId} value={th.id || th.themeId} className="text-foreground">
+                  {th.name || th.themeName}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* 3. Mục đích yêu cầu */}
           <div className="space-y-1.5">
             <label className="text-[12.5px] font-medium text-foreground">
@@ -331,34 +379,54 @@ export function ActivitySlotDrawer({ isOpen, onClose, initialSlot, onSave, readO
         </form>
 
         {/* Footer */}
-        <div className="p-4 border-t border-border bg-muted/20 flex items-center justify-end gap-2.5">
+        <div className="p-4 border-t border-border bg-muted/20 flex items-center justify-between gap-2.5">
           {readOnly ? (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="h-8 px-5 border border-border text-[13px] rounded-none hover:bg-muted shadow-none cursor-pointer"
-            >
-              {t('common.close', 'Đóng')}
-            </Button>
-          ) : (
-            <>
+            <div className="ml-auto">
               <Button
                 type="button"
                 variant="outline"
                 onClick={onClose}
-                className="h-8 px-4 border border-border text-[13px] rounded-none hover:bg-muted shadow-none cursor-pointer"
+                className="h-8 px-5 border border-border text-[13px] rounded-none hover:bg-muted shadow-none cursor-pointer"
               >
-                {t('common.cancel', 'Huỷ')}
+                {t('common.close', 'Đóng')}
               </Button>
-              <Button
-                type="submit"
-                form="slot-form"
-                disabled={!canSave}
-                className="h-8 px-6 bg-[#1447e6] hover:bg-[#1447e6]/90 text-white text-[13px] font-medium rounded-none shadow-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#1447e6] transition-opacity"
-              >
-                {t('common.saveChanges', 'Lưu')}
-              </Button>
+            </div>
+          ) : (
+            <>
+              {isEditing && onDelete && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    if (initialSlot?.id) {
+                      onDelete(initialSlot.id);
+                      onClose();
+                    }
+                  }}
+                  className="h-8 px-3.5 bg-destructive/5 hover:bg-destructive/15 text-destructive border border-destructive/30 rounded-none shadow-none cursor-pointer text-[12.5px] font-medium flex items-center gap-1.5"
+                >
+                  <HugeiconsIcon icon={Delete02Icon} size={14} />
+                  <span>{t('common.delete', 'Xóa hoạt động')}</span>
+                </Button>
+              )}
+              <div className="flex items-center gap-2.5 ml-auto">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onClose}
+                  className="h-8 px-4 border border-border text-[13px] rounded-none hover:bg-muted shadow-none cursor-pointer"
+                >
+                  {t('common.cancel', 'Huỷ')}
+                </Button>
+                <Button
+                  type="submit"
+                  form="slot-form"
+                  disabled={!canSave}
+                  className="h-8 px-6 bg-[#1447e6] hover:bg-[#1447e6]/90 text-white text-[13px] font-medium rounded-none shadow-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#1447e6] transition-opacity"
+                >
+                  {t('common.saveChanges', 'Lưu')}
+                </Button>
+              </div>
             </>
           )}
         </div>

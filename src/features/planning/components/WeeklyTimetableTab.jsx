@@ -1280,6 +1280,7 @@ export function WeeklyTimetableTab({ classId = '1' }) {
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         initialSlot={selectedSlotForDrawer}
+        allocatedThemes={timetableData?.themeAllocations || []}
         readOnly={isReadOnly}
         lockRoutineSlot={true}
         onSave={handleSaveEditedSlot}

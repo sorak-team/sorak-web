@@ -75,8 +75,13 @@ export function EducationalActivitiesTab({ classId = '1' }) {
 
   const [data, setData] = useState(null);
   const [selectedDomain, setSelectedDomain] = useState('ALL');
+  const [selectedThemeFilter, setSelectedThemeFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+
+  const availableThemes = useMemo(() => {
+    return data?.themes || [];
+  }, [data]);
 
   // Expanded domain groups in List View: { [domainKey]: boolean }
   const [expandedDomains, setExpandedDomains] = useState({
@@ -122,6 +127,16 @@ export function EducationalActivitiesTab({ classId = '1' }) {
         return null;
       }
 
+      // Filter by theme dropdown
+      if (selectedThemeFilter !== 'ALL') {
+        goals = goals.filter((g) => {
+          if (!g.allocatedThemes?.length) return false;
+          return g.allocatedThemes.some(
+            (th) => String(th.id) === String(selectedThemeFilter) || String(th.themeId) === String(selectedThemeFilter) || String(th._theme_id) === String(selectedThemeFilter)
+          );
+        });
+      }
+
       // Filter by search query
       if (q) {
         goals = goals.filter((g) => {
@@ -148,7 +163,7 @@ export function EducationalActivitiesTab({ classId = '1' }) {
         goals,
       };
     }).filter(Boolean);
-  }, [data, selectedDomain, searchQuery]);
+  }, [data, selectedDomain, selectedThemeFilter, searchQuery]);
 
   // Total count of goals
   const totalGoalsCount = useMemo(() => {
@@ -256,9 +271,13 @@ export function EducationalActivitiesTab({ classId = '1' }) {
   const handleCreateActivityForContent = (goal, content) => {
     setActiveGoalContext(goal);
     setActiveContentContext(content);
+    const allocThemes = goal?.allocatedThemes || [];
+    const defaultThemeId = allocThemes.length === 1 ? (allocThemes[0].id || allocThemes[0].themeId) : '';
     setDrawerInitialSlot({
       title: '',
       contentId: content?.id,
+      themeId: defaultThemeId,
+      theme_id: defaultThemeId,
       routineSlot: 'DIRECTED_STUDY',
       objective: '',
       preparation: '',
@@ -276,6 +295,9 @@ export function EducationalActivitiesTab({ classId = '1' }) {
       id: activity.id,
       title: activity.title,
       contentId: content?.id,
+      themeId: activity.themeId || activity.theme_id || '',
+      theme_id: activity.themeId || activity.theme_id || '',
+      themeName: activity.themeName || '',
       routineSlot: activity.routineSlot || activity.routine_slot || 'DIRECTED_STUDY',
       objective: activity.objective || '',
       preparation: activity.preparation || '',
@@ -291,6 +313,7 @@ export function EducationalActivitiesTab({ classId = '1' }) {
 
   // Delete activity
   const handleDeleteActivity = async (activityId) => {
+    if (!activityId) return;
     if (!window.confirm('Bạn có chắc chắn muốn xóa hoạt động giáo dục này?')) {
       return;
     }
@@ -300,10 +323,16 @@ export function EducationalActivitiesTab({ classId = '1' }) {
         if (!prev) return prev;
         const newGoals = prev.goals.map((g) => ({
           ...g,
-          contents: g.contents.map((c) => ({
-            ...c,
-            activities: c.activities.filter((a) => a.id !== activityId),
-          })),
+          contents: g.contents.map((c) => {
+            const nextActs = c.activities.filter(
+              (a) => a.id !== activityId && String(a.id) !== String(activityId)
+            );
+            return {
+              ...c,
+              activities: nextActs,
+              activitiesCount: nextActs.length,
+            };
+          }),
         }));
         return { ...prev, goals: newGoals };
       });
@@ -322,6 +351,9 @@ export function EducationalActivitiesTab({ classId = '1' }) {
         ...(isEditing ? { id: drawerInitialSlot.id } : {}),
         contentId: activeContentContext?.id || drawerInitialSlot?.contentId || 'cnt-1-1',
         title: savedSlot.title,
+        themeId: savedSlot.themeId || savedSlot.theme_id || null,
+        theme_id: savedSlot.themeId || savedSlot.theme_id || null,
+        themeName: savedSlot.themeName || null,
         routineSlot: savedSlot.routineSlot || 'DIRECTED_STUDY',
         routine_slot: savedSlot.routineSlot || 'DIRECTED_STUDY',
         objective: savedSlot.objective,
@@ -349,11 +381,11 @@ export function EducationalActivitiesTab({ classId = '1' }) {
           ...g,
           contents: g.contents.map((c) => {
             if (c.id === targetContentId) {
-              const exists = c.activities.some((a) => a.id === savedActivity.id);
+              const exists = c.activities.some((a) => a.id === savedActivity.id || (payload.id && a.id === payload.id));
               return {
                 ...c,
                 activities: exists
-                  ? c.activities.map((a) => (a.id === savedActivity.id ? savedActivity : a))
+                  ? c.activities.map((a) => ((a.id === savedActivity.id || (payload.id && a.id === payload.id)) ? savedActivity : a))
                   : [...c.activities, savedActivity],
               };
             }
@@ -510,13 +542,34 @@ export function EducationalActivitiesTab({ classId = '1' }) {
 
           {/* Card 2: Danh sách nội dung giáo dục (Khớp 100% Image 1) */}
           <div className="border border-border bg-card p-5 space-y-4 shadow-2xs">
-            <div className="pb-2 border-b border-border/60">
-              <h2 className="text-[14.5px] font-semibold text-foreground">
-                {t('planning.educationalContentListTitle', 'Danh sách nội dung giáo dục')}
-              </h2>
-              <p className="text-[12px] text-muted-foreground mt-0.5">
-                {t('planning.educationalContentListSubtitle', 'Thiết lập các nội dung giáo dục cụ thể theo chuẩn Thông tư 51/BGDĐT.')}
-              </p>
+            <div className="pb-2 border-b border-border/60 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-[14.5px] font-semibold text-foreground">
+                  {t('planning.educationalContentListTitle', 'Danh sách nội dung giáo dục')}
+                </h2>
+                <p className="text-[12px] text-muted-foreground mt-0.5">
+                  {t('planning.educationalContentListSubtitle', 'Thiết lập các nội dung giáo dục cụ thể theo chuẩn Thông tư 51/BGDĐT.')}
+                </p>
+              </div>
+
+              {/* Theme filter for activities under this goal */}
+              {activeGoal.allocatedThemes?.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-[12px] font-medium text-muted-foreground">Lọc chủ đề:</span>
+                  <select
+                    value={selectedThemeFilter}
+                    onChange={(e) => setSelectedThemeFilter(e.target.value)}
+                    className="h-8 px-2.5 bg-background border border-border text-[12.5px] text-foreground rounded-none outline-none focus:border-primary cursor-pointer"
+                  >
+                    <option value="ALL">Tất cả chủ đề ({activeGoal.allocatedThemes.length})</option>
+                    {activeGoal.allocatedThemes.map((th) => (
+                      <option key={th.id || th.themeId} value={th.id || th.themeId}>
+                        {th.name || th.themeName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
             {/* Sub-items List */}
@@ -527,7 +580,17 @@ export function EducationalActivitiesTab({ classId = '1' }) {
                 </div>
               ) : (
                 activeGoal.contents.map((content, idx) => {
-                const activities = content.activities || [];
+                const allActivities = content.activities || [];
+                const activities = selectedThemeFilter === 'ALL'
+                  ? allActivities
+                  : allActivities.filter((act) => {
+                      const actThId = String(act.themeId || act.theme_id || '').trim();
+                      const selThId = String(selectedThemeFilter).trim();
+                      const matchedTh = activeGoal.allocatedThemes?.find((th) => String(th.id || th.themeId) === selThId);
+                      const selThName = matchedTh?.name?.toLowerCase();
+                      const actThName = act.themeName?.toLowerCase();
+                      return actThId === selThId || (act._theme_id && String(act._theme_id) === selThId) || (actThName && selThName && actThName === selThName);
+                    });
 
                 return (
                   <div
@@ -583,10 +646,17 @@ export function EducationalActivitiesTab({ classId = '1' }) {
                                 )}
                               </div>
 
-                              <p className="text-[12px] text-muted-foreground">
-                                <strong className="text-foreground/80 font-medium">{t('planning.routineSlotLabel', 'Chế độ sinh hoạt')}:</strong>{' '}
-                                {getRoutineSlotLabel(act.routineSlot)}
-                              </p>
+                              <div className="text-[12px] text-muted-foreground flex items-center gap-3 flex-wrap">
+                                <p>
+                                  <strong className="text-foreground/80 font-medium">{t('planning.routineSlotLabel', 'Chế độ sinh hoạt')}:</strong>{' '}
+                                  {getRoutineSlotLabel(act.routineSlot)}
+                                </p>
+                                {act.themeName && (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 text-[11px] font-medium bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-900/50 select-none">
+                                    Chủ đề: {act.themeName}
+                                  </span>
+                                )}
+                              </div>
 
                               {act.objective && (
                                 <p className="text-[12px] text-muted-foreground line-clamp-2">
@@ -595,7 +665,7 @@ export function EducationalActivitiesTab({ classId = '1' }) {
                                 </p>
                               )}
 
-                              {act.updaterName && act.updaterName !== act.creatorName && (
+                              {act.updaterName && (
                                 <p className="text-[11px] text-muted-foreground/80 italic">
                                   Chỉnh sửa bởi: <span className="font-medium text-foreground/80 not-italic">{act.updaterName}</span>
                                 </p>
@@ -617,7 +687,8 @@ export function EducationalActivitiesTab({ classId = '1' }) {
                                 <button
                                   type="button"
                                   disabled={act.isScheduled || act.slotsCount > 0}
-                                  onClick={() => {
+                                  onClick={(e) => {
+                                    e.stopPropagation();
                                     if (act.isScheduled || act.slotsCount > 0) {
                                       toast.warning('Hoạt động giáo dục đã được sử dụng trong kế hoạch tuần, không thể xóa.');
                                       return;
@@ -660,6 +731,7 @@ export function EducationalActivitiesTab({ classId = '1' }) {
             <Button
               type="button"
               disabled
+              title={t('planning.autoSavedNotice', 'Mọi hoạt động giáo dục (thêm, sửa, xóa) được lưu tự động lên hệ thống.')}
               className="h-9 px-4 text-[13px] font-medium bg-muted text-muted-foreground border border-border rounded-none shadow-none cursor-not-allowed opacity-60"
             >
               {t('common.saveChanges', 'Lưu thay đổi')}
@@ -672,7 +744,9 @@ export function EducationalActivitiesTab({ classId = '1' }) {
           isOpen={isDrawerOpen}
           onClose={() => setIsDrawerOpen(false)}
           initialSlot={drawerInitialSlot}
+          allocatedThemes={activeGoal?.allocatedThemes || activeGoalContext?.allocatedThemes || []}
           onSave={handleSaveActivity}
+          onDelete={handleDeleteActivity}
           readOnly={isBgh}
         />
       </div>
@@ -681,11 +755,11 @@ export function EducationalActivitiesTab({ classId = '1' }) {
 
   // =========================================================================
   // VIEW 1: DANH SÁCH MỤC TIÊU (Giao diện chuẩn 100% giống CurriculumGoalDetailPage)
-  // Không có filter chủ đề, có số đằng trước lĩnh vực, 17 mục tiêu, layout và spacing y hệt
+  // Có filter chủ đề, có số đằng trước lĩnh vực, 17 mục tiêu, layout và spacing y hệt
   // =========================================================================
   return (
     <div className="w-full flex-1 flex flex-col bg-background text-foreground select-none">
-      {/* 1. Filter Toolbar - Consistent with CurriculumGoalDetailPage (No Theme Dropdown) */}
+      {/* 1. Filter Toolbar - Consistent with CurriculumGoalDetailPage (With Theme Dropdown per Comment 1) */}
       <div className="px-6 py-3 flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/20">
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Search Input */}
@@ -728,6 +802,22 @@ export function EducationalActivitiesTab({ classId = '1' }) {
               </option>
             ))}
           </select>
+
+          {/* Theme Dropdown Filter */}
+          {availableThemes.length > 0 && (
+            <select
+              value={selectedThemeFilter}
+              onChange={(e) => setSelectedThemeFilter(e.target.value)}
+              className="h-8 px-2.5 bg-background border border-border text-[13px] text-foreground rounded-none outline-none focus:border-primary cursor-pointer"
+            >
+              <option value="ALL">Tất cả chủ đề ({availableThemes.length})</option>
+              {availableThemes.map((th) => (
+                <option key={th.id || th.code} value={th.id || th.code}>
+                  {th.name}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
 
         {/* Tree Expand / Collapse controls */}
