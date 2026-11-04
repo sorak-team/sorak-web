@@ -2,12 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import {
-  KeyRound,
   ShieldCheck,
   Eye,
   EyeOff,
   AlertCircle,
-  CheckCircle2,
 } from 'lucide-react';
 import {
   Dialog,
@@ -159,41 +157,31 @@ export function RequirePasswordChangeModal() {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-[460px] p-6 bg-card border border-border shadow-2xl rounded-none select-none">
+      <DialogContent className="max-w-[440px] p-6 bg-card border border-border shadow-2xl rounded-none select-none">
         {mode === 'prompt' ? (
-          <div className="flex flex-col gap-4">
-            <DialogHeader className="space-y-2.5 text-left">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 rounded-none shrink-0">
-                  <KeyRound className="size-5" />
-                </div>
-                <div>
-                  <DialogTitle className="text-[16px] font-semibold text-foreground">
-                    Gợi ý đổi mật khẩu
-                  </DialogTitle>
-                  <span className="text-[11.5px] text-muted-foreground">
-                    Bảo mật thông tin tài khoản
-                  </span>
-                </div>
-              </div>
-              <DialogDescription className="text-[13.5px] text-foreground/90 leading-relaxed pt-1">
-                Bạn đang sử dụng mật khẩu mặc định do nhà trường cung cấp. Bạn có muốn đổi mật khẩu không?
+          <div className="flex flex-col gap-5">
+            <DialogHeader className="space-y-1.5 text-left">
+              <DialogTitle className="text-[17px] font-semibold text-foreground tracking-tight">
+                Gợi ý đổi mật khẩu
+              </DialogTitle>
+              <DialogDescription className="text-[13px] text-muted-foreground leading-relaxed">
+                Bạn đang sử dụng mật khẩu mặc định do nhà trường cung cấp. Bạn có muốn đổi mật khẩu để tăng cường bảo mật cho tài khoản không?
               </DialogDescription>
             </DialogHeader>
 
-            <div className="p-3 bg-muted/40 border border-border text-[12px] text-muted-foreground space-y-1">
+            <div className="p-3 bg-muted/40 border border-border/70 text-[12px] text-muted-foreground space-y-1">
               <div className="flex items-start gap-2">
                 <ShieldCheck className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-                <span>
+                <span className="text-foreground/90 font-medium">
                   Đổi mật khẩu giúp bảo vệ dữ liệu giảng dạy, thông tin học sinh và ngăn chặn truy cập trái phép.
                 </span>
               </div>
-              <p className="text-[11px] text-muted-foreground/80 pl-6 italic">
-                (Gợi ý này không bắt buộc và không chặn thao tác của bạn. Bạn có thể đổi mật khẩu bất kỳ lúc nào tại Cài đặt tài khoản).
+              <p className="text-[11.5px] text-muted-foreground/80 pl-6 leading-relaxed">
+                Gợi ý này không bắt buộc và không chặn thao tác của bạn. Bạn có thể đổi mật khẩu bất kỳ lúc nào tại Cài đặt tài khoản.
               </p>
             </div>
 
-            <DialogFooter className="flex flex-row items-center justify-end gap-2.5 pt-2">
+            <DialogFooter className="flex flex-row items-center justify-end gap-2.5 pt-1">
               <Button
                 type="button"
                 variant="outline"
@@ -219,16 +207,11 @@ export function RequirePasswordChangeModal() {
           </div>
         ) : (
           <form onSubmit={handleChangePasswordSubmit} className="flex flex-col gap-4">
-            <DialogHeader className="space-y-1 text-left">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-primary/10 text-primary border border-primary/20 rounded-none shrink-0">
-                  <KeyRound className="size-4" />
-                </div>
-                <DialogTitle className="text-[15px] font-semibold text-foreground">
-                  Cập nhật mật khẩu mới
-                </DialogTitle>
-              </div>
-              <DialogDescription className="text-[12px] text-muted-foreground">
+            <DialogHeader className="space-y-1 text-left pb-0.5">
+              <DialogTitle className="text-[17px] font-semibold text-foreground tracking-tight">
+                Cập nhật mật khẩu mới
+              </DialogTitle>
+              <DialogDescription className="text-[12.5px] text-muted-foreground leading-normal">
                 Nhập mật khẩu mặc định hiện tại và tạo mật khẩu mới an toàn cho tài khoản.
               </DialogDescription>
             </DialogHeader>
@@ -240,10 +223,10 @@ export function RequirePasswordChangeModal() {
               </div>
             )}
 
-            <div className="space-y-3 pt-1">
+            <div className="space-y-3 pt-0.5">
               {/* Mật khẩu hiện tại */}
-              <div className="space-y-1">
-                <label className="text-[12px] font-medium text-foreground">
+              <div className="space-y-1.5">
+                <label className="text-[12.5px] font-medium text-foreground block">
                   Mật khẩu hiện tại (mặc định)
                 </label>
                 <div className="relative">
@@ -259,7 +242,7 @@ export function RequirePasswordChangeModal() {
                     type="button"
                     tabIndex={-1}
                     onClick={() => setShowCurrent(!showCurrent)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   >
                     {showCurrent ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                   </button>
@@ -267,8 +250,8 @@ export function RequirePasswordChangeModal() {
               </div>
 
               {/* Mật khẩu mới */}
-              <div className="space-y-1">
-                <label className="text-[12px] font-medium text-foreground">
+              <div className="space-y-1.5">
+                <label className="text-[12.5px] font-medium text-foreground block">
                   Mật khẩu mới
                 </label>
                 <div className="relative">
@@ -283,7 +266,7 @@ export function RequirePasswordChangeModal() {
                     type="button"
                     tabIndex={-1}
                     onClick={() => setShowNew(!showNew)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   >
                     {showNew ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                   </button>
@@ -291,8 +274,8 @@ export function RequirePasswordChangeModal() {
               </div>
 
               {/* Xác nhận mật khẩu mới */}
-              <div className="space-y-1">
-                <label className="text-[12px] font-medium text-foreground">
+              <div className="space-y-1.5">
+                <label className="text-[12.5px] font-medium text-foreground block">
                   Xác nhận mật khẩu mới
                 </label>
                 <div className="relative">
@@ -307,7 +290,7 @@ export function RequirePasswordChangeModal() {
                     type="button"
                     tabIndex={-1}
                     onClick={() => setShowConfirm(!showConfirm)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   >
                     {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                   </button>
