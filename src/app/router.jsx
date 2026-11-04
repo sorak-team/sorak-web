@@ -7,6 +7,7 @@ import {
   OtpVerifyPage,
   ProtectedRoute,
   PublicOnlyRoute,
+  useAuthStore,
 } from '@/features/auth';
 import { AcademicYearsPage, AcademicYearOverviewPage } from '@/features/academic-years';
 import { TeachersPage, TeacherOverviewPage } from '@/features/teachers';
@@ -20,6 +21,7 @@ import {
   ClassExportPage,
   useClassesStore,
   classesApi,
+  findTeacherClassForYear,
 } from '@/features/classes';
 import { useAcademicYearStore } from '@/features/academic-years';
 import { TransfersManagementPage, TransferDetailPage } from '@/features/transfers';
@@ -47,7 +49,7 @@ import {
 } from '@/features/parent';
 import { NotFoundPage } from '@/features/error';
 import { useTranslation } from 'react-i18next';
-import { useAuthStore, isParentRole } from '@/features/auth';
+import { isParentRole } from '@/features/auth';
 
 function RootRedirect() {
   const user = useAuthStore((state) => state.user);
@@ -142,6 +144,26 @@ function ClassRouteGuard() {
 
   if (classNotFound) {
     return <NotFoundPage />;
+  }
+
+  // Strict teacher authorization: Teacher cannot view or operate on classes they are not assigned to
+  const user = useAuthStore((state) => state.user);
+  const isTeacher =
+    user?.role === 'TEACHER_GV' ||
+    user?.role === 'TEACHER' ||
+    user?.role?.toLowerCase()?.includes('teacher');
+
+  if (isTeacher && id && classes.length > 0) {
+    const teacherClass = findTeacherClassForYear(user, classes, selectedYearId);
+    const isAssigned =
+      teacherClass &&
+      (String(teacherClass.id) === String(id) || String(teacherClass.publicId) === String(id));
+    if (!isAssigned) {
+      if (teacherClass) {
+        return <Navigate to={`/classes/${teacherClass.id || teacherClass.publicId}`} replace />;
+      }
+      return <Navigate to="/classes" replace />;
+    }
   }
 
   // Prevent flashing child pages or premature 404 while checking/fetching class

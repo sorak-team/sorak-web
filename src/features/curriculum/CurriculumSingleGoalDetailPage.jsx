@@ -55,6 +55,77 @@ const STANDARD_GOAL_FALLBACKS = {
   MT11: 'Trẻ thích nghe hát, vận động theo nhạc và tham gia tạo hình đơn giản.',
 };
 
+// Format timestamp/Date to HH:mm - DD/MM/YYYY chuẩn UX
+const formatDateTime = (val) => {
+  if (!val) {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = now.getFullYear();
+    return `${hours}:${minutes} - ${day}/${month}/${year}`;
+  }
+
+  // 1. Đã đúng định dạng chuẩn "HH:mm - DD/MM/YYYY"
+  if (typeof val === 'string' && /^\d{2}:\d{2}\s*-\s*\d{2}\/\d{2}\/\d{4}$/.test(val)) {
+    return val;
+  }
+
+  // 2. Chuỗi ngày định dạng Việt Nam "DD/MM/YYYY" (ví dụ: "13/10/2026")
+  if (typeof val === 'string') {
+    const vnMatch = val.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
+    if (vnMatch) {
+      const now = new Date();
+      const day = vnMatch[1].padStart(2, '0');
+      const month = vnMatch[2].padStart(2, '0');
+      const year = vnMatch[3];
+      const hours = vnMatch[4] ? vnMatch[4].padStart(2, '0') : String(now.getHours()).padStart(2, '0');
+      const minutes = vnMatch[5] ? vnMatch[5].padStart(2, '0') : String(now.getMinutes()).padStart(2, '0');
+      return `${hours}:${minutes} - ${day}/${month}/${year}`;
+    }
+  }
+
+  // 3. Đối tượng Date (kiểm tra tính hợp lệ tránh Invalid Date / NaN)
+  if (val instanceof Date) {
+    if (!isNaN(val.getTime())) {
+      const hours = String(val.getHours()).padStart(2, '0');
+      const minutes = String(val.getMinutes()).padStart(2, '0');
+      const day = String(val.getDate()).padStart(2, '0');
+      const month = String(val.getMonth() + 1).padStart(2, '0');
+      const year = val.getFullYear();
+      return `${hours}:${minutes} - ${day}/${month}/${year}`;
+    }
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = now.getFullYear();
+    return `${hours}:${minutes} - ${day}/${month}/${year}`;
+  }
+
+  // 4. Thử parse chuỗi chuẩn ISO (YYYY-MM-DD...)
+  const d = new Date(val);
+  if (!isNaN(d.getTime())) {
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${hours}:${minutes} - ${day}/${month}/${year}`;
+  }
+
+  // Fallback về thời gian hiện tại
+  const now = new Date();
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const year = now.getFullYear();
+  return `${hours}:${minutes} - ${day}/${month}/${year}`;
+};
+
 const normalizeGoalCode = (code) => {
   if (!code) return '';
   const raw = String(code).toUpperCase().trim();
@@ -145,6 +216,7 @@ export function CurriculumSingleGoalDetailPage() {
   const [allGoals, setAllGoals] = useState([]);
   const [contents, setContents] = useState([]);
   const [originalContents, setOriginalContents] = useState([]);
+  const [lastSavedTime, setLastSavedTime] = useState(null);
   const [bankStatus, setBankStatus] = useState(() => {
     return localStorage.getItem(`sorak_goal_bank_${yearId}_${ageGroup}_status`) || 'DRAFT';
   });
@@ -271,6 +343,38 @@ export function CurriculumSingleGoalDetailPage() {
     return JSON.stringify(contents) !== JSON.stringify(originalContents);
   }, [contents, originalContents]);
 
+  // Thời gian cập nhật định dạng HH:mm - DD/MM/YYYY chuẩn UX
+  const updatedAt = useMemo(() => {
+    const rawVal = lastSavedTime || goal?.updatedAt || goal?.updated_at;
+    return formatDateTime(rawVal);
+  }, [lastSavedTime, goal]);
+
+  // Tự động lưu nội dung giáo dục khi có thay đổi (Debounced auto-save)
+  useEffect(() => {
+    if (!goal || isBankPublished || isLoading || !hasChanges) return;
+
+    const validContents = contents.filter((c) => c.title && c.title.trim() !== '');
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await curriculumApi.updateGoalContents({
+          year: yearId.replace('-', '–'),
+          ageGroup,
+          goalId: goal.id,
+          contents: validContents,
+        });
+
+        const updatedContents = res?.contents || validContents;
+        setOriginalContents(JSON.parse(JSON.stringify(contents)));
+        setLastSavedTime(new Date());
+      } catch (err) {
+        console.warn('Auto-save contents warning:', err);
+      }
+    }, 700);
+
+    return () => clearTimeout(timer);
+  }, [contents, hasChanges, goal, isBankPublished, isLoading, yearId, ageGroup]);
+
   // Add new educational content
   const handleAddContent = () => {
     if (isBankPublished) {
@@ -361,6 +465,7 @@ export function CurriculumSingleGoalDetailPage() {
 
       setGoal(updatedGoal);
       setActiveGoal(updatedGoal);
+      setLastSavedTime(new Date());
       setIsEditDrawerOpen(false);
       toast.success('Đã cập nhật thông tin mục tiêu thành công!');
     } catch (err) {
@@ -659,22 +764,17 @@ export function CurriculumSingleGoalDetailPage() {
           </div>
         </div>
 
-        {/* Footer: Nút lưu thay đổi */}
-        <div className="flex items-center justify-end pt-2 pb-6">
-          <Button
-            type="button"
-            onClick={handleSaveGoalContents}
-            disabled={!hasChanges || isBankPublished}
-            className={cn(
-              'h-8 px-5 text-[13px] font-medium rounded-none shadow-none flex items-center gap-1.5 transition-colors',
-              hasChanges && !isBankPublished
-                ? 'bg-[#1447e6] hover:bg-[#1447e6]/90 text-white cursor-pointer'
-                : 'bg-muted text-muted-foreground border border-border cursor-not-allowed',
-            )}
-            title={isBankPublished ? 'Ngân hàng mục tiêu đã công bố' : undefined}
+        {/* Footer: Thời gian cập nhật (Tự động lưu) */}
+        <div className="flex items-center justify-end pt-3 pb-6">
+          <div
+            className="text-[12.5px] text-muted-foreground select-none"
+            title="Mọi nội dung giáo dục được lưu tự động lên hệ thống"
           >
-            <span>{t('common.saveChanges', 'Lưu thay đổi')}</span>
-          </Button>
+            <span>Thời gian cập nhật: </span>
+            <span className="font-mono font-medium text-foreground">
+              {updatedAt}
+            </span>
+          </div>
         </div>
       </div>
 

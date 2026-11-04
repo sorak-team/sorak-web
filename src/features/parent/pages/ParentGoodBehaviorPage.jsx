@@ -127,6 +127,7 @@ export function ParentGoodBehaviorPage() {
       return data.historyMonths;
     }
     return [
+      { month: 11, year: 2026, label: 'Tháng 11/2026 (Hiện tại)' },
       { month: 10, year: 2026, label: 'Tháng 10/2026' },
       { month: 9, year: 2026, label: 'Tháng 9/2026' },
     ];
@@ -258,34 +259,66 @@ export function ParentGoodBehaviorPage() {
       {/* MODE 1: SỔ BÉ NGOAN HÀNG THÁNG */}
       {activeMode === 'monthly' && (
         <div className="flex flex-col gap-3.5">
+          {/* Banner thông báo nếu tháng đang diễn ra */}
+          {!data?.period?.isEnded && !record.id && (
+            <div className="flex items-center gap-2.5 px-3.5 py-2.5 border border-blue-500/25 bg-blue-500/[0.05] text-blue-900 dark:text-blue-300 text-[12px] rounded-none">
+              <Info className="size-4 shrink-0 text-blue-600 dark:text-blue-400" />
+              <span>
+                <strong>Tháng {selectedMonth}/{selectedYear}</strong> đang trong thời gian học tập và rèn luyện. Dữ liệu chuyên cần và mục tiêu giáo dục được cập nhật theo tiến độ hàng ngày; kết quả hoa bé ngoan tháng sẽ được giáo viên tổng kết và công bố khi kết thúc tháng.
+              </span>
+            </div>
+          )}
+
           {/* 1. Clean Summary Strip (3 metrics, concise, no redundant text) */}
           <div className="border border-border bg-card shadow-2xs grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-border">
             {/* Metric 1: Kết quả tháng */}
             <div className="p-3.5 flex items-center gap-3">
               <img
                 src={record.isLotus ? '/lotus.webp' : '/rose.webp'}
-                alt="Hoa bé ngoan"
+                alt={record.isLotus ? 'Danh hiệu Hoa Sen' : 'Hoa bé ngoan'}
                 className="w-10 h-10 object-contain drop-shadow-2xs shrink-0"
                 style={{ width: 40, height: 40 }}
               />
               <div className="flex flex-col min-w-0">
-                <span className="text-[11.5px] text-muted-foreground">Hoa bé ngoan tháng</span>
-                <div className="flex items-baseline gap-1.5 mt-0.5">
-                  <span className="text-xl font-bold font-mono text-rose-600 dark:text-rose-400">
-                    {record.rosesCount}/{record.maxRoses}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[11.5px] text-muted-foreground">Hoa hồng trong tháng:</span>
+                  <span className="text-base font-bold font-mono text-rose-600 dark:text-rose-400">
+                    {record.rosesCount} hoa
                   </span>
-                  <span className="text-[12px] text-muted-foreground">tuần đạt hoa</span>
+                  <span className="text-[11px] text-muted-foreground font-mono">
+                    ({record.rosesCount}/{record.maxRoses} tuần đạt hoa)
+                  </span>
                 </div>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span className="text-[11.5px] text-muted-foreground">Danh hiệu tháng:</span>
+                  {record.isLotus ? (
+                    <span className="px-1.5 py-0.5 bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 text-[11px] font-semibold border border-rose-200 inline-flex items-center gap-1">
+                      <span>1 Hoa Sen</span>
+                    </span>
+                  ) : (
+                    <span className="text-[11.5px] font-medium text-muted-foreground">
+                      {record.rosesCount >= 4 ? '1 Hoa Sen' : 'Chưa đạt hoa sen'}
+                    </span>
+                  )}
+                  {!data?.period?.isEnded && !record.id && (
+                    <span className="text-[10.5px] text-muted-foreground/80 italic ml-0.5">
+                      (Chưa tổng kết)
+                    </span>
+                  )}
+                </div>
+                <span className="text-[10.5px] text-muted-foreground/80 mt-1">
+                  Đạt ít nhất 4 hoa hồng trong tháng để nhận 1 hoa sen.
+                </span>
               </div>
             </div>
 
             {/* Metric 2: Giáo viên */}
             <div className="p-3.5 flex flex-col justify-center">
-              <span className="text-[11.5px] text-muted-foreground">Giáo viên</span>
-              <span className="text-[13.5px] font-semibold text-foreground mt-0.5 truncate">
-                {record.evaluatorName || 'Cô giáo chủ nhiệm'}
+              <span className="text-[11.5px] text-muted-foreground">Giáo viên phụ trách</span>
+              <span className="text-[13.5px] font-semibold text-foreground mt-0.5 truncate" title={record.evaluatorName}>
+                {record.evaluatorName || 'Quang Nhật Phi Yến'}
               </span>
-              <span className="text-[11px] text-muted-foreground mt-0.5">Trường MN Hòn Tre</span>
+              <span className="text-[11px] text-muted-foreground mt-0.5">Giáo viên chủ nhiệm · Trường MN Hòn Tre</span>
             </div>
 
             {/* Metric 3: Trạng thái sổ liên lạc */}
@@ -300,9 +333,9 @@ export function ParentGoodBehaviorPage() {
             </div>
           </div>
 
-          {/* Banner vinh danh Danh hiệu Hoa Sen nếu đạt từ 4 hoa trở lên */}
-          {record.isLotus && (
-            <div className="p-3 bg-rose-50/40 dark:bg-rose-950/20 border border-rose-200/80 dark:border-rose-900/60 flex items-center gap-3">
+          {/* Banner kết quả / vinh danh Danh hiệu tháng */}
+          {record.isLotus ? (
+            <div className="p-3 bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200/80 dark:border-rose-900/60 flex items-center gap-3">
               <img
                 src="/lotus.webp"
                 alt="Danh hiệu Hoa Sen"
@@ -310,9 +343,21 @@ export function ParentGoodBehaviorPage() {
                 style={{ width: 36, height: 36 }}
               />
               <div className="text-[12.5px] text-foreground leading-snug">
-                <strong className="text-rose-600 dark:text-rose-400 font-semibold">Danh hiệu Hoa Sen: </strong>
-                Bé đạt xuất sắc {record.rosesCount}/{record.maxRoses} tuần hoa bé ngoan trong tháng!
+                <div>
+                  <strong className="text-rose-600 dark:text-rose-400 font-semibold">Danh hiệu tháng: 1 Hoa Sen </strong>
+                  <span>— Bé đạt xuất sắc <strong>{record.rosesCount} hoa hồng</strong> trong tháng ({record.rosesCount}/{record.maxRoses} tuần đạt hoa).</span>
+                </div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">
+                  Chú thích: Đạt ít nhất 4 hoa hồng trong tháng để nhận 1 hoa sen.
+                </div>
               </div>
+            </div>
+          ) : (
+            <div className="p-2.5 bg-muted/30 border border-border flex items-center gap-2.5 text-[12px] text-muted-foreground">
+              <Info className="size-4 shrink-0 text-muted-foreground" />
+              <span>
+                Hoa hồng trong tháng: <strong>{record.rosesCount} hoa</strong> ({record.rosesCount}/{record.maxRoses} tuần đạt hoa). Chú thích: Đạt ít nhất 4 hoa hồng trong tháng để nhận 1 hoa sen.
+              </span>
             </div>
           )}
 
@@ -327,12 +372,13 @@ export function ParentGoodBehaviorPage() {
               </span>
             </div>
 
-            {/* Lưới các tuần: Clean, không trùng lặp nhãn hoa hồng */}
+            {/* Lưới các tuần */}
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
               {monthWeeks.map((wk) => {
                 const key = `week${wk}`;
                 const isRose = Boolean(record.weeks?.[key]);
                 const weekStat = weeklyStats[key];
+                const status = weekStat?.status || (isRose ? 'ACHIEVED' : (data?.period?.isEnded || record?.id ? 'NOT_ACHIEVED' : 'NOT_EVALUATED'));
 
                 return (
                   <div
@@ -364,16 +410,20 @@ export function ParentGoodBehaviorPage() {
                       )}
                     </div>
 
-                    <span
-                      className={cn(
-                        'text-[11px] font-medium',
-                        isRose
-                          ? 'text-rose-600 dark:text-rose-400 font-semibold'
-                          : 'text-muted-foreground'
-                      )}
-                    >
-                      {isRose ? 'Đạt hoa' : 'Chưa đạt'}
-                    </span>
+                    {/* Week Status */}
+                    {status === 'ACHIEVED' ? (
+                      <span className="text-[11px] font-semibold text-rose-600 dark:text-rose-400">
+                        Đạt hoa
+                      </span>
+                    ) : status === 'NOT_ACHIEVED' ? (
+                      <span className="text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                        Chưa đạt
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-medium text-muted-foreground">
+                        Chưa đánh giá
+                      </span>
+                    )}
 
                     {/* Tóm tắt 3 tiêu chí của tuần */}
                     {weekStat && (
@@ -381,19 +431,23 @@ export function ParentGoodBehaviorPage() {
                         <div className="flex items-center justify-between">
                           <span>Chuyên cần</span>
                           <span className="font-mono font-medium text-foreground">
-                            {weekStat.attendancePresent}/{weekStat.attendanceTotal} ngày
+                            {weekStat.attendanceTotal > 0
+                              ? `${weekStat.attendancePresent}/${weekStat.attendanceTotal} ngày`
+                              : 'Chưa có dữ liệu'}
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span>Mục tiêu GD</span>
                           <span className="font-mono font-medium text-foreground">
-                            {weekStat.goalsAchieved}/{weekStat.goalsTotal}
+                            {weekStat.goalsTotal > 0
+                              ? `${weekStat.goalsAchieved}/${weekStat.goalsTotal}`
+                              : 'Chưa có dữ liệu'}
                           </span>
                         </div>
                         <div className="flex items-center justify-between truncate">
                           <span>Sức khỏe</span>
-                          <span className="font-medium text-foreground truncate">
-                            {weekStat.healthStatus}
+                          <span className="font-medium text-foreground truncate" title={weekStat.healthStatus}>
+                            {weekStat.healthStatus || 'Chưa đánh giá'}
                           </span>
                         </div>
                       </div>
@@ -416,12 +470,12 @@ export function ParentGoodBehaviorPage() {
                   </span>
                 </div>
                 <span className="text-[11.5px] text-muted-foreground">
-                  {record.evaluatorName}
+                  {record.evaluatorName || 'Quang Nhật Phi Yến'}
                 </span>
               </div>
 
               <div className="p-3 bg-muted/15 border border-border text-[12.5px] text-foreground leading-relaxed flex-1 min-h-[90px]">
-                {record.teacherNotes || 'Chưa có nhận xét tổng kết cho tháng này.'}
+                {record.teacherNotes || (data?.period?.isEnded ? 'Chưa có nhận xét tổng kết cho tháng này.' : 'Đang trong tháng rèn luyện, nhận xét sẽ được cô giáo tổng kết khi kết thúc tháng.')}
               </div>
             </div>
 

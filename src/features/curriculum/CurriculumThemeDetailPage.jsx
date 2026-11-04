@@ -49,6 +49,77 @@ const formatDateRangeDdMm = (startDateStr, endDateStr) => {
   return `${formatDdMm(startDateStr)} → ${formatDdMm(endDateStr)}`;
 };
 
+// Format timestamp/Date to HH:mm - DD/MM/YYYY chuẩn UX
+const formatDateTime = (val) => {
+  if (!val) {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = now.getFullYear();
+    return `${hours}:${minutes} - ${day}/${month}/${year}`;
+  }
+
+  // 1. Đã đúng định dạng chuẩn "HH:mm - DD/MM/YYYY"
+  if (typeof val === 'string' && /^\d{2}:\d{2}\s*-\s*\d{2}\/\d{2}\/\d{4}$/.test(val)) {
+    return val;
+  }
+
+  // 2. Chuỗi ngày định dạng Việt Nam "DD/MM/YYYY" (ví dụ: "13/10/2026")
+  if (typeof val === 'string') {
+    const vnMatch = val.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
+    if (vnMatch) {
+      const now = new Date();
+      const day = vnMatch[1].padStart(2, '0');
+      const month = vnMatch[2].padStart(2, '0');
+      const year = vnMatch[3];
+      const hours = vnMatch[4] ? vnMatch[4].padStart(2, '0') : String(now.getHours()).padStart(2, '0');
+      const minutes = vnMatch[5] ? vnMatch[5].padStart(2, '0') : String(now.getMinutes()).padStart(2, '0');
+      return `${hours}:${minutes} - ${day}/${month}/${year}`;
+    }
+  }
+
+  // 3. Đối tượng Date (kiểm tra tính hợp lệ tránh Invalid Date / NaN)
+  if (val instanceof Date) {
+    if (!isNaN(val.getTime())) {
+      const hours = String(val.getHours()).padStart(2, '0');
+      const minutes = String(val.getMinutes()).padStart(2, '0');
+      const day = String(val.getDate()).padStart(2, '0');
+      const month = String(val.getMonth() + 1).padStart(2, '0');
+      const year = val.getFullYear();
+      return `${hours}:${minutes} - ${day}/${month}/${year}`;
+    }
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = now.getFullYear();
+    return `${hours}:${minutes} - ${day}/${month}/${year}`;
+  }
+
+  // 4. Thử parse chuỗi chuẩn ISO (YYYY-MM-DD...)
+  const d = new Date(val);
+  if (!isNaN(d.getTime())) {
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${hours}:${minutes} - ${day}/${month}/${year}`;
+  }
+
+  // Fallback về thời gian hiện tại
+  const now = new Date();
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const year = now.getFullYear();
+  return `${hours}:${minutes} - ${day}/${month}/${year}`;
+};
+
 // Helper add days to ISO date string (YYYY-MM-DD)
 const addDaysToDate = (dateStr, days) => {
   if (!dateStr) return '';
@@ -164,7 +235,7 @@ export function CurriculumThemeDetailPage() {
   const [subThemes, setSubThemes] = useState([]);
   const [note, setNote] = useState('');
   const [status, setStatus] = useState('DRAFT');
-  const [updatedAt, setUpdatedAt] = useState('11/10/2026');
+  const [updatedAt, setUpdatedAt] = useState(() => new Date());
   const topicNameInputRef = React.useRef(null);
 
   // Interactive calendar scheduling state for sub-themes (Two-Click Range Selection)
@@ -857,61 +928,67 @@ export function CurriculumThemeDetailPage() {
   const canSave = !isReadOnly && hasChanges && (subThemes.length === 0 || !hasUnassignedDaysInTheme);
 
   // Save changes to current topic
-  const handleSaveTopic = async () => {
+  const handleSaveTopic = async (isSilent = false) => {
     if (isTeacher || !canSave) return;
     if (subThemes.length > 0 && hasUnassignedDaysInTheme) {
-      toast.error(
-        `Vui lòng phân bổ đầy đủ tất cả các ngày trong chủ đề (từ ${formatDateVn(startDate)} đến ${formatDateVn(endDate)}) cho các nhánh trước khi lưu.`,
-      );
+      if (!isSilent) {
+        toast.error(
+          `Vui lòng phân bổ đầy đủ tất cả các ngày trong chủ đề (từ ${formatDateVn(startDate)} đến ${formatDateVn(endDate)}) cho các nhánh trước khi lưu.`,
+        );
+      }
       return;
     }
     if (!topicName.trim()) {
-      toast.error('Tên chủ đề không được để trống.');
+      if (!isSilent) toast.error('Tên chủ đề không được để trống.');
       return;
     }
     if (!startDate || !endDate) {
-      toast.error('Vui lòng chọn đầy đủ ngày bắt đầu và ngày kết thúc.');
+      if (!isSilent) toast.error('Vui lòng chọn đầy đủ ngày bắt đầu và ngày kết thúc.');
       return;
     }
     if (startDate > endDate) {
-      toast.error('Ngày bắt đầu không được sau ngày kết thúc.');
+      if (!isSilent) toast.error('Ngày bắt đầu không được sau ngày kết thúc.');
       return;
     }
 
     // Ngoại lệ: Nằm ngoài năm học
     if (themeDateBounds.academicYearStart && startDate < themeDateBounds.academicYearStart) {
-      toast.error(`Ngày bắt đầu (${formatDateVn(startDate)}) không được trước ngày bắt đầu năm học (${formatDateVn(themeDateBounds.academicYearStart)}).`);
+      if (!isSilent) toast.error(`Ngày bắt đầu (${formatDateVn(startDate)}) không được trước ngày bắt đầu năm học (${formatDateVn(themeDateBounds.academicYearStart)}).`);
       return;
     }
     if (themeDateBounds.academicYearEnd && endDate > themeDateBounds.academicYearEnd) {
-      toast.error(`Ngày kết thúc (${formatDateVn(endDate)}) không được sau ngày kết thúc năm học (${formatDateVn(themeDateBounds.academicYearEnd)}).`);
+      if (!isSilent) toast.error(`Ngày kết thúc (${formatDateVn(endDate)}) không được sau ngày kết thúc năm học (${formatDateVn(themeDateBounds.academicYearEnd)}).`);
       return;
     }
 
     // Kiểm tra thời lượng chủ đề tối thiểu 2 tuần (14 ngày), tối đa 6 tuần (42 ngày)
     const diffDays = Math.round((new Date(endDate) - new Date(startDate)) / 86400000) + 1;
     if (diffDays < 14) {
-      toast.error(`Thời lượng chủ đề tối thiểu là 2 tuần (14 ngày). Hiện tại là ${diffDays} ngày.`);
+      if (!isSilent) toast.error(`Thời lượng chủ đề tối thiểu là 2 tuần (14 ngày). Hiện tại là ${diffDays} ngày.`);
       return;
     }
     if (diffDays > 42) {
-      toast.error(`Thời lượng chủ đề tối đa là 6 tuần (42 ngày). Hiện tại là ${diffDays} ngày.`);
+      if (!isSilent) toast.error(`Thời lượng chủ đề tối đa là 6 tuần (42 ngày). Hiện tại là ${diffDays} ngày.`);
       return;
     }
 
     if (themeDateBounds.minAllowedStart && startDate < themeDateBounds.minAllowedStart) {
-      toast.error(
-        `Ngày bắt đầu (${formatDateVn(startDate)}) không được trước ${formatDateVn(themeDateBounds.minAllowedStart)}${themeDateBounds.prevTopicName ? ` (sau chủ đề "${themeDateBounds.prevTopicName}")` : ''
-        }.`,
-      );
+      if (!isSilent) {
+        toast.error(
+          `Ngày bắt đầu (${formatDateVn(startDate)}) không được trước ${formatDateVn(themeDateBounds.minAllowedStart)}${themeDateBounds.prevTopicName ? ` (sau chủ đề "${themeDateBounds.prevTopicName}")` : ''
+          }.`,
+        );
+      }
       return;
     }
 
     if (isAllPublished && themeDateBounds.maxAllowedEnd && endDate > themeDateBounds.maxAllowedEnd) {
-      toast.error(
-        `Ngày kết thúc (${formatDateVn(endDate)}) không được sau ${formatDateVn(themeDateBounds.maxAllowedEnd)}${themeDateBounds.nextTopicName ? ` (trước chủ đề "${themeDateBounds.nextTopicName}")` : ''
-        }.`,
-      );
+      if (!isSilent) {
+        toast.error(
+          `Ngày kết thúc (${formatDateVn(endDate)}) không được sau ${formatDateVn(themeDateBounds.maxAllowedEnd)}${themeDateBounds.nextTopicName ? ` (trước chủ đề "${themeDateBounds.nextTopicName}")` : ''
+          }.`,
+        );
+      }
       return;
     }
 
@@ -919,35 +996,41 @@ export function CurriculumThemeDetailPage() {
     for (let i = 0; i < subThemes.length; i++) {
       const cur = subThemes[i];
       if (!cur.name?.trim()) {
-        toast.error(`Chủ đề nhánh số ${i + 1} chưa có tên.`);
+        if (!isSilent) toast.error(`Chủ đề nhánh số ${i + 1} chưa có tên.`);
         return;
       }
       if (!cur.startDate || !cur.endDate) {
-        toast.error(`Chủ đề nhánh "${cur.name}" cần có đầy đủ ngày bắt đầu và ngày kết thúc.`);
+        if (!isSilent) toast.error(`Chủ đề nhánh "${cur.name}" cần có đầy đủ ngày bắt đầu và ngày kết thúc.`);
         return;
       }
       if (cur.startDate > cur.endDate) {
-        toast.error(`Chủ đề nhánh "${cur.name}": Ngày bắt đầu không được sau ngày kết thúc.`);
+        if (!isSilent) toast.error(`Chủ đề nhánh "${cur.name}": Ngày bắt đầu không được sau ngày kết thúc.`);
         return;
       }
       if (startDate && cur.startDate < startDate) {
-        toast.error(
-          `Chủ đề nhánh "${cur.name}": Ngày bắt đầu (${formatDateVn(cur.startDate)}) không được trước ngày bắt đầu chủ đề chính (${formatDateVn(startDate)}).`,
-        );
+        if (!isSilent) {
+          toast.error(
+            `Chủ đề nhánh "${cur.name}": Ngày bắt đầu (${formatDateVn(cur.startDate)}) không được trước ngày bắt đầu chủ đề chính (${formatDateVn(startDate)}).`,
+          );
+        }
         return;
       }
       if (endDate && cur.endDate > endDate) {
-        toast.error(
-          `Chủ đề nhánh "${cur.name}": Ngày kết thúc (${formatDateVn(cur.endDate)}) không được sau ngày kết thúc chủ đề chính (${formatDateVn(endDate)}).`,
-        );
+        if (!isSilent) {
+          toast.error(
+            `Chủ đề nhánh "${cur.name}": Ngày kết thúc (${formatDateVn(cur.endDate)}) không được sau ngày kết thúc chủ đề chính (${formatDateVn(endDate)}).`,
+          );
+        }
         return;
       }
       if (i > 0) {
         const prev = subThemes[i - 1];
         if (prev.endDate && cur.startDate <= prev.endDate) {
-          toast.error(
-            `Chủ đề nhánh số ${i + 1} ("${cur.name}") bị trùng hoặc đi trước ngày kết thúc của nhánh số ${i} ("${prev.name}"). Các nhánh phải theo thứ tự nối tiếp nhau.`,
-          );
+          if (!isSilent) {
+            toast.error(
+              `Chủ đề nhánh số ${i + 1} ("${cur.name}") bị trùng hoặc đi trước ngày kết thúc của nhánh số ${i} ("${prev.name}"). Các nhánh phải theo thứ tự nối tiếp nhau.`,
+            );
+          }
           return;
         }
       }
@@ -1025,7 +1108,7 @@ export function CurriculumThemeDetailPage() {
 
       setThemes(updatedThemes);
       setSubThemes(sortedSubThemes);
-      setUpdatedAt(new Date().toLocaleDateString('vi-VN'));
+      setUpdatedAt(new Date());
 
       try {
         const res = await curriculumApi.updateThemeSetDetail({
@@ -1047,9 +1130,40 @@ export function CurriculumThemeDetailPage() {
         console.warn('Failed to save themes on server:', err);
       }
 
-      toast.success(`Đã lưu thay đổi cho chủ đề "${topicName.trim()}"`);
+      if (!isSilent) {
+        toast.success(`Đã lưu thay đổi cho chủ đề "${topicName.trim()}"`);
+      }
     }
   };
+
+  // Tự động lưu chủ đề khi có thay đổi hợp lệ (Debounced auto-save)
+  useEffect(() => {
+    if (isTeacher || isReadOnly || !hasChanges || !canSave) return;
+    if (subThemes.length > 0 && hasUnassignedDaysInTheme) return;
+    if (!topicName.trim() || !startDate || !endDate || startDate > endDate) return;
+
+    const diffDays = Math.round((new Date(endDate) - new Date(startDate)) / 86400000) + 1;
+    if (diffDays < 14 || diffDays > 42) return;
+
+    for (let i = 0; i < subThemes.length; i++) {
+      const cur = subThemes[i];
+      if (!cur.name?.trim() || !cur.startDate || !cur.endDate || cur.startDate > cur.endDate) {
+        return;
+      }
+      if (startDate && cur.startDate < startDate) return;
+      if (endDate && cur.endDate > endDate) return;
+      if (i > 0) {
+        const prev = subThemes[i - 1];
+        if (prev.endDate && cur.startDate <= prev.endDate) return;
+      }
+    }
+
+    const timer = setTimeout(() => {
+      handleSaveTopic(true);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [topicName, startDate, endDate, subThemes, note, hasChanges, canSave, isTeacher, isReadOnly, hasUnassignedDaysInTheme]);
 
   const handleTogglePublish = async () => {
     if (!isAllPublished) {
@@ -1765,7 +1879,8 @@ export function CurriculumThemeDetailPage() {
           {!showRightSidebar && (
             <div className="p-3 px-6 bg-card border-t border-border flex items-center justify-between shrink-0 select-none">
               <div className="text-[12px] text-muted-foreground">
-                <span>Cập nhật: {updatedAt}</span>
+                <span>Thời gian cập nhật: </span>
+                <span className="font-mono font-medium text-foreground">{formatDateTime(updatedAt)}</span>
               </div>
 
               <div className="flex items-center gap-2.5">
@@ -1790,30 +1905,6 @@ export function CurriculumThemeDetailPage() {
                     <span>Công bố bộ chủ đề</span>
                   </Button>
                 )}
-
-                <Button
-                  type="button"
-                  onClick={handleSaveTopic}
-                  disabled={!canSave}
-                  className={cn(
-                    'h-8 px-4 text-[12.5px] font-medium rounded-none shadow-none flex items-center gap-1.5 transition-colors',
-                    canSave
-                      ? 'bg-[#1447e6] hover:bg-[#1447e6]/90 text-white cursor-pointer'
-                      : 'bg-muted text-muted-foreground border border-border cursor-not-allowed opacity-60',
-                  )}
-                  title={
-                    isAllPublished
-                      ? 'Không thể lưu khi bộ chủ đề đã công bố'
-                      : hasUnassignedDaysInTheme
-                        ? `Chỉ có thể lưu khi đã phân bổ hết tất cả các ngày trong chủ đề (từ ${formatDateVn(startDate)} đến ${formatDateVn(endDate)})`
-                        : !hasChanges
-                          ? 'Chưa có thay đổi để lưu'
-                          : 'Lưu thay đổi'
-                  }
-                >
-                  <HugeiconsIcon icon={CheckmarkCircle01Icon} size={14} />
-                  <span>{t('common.saveChanges', 'Lưu thay đổi')}</span>
-                </Button>
               </div>
             </div>
           )}
@@ -2192,10 +2283,13 @@ export function CurriculumThemeDetailPage() {
                 </Popover>
               </div>
 
-              {/* Thanh thao tác: Cập nhật, Công bố & Lưu thay đổi (Nằm sát ngay dưới lịch, dính liền không hở khoảng trắng) */}
+              {/* Thanh thao tác: Thời gian cập nhật & Công bố (Tự động lưu) */}
               <div className="pt-2.5 border-t border-border/70 space-y-2 select-none">
                 <div className="flex items-center justify-between text-[12px] text-muted-foreground">
-                  <span>Cập nhật: {updatedAt}</span>
+                  <span>Thời gian cập nhật:</span>
+                  <span className="font-mono font-medium text-foreground">
+                    {formatDateTime(updatedAt)}
+                  </span>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -2204,46 +2298,22 @@ export function CurriculumThemeDetailPage() {
                       type="button"
                       variant="outline"
                       onClick={handleTogglePublish}
-                      className="flex-1 h-8 px-2 border border-border bg-card hover:bg-muted text-foreground text-[12px] font-normal rounded-none shadow-none cursor-pointer flex items-center justify-center gap-1.5 transition-colors"
+                      className="w-full h-8 px-2 border border-border bg-card hover:bg-muted text-foreground text-[12px] font-normal rounded-none shadow-none cursor-pointer flex items-center justify-center gap-1.5 transition-colors"
                     >
                       <HugeiconsIcon icon={Cancel01Icon} size={13} className="text-muted-foreground" />
-                      <span>Gỡ công bố</span>
+                      <span>Gỡ công bố bộ chủ đề</span>
                     </Button>
                   ) : (
                     <Button
                       type="button"
                       variant="outline"
                       onClick={handleTogglePublish}
-                      className="flex-1 h-8 px-2 border border-border bg-card hover:bg-muted text-foreground text-[12px] font-normal rounded-none shadow-none cursor-pointer flex items-center justify-center gap-1.5 transition-colors"
+                      className="w-full h-8 px-2 border border-border bg-card hover:bg-muted text-foreground text-[12px] font-normal rounded-none shadow-none cursor-pointer flex items-center justify-center gap-1.5 transition-colors"
                     >
                       <HugeiconsIcon icon={SentIcon} size={13} className="text-muted-foreground" />
                       <span>Công bố bộ chủ đề</span>
                     </Button>
                   )}
-
-                  <Button
-                    type="button"
-                    onClick={handleSaveTopic}
-                    disabled={!canSave}
-                    className={cn(
-                      'flex-1 h-8 px-2.5 text-[12px] font-medium rounded-none shadow-none flex items-center justify-center gap-1.5 transition-colors',
-                      canSave
-                        ? 'bg-[#1447e6] hover:bg-[#1447e6]/90 text-white cursor-pointer'
-                        : 'bg-muted text-muted-foreground border border-border cursor-not-allowed opacity-60',
-                    )}
-                    title={
-                      isAllPublished
-                        ? 'Không thể lưu khi bộ chủ đề đã công bố'
-                        : hasUnassignedDaysInTheme
-                          ? `Chỉ có thể lưu khi đã phân bổ hết tất cả các ngày trong chủ đề (từ ${formatDateVn(startDate)} đến ${formatDateVn(endDate)})`
-                          : !hasChanges
-                            ? 'Chưa có thay đổi để lưu'
-                            : 'Lưu thay đổi'
-                    }
-                  >
-                    <HugeiconsIcon icon={CheckmarkCircle01Icon} size={14} />
-                    <span>{t('common.saveChanges', 'Lưu thay đổi')}</span>
-                  </Button>
                 </div>
               </div>
             </div>

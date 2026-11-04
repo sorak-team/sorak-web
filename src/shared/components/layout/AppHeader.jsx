@@ -271,10 +271,10 @@ export function AppHeader({ sidebarCollapsed, onToggleSidebar, currentTitle }) {
             {renderClassesBreadcrumb()}
             {isTeacher ? (
               <Link
-                to={`/classes/${currentClass?.id || teacherClass?.id || currentClassId}`}
+                to={`/classes/${teacherClass?.id || teacherClass?.publicId || currentClass?.id || currentClassId}`}
                 className="text-muted-foreground hover:text-foreground font-normal transition-colors"
               >
-                {currentClass?.name || teacherClass?.name || t('classes.class', 'Lớp học')}
+                {teacherClass?.name || currentClass?.name || t('classes.class', 'Lớp học')}
               </Link>
             ) : (
               <ClassCommandMenu />

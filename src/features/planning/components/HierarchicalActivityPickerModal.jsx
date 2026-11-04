@@ -246,21 +246,43 @@ export function HierarchicalActivityPickerModal({
           if (!matchId && !matchName) {
             return false;
           }
-        } else {
-          // Heuristic kiểm tra tiêu đề nếu hoạt động cũ chưa được gán theme_id trong DB
-          const titleLower = (act.title || '').toLowerCase();
-          const isGiaDinhTheme = activeThemeName.includes('gia đình');
-          const isBanThanTheme = activeThemeName.includes('bản thân');
-          const isTruongMamNonTheme = activeThemeName.includes('trường mầm non');
+        }
 
-          const mentionsGiaDinh = titleLower.includes('gia đình') || titleLower.includes('nhà bà') || titleLower.includes('ông bà') || titleLower.includes('người thân') || titleLower.includes('ngôi nhà');
-          const mentionsBanThan = titleLower.includes('bản thân') || titleLower.includes('cơ thể') || titleLower.includes('sở thích') || titleLower.includes('thẻ tên');
-          const mentionsTruongMamNon = titleLower.includes('trường mầm non') || titleLower.includes('cô giáo') || titleLower.includes('búp bê') || titleLower.includes('góc chơi');
+        // Kiểm tra ngữ cảnh nội dung & tiêu đề để loại bỏ triệt để hoạt động sai chủ đề
+        const actText = `${act.title || ''} ${act.objective || ''} ${act.procedure || ''}`.toLowerCase();
+        const isGiaDinhTheme = activeThemeName.includes('gia đình');
+        const isBanThanTheme = activeThemeName.includes('bản thân');
+        const isTruongMamNonTheme = activeThemeName.includes('trường mầm non');
 
-          if (isBanThanTheme && mentionsGiaDinh && !mentionsBanThan) return false;
-          if (isBanThanTheme && mentionsTruongMamNon && !mentionsBanThan) return false;
-          if (isGiaDinhTheme && (mentionsBanThan || mentionsTruongMamNon) && !mentionsGiaDinh) return false;
-          if (isTruongMamNonTheme && (mentionsGiaDinh || mentionsBanThan) && !mentionsTruongMamNon) return false;
+        const banThanKeywords = [
+          'bản thân', 'bạn nhỏ', 'bạn bè', 'bạn trong', 'hình bạn', 'thẻ bạn', 'nhóm bạn',
+          'bạn trai', 'bạn gái', 'cơ thể', 'sở thích', 'thẻ tên', 'khuôn mặt', 'giới tính',
+          'tay chân', 'chiều cao', 'cân nặng', 'cảm xúc', 'giác quan', 'mắt', 'mũi', 'miệng',
+          'tai', 'răng', 'tóc', 'của bé', 'về bé', 'bé đi khéo', 'đồ dùng cá nhân', 'trang phục của bé'
+        ];
+        const giaDinhKeywords = [
+          'gia đình', 'người trong ảnh', 'ảnh gia đình', 'ảnh của gia đình', 'ông bà',
+          'bố mẹ', 'cha mẹ', 'ba mẹ', 'anh chị', 'người thân', 'ngôi nhà', 'nhà của bé',
+          'nhà bà', 'đồ dùng gia đình', 'bữa cơm gia đình', 'phòng khách', 'phòng bếp', 'con vật nuôi trong nhà'
+        ];
+        const truongMamNonKeywords = [
+          'trường mầm non', 'trường của bé', 'lớp học của bé', 'cô giáo', 'bảo mẫu', 'búp bê',
+          'góc chơi', 'đồ chơi lớp', 'sân trường', 'bác bảo vệ', 'ngày hội đến trường'
+        ];
+
+        const mentionsBanThan = banThanKeywords.some((k) => actText.includes(k));
+        const mentionsGiaDinh = giaDinhKeywords.some((k) => actText.includes(k));
+        const mentionsTruongMamNon = truongMamNonKeywords.some((k) => actText.includes(k));
+
+        if (isGiaDinhTheme) {
+          if (mentionsBanThan && !mentionsGiaDinh) return false;
+          if (mentionsTruongMamNon && !mentionsGiaDinh) return false;
+        } else if (isBanThanTheme) {
+          if (mentionsGiaDinh && !mentionsBanThan) return false;
+          if (mentionsTruongMamNon && !mentionsBanThan) return false;
+        } else if (isTruongMamNonTheme) {
+          if (mentionsGiaDinh && !mentionsTruongMamNon) return false;
+          if (mentionsBanThan && !mentionsTruongMamNon) return false;
         }
       }
 

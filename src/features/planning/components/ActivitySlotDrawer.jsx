@@ -22,7 +22,18 @@ const ROUTINE_SLOT_OPTIONS = [
   { value: 'RETURN_CHILD', key: 'slotReturnChild', label: 'Trả trẻ' },
 ];
 
-export function ActivitySlotDrawer({ isOpen, onClose, initialSlot, allocatedThemes = [], onSave, onDelete, readOnly = false, lockRoutineSlot = false }) {
+export function ActivitySlotDrawer({
+  isOpen,
+  onClose,
+  initialSlot,
+  allocatedThemes = [],
+  allThemes = [],
+  contentAllocatedThemes = [],
+  onSave,
+  onDelete,
+  readOnly = false,
+  lockRoutineSlot = false,
+}) {
   const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const [routineSlot, setRoutineSlot] = useState('DIRECTED_STUDY');
@@ -33,12 +44,37 @@ export function ActivitySlotDrawer({ isOpen, onClose, initialSlot, allocatedThem
   const [evaluationCriteria, setEvaluationCriteria] = useState('');
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
 
+  // Combine allocatedThemes and allThemes without duplicates
+  const availableThemesList = React.useMemo(() => {
+    const list = [...allThemes, ...allocatedThemes];
+    const map = new Map();
+    list.forEach((th) => {
+      const idStr = String(th.id || th.themeId || th._theme_id || '');
+      if (idStr && !map.has(idStr)) {
+        map.set(idStr, th);
+      }
+    });
+    return Array.from(map.values());
+  }, [allThemes, allocatedThemes]);
+
+  const activeContentThemes = React.useMemo(() => {
+    return initialSlot?.contentAllocatedThemes || contentAllocatedThemes || [];
+  }, [initialSlot?.contentAllocatedThemes, contentAllocatedThemes]);
+
   useEffect(() => {
     if (initialSlot) {
       setTitle(initialSlot.title || '');
       setRoutineSlot(initialSlot.routineSlot || initialSlot.routine_slot || 'DIRECTED_STUDY');
       const curThemeId = initialSlot.themeId || initialSlot.theme_id || '';
-      setSelectedThemeId(curThemeId || (allocatedThemes.length === 1 ? (allocatedThemes[0].id || allocatedThemes[0].themeId) : ''));
+      const fallbackThemeId =
+        activeContentThemes.length > 0
+          ? (activeContentThemes[0].id || activeContentThemes[0].themeId)
+          : allocatedThemes.length === 1
+          ? (allocatedThemes[0].id || allocatedThemes[0].themeId)
+          : availableThemesList.length === 1
+          ? (availableThemesList[0].id || availableThemesList[0].themeId)
+          : '';
+      setSelectedThemeId(curThemeId || fallbackThemeId);
       setObjective(initialSlot.objective || '');
       setPreparation(initialSlot.preparation || '');
       setProcedure(initialSlot.procedure || '');
@@ -48,13 +84,19 @@ export function ActivitySlotDrawer({ isOpen, onClose, initialSlot, allocatedThem
     } else {
       setTitle('');
       setRoutineSlot('DIRECTED_STUDY');
-      setSelectedThemeId(allocatedThemes.length === 1 ? (allocatedThemes[0].id || allocatedThemes[0].themeId) : '');
+      const fallbackThemeId =
+        activeContentThemes.length > 0
+          ? (activeContentThemes[0].id || activeContentThemes[0].themeId)
+          : allocatedThemes.length === 1
+          ? (allocatedThemes[0].id || allocatedThemes[0].themeId)
+          : '';
+      setSelectedThemeId(fallbackThemeId);
       setObjective('');
       setPreparation('');
       setProcedure('');
       setEvaluationCriteria('');
     }
-  }, [initialSlot, isOpen, allocatedThemes]);
+  }, [initialSlot, isOpen, allocatedThemes, availableThemesList, activeContentThemes]);
 
   // Kiểm tra có thay đổi dữ liệu so với ban đầu hay không
   const isEditing = Boolean(initialSlot && (initialSlot.id || initialSlot.title));
@@ -119,12 +161,12 @@ export function ActivitySlotDrawer({ isOpen, onClose, initialSlot, allocatedThem
       return;
     }
 
-    if (allocatedThemes.length > 0 && !selectedThemeId) {
+    if (availableThemesList.length > 0 && !selectedThemeId) {
       toast.error('Vui lòng chọn chủ đề giáo dục cho hoạt động');
       return;
     }
 
-    const matchedTheme = allocatedThemes.find((th) => String(th.id || th.themeId) === String(selectedThemeId));
+    const matchedTheme = availableThemesList.find((th) => String(th.id || th.themeId || th._theme_id) === String(selectedThemeId));
 
     const payload = {
       ...(initialSlot || {}),
@@ -274,18 +316,44 @@ export function ActivitySlotDrawer({ isOpen, onClose, initialSlot, allocatedThem
             </select>
           </div>
 
-          {/* 3. Chủ đề giáo dục (Bắt buộc theo Comment 1) */}
+          {/* 3. Chủ đề giáo dục */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label className="text-[12.5px] font-medium text-foreground">
                 {t('planning.themeLabel', 'Chủ đề giáo dục')} {!readOnly && <span className="text-destructive">*</span>}
               </label>
-              {allocatedThemes.length > 0 && (
+              {activeContentThemes.length > 0 ? (
+                <span className="text-[11px] text-primary font-medium">
+                  ✓ Khớp Kế hoạch năm ({activeContentThemes.map((th) => th.code ? `Chủ đề ${th.code}` : th.name).join(', ')})
+                </span>
+              ) : (
                 <span className="text-[11px] text-muted-foreground italic">
-                  {allocatedThemes.length} chủ đề phân bổ cho mục tiêu
+                  Chưa phân bổ ở Kế hoạch năm
                 </span>
               )}
             </div>
+
+            {/* Banner gợi ý nghiệp vụ */}
+            {activeContentThemes.length > 0 ? (
+              <div className="p-2.5 bg-muted/30 border border-border text-[12px] text-foreground flex items-start gap-1.5 leading-relaxed">
+                <span className="font-semibold text-foreground shrink-0">Kế hoạch năm:</span>
+                <span>
+                  Nội dung này được phân bổ cho{' '}
+                  {activeContentThemes.map((th, i) => (
+                    <React.Fragment key={th.id || th.themeId || i}>
+                      {i > 0 && ', '}
+                      <strong>{th.code ? `Chủ đề ${th.code}: ` : ''}{th.name || th.themeName}</strong>
+                      {th.dateRange && <span className="text-muted-foreground font-normal"> ({th.dateRange})</span>}
+                    </React.Fragment>
+                  ))}
+                </span>
+              </div>
+            ) : (
+              <div className="p-2.5 bg-muted/15 border border-dashed border-border text-[12px] text-muted-foreground leading-relaxed">
+                <span>○ Nội dung giáo dục này chưa được xếp vào chủ đề nào ở Kế hoạch năm. Vui lòng chọn một chủ đề để tổ chức hoạt động.</span>
+              </div>
+            )}
+
             <select
               value={selectedThemeId}
               disabled={readOnly}
@@ -297,11 +365,16 @@ export function ActivitySlotDrawer({ isOpen, onClose, initialSlot, allocatedThem
               )}
             >
               <option value="">-- Chọn chủ đề giáo dục --</option>
-              {allocatedThemes.map((th) => (
-                <option key={th.id || th.themeId} value={th.id || th.themeId} className="text-foreground">
-                  {th.name || th.themeName}
-                </option>
-              ))}
+              {availableThemesList.map((th) => {
+                const isCntAlloc = activeContentThemes.some(
+                  (cth) => String(cth.id || cth.themeId || cth._theme_id) === String(th.id || th.themeId || th._theme_id)
+                );
+                return (
+                  <option key={th.id || th.themeId} value={th.id || th.themeId} className="text-foreground">
+                    {th.code ? `Chủ đề ${th.code}: ` : ''}{th.name || th.themeName} {isCntAlloc ? '✓ (Theo KH năm)' : ''}
+                  </option>
+                );
+              })}
             </select>
           </div>
 

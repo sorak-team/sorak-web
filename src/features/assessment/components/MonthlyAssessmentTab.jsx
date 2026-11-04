@@ -438,7 +438,8 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
           (newRecord.week4Rose ? 1 : 0) +
           (newRecord.week5Rose ? 1 : 0);
 
-        const lotusTarget = monthWeeks.length >= 5 ? 4 : monthWeeks.length;
+        // Quy tắc: Đạt ít nhất 4 hoa hồng trong tháng thì được 1 hoa sen (dù tháng có 4 hay 5 tuần)
+        const lotusTarget = 4;
 
         return {
           ...newRecord,
@@ -488,7 +489,8 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
           (updatedRecord.week4Rose ? 1 : 0) +
           (updatedRecord.week5Rose ? 1 : 0);
 
-        const lotusTarget = monthWeeks.length >= 5 ? 4 : monthWeeks.length;
+        // Quy tắc: Đạt ít nhất 4 hoa hồng trong tháng thì được 1 hoa sen (dù tháng có 4 hay 5 tuần)
+        const lotusTarget = 4;
 
         return {
           ...updatedRecord,

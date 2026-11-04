@@ -54,6 +54,77 @@ const STANDARD_GOAL_FALLBACKS = {
   MT11: 'Trẻ thích nghe hát, vận động theo nhạc và tham gia tạo hình đơn giản.',
 };
 
+// Format timestamp/Date to HH:mm - DD/MM/YYYY chuẩn UX
+const formatDateTime = (val) => {
+  if (!val) {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = now.getFullYear();
+    return `${hours}:${minutes} - ${day}/${month}/${year}`;
+  }
+
+  // 1. Đã đúng định dạng chuẩn "HH:mm - DD/MM/YYYY"
+  if (typeof val === 'string' && /^\d{2}:\d{2}\s*-\s*\d{2}\/\d{2}\/\d{4}$/.test(val)) {
+    return val;
+  }
+
+  // 2. Chuỗi ngày định dạng Việt Nam "DD/MM/YYYY" (ví dụ: "13/10/2026")
+  if (typeof val === 'string') {
+    const vnMatch = val.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
+    if (vnMatch) {
+      const now = new Date();
+      const day = vnMatch[1].padStart(2, '0');
+      const month = vnMatch[2].padStart(2, '0');
+      const year = vnMatch[3];
+      const hours = vnMatch[4] ? vnMatch[4].padStart(2, '0') : String(now.getHours()).padStart(2, '0');
+      const minutes = vnMatch[5] ? vnMatch[5].padStart(2, '0') : String(now.getMinutes()).padStart(2, '0');
+      return `${hours}:${minutes} - ${day}/${month}/${year}`;
+    }
+  }
+
+  // 3. Đối tượng Date (kiểm tra tính hợp lệ tránh Invalid Date / NaN)
+  if (val instanceof Date) {
+    if (!isNaN(val.getTime())) {
+      const hours = String(val.getHours()).padStart(2, '0');
+      const minutes = String(val.getMinutes()).padStart(2, '0');
+      const day = String(val.getDate()).padStart(2, '0');
+      const month = String(val.getMonth() + 1).padStart(2, '0');
+      const year = val.getFullYear();
+      return `${hours}:${minutes} - ${day}/${month}/${year}`;
+    }
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = now.getFullYear();
+    return `${hours}:${minutes} - ${day}/${month}/${year}`;
+  }
+
+  // 4. Thử parse chuỗi chuẩn ISO (YYYY-MM-DD...)
+  const d = new Date(val);
+  if (!isNaN(d.getTime())) {
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${hours}:${minutes} - ${day}/${month}/${year}`;
+  }
+
+  // Fallback về thời gian hiện tại
+  const now = new Date();
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const year = now.getFullYear();
+  return `${hours}:${minutes} - ${day}/${month}/${year}`;
+};
+
 const normalizeGoalCode = (code) => {
   if (!code) return '';
   const raw = String(code).toUpperCase().trim();
@@ -170,7 +241,7 @@ export function CurriculumGoalDetailPage() {
   const [bankInfo, setBankInfo] = useState(null);
   const [goalTree, setGoalTree] = useState([]);
   const [status, setStatus] = useState('DRAFT');
-  const [updatedAt, setUpdatedAt] = useState('');
+  const [updatedAt, setUpdatedAt] = useState(() => new Date());
 
   // Search & Filter state (No age filter needed)
   const [searchQuery, setSearchQuery] = useState('');
@@ -204,7 +275,7 @@ export function CurriculumGoalDetailPage() {
         const localStatus = localStorage.getItem(`sorak_goal_bank_${yearId}_${ageGroup}_status`);
         const effectiveStatus = localStatus || data.info?.status || 'DRAFT';
         setStatus(effectiveStatus);
-        setUpdatedAt(data.info?.updatedAt || new Date().toLocaleDateString('vi-VN'));
+        setUpdatedAt(data.info?.updatedAt || new Date());
         setGoalTree(reindexGoalTree(data.tree || []));
       } catch (err) {
         console.warn('Failed to load goal bank details:', err);
@@ -222,7 +293,7 @@ export function CurriculumGoalDetailPage() {
   const handleTogglePublish = async () => {
     const nextStatus = isPublished ? 'DRAFT' : 'PUBLISHED';
     setStatus(nextStatus);
-    const nextDate = new Date().toLocaleDateString('vi-VN');
+    const nextDate = new Date();
     setUpdatedAt(nextDate);
 
     try {
@@ -337,6 +408,7 @@ export function CurriculumGoalDetailPage() {
 
       return reindexGoalTree(updatedTree);
     });
+    setUpdatedAt(new Date());
     toast.success('Đã cập nhật thứ tự mục tiêu');
   };
 
@@ -383,6 +455,7 @@ export function CurriculumGoalDetailPage() {
       });
       return reindexGoalTree(updated);
     });
+    setUpdatedAt(new Date());
     toast.success('Đã xóa mục tiêu khỏi ngân hàng');
   };
 
@@ -473,6 +546,7 @@ export function CurriculumGoalDetailPage() {
 
         return reindexGoalTree(updatedTree);
       });
+      setUpdatedAt(new Date());
 
       setIsItemDrawerOpen(false);
       setEditingGoal(null);
@@ -529,7 +603,7 @@ export function CurriculumGoalDetailPage() {
 
         return reindexGoalTree(updated);
       });
-      setUpdatedAt(new Date().toLocaleDateString('vi-VN'));
+      setUpdatedAt(new Date());
       toast.success('Đã thêm mục tiêu mới vào ngân hàng');
     }
   };
@@ -542,8 +616,8 @@ export function CurriculumGoalDetailPage() {
     >
       {/* Page Title Header & Primary Actions */}
       <div className="px-6 py-5 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/60">
-        <div className="flex flex-col gap-0.5">
-          <div className="flex items-center gap-2.5">
+        <div className="flex flex-col gap-1">
+          <div className="flex flex-wrap items-center gap-2.5">
             <h1 className="text-[24px] font-semibold text-foreground tracking-tight">
               {t('curriculum.tabGoals', 'Ngân hàng mục tiêu')}
             </h1>
@@ -557,13 +631,18 @@ export function CurriculumGoalDetailPage() {
             >
               {isPublished ? t('curriculum.published', 'Đã công bố') : t('curriculum.draft', 'Bản nháp')}
             </span>
+            <span className="text-muted-foreground/30 text-xs hidden sm:inline">•</span>
+            <span className="text-[12.5px] text-muted-foreground">
+              <span>Thời gian cập nhật: </span>
+              <span className="font-mono font-medium text-foreground">{formatDateTime(updatedAt)}</span>
+            </span>
           </div>
-          <p className="text-[13px] text-muted-foreground font-normal mt-0.5">
+          <p className="text-[13px] text-muted-foreground font-normal">
             Quản lý và thiết lập hệ thống mục tiêu giáo dục theo các lĩnh vực phát triển
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
           {/* Button Import */}
           <Button
             type="button"
@@ -604,6 +683,28 @@ export function CurriculumGoalDetailPage() {
             <HugeiconsIcon icon={PlusSignIcon} size={14} />
             <span>{t('curriculum.addGoal', 'Thêm mục tiêu')}</span>
           </Button>
+
+          {/* Button Công bố / Gỡ công bố ngân hàng */}
+          {isPublished ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleTogglePublish}
+              className="h-8 px-3.5 border border-border bg-card hover:bg-muted text-foreground text-[13px] font-normal rounded-none shadow-none cursor-pointer flex items-center gap-1.5 transition-colors"
+            >
+              <HugeiconsIcon icon={Cancel01Icon} size={14} className="text-muted-foreground" />
+              <span>Gỡ công bố</span>
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              onClick={handleTogglePublish}
+              className="h-8 px-3.5 bg-[#1447e6] hover:bg-[#1447e6]/90 text-white text-[13px] font-medium rounded-none shadow-none cursor-pointer flex items-center gap-1.5 transition-colors"
+            >
+              <HugeiconsIcon icon={SentIcon} size={14} />
+              <span>Công bố ngân hàng</span>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -665,11 +766,18 @@ export function CurriculumGoalDetailPage() {
       <div className="px-6 py-4">
         <div className="border border-border bg-card rounded-none overflow-hidden shadow-2xs">
           {/* Table Header Bar */}
-          <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-muted/40 text-[13px] font-medium text-foreground">
-            <span>{t('curriculum.goalStructure', 'Cấu trúc mục tiêu')}</span>
-            <span className="text-muted-foreground text-[12px]">
-              {totalGoalsCount} {t('curriculum.tabGoals', 'mục tiêu')}
-            </span>
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-muted/40 text-[13px] font-medium text-foreground select-none">
+            <div className="flex items-center gap-3">
+              <span>{t('curriculum.goalStructure', 'Cấu trúc mục tiêu')}</span>
+              <span className="text-muted-foreground/40">•</span>
+              <span className="text-muted-foreground text-[12px] font-normal">
+                {totalGoalsCount} {t('curriculum.tabGoals', 'mục tiêu')}
+              </span>
+            </div>
+            <div className="text-[12px] text-muted-foreground font-normal">
+              <span>Thời gian cập nhật: </span>
+              <span className="font-mono font-medium text-foreground">{formatDateTime(updatedAt)}</span>
+            </div>
           </div>
 
           {/* Tree Rows */}
@@ -863,40 +971,6 @@ export function CurriculumGoalDetailPage() {
                 );
               })
             )}
-          </div>
-
-          {/* Table Footer: Tích hợp liền khối với bảng mục tiêu */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-2.5 border-t border-border bg-muted/20">
-            {/* Left: Ngày cập nhật */}
-            <div className="flex items-center gap-2">
-              <span className="text-[12px] text-muted-foreground">
-                {t('curriculum.updated', 'Cập nhật')}: {updatedAt || '13/10/2026'}
-              </span>
-            </div>
-
-            {/* Right: Nút Công bố / Gỡ công bố ngân hàng */}
-            <div className="flex items-center gap-2 shrink-0">
-              {isPublished ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleTogglePublish}
-                  className="h-7.5 px-3 border border-border bg-background hover:bg-muted text-foreground text-[12.5px] font-medium rounded-none shadow-none cursor-pointer flex items-center gap-1.5 transition-colors"
-                >
-                  <HugeiconsIcon icon={Cancel01Icon} size={13} className="text-muted-foreground" />
-                  <span>Gỡ công bố</span>
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  onClick={handleTogglePublish}
-                  className="h-7.5 px-3 bg-[#1447e6] hover:bg-[#1447e6]/90 text-white text-[12.5px] font-medium rounded-none shadow-none cursor-pointer flex items-center gap-1.5 transition-colors"
-                >
-                  <HugeiconsIcon icon={SentIcon} size={13} />
-                  <span>Công bố ngân hàng</span>
-                </Button>
-              )}
-            </div>
           </div>
         </div>
       </div>

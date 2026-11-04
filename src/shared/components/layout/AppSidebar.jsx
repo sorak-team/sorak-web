@@ -86,7 +86,7 @@ export function AppSidebar({
     ? classes.find((c) => c.id === specificClassId || c.publicId === specificClassId)
     : null;
   const currentClass =
-    matchedClass ||
+    (isTeacher && teacherClass ? teacherClass : matchedClass) ||
     (isTeacher ? teacherClass : null) ||
     (isSpecificClass
       ? {
