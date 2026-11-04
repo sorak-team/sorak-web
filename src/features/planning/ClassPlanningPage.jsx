@@ -37,7 +37,9 @@ export function ClassPlanningPage() {
     <div
       className={cn(
         'w-full flex-1 flex flex-col bg-background text-foreground select-none',
-        activeTab !== 'timetable' && activeTab !== 'allocation' && 'pb-16'
+        activeTab === 'allocation' || activeTab === 'timetable'
+          ? 'h-full overflow-hidden'
+          : 'overflow-y-auto p-6 lg:p-8 pb-16'
       )}
       data-node-id="4965:16014"
       data-name="Class Educational Planning Page"

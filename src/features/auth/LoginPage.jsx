@@ -15,7 +15,7 @@ import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher';
 import { loginSchema } from './auth-schema';
 import { useAuthStore, isBghRole, isParentRole } from './auth.store';
 import { useAcademicYearStore } from '@/features/academic-years';
-import { useClassesStore } from '@/features/classes';
+import { useClassesStore, findTeacherClassForYear } from '@/features/classes';
 import { authApi } from './auth.api';
 import { AuthBrandHeader } from './AuthBrandHeader';
 import { InputOTP } from '@/components/ui/input-otp';
@@ -224,7 +224,7 @@ export default function LoginPage() {
         }
         try {
           localStorage.removeItem('sorak_attached_class_id');
-          useClassesStore.getState().detachClass();
+          useClassesStore.getState().resetClassesStore();
         } catch {}
       }
 
@@ -233,6 +233,17 @@ export default function LoginPage() {
         destination = location.state?.from?.pathname?.startsWith('/parent')
           ? location.state.from.pathname
           : '/parent';
+      } else if (user?.role === 'TEACHER_GV' || user?.role === 'TEACHER') {
+        try {
+          const activeYear = useAcademicYearStore.getState().selectedYearId;
+          const freshClasses = await useClassesStore.getState().fetchClasses(activeYear, true);
+          const myClass = findTeacherClassForYear(user, freshClasses, activeYear);
+          if (myClass) {
+            destination = `/classes/${myClass.id || myClass.publicId}`;
+          }
+        } catch (e) {
+          console.warn('Error finding teacher class on login:', e);
+        }
       } else {
         const fromPath = location.state?.from?.pathname;
         if (
@@ -354,7 +365,7 @@ export default function LoginPage() {
           }
           try {
             localStorage.removeItem('sorak_attached_class_id');
-            useClassesStore.getState().detachClass();
+            useClassesStore.getState().resetClassesStore();
           } catch {}
         }
 
@@ -363,6 +374,17 @@ export default function LoginPage() {
           destination = location.state?.from?.pathname?.startsWith('/parent')
             ? location.state.from.pathname
             : '/parent';
+        } else if (user?.role === 'TEACHER_GV' || user?.role === 'TEACHER') {
+          try {
+            const activeYear = useAcademicYearStore.getState().selectedYearId;
+            const freshClasses = await useClassesStore.getState().fetchClasses(activeYear, true);
+            const myClass = findTeacherClassForYear(user, freshClasses, activeYear);
+            if (myClass) {
+              destination = `/classes/${myClass.id || myClass.publicId}`;
+            }
+          } catch (e) {
+            console.warn('Error finding teacher class on 2FA login:', e);
+          }
         } else {
           const fromPath = location.state?.from?.pathname;
           if (

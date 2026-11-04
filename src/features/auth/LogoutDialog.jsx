@@ -29,7 +29,7 @@ export function LogoutDialog({ open, onOpenChange }) {
       logout();
       try {
         localStorage.removeItem('sorak_attached_class_id');
-        useClassesStore.getState().detachClass();
+        useClassesStore.getState().resetClassesStore();
       } catch {}
       document.documentElement.classList.remove('dark');
       onOpenChange(false);

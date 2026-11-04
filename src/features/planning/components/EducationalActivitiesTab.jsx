@@ -97,6 +97,7 @@ export function EducationalActivitiesTab({ classId = '1' }) {
   const [drawerInitialSlot, setDrawerInitialSlot] = useState(null);
   const [activeGoalContext, setActiveGoalContext] = useState(null);
   const [activeContentContext, setActiveContentContext] = useState(null);
+  const [lastUpdatedTime, setLastUpdatedTime] = useState(null);
 
   // Load activities data
   useEffect(() => {
@@ -271,12 +272,17 @@ export function EducationalActivitiesTab({ classId = '1' }) {
   const handleCreateActivityForContent = (goal, content) => {
     setActiveGoalContext(goal);
     setActiveContentContext(content);
-    const allocThemes = goal?.allocatedThemes || [];
+    const cntThemes = content?.allocatedThemes || [];
+    const goalThemes = goal?.allocatedThemes || [];
     let defaultThemeId = '';
     let defaultThemeName = '';
-    if (selectedThemeFilter && selectedThemeFilter !== 'ALL') {
+
+    if (cntThemes.length > 0) {
+      defaultThemeId = cntThemes[0].id || cntThemes[0].themeId;
+      defaultThemeName = cntThemes[0].name || cntThemes[0].themeName || '';
+    } else if (selectedThemeFilter && selectedThemeFilter !== 'ALL' && selectedThemeFilter !== 'UNALLOCATED') {
       const filterStr = String(selectedThemeFilter).trim();
-      const matched = allocThemes.find(
+      const matched = goalThemes.find(
         (th) =>
           String(th.id || '').trim() === filterStr ||
           String(th.themeId || '').trim() === filterStr ||
@@ -286,13 +292,10 @@ export function EducationalActivitiesTab({ classId = '1' }) {
       if (matched) {
         defaultThemeId = matched.id || matched.themeId;
         defaultThemeName = matched.name || matched.themeName || '';
-      } else if (allocThemes.length === 1) {
-        defaultThemeId = allocThemes[0].id || allocThemes[0].themeId;
-        defaultThemeName = allocThemes[0].name || allocThemes[0].themeName || '';
       }
-    } else if (allocThemes.length === 1) {
-      defaultThemeId = allocThemes[0].id || allocThemes[0].themeId;
-      defaultThemeName = allocThemes[0].name || allocThemes[0].themeName || '';
+    } else if (goalThemes.length === 1) {
+      defaultThemeId = goalThemes[0].id || goalThemes[0].themeId;
+      defaultThemeName = goalThemes[0].name || goalThemes[0].themeName || '';
     }
 
     setDrawerInitialSlot({
@@ -306,6 +309,8 @@ export function EducationalActivitiesTab({ classId = '1' }) {
       preparation: '',
       procedure: '',
       evaluation_criteria: '',
+      contentTitle: content?.title,
+      contentAllocatedThemes: cntThemes,
     });
     setIsDrawerOpen(true);
   };
@@ -330,6 +335,8 @@ export function EducationalActivitiesTab({ classId = '1' }) {
       updaterName: activity.updaterName,
       createdAt: activity.createdAt,
       updatedAt: activity.updatedAt,
+      contentTitle: content?.title,
+      contentAllocatedThemes: content?.allocatedThemes || [],
     });
     setIsDrawerOpen(true);
   };
@@ -364,6 +371,7 @@ export function EducationalActivitiesTab({ classId = '1' }) {
         }));
         return { ...prev, goals: newGoals };
       });
+      setLastUpdatedTime(new Date());
       setIsDrawerOpen(false);
       toast.success('Đã xóa hoạt động giáo dục thành công');
       // Background re-fetch to keep 100% in sync with database
@@ -431,6 +439,7 @@ export function EducationalActivitiesTab({ classId = '1' }) {
         return { ...prev, goals: newGoals };
       });
 
+      setLastUpdatedTime(new Date());
       setIsDrawerOpen(false);
       const savedThemeId = payload.themeId || payload.theme_id;
       const isFilteredOtherTheme =
@@ -483,6 +492,34 @@ export function EducationalActivitiesTab({ classId = '1' }) {
     };
 
     const domainDisplay = getDomainShortLabel(activeGoal.domain, activeGoal.domainLabel);
+
+    // Thời gian cập nhật gần nhất của mục tiêu này
+    let latestActivityTimestamp = null;
+    (activeGoal.contents || []).forEach((c) => {
+      (c.activities || []).forEach((a) => {
+        const rawTime = a.updatedAt || a.createdAt || a.updated_at || a.created_at;
+        if (rawTime) {
+          const t = new Date(rawTime);
+          if (!isNaN(t.getTime()) && (!latestActivityTimestamp || t > latestActivityTimestamp)) {
+            latestActivityTimestamp = t;
+          }
+        }
+      });
+    });
+
+    const effectiveUpdatedTime = lastUpdatedTime || latestActivityTimestamp;
+
+    const formatDateTime = (date) => {
+      if (!date) return null;
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return null;
+      const hours = String(d.getHours()).padStart(2, '0');
+      const minutes = String(d.getMinutes()).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${hours}:${minutes} - ${day}/${month}/${year}`;
+    };
 
     return (
       <div className="w-full flex-1 flex flex-col bg-background text-foreground select-none">
@@ -565,8 +602,8 @@ export function EducationalActivitiesTab({ classId = '1' }) {
               </p>
             </div>
 
-            {/* 2-column grid: Lĩnh vực phát triển & Chỉ số Bộ Giáo dục */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* 3-column grid: Lĩnh vực phát triển, Chỉ số Bộ Giáo dục, Chủ đề áp dụng (Kế hoạch năm) */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="p-3 bg-muted/20 border border-border/70 flex flex-col gap-1">
                 <span className="text-[11.5px] font-medium text-muted-foreground uppercase tracking-wider">
                   {t('planning.devDomainLabel', 'Lĩnh vực phát triển')}
@@ -580,14 +617,38 @@ export function EducationalActivitiesTab({ classId = '1' }) {
                 <span className="text-[11.5px] font-medium text-muted-foreground uppercase tracking-wider">
                   {t('planning.moetIndicatorLabel', 'Chỉ số Bộ Giáo dục')}
                 </span>
-                <div>
+                <div className="text-[13px]">
                   {activeGoal.indicatorCode ? (
-                    <span className="px-2 py-0.5 text-[12px] font-mono font-semibold bg-muted text-foreground border border-border">
+                    <span className="font-mono font-medium text-foreground">
                       {activeGoal.indicatorCode}
                     </span>
                   ) : (
-                    <span className="text-[13px] text-muted-foreground italic">
+                    <span className="text-muted-foreground italic">
                       {t('planning.noIndicator', 'Không có chỉ số')}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-3 bg-muted/20 border border-border/70 flex flex-col gap-1">
+                <span className="text-[11.5px] font-medium text-muted-foreground uppercase tracking-wider">
+                  Chủ đề áp dụng (Kế hoạch năm)
+                </span>
+                <div className="text-[13px] text-foreground leading-snug">
+                  {activeGoal.allocatedThemes && activeGoal.allocatedThemes.length > 0 ? (
+                    <span>
+                      {activeGoal.allocatedThemes.map((th, i) => (
+                        <span key={th.id || th.themeId || i}>
+                          {i > 0 && <span className="text-muted-foreground mx-1.5">•</span>}
+                          <span className="font-medium">
+                            {th.code ? `Chủ đề ${th.code}: ` : ''}{th.name || th.themeName}
+                          </span>
+                        </span>
+                      ))}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground italic">
+                      Chưa phân bổ vào chủ đề nào
                     </span>
                   )}
                 </div>
@@ -608,72 +669,139 @@ export function EducationalActivitiesTab({ classId = '1' }) {
               </div>
 
               {/* Theme filter for activities under this goal */}
-              {activeGoal.allocatedThemes?.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <span className="text-[12px] font-medium text-muted-foreground">Lọc chủ đề:</span>
-                  <select
-                    value={selectedThemeFilter}
-                    onChange={(e) => setSelectedThemeFilter(e.target.value)}
-                    className="h-8 px-2.5 bg-background border border-border text-[12.5px] text-foreground rounded-none outline-none focus:border-primary cursor-pointer"
-                  >
-                    <option value="ALL">Tất cả chủ đề ({activeGoal.allocatedThemes.length})</option>
-                    {activeGoal.allocatedThemes.map((th) => (
-                      <option key={th.id || th.themeId} value={th.id || th.themeId}>
-                        {th.name || th.themeName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
+              <div className="flex items-center gap-2">
+                <span className="text-[12px] font-medium text-muted-foreground">Lọc chủ đề:</span>
+                <select
+                  value={selectedThemeFilter}
+                  onChange={(e) => setSelectedThemeFilter(e.target.value)}
+                  className="h-8 px-2.5 bg-background border border-border text-[12.5px] text-foreground rounded-none outline-none focus:border-primary cursor-pointer"
+                >
+                  <option value="ALL">Tất cả nội dung ({activeGoal.contents?.length || 0})</option>
+                  {activeGoal.allocatedThemes?.map((th) => (
+                    <option key={th.id || th.themeId} value={th.id || th.themeId}>
+                      {th.code ? `Chủ đề ${th.code}: ` : ''}{th.name || th.themeName}
+                    </option>
+                  ))}
+                  <option value="UNALLOCATED">Chưa phân bổ chủ đề</option>
+                </select>
+              </div>
             </div>
 
             {/* Sub-items List */}
             <div className="space-y-3">
-              {(!activeGoal.contents || activeGoal.contents.length === 0) ? (
-                <div className="py-8 text-center text-[13px] text-muted-foreground">
-                  Chưa có nội dung giáo dục
-                </div>
-              ) : (
-                activeGoal.contents.map((content, idx) => {
-                const allActivities = content.activities || [];
-                const activities = selectedThemeFilter === 'ALL'
-                  ? allActivities
-                  : allActivities.filter((act) => {
-                      const actThId = String(act.themeId || act.theme_id || '').trim();
-                      const selThId = String(selectedThemeFilter).trim();
-                      const matchedTh = activeGoal.allocatedThemes?.find((th) => String(th.id || th.themeId) === selThId);
-                      const selThName = matchedTh?.name?.toLowerCase();
-                      const actThName = act.themeName?.toLowerCase();
-                      return actThId === selThId || (act._theme_id && String(act._theme_id) === selThId) || (actThName && selThName && actThName === selThName);
-                    });
+              {(() => {
+                const contentsList = activeGoal.contents || [];
+                const displayedContents = contentsList.filter((content) => {
+                  if (!selectedThemeFilter || selectedThemeFilter === 'ALL') return true;
+                  if (selectedThemeFilter === 'UNALLOCATED') {
+                    return !content.allocatedThemes || content.allocatedThemes.length === 0;
+                  }
+                  const selId = String(selectedThemeFilter).trim();
+                  const matchedInTheme = (content.allocatedThemes || []).some(
+                    (th) =>
+                      String(th.id || '').trim() === selId ||
+                      String(th.themeId || '').trim() === selId ||
+                      String(th._theme_id || '').trim() === selId ||
+                      String(th.code || '').trim() === selId
+                  );
+                  const hasActivityInTheme = (content.activities || []).some(
+                    (act) =>
+                      String(act.themeId || act.theme_id || act._theme_id || '').trim() === selId
+                  );
+                  return matchedInTheme || hasActivityInTheme;
+                });
 
-                return (
-                  <div
-                    key={content.id}
-                    className="bg-card border border-border rounded-none shadow-2xs overflow-hidden transition-all group"
-                  >
-                    {/* Hàng nội dung giáo dục */}
-                    <div className="p-3.5 bg-card flex items-center justify-between gap-3 border-b border-border/60">
-                      <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <span className="size-7 flex items-center justify-center text-[12px] font-mono font-medium text-muted-foreground bg-muted border border-border shrink-0">
-                          {String(idx + 1).padStart(2, '0')}
-                        </span>
-                        <span className="text-[13.5px] font-medium text-foreground leading-snug">
-                          {content.title}
-                        </span>
-                      </div>
-
-                      {!isBgh && (
-                        <Button
-                          type="button"
-                          onClick={() => handleCreateActivityForContent(activeGoal, content)}
-                          className="h-8 px-3.5 bg-[#1447e6] hover:bg-[#1447e6]/90 text-white text-[12.5px] font-medium rounded-none flex items-center gap-1.5 shadow-none cursor-pointer shrink-0"
-                        >
-                          <HugeiconsIcon icon={PlusSignIcon} size={14} />
-                          <span>{t('planning.addActivity', 'Thêm hoạt động')}</span>
-                        </Button>
-                      )}
+                if (contentsList.length === 0) {
+                  return (
+                    <div className="py-8 text-center text-[13px] text-muted-foreground">
+                      Chưa có nội dung giáo dục
                     </div>
+                  );
+                }
+
+                if (displayedContents.length === 0) {
+                  return (
+                    <div className="py-8 text-center text-[13px] text-muted-foreground bg-muted/20 border border-dashed border-border p-4">
+                      <p>Không có nội dung giáo dục nào thuộc bộ lọc chủ đề đã chọn.</p>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedThemeFilter('ALL')}
+                        className="mt-2 text-xs text-primary hover:underline cursor-pointer font-medium"
+                      >
+                        Xem tất cả ({contentsList.length}) nội dung
+                      </button>
+                    </div>
+                  );
+                }
+
+                return displayedContents.map((content, idx) => {
+                  const allActivities = content.activities || [];
+                  const activities = selectedThemeFilter === 'ALL' || selectedThemeFilter === 'UNALLOCATED'
+                    ? allActivities
+                    : allActivities.filter((act) => {
+                        const actThId = String(act.themeId || act.theme_id || '').trim();
+                        const selThId = String(selectedThemeFilter).trim();
+                        const matchedTh = activeGoal.allocatedThemes?.find((th) => String(th.id || th.themeId) === selThId);
+                        const selThName = matchedTh?.name?.toLowerCase();
+                        const actThName = act.themeName?.toLowerCase();
+                        return actThId === selThId || (act._theme_id && String(act._theme_id) === selThId) || (actThName && selThName && actThName === selThName);
+                      });
+
+                  return (
+                    <div
+                      key={content.id}
+                      className="bg-card border border-border rounded-none shadow-2xs overflow-hidden transition-all group"
+                    >
+                      {/* Hàng nội dung giáo dục */}
+                      <div className="p-3.5 bg-card flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/60">
+                        <div className="flex items-start gap-3 min-w-0 flex-1">
+                          <span className="size-7 flex items-center justify-center text-[12px] font-mono font-medium text-muted-foreground bg-muted border border-border shrink-0 mt-0.5">
+                            {String(idx + 1).padStart(2, '0')}
+                          </span>
+                          <div className="space-y-1.5 flex-1 min-w-0">
+                            <span className="text-[13.5px] font-medium text-foreground leading-snug">
+                              {content.title}
+                            </span>
+
+                            {/* Thông tin chủ đề của NDGD (Ghi chuyên nghiệp, không dùng badge) */}
+                            <div className="text-[12px] text-muted-foreground leading-relaxed pt-0.5">
+                              <span className="font-medium text-muted-foreground">Chủ đề: </span>
+                              {content.allocatedThemes && content.allocatedThemes.length > 0 ? (
+                                <span className="text-foreground">
+                                  {content.allocatedThemes.map((th, thIdx) => (
+                                    <span key={th.id || th.themeId || thIdx}>
+                                      {thIdx > 0 && <span className="text-muted-foreground mx-1.5">;</span>}
+                                      <span className="font-medium text-foreground">
+                                        {th.code ? `Chủ đề ${th.code}: ` : ''}{th.name || th.themeName}
+                                      </span>
+                                      {th.dateRange && (
+                                        <span className="text-muted-foreground font-normal ml-1">
+                                          ({th.dateRange})
+                                        </span>
+                                      )}
+                                    </span>
+                                  ))}
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground/80 italic">
+                                  Chưa phân bổ vào chủ đề nào (Kế hoạch năm)
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {!isBgh && (
+                          <Button
+                            type="button"
+                            onClick={() => handleCreateActivityForContent(activeGoal, content)}
+                            className="h-8 px-3.5 bg-[#1447e6] hover:bg-[#1447e6]/90 text-white text-[12.5px] font-medium rounded-none flex items-center gap-1.5 shadow-none cursor-pointer shrink-0 self-start sm:self-center"
+                          >
+                            <HugeiconsIcon icon={PlusSignIcon} size={14} />
+                            <span>{t('planning.addActivity', 'Thêm hoạt động')}</span>
+                          </Button>
+                        )}
+                      </div>
 
                     {/* Danh sách hoạt động giáo dục cụ thể bên dưới */}
                     {activities.length > 0 ? (
@@ -727,16 +855,16 @@ export function EducationalActivitiesTab({ classId = '1' }) {
                               )}
                             </div>
 
-                            {/* Phải: Nút Sửa / Xem chi tiết & Nút Xóa */}
+                            {/* Phải: Nút Sửa (chỉ icon) & Nút Xóa */}
                             <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
                               <button
                                 type="button"
                                 onClick={() => handleEditActivity(activeGoal, content, act)}
-                                className="h-7 px-2.5 flex items-center gap-1 bg-muted/60 hover:bg-muted text-[11.5px] font-medium text-foreground transition-colors cursor-pointer rounded-none border border-border"
+                                className="size-7 flex items-center justify-center rounded-none border transition-colors bg-muted/60 hover:bg-muted text-foreground border-border cursor-pointer"
                                 title={isBgh ? 'Xem chi tiết hoạt động' : t('common.edit', 'Chỉnh sửa hoạt động')}
+                                aria-label={isBgh ? 'Xem chi tiết hoạt động' : 'Chỉnh sửa hoạt động'}
                               >
-                                <HugeiconsIcon icon={PencilEdit02Icon} size={12} className="text-muted-foreground" />
-                                <span>{isBgh ? (isVi ? 'Xem chi tiết' : 'View detail') : t('common.edit', 'Sửa')}</span>
+                                <HugeiconsIcon icon={PencilEdit02Icon} size={14} className="text-muted-foreground hover:text-foreground" />
                               </button>
                               {!isBgh && (
                                 <button
@@ -763,18 +891,21 @@ export function EducationalActivitiesTab({ classId = '1' }) {
                     )}
                   </div>
                 );
-              }))}
+              });
+            })()}
             </div>
           </div>
 
-          {/* Bottom Bar: Tự động lưu */}
-          <div className="flex justify-end pt-2">
+          {/* Bottom Bar: Thời gian cập nhật (Tự động lưu) */}
+          <div className="flex items-center justify-end pt-2 pb-1">
             <div
-              className="h-9 px-4 text-[13px] font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/50 flex items-center gap-1.5 select-none"
+              className="text-[12.5px] text-muted-foreground select-none"
               title={t('planning.autoSavedNotice', 'Mọi hoạt động giáo dục (thêm, sửa, xóa) được lưu tự động lên hệ thống.')}
             >
-              <HugeiconsIcon icon={CheckmarkCircle01Icon} size={15} className="text-emerald-600 dark:text-emerald-400" />
-              <span>{t('common.saved', 'Đã lưu thay đổi')}</span>
+              <span>Thời gian cập nhật: </span>
+              <span className="font-medium text-foreground">
+                {formatDateTime(effectiveUpdatedTime) || 'Chưa có cập nhật'}
+              </span>
             </div>
           </div>
         </div>
@@ -785,6 +916,8 @@ export function EducationalActivitiesTab({ classId = '1' }) {
           onClose={() => setIsDrawerOpen(false)}
           initialSlot={drawerInitialSlot}
           allocatedThemes={activeGoal?.allocatedThemes || activeGoalContext?.allocatedThemes || []}
+          allThemes={availableThemes}
+          contentAllocatedThemes={activeContentContext?.allocatedThemes || drawerInitialSlot?.contentAllocatedThemes || []}
           onSave={handleSaveActivity}
           onDelete={handleDeleteActivity}
           readOnly={isBgh}
@@ -955,7 +1088,7 @@ export function EducationalActivitiesTab({ classId = '1' }) {
                             className="group/row flex items-center justify-between px-4 py-2.5 pl-11 hover:bg-muted/30 transition-colors cursor-pointer"
                             title="Bấm để xem chi tiết mục tiêu và thiết lập hoạt động giáo dục"
                           >
-                            {/* Left: Code, Title, Inline Indicator Badge */}
+                            {/* Left: Code, Title, Inline Indicator Badge & Allocated Themes */}
                             <div className="flex items-baseline gap-3 min-w-0 pr-4 flex-1">
                               <span className="text-[13px] font-semibold text-foreground/80 shrink-0 min-w-[48px] font-mono select-none">
                                 {goal.goalCode}
@@ -966,11 +1099,22 @@ export function EducationalActivitiesTab({ classId = '1' }) {
                                   {goal.title}
                                 </span>
                                 {goal.indicatorCode && (
-                                  <span className="inline-flex items-center px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground bg-muted/70 border border-border/60 rounded-none shrink-0 select-none">
-                                    {goal.indicatorCode}
+                                  <span className="text-[12px] text-muted-foreground font-mono">
+                                    ({goal.indicatorCode})
+                                  </span>
+                                )}
+                                {goal.allocatedThemes?.length > 0 && (
+                                  <span className="text-[12px] text-muted-foreground font-normal">
+                                    · {goal.allocatedThemes.map((th) => th.code ? `Chủ đề ${th.code}` : th.name).join(', ')}
                                   </span>
                                 )}
                               </div>
+                            </div>
+
+                            {/* Right: Số lượng nội dung & icon mũi tên */}
+                            <div className="flex items-center gap-2 shrink-0 text-[12px] text-muted-foreground select-none">
+                              <span>{goal.contents?.length || 0} nội dung</span>
+                              <HugeiconsIcon icon={ArrowRight01Icon} size={14} className="text-muted-foreground/60 group-hover/row:text-foreground" />
                             </div>
                           </div>
                         ))}

@@ -228,6 +228,20 @@ export const useClassesStore = create((set, get) => ({
     } catch {}
     set({ attachedClassId: null, isCommandMenuOpen: false });
   },
+  resetClassesStore: () => {
+    try {
+      localStorage.removeItem('sorak_attached_class_id');
+    } catch {}
+    set({
+      classes: [],
+      attachedClassId: null,
+      hasLoaded: false,
+      lastFetchedYearId: null,
+      isLoading: false,
+      isFetching: false,
+      error: null,
+    });
+  },
 
   setCommandMenuOpen: (open) => set({ isCommandMenuOpen: open }),
 
@@ -402,9 +416,10 @@ export function findTeacherClassesForYear(user, classes, yearId) {
     .map(String);
 
   const matched = pool.filter((c) => {
-    // 1. Direct name match
-    if (user.fullName && (c.teacher === user.fullName || c.teacher === user.name)) return true;
-    if (user.name && (c.teacher === user.name || c.teacher === user.fullName)) return true;
+    // 1. Direct name match (support comma-separated list like "Nguyễn Ngọc Hân, Trần Hữu Nghĩa")
+    const teacherNames = (c.teacher || '').split(',').map((s) => s.trim().toLowerCase());
+    if (user.fullName && (teacherNames.includes(user.fullName.toLowerCase()) || c.teacher?.toLowerCase()?.includes(user.fullName.toLowerCase()))) return true;
+    if (user.name && (teacherNames.includes(user.name.toLowerCase()) || c.teacher?.toLowerCase()?.includes(user.name.toLowerCase()))) return true;
 
     // 2. Direct teacherId match
     if (c.teacherId && userTeacherIds.includes(String(c.teacherId))) return true;
@@ -421,9 +436,9 @@ export function findTeacherClassesForYear(user, classes, yearId) {
             String(user.employeeCode).toLowerCase() === String(t.employeeCode).toLowerCase();
           const nameMatch =
             user.fullName &&
-            (t.fullName === user.fullName ||
-              t.name === user.fullName ||
-              t.fullName === user.name);
+            (t.fullName?.toLowerCase() === user.fullName.toLowerCase() ||
+              t.name?.toLowerCase() === user.fullName.toLowerCase() ||
+              t.fullName?.toLowerCase() === user.name?.toLowerCase());
           return idMatch || codeMatch || nameMatch;
         })
       ) {
@@ -460,14 +475,25 @@ export function findTeacherClassForYear(user, classes, yearId) {
   const teacherClasses = findTeacherClassesForYear(user, classes, yearId);
   if (teacherClasses.length > 0) {
     const matched = teacherClasses.find((c) => {
-      if (c.teacher && (c.teacher === user?.fullName || c.teacher === user?.name || (user?.fullName && c.teacher.includes(user.fullName)) || (user?.name && c.teacher.includes(user.name)))) return true;
-      if (Array.isArray(c.teachers) && c.teachers.some((t) => t.fullName === user?.fullName || t.teacherId === user?.teacherId)) return true;
-      if (Array.isArray(user?.assignedClasses)) {
+      // Prioritize explicit match in user.assignedClasses
+      if (Array.isArray(user?.assignedClasses) && user.assignedClasses.length > 0) {
         const ac = user.assignedClasses.find(
           (a) => String(a.classId) === String(c.id) || String(a.classId) === String(c.publicId)
         );
         if (ac) return true;
       }
+      if (Array.isArray(c.teachers) && c.teachers.some((t) => {
+        const tIds = [t.id, t.teacherId, t.publicId].filter(Boolean).map(String);
+        const userTids = [user.id, user.teacherId, user.teacher?.id, user.publicId, user.teacher?.publicId].filter(Boolean).map(String);
+        return (
+          t.fullName?.toLowerCase() === user?.fullName?.toLowerCase() ||
+          (user.employeeCode && t.employeeCode && String(user.employeeCode).toLowerCase() === String(t.employeeCode).toLowerCase()) ||
+          tIds.some((tid) => userTids.includes(tid))
+        );
+      })) return true;
+      const teacherNames = (c.teacher || '').split(',').map((s) => s.trim().toLowerCase());
+      if (user?.fullName && (teacherNames.includes(user.fullName.toLowerCase()) || c.teacher?.toLowerCase()?.includes(user.fullName.toLowerCase()))) return true;
+      if (user?.name && (teacherNames.includes(user.name.toLowerCase()) || c.teacher?.toLowerCase()?.includes(user.name.toLowerCase()))) return true;
       return false;
     });
     return matched || teacherClasses[0];

@@ -20,7 +20,7 @@ import {
 } from '@hugeicons/core-free-icons';
 
 import { cn } from '@/shared/lib/utils';
-import { LogoutDialog, useAuthStore } from '@/features/auth';
+import { LogoutDialog, RequirePasswordChangeModal, useAuthStore } from '@/features/auth';
 import { SettingsDialog } from '@/features/settings';
 import { NotificationsPanel } from '@/features/notifications';
 import { useAppearanceStore } from '@/shared/stores/appearance.store';
@@ -150,21 +150,23 @@ export function DashboardShell() {
       }
     }
 
-    // If teacher is in a class whose school year doesn't match selectedYearId
+    // For Teachers: Ensure teacher is ONLY in their assigned class for the selected academic year
     if (selectedYearId && location.pathname.startsWith('/classes/')) {
       const match = location.pathname.match(/\/classes\/([^/]+)(\/.*)?/);
       if (match) {
         const currentClassId = match[1];
         const subPath = match[2] || '';
-        const currentClassObj = classes.find((c) => c.id === currentClassId);
-        if (!currentClassObj || String(currentClassObj.schoolYearId) !== String(selectedYearId)) {
-          if (hasNewYearClasses) {
-            const teacherClassInNewYear = findTeacherClassForYear(user, classes, selectedYearId);
-            if (teacherClassInNewYear && teacherClassInNewYear.id !== currentClassId) {
-              navigate(`/classes/${teacherClassInNewYear.id}${subPath}`, { replace: true });
-            } else if (!teacherClassInNewYear) {
-              navigate('/classes', { replace: true });
-            }
+        const teacherClassInYear = findTeacherClassForYear(user, classes, selectedYearId);
+        const isAssigned =
+          teacherClassInYear &&
+          (String(teacherClassInYear.id) === String(currentClassId) ||
+           String(teacherClassInYear.publicId) === String(currentClassId));
+
+        if (!isAssigned && classes.length > 0) {
+          if (teacherClassInYear) {
+            navigate(`/classes/${teacherClassInYear.id || teacherClassInYear.publicId}${subPath}`, { replace: true });
+          } else {
+            navigate('/classes', { replace: true });
           }
         }
       }
@@ -267,8 +269,15 @@ export function DashboardShell() {
           currentTitle={currentTitle}
         />
 
-        {/* Content Area - Standardized 32px padding from sidebar & appbar */}
-        <main className="flex-1 overflow-y-auto p-6 lg:p-8 bg-background flex flex-col">
+        {/* Content Area - Full-bleed for planning multi-column workspaces, standardized 32px padding for other pages */}
+        <main
+          className={cn(
+            'flex-1 bg-background flex flex-col',
+            location.pathname.includes('/planning')
+              ? 'p-0 overflow-hidden'
+              : 'overflow-y-auto p-6 lg:p-8'
+          )}
+        >
           <Outlet />
         </main>
       </div>
@@ -292,6 +301,9 @@ export function DashboardShell() {
         onOpenSettings={() => setSettingsModalOpen(true)}
         sidebarCollapsed={sidebarCollapsed}
       />
+
+      {/* Gợi ý đổi mật khẩu mặc định lần đầu đăng nhập trên thiết bị */}
+      <RequirePasswordChangeModal />
     </div>
   );
 }

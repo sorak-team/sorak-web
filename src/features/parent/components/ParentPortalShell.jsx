@@ -18,6 +18,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import { useAuthStore } from '@/features/auth/auth.store';
+import { RequirePasswordChangeModal } from '@/features/auth';
 import { getStudentAvatarUrl } from '@/features/students/students.store';
 import { parentApi } from '../api/parent.api';
 import { ParentChildHero } from './ParentChildHero';
@@ -341,6 +342,9 @@ export function ParentPortalShell() {
         onClose={() => setIsActivitySheetOpen(false)}
         studentName={activeStudent.fullName}
       />
+
+      {/* 6. Gợi ý đổi mật khẩu mặc định lần đầu trên thiết bị */}
+      <RequirePasswordChangeModal />
     </div>
   );
 }

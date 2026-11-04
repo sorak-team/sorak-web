@@ -331,7 +331,7 @@ export function StudentReportPage() {
     presentCount: 0,
     excusedCount: 0,
     unexcusedCount: 0,
-    attendanceRate: 100,
+    attendanceRate: null,
     history: [],
   };
   const assessmentsData = reportData?.assessments || {
@@ -945,10 +945,12 @@ export function StudentReportPage() {
           )}
         >
           <div className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">
-            Chuyên cần ({attendanceData.attendanceRate}%)
+            Chuyên cần {attendanceData.totalDays > 0 ? `(${attendanceData.attendanceRate}%)` : '(Chưa có dữ liệu)'}
           </div>
           <div className="text-xs font-medium text-foreground mt-1 truncate">
-            {attendanceData.presentCount}/{attendanceData.totalDays} buổi có mặt
+            {attendanceData.totalDays > 0
+              ? `${attendanceData.presentCount}/${attendanceData.totalDays} buổi có mặt`
+              : 'Chưa có dữ liệu'}
           </div>
         </button>
 
@@ -1420,6 +1422,7 @@ export function StudentReportPage() {
                 <tr>
                   <th className="px-4 py-2.5">Ngày</th>
                   <th className="px-4 py-2.5">Thứ</th>
+                  <th className="px-4 py-2.5">Lớp ghi nhận</th>
                   <th className="px-4 py-2.5">Trạng thái</th>
                   <th className="px-4 py-2.5">Giờ đón</th>
                   <th className="px-4 py-2.5">Giờ về</th>
@@ -1430,13 +1433,13 @@ export function StudentReportPage() {
               <tbody className="divide-y divide-border">
                 {isReportLoading ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-muted-foreground">
+                    <td colSpan={8} className="py-8 text-center text-muted-foreground">
                       Đang tải lịch sử điểm danh...
                     </td>
                   </tr>
                 ) : attendanceData.history.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-muted-foreground">
+                    <td colSpan={8} className="py-8 text-center text-muted-foreground">
                       Không tìm thấy bản ghi điểm danh nào.
                     </td>
                   </tr>
@@ -1468,6 +1471,9 @@ export function StudentReportPage() {
                         </td>
                         <td className="px-4 py-2.5 text-muted-foreground">
                           {att.dayName}
+                        </td>
+                        <td className="px-4 py-2.5 text-foreground font-medium">
+                          {att.className || '—'}
                         </td>
                         <td className="px-4 py-2.5">{statusBadge}</td>
                         <td className="px-4 py-2.5 font-mono text-muted-foreground">
