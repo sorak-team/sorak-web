@@ -128,5 +128,66 @@ export const academicYearsApi = {
     const response = await apiClient.delete(`/school-years/${id}/holidays/${holidayId}`);
     return response.data?.data || response.data;
   },
+
+  /**
+   * Tải file Excel mẫu lịch năm học
+   */
+  async getCalendarTemplate() {
+    const response = await apiClient.get('/school-years/calendar/template', {
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+
+  /**
+   * Upload file Excel để xem trước và kiểm tra lỗi lịch năm học
+   */
+  async previewCalendarImport(id, file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post(`/school-years/${id}/calendar/preview`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data?.data || response.data;
+  },
+
+  /**
+   * Thực thi import lịch năm học từ file Excel
+   */
+  async importCalendarExcel(id, holidays) {
+    const response = await apiClient.post(`/school-years/${id}/calendar/import`, { holidays });
+    return response.data?.data || response.data;
+  },
+
+  /**
+   * Xuất toàn bộ Lịch năm học & Ngày lễ ra file Excel (.xlsx)
+   */
+  async exportCalendarExcel(id) {
+    const response = await apiClient.get(`/school-years/${id}/calendar/export/excel`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+
+  /**
+   * Lấy dữ liệu Thống kê Tổng quan Toàn trường (School-wide Statistics Dashboard)
+   */
+  async getSchoolOverviewStatistics(schoolYearId) {
+    const response = await apiClient.get('/statistics/overview', {
+      params: { schoolYearId },
+    });
+    return response.data?.data || response.data;
+  },
+
+  /**
+   * Xuất file Excel Báo cáo Thống kê Sĩ số 9 tháng và Đánh giá toàn trường
+   */
+  async exportSchoolStatisticsExcel(schoolYearId) {
+    const response = await apiClient.get('/statistics/export/excel', {
+      params: { schoolYearId },
+      responseType: 'blob',
+    });
+    return response.data;
+  },
 };
 
