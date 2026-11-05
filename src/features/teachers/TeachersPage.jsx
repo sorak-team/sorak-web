@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
@@ -7,8 +7,14 @@ import {
   Menu01Icon,
   DashboardSquare02Icon,
 } from '@hugeicons/core-free-icons';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { downloadBlob } from '@/shared/utils/download';
+import { ExcelImportModal } from '@/components/ExcelImportModal';
+import { ExcelActionsDropdown } from '@/components/ExcelActionsDropdown';
+import { useAcademicYearStore } from '@/features/academic-years';
+import { teachersApi } from './teachers.api';
 import { useTeacherStore } from './teachers.store';
 import { TeacherTable } from './components/TeacherTable';
 import { TeacherGrid } from './components/TeacherGrid';
@@ -23,6 +29,7 @@ import { cn } from '@/shared/lib/utils';
 export function TeachersPage() {
   const { t } = useTranslation();
   const pageSize = usePaginationStore((state) => state.pageSize);
+  const selectedYearId = useAcademicYearStore((state) => state.selectedYearId);
 
   const {
     teachers,
@@ -41,6 +48,27 @@ export function TeachersPage() {
     fetchTeachers();
   }, [fetchTeachers]);
 
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportExcel = async () => {
+    try {
+      setIsExporting(true);
+      const blob = await teachersApi.exportExcel({
+        workStatus: statusFilter !== 'all' ? statusFilter : undefined,
+        search: searchQuery || undefined,
+        schoolYearId: selectedYearId || undefined,
+      });
+      const filename = `Danh_Sach_Giao_Vien_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      downloadBlob(blob, filename);
+      toast.success('Đã xuất danh sách cán bộ giáo viên ra file Excel thành công.');
+    } catch (err) {
+      toast.error('Không thể xuất file Excel. Vui lòng thử lại sau.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
 
   // Filtered Teachers
   const filteredTeachers = useMemo(() => {
@@ -51,16 +79,20 @@ export function TeachersPage() {
       const q = searchQuery.toLowerCase().trim();
       list = list.filter(
         (teacher) =>
-          teacher.fullName.toLowerCase().includes(q) ||
-          teacher.email.toLowerCase().includes(q) ||
-          teacher.phone.includes(q) ||
-          (teacher.role || teacher.position || '').toLowerCase().includes(q),
+          (teacher.fullName && teacher.fullName.toLowerCase().includes(q)) ||
+          (teacher.employeeCode && teacher.employeeCode.toLowerCase().includes(q)) ||
+          (teacher.email && teacher.email.toLowerCase().includes(q)) ||
+          (teacher.phone && teacher.phone.includes(q)) ||
+          (teacher.account?.username && teacher.account.username.toLowerCase().includes(q)) ||
+          ((teacher.role || teacher.position || '').toLowerCase().includes(q)),
       );
     }
 
     // Status filter
     if (statusFilter !== 'all') {
       list = list.filter((teacher) => teacher.status === statusFilter);
+    } else {
+      list = list.filter((teacher) => !teacher.isDeleted);
     }
 
     // Default sort by teacher code (GV001, GV002, ...)
@@ -157,6 +189,13 @@ export function TeachersPage() {
             </button>
           </div>
 
+          {/* Excel Actions Dropdown (Compact icon button, zero text, rounded-none) */}
+          <ExcelActionsDropdown
+            onExport={handleExportExcel}
+            onImport={() => setIsImportModalOpen(true)}
+            isExporting={isExporting}
+          />
+
           {/* Add Teacher Button */}
           <Button
             type="button"
@@ -201,6 +240,19 @@ export function TeachersPage() {
       {/* Global Slide-in Drawer & Delete Modal */}
       <TeacherDrawer />
       <DeleteTeacherDialog />
+
+      {/* Excel Import Modal */}
+      <ExcelImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        title="Nhập cán bộ giáo viên từ Excel"
+        description="Tải file mẫu, điền thông tin nhân sự để nhập hàng loạt và tự động cấp tài khoản cho giáo viên."
+        templateFileName="Mau_Nhap_Giao_Vien_Sorak.xlsx"
+        onDownloadTemplate={teachersApi.getImportTemplate}
+        onPreview={teachersApi.previewImport}
+        onImport={teachersApi.importTeachers}
+        onSuccess={fetchTeachers}
+      />
     </div>
   );
 }
