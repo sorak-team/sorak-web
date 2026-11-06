@@ -80,6 +80,47 @@ export const studentsApi = {
     const response = await apiClient.delete(`/students/${studentId}/parents/${parentId}`);
     return response.data?.data || response.data;
   },
+
+  /**
+   * Tải file Excel mẫu nhập học sinh
+   */
+  async getImportTemplate() {
+    const response = await apiClient.get('/students/import/template', {
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+
+  /**
+   * Upload file Excel để xem trước và kiểm tra lỗi
+   */
+  async previewImport(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post('/students/import/preview', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data?.data || response.data;
+  },
+
+  /**
+   * Thực thi import danh sách học sinh
+   */
+  async importStudents(students) {
+    const response = await apiClient.post('/students/import', { students });
+    return response.data?.data || response.data;
+  },
+
+  /**
+   * Xuất danh sách học sinh ra file Excel
+   */
+  async exportExcel(params = {}) {
+    const response = await apiClient.get('/students/export/excel', {
+      params,
+      responseType: 'blob',
+    });
+    return response.data;
+  },
 };
 
 export default studentsApi;
