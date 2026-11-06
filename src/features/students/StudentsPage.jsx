@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -8,8 +8,13 @@ import {
   Menu01Icon,
   DashboardSquare02Icon,
 } from '@hugeicons/core-free-icons';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { downloadBlob } from '@/shared/utils/download';
+import { ExcelImportModal } from '@/components/ExcelImportModal';
+import { ExcelActionsDropdown } from '@/components/ExcelActionsDropdown';
+import { studentsApi } from './students.api';
 import { useAuthStore } from '@/features/auth';
 import { useAcademicYearStore } from '@/features/academic-years';
 import { useClassesStore, findTeacherClassForYear } from '@/features/classes';
@@ -57,6 +62,34 @@ export function StudentsPage() {
     openCreateDrawer,
     fetchStudents,
   } = useStudentStore();
+
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportExcel = async () => {
+    if (filteredStudents.length === 0) {
+      toast.warning('Không có dữ liệu học sinh phù hợp để xuất file Excel.');
+      return;
+    }
+
+    try {
+      setIsExporting(true);
+      const blob = await studentsApi.exportExcel({
+        schoolYearId: selectedYearId,
+        classId: classFilter !== 'all' ? classFilter : undefined,
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        gender: genderFilter !== 'all' ? genderFilter : undefined,
+        search: searchQuery || undefined,
+      });
+      const filename = `Danh_Sach_Hoc_Sinh_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      downloadBlob(blob, filename);
+      toast.success('Đã xuất danh sách học sinh ra file Excel thành công.');
+    } catch (err) {
+      toast.error('Không thể xuất file Excel. Vui lòng thử lại sau.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   useEffect(() => {
     fetchStudents(selectedYearId ? { schoolYearId: selectedYearId } : {});
@@ -194,6 +227,14 @@ export function StudentsPage() {
             </button>
           </div>
 
+          {/* Excel Actions Dropdown (Compact icon button, zero text, rounded-none) */}
+          <ExcelActionsDropdown
+            onExport={handleExportExcel}
+            onImport={!isTeacher && !isYearCompleted ? () => setIsImportModalOpen(true) : null}
+            showImport={!isTeacher && !isYearCompleted}
+            isExporting={isExporting}
+          />
+
           {/* Add Student Button */}
           {!isYearCompleted ? (
             <Button
@@ -244,6 +285,19 @@ export function StudentsPage() {
       <StudentDrawer onSuccess={fetchStudents} />
       <DeleteStudentDialog />
       <TransferStudentDialog onSuccess={fetchStudents} />
+
+      {/* Excel Import Modal */}
+      <ExcelImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        title="Nhập danh sách học sinh từ Excel"
+        description="Tải file mẫu, điền thông tin học sinh và phụ huynh để nhập hàng loạt vào trường."
+        templateFileName="Mau_Nhap_Hoc_Sinh_Sorak.xlsx"
+        onDownloadTemplate={studentsApi.getImportTemplate}
+        onPreview={studentsApi.previewImport}
+        onImport={studentsApi.importStudents}
+        onSuccess={fetchStudents}
+      />
     </div>
   );
 }

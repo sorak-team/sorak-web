@@ -56,4 +56,45 @@ export const teachersApi = {
     const response = await apiClient.delete(`/teachers/${teacherId}/classes/${classId}`);
     return response.data?.data || response.data;
   },
+
+  /**
+   * Tải file Excel mẫu nhập giáo viên
+   */
+  async getImportTemplate() {
+    const response = await apiClient.get('/teachers/import/template', {
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+
+  /**
+   * Upload file Excel để xem trước và kiểm tra lỗi giáo viên
+   */
+  async previewImport(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post('/teachers/import/preview', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data?.data || response.data;
+  },
+
+  /**
+   * Thực thi import danh sách giáo viên
+   */
+  async importTeachers(teachers) {
+    const response = await apiClient.post('/teachers/import', { teachers });
+    return response.data?.data || response.data;
+  },
+
+  /**
+   * Xuất danh sách giáo viên ra file Excel
+   */
+  async exportExcel(params = {}) {
+    const response = await apiClient.get('/teachers/export/excel', {
+      params,
+      responseType: 'blob',
+    });
+    return response.data;
+  },
 };
