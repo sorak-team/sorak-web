@@ -1,16 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { HugeiconsIcon } from '@hugeicons/react';
-import {
-  Search01Icon,
-  FilterIcon,
-  DashboardSquare02Icon,
-} from '@hugeicons/core-free-icons';
 import { cn } from '@/shared/lib/utils';
 import { useAcademicYearStore } from '@/features/academic-years';
 import { curriculumApi } from './curriculum.api';
+import { planningApi } from '@/features/planning/planning.api';
 import { ThemeCard } from './components/ThemeCard';
+import { ExcelActionsDropdown } from '@/components/ExcelActionsDropdown';
+import { downloadBlob } from '@/shared/utils/download';
+import { toast } from 'sonner';
 
 export function CurriculumFrameworkPage() {
   const { t } = useTranslation();
@@ -46,12 +44,38 @@ export function CurriculumFrameworkPage() {
     return `Năm học ${targetYearStr.replace('-', '–')}`;
   }, [selectedYear, targetYearStr]);
 
-  const [searchQuery, setSearchQuery] = useState('');
-
   // Data states
   const [themeData, setThemeData] = useState(null);
   const [goalData, setGoalData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportExcel = async () => {
+    try {
+      setIsExporting(true);
+      const safeYear = targetYearStr.replace(/\s+/g, '_');
+      if (activeTab === 'themes') {
+        const blob = await planningApi.exportThemePlanExcel({
+          schoolYearId: selectedYear?.id,
+          year: targetYearStr,
+        });
+        downloadBlob(blob, `Ke_Hoach_Phan_Phoi_Bo_Chu_De_${safeYear}.xlsx`);
+        toast.success('Đã xuất kế hoạch phân phối bộ chủ đề thành công');
+      } else {
+        const blob = await curriculumApi.exportFrameworkExcel({
+          year: targetYearStr,
+        });
+        downloadBlob(blob, `Khung_Chuong_Trinh_GDMN_${safeYear}.xlsx`);
+        toast.success('Đã xuất khung chương trình GDMN (Ngân hàng mục tiêu) thành công');
+      }
+    } catch (err) {
+      toast.error('Lỗi khi xuất dữ liệu', {
+        description: err.message || 'Vui lòng thử lại sau.',
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   useEffect(() => {
     async function loadData() {
@@ -100,22 +124,12 @@ export function CurriculumFrameworkPage() {
         }
       }
 
-      if (searchQuery.trim()) {
-        const q = searchQuery.trim().toLowerCase();
-        cards = cards.filter(
-          (c) =>
-            c.yearName?.toLowerCase().includes(q) ||
-            c.ageGroupLabel?.toLowerCase().includes(q) ||
-            c.statusLabel?.toLowerCase().includes(q),
-        );
-      }
-
       return {
         ...grp,
         cards,
       };
     });
-  }, [currentData?.groups, targetYearStr, searchQuery]);
+  }, [currentData?.groups, targetYearStr]);
 
   return (
     <div
@@ -140,41 +154,12 @@ export function CurriculumFrameworkPage() {
 
         {/* Action Controls */}
         <div className="flex items-center gap-2.5">
-          {/* Search box */}
-          <div className="relative min-w-[220px] sm:w-[280px]">
-            <HugeiconsIcon
-              icon={Search01Icon}
-              size={14}
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
-            />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={activeTab === 'themes' ? t('curriculum.searchThemes') : t('curriculum.searchGoals')}
-              className="w-full h-8 pl-8 pr-2.5 bg-background border border-border text-[13px] text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition-colors rounded-none"
-            />
-          </div>
-
-          {/* Filter button */}
-          <button
-            type="button"
-            title={t('curriculum.filter')}
-            className="size-8 flex items-center justify-center bg-background border border-border text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-none transition-colors cursor-pointer"
-          >
-            <HugeiconsIcon icon={FilterIcon} size={14} />
-          </button>
-
-          {/* View toggle */}
-          <button
-            type="button"
-            title={t('curriculum.gridView')}
-            className="size-8 flex items-center justify-center bg-muted/60 border border-border text-foreground rounded-none transition-colors cursor-pointer"
-          >
-            <HugeiconsIcon icon={DashboardSquare02Icon} size={15} />
-          </button>
-
-
+          {/* Export Educational Framework Excel */}
+          <ExcelActionsDropdown
+            onExport={handleExportExcel}
+            isExporting={isExporting}
+            showImport={false}
+          />
         </div>
       </div>
 
