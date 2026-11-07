@@ -4,6 +4,19 @@ import { Cancel01Icon } from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
+export const formatGoalCode = (code) => {
+  if (!code) return '';
+  const raw = String(code).trim().toUpperCase();
+  const digitsMatch = raw.match(/\d+/);
+  if (digitsMatch) {
+    const num = parseInt(digitsMatch[0], 10);
+    if (!isNaN(num)) {
+      return `MT ${num < 10 ? '0' + num : num}`;
+    }
+  }
+  return raw;
+};
+
 export function GoalItemDrawer({
   isOpen,
   onClose,
@@ -22,14 +35,16 @@ export function GoalItemDrawer({
   const [domain, setDomain] = useState('PHYSICAL');
   const [indicatorCode, setIndicatorCode] = useState('');
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
     if (initialData) {
-      setCode(initialData.code || '');
+      setCode(initialData.code ? formatGoalCode(initialData.code) : '');
       setTitle(initialData.title || '');
       setDomain(initialData.domain || 'PHYSICAL');
       setIndicatorCode(initialData.indicatorCode || initialData.indicator || '');
     } else {
-      setCode(nextCodeSuggestion || 'Tự động theo thứ tự');
+      setCode(nextCodeSuggestion ? formatGoalCode(nextCodeSuggestion) : 'Tự động theo thứ tự');
       setTitle('');
       setDomain('PHYSICAL');
       setIndicatorCode('');
@@ -38,7 +53,7 @@ export function GoalItemDrawer({
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title.trim()) {
       toast.error('Vui lòng nhập tên mục tiêu');
@@ -46,15 +61,27 @@ export function GoalItemDrawer({
     }
 
     const payload = {
-      code: code ? code.trim() : '',
+      code: code ? formatGoalCode(code.trim()) : '',
       title: title.trim(),
       domain,
       indicatorCode: isMam ? '' : indicatorCode.trim(),
     };
 
-    if (onSave) onSave(payload);
-    toast.success('Đã lưu mục tiêu giáo dục thành công!');
-    onClose();
+    try {
+      setIsSubmitting(true);
+      if (onSave) {
+        await onSave(payload);
+      }
+      onClose();
+    } catch (err) {
+      console.error('Save goal failed:', err);
+      const errMsg = err?.response?.data?.message || err?.message;
+      if (errMsg && !errMsg.includes('Không thể tải')) {
+        toast.error(errMsg, { id: 'goal-item-save-error' });
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -187,9 +214,10 @@ export function GoalItemDrawer({
           <Button
             type="submit"
             form="goal-item-form"
-            className="h-8 px-4 rounded-none bg-[#1447e6] hover:bg-[#1447e6]/90 text-white text-[13px] font-medium shadow-none cursor-pointer"
+            disabled={isSubmitting}
+            className="h-8 px-4 rounded-none bg-[#1447e6] hover:bg-[#1447e6]/90 text-white text-[13px] font-medium shadow-none cursor-pointer disabled:opacity-50"
           >
-            Lưu mục tiêu
+            {isSubmitting ? 'Đang lưu...' : 'Lưu mục tiêu'}
           </Button>
         </div>
       </div>
