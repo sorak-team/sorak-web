@@ -5,21 +5,10 @@ import {
   Cancel01Icon,
   Search01Icon,
   BookOpen01Icon,
-  ArrowDown01Icon,
   ArrowRight01Icon,
   CheckmarkCircle01Icon,
-  FilterHorizontalIcon,
-  CheckmarkSquare02Icon,
+  ArrowDown01Icon,
 } from '@hugeicons/core-free-icons';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/shared/lib/utils';
 
 export const DOMAIN_SECTIONS = [
@@ -28,15 +17,6 @@ export const DOMAIN_SECTIONS = [
   { domain: 'LANGUAGE', code: '3.', label: 'Phát triển ngôn ngữ' },
   { domain: 'SOCIO_EMOTIONAL', code: '4.', label: 'Phát triển tình cảm - kỹ năng xã hội' },
   { domain: 'AESTHETIC', code: '5.', label: 'Phát triển thẩm mỹ' },
-];
-
-export const DOMAIN_FILTER_OPTIONS = [
-  { value: 'ALL', label: 'Tất cả lĩnh vực' },
-  { value: 'PHYSICAL', label: '1. Phát triển thể chất' },
-  { value: 'COGNITIVE', label: '2. Phát triển nhận thức' },
-  { value: 'LANGUAGE', label: '3. Phát triển ngôn ngữ' },
-  { value: 'SOCIO_EMOTIONAL', label: '4. Phát triển tình cảm - kỹ năng xã hội' },
-  { value: 'AESTHETIC', label: '5. Phát triển thẩm mỹ' },
 ];
 
 const DAY_DATE_MAP = {
@@ -59,31 +39,113 @@ const formatSlotDate = (s) => {
   return DAY_DATE_MAP[s.day] || s.day || '';
 };
 
-const getScheduledDates = (act) => {
+export const formatGoalCode = (code) => {
+  if (!code) return '';
+  const raw = String(code).trim().toUpperCase();
+  const digitsMatch = raw.match(/\d+/);
+  if (digitsMatch) {
+    const num = parseInt(digitsMatch[0], 10);
+    if (!isNaN(num)) {
+      return `MT ${num < 10 ? '0' + num : num}`;
+    }
+  }
+  return raw;
+};
+
+const getActivityUsage = (act, activeThemeForDate) => {
   const slots = act.scheduledSlots && act.scheduledSlots.length > 0
     ? act.scheduledSlots
     : act.scheduleInfo
       ? [act.scheduleInfo]
       : [];
 
-  if (slots.length === 0) return [];
+  if (slots.length === 0) {
+    return {
+      hasUsage: false,
+      currentTheme: { count: 0, dates: [] },
+      otherThemes: [],
+    };
+  }
 
-  const dates = slots.map(formatSlotDate).filter(Boolean);
-  return Array.from(new Set(dates));
+  const activeThemeId = String(activeThemeForDate?.themeId || activeThemeForDate?.id || '').trim().toLowerCase();
+  const activeThemeNumId = String(activeThemeForDate?._theme_id || '').trim().toLowerCase();
+  const activeThemeName = (activeThemeForDate?.themeName || activeThemeForDate?.name || '').trim().toLowerCase();
+
+  const currentThemeDates = [];
+  const otherThemesMap = new Map();
+
+  slots.forEach((s) => {
+    const sDate = formatSlotDate(s);
+    const sThId = String(s.themeId || s._theme_id || '').trim().toLowerCase();
+    const sThNumId = String(s._theme_id || '').trim().toLowerCase();
+    const sThName = (s.themeName || '').trim().toLowerCase();
+    const sThCode = String(s.themeCode || '').trim();
+
+    const isCurrentTheme = Boolean(
+      activeThemeForDate && (
+        (activeThemeId && (sThId === activeThemeId || sThNumId === activeThemeId)) ||
+        (activeThemeNumId && (sThId === activeThemeNumId || sThNumId === activeThemeNumId)) ||
+        (activeThemeName && sThName && sThName === activeThemeName) ||
+        (activeThemeForDate.startDate && activeThemeForDate.endDate && s.scheduledDate &&
+         s.scheduledDate >= activeThemeForDate.startDate && s.scheduledDate <= activeThemeForDate.endDate)
+      )
+    );
+
+    if (isCurrentTheme) {
+      if (sDate) currentThemeDates.push(sDate);
+    } else {
+      let label = '';
+      if (sThCode) {
+        const cleanCode = sThCode.replace(/\D/g, '').padStart(2, '0');
+        label = `Chủ đề ${cleanCode}`;
+      } else if (s.themeName) {
+        const match = s.themeName.match(/Chủ đề\s*\d+/i);
+        label = match ? match[0].replace(/c/i, 'C') : s.themeName;
+      } else {
+        label = 'Chủ đề khác';
+      }
+
+      if (!otherThemesMap.has(label)) {
+        otherThemesMap.set(label, { label, count: 0, dates: [] });
+      }
+      const entry = otherThemesMap.get(label);
+      entry.count += 1;
+      if (sDate) entry.dates.push(sDate);
+    }
+  });
+
+  const uniqueCurrentThemeDates = Array.from(new Set(currentThemeDates));
+
+  return {
+    hasUsage: true,
+    currentTheme: {
+      count: currentThemeDates.length,
+      dates: uniqueCurrentThemeDates,
+    },
+    otherThemes: Array.from(otherThemesMap.values()).map((ot) => ({
+      ...ot,
+      dates: Array.from(new Set(ot.dates)),
+    })),
+  };
 };
 
 export function HierarchicalActivityPickerModal({
   isOpen,
   onClose,
-  targetCell, // { day, slotDef }
-  goals = [], // Hierarchical tree: Domain -> Goal -> Content -> Activities
-  themeAllocations = [], // List of themes with date ranges and allocatedGoalIds
+  targetCell,
+  goals = [],
+  themeAllocations = [],
+  currentActivityId,
   onSelectActivity,
-  currentActivityId = null,
+  activeThemeForDate: propActiveTheme = null,
+  subThemeName = null,
 }) {
   const { t } = useTranslation();
 
-  const targetSlotKey = targetCell?.slotDef?.key;
+  const targetSlotKey = useMemo(() => {
+    if (!targetCell) return null;
+    return targetCell.slotDef?.activitySlot || targetCell.slotDef?.key || null;
+  }, [targetCell]);
 
   // Resolve target date in ISO format (YYYY-MM-DD)
   const targetDateIso = useMemo(() => {
@@ -108,15 +170,34 @@ export function HierarchicalActivityPickerModal({
     return null;
   }, [targetCell]);
 
-  // Determine active theme covering target date
+  // Determine active theme covering target date dynamically from themeAllocations
   const activeThemeForDate = useMemo(() => {
-    if (!targetDateIso || !themeAllocations?.length) return null;
-    return themeAllocations.find(
+    if (propActiveTheme) return propActiveTheme;
+    if (!targetDateIso || !themeAllocations?.length) {
+      return themeAllocations?.[0] || null;
+    }
+    const found = themeAllocations.find(
       (th) => targetDateIso >= th.startDate && targetDateIso <= th.endDate
     );
-  }, [targetDateIso, themeAllocations]);
+    return found || themeAllocations[0] || null;
+  }, [propActiveTheme, targetDateIso, themeAllocations]);
 
-  // Set of goal IDs & codes allocated to this theme
+  const cleanSubThemeName = useMemo(() => {
+    if (!subThemeName) return null;
+    let s = subThemeName.trim();
+    if (activeThemeForDate?.themeName) {
+      const escapedTheme = activeThemeForDate.themeName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      s = s.replace(new RegExp(`\\s*-\\s*${escapedTheme}\\s*$`, 'i'), '').trim();
+    }
+    if (s.includes(' - ')) {
+      const parts = s.split(' - ');
+      if (parts.length > 1) {
+        s = parts[0].trim();
+      }
+    }
+    return s || null;
+  }, [subThemeName, activeThemeForDate]);
+
   const allowedGoalSet = useMemo(() => {
     if (!activeThemeForDate) return null;
     const set = new Set();
@@ -136,47 +217,24 @@ export function HierarchicalActivityPickerModal({
     return set;
   }, [activeThemeForDate]);
 
-  // Search & filter states
+  const allowedContentSet = useMemo(() => {
+    if (!activeThemeForDate || !activeThemeForDate.contentIds?.length) return null;
+    return new Set(activeThemeForDate.contentIds.map((id) => String(id)));
+  }, [activeThemeForDate]);
+
+  // Chỉ chọn Lĩnh vực phát triển
   const [selectedDomain, setSelectedDomain] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [collapsedDomains, setCollapsedDomains] = useState(new Set());
 
-  const selectedDomainLabel = useMemo(() => {
-    const found = DOMAIN_FILTER_OPTIONS.find((opt) => opt.value === selectedDomain);
-    return found ? found.label : 'Tất cả lĩnh vực';
-  }, [selectedDomain]);
-
-  // Accordion expanded map for each domain
-  const [expandedDomains, setExpandedDomains] = useState({
-    PHYSICAL: true,
-    COGNITIVE: true,
-    LANGUAGE: true,
-    SOCIO_EMOTIONAL: true,
-    AESTHETIC: true,
-  });
-
-  // Reset filters & expand all domains on open or target change
   useEffect(() => {
     if (isOpen) {
       setSelectedDomain('ALL');
       setSearchQuery('');
-      setExpandedDomains({
-        PHYSICAL: true,
-        COGNITIVE: true,
-        LANGUAGE: true,
-        SOCIO_EMOTIONAL: true,
-        AESTHETIC: true,
-      });
+      setCollapsedDomains(new Set());
     }
   }, [isOpen, targetCell]);
 
-  const toggleDomain = (domainKey) => {
-    setExpandedDomains((prev) => ({
-      ...prev,
-      [domainKey]: !prev[domainKey],
-    }));
-  };
-
-  // Flatten all activities with context
   const allActivities = useMemo(() => {
     const list = [];
     (goals || []).forEach((goal) => {
@@ -191,6 +249,10 @@ export function HierarchicalActivityPickerModal({
             goalTitle: goal.title || act.goalTitle,
             indicatorCode: goal.indicatorCode || act.indicatorCode,
             contentTitle: content.title || act.contentTitle,
+            contentId: content.id || content.contentId || act.contentId,
+            contentNumId: content._content_id || content.contentId || act._content_id,
+            contentAllocatedThemes: content.allocatedThemes || act.contentAllocatedThemes || [],
+            goalAllocatedThemes: goal.allocatedThemes || act.goalAllocatedThemes || [],
           });
         });
       });
@@ -198,100 +260,93 @@ export function HierarchicalActivityPickerModal({
     return list;
   }, [goals]);
 
-  // Filter activities: strictly matches the clicked routine slot & theme allocated goals for this date
-  const filteredActivities = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-
+  const baseActivities = useMemo(() => {
     return allActivities.filter((act) => {
-      // 0. Luôn lọc theo mục tiêu đã phân bổ cho chủ đề tương ứng với ngày đang chọn
-      if (allowedGoalSet && allowedGoalSet.size > 0) {
-        const rawCode = String(act.goalCode || '').trim().toUpperCase();
-        const cleanGoalCode = rawCode.split('(')[0].trim();
-        const digits = cleanGoalCode.replace(/\D/g, '');
-        const normNum = digits ? String(parseInt(digits, 10)) : '';
-        const normPadded = digits ? normNum.padStart(2, '0') : '';
-
-        const isGoalAllowed =
-          (act.goalId && allowedGoalSet.has(String(act.goalId))) ||
-          (cleanGoalCode && allowedGoalSet.has(cleanGoalCode)) ||
-          (rawCode && allowedGoalSet.has(rawCode)) ||
-          (normNum && allowedGoalSet.has(normNum)) ||
-          (normPadded && allowedGoalSet.has(normPadded));
-        if (!isGoalAllowed) {
+      const actRoutineSlot = act.routineSlot || act.routine_slot;
+      if (targetSlotKey) {
+        if (!actRoutineSlot || actRoutineSlot !== targetSlotKey) {
           return false;
         }
       }
 
-      // 1. Luôn lọc chính xác theo Routine Slot của ô được chọn
-      const actRoutineSlot = act.routineSlot || act.routine_slot;
-      if (targetSlotKey && actRoutineSlot && actRoutineSlot !== targetSlotKey) {
-        return false;
-      }
-
-      // 2. Luôn lọc chính xác theo Chủ đề tương ứng với ngày đang chọn (Bắt buộc không hiển thị hoạt động của chủ đề khác)
       if (activeThemeForDate) {
         const activeThemeIdStr = String(activeThemeForDate.themeId || activeThemeForDate.id || '').trim();
         const activeThemeNumId = activeThemeForDate._theme_id ? String(activeThemeForDate._theme_id).trim() : '';
-        const actThemeIdStr = String(act.themeId || act.theme_id || '').trim();
-        const actThemeNumId = act._theme_id ? String(act._theme_id).trim() : '';
-        const actThemeName = (act.themeName || '').trim().toLowerCase();
-        const activeThemeName = (activeThemeForDate.themeName || '').trim().toLowerCase();
+        const curThName = (activeThemeForDate.themeName || activeThemeForDate.name || '').trim().toLowerCase();
+        const curThCode = String(activeThemeForDate.code || activeThemeForDate.themeCode || '').replace(/\D/g, '');
 
-        if (actThemeIdStr || actThemeNumId) {
-          const matchId =
-            (actThemeIdStr && (actThemeIdStr === activeThemeIdStr || actThemeIdStr === activeThemeNumId)) ||
-            (actThemeNumId && (actThemeNumId === activeThemeIdStr || actThemeNumId === activeThemeNumId));
-          const matchName = actThemeName && activeThemeName && actThemeName === activeThemeName;
+        // Lọc theo Chủ đề của hoạt động: Không hiển thị hoạt động thuộc chủ đề khác
+        const actThId = String(act.themeId || act.theme_id || act._theme_id || '').trim().toLowerCase();
+        const actThDbId = String(act._theme_id || '').trim().toLowerCase();
+        const actThName = (act.themeName || '').trim().toLowerCase();
+        const actThCode = String(act.themeCode || '').replace(/\D/g, '');
 
-          if (!matchId && !matchName) {
+        if (actThId || actThDbId || actThName || actThCode) {
+          const matchActTheme =
+            (activeThemeIdStr && (actThId === activeThemeIdStr.toLowerCase() || actThId === activeThemeNumId.toLowerCase())) ||
+            (activeThemeNumId && (actThDbId === activeThemeNumId.toLowerCase() || actThId === activeThemeNumId.toLowerCase())) ||
+            (curThCode && actThCode && actThCode === curThCode) ||
+            (curThName && actThName && (actThName === curThName || actThName.includes(curThName) || curThName.includes(actThName)));
+
+          if (!matchActTheme) {
             return false;
           }
         }
 
-        // Kiểm tra ngữ cảnh nội dung & tiêu đề để loại bỏ triệt để hoạt động sai chủ đề
-        const actText = `${act.title || ''} ${act.objective || ''} ${act.procedure || ''}`.toLowerCase();
-        const isGiaDinhTheme = activeThemeName.includes('gia đình');
-        const isBanThanTheme = activeThemeName.includes('bản thân');
-        const isTruongMamNonTheme = activeThemeName.includes('trường mầm non');
+        if (allowedGoalSet) {
+          if (allowedGoalSet.size === 0) return false;
+          const rawCode = String(act.goalCode || '').trim().toUpperCase();
+          const cleanCode = rawCode.split('(')[0].trim();
+          const digits = cleanCode.replace(/\D/g, '');
+          const idStr = String(act.goalId || '').trim();
 
-        const banThanKeywords = [
-          'bản thân', 'bạn nhỏ', 'bạn bè', 'bạn trong', 'hình bạn', 'thẻ bạn', 'nhóm bạn',
-          'bạn trai', 'bạn gái', 'cơ thể', 'sở thích', 'thẻ tên', 'khuôn mặt', 'giới tính',
-          'tay chân', 'chiều cao', 'cân nặng', 'cảm xúc', 'giác quan', 'mắt', 'mũi', 'miệng',
-          'tai', 'răng', 'tóc', 'của bé', 'về bé', 'bé đi khéo', 'đồ dùng cá nhân', 'trang phục của bé'
-        ];
-        const giaDinhKeywords = [
-          'gia đình', 'người trong ảnh', 'ảnh gia đình', 'ảnh của gia đình', 'ông bà',
-          'bố mẹ', 'cha mẹ', 'ba mẹ', 'anh chị', 'người thân', 'ngôi nhà', 'nhà của bé',
-          'nhà bà', 'đồ dùng gia đình', 'bữa cơm gia đình', 'phòng khách', 'phòng bếp', 'con vật nuôi trong nhà'
-        ];
-        const truongMamNonKeywords = [
-          'trường mầm non', 'trường của bé', 'lớp học của bé', 'cô giáo', 'bảo mẫu', 'búp bê',
-          'góc chơi', 'đồ chơi lớp', 'sân trường', 'bác bảo vệ', 'ngày hội đến trường'
-        ];
+          const matchGoal =
+            (idStr && allowedGoalSet.has(idStr)) ||
+            (rawCode && allowedGoalSet.has(rawCode)) ||
+            (cleanCode && allowedGoalSet.has(cleanCode)) ||
+            (digits && (
+              allowedGoalSet.has(digits) ||
+              allowedGoalSet.has(String(parseInt(digits, 10))) ||
+              allowedGoalSet.has(String(parseInt(digits, 10)).padStart(2, '0'))
+            ));
 
-        const mentionsBanThan = banThanKeywords.some((k) => actText.includes(k));
-        const mentionsGiaDinh = giaDinhKeywords.some((k) => actText.includes(k));
-        const mentionsTruongMamNon = truongMamNonKeywords.some((k) => actText.includes(k));
+          if (!matchGoal) return false;
+        }
 
-        if (isGiaDinhTheme) {
-          if (mentionsBanThan && !mentionsGiaDinh) return false;
-          if (mentionsTruongMamNon && !mentionsGiaDinh) return false;
-        } else if (isBanThanTheme) {
-          if (mentionsGiaDinh && !mentionsBanThan) return false;
-          if (mentionsTruongMamNon && !mentionsBanThan) return false;
-        } else if (isTruongMamNonTheme) {
-          if (mentionsGiaDinh && !mentionsTruongMamNon) return false;
-          if (mentionsBanThan && !mentionsTruongMamNon) return false;
+        if (allowedContentSet) {
+          const cId = act.contentId ? String(act.contentId).trim() : null;
+          const cNumId = act.contentNumId ? String(act.contentNumId).trim() : null;
+          const isContentDirectlyAllowed = (cId && allowedContentSet.has(cId)) || (cNumId && allowedContentSet.has(cNumId));
+
+          if (!isContentDirectlyAllowed) {
+            const contentHasTheme = (act.contentAllocatedThemes || []).some((th) => {
+              const thId = String(th.themeId || th.id || th._theme_id || '').trim();
+              return (activeThemeIdStr && thId === activeThemeIdStr) || (activeThemeNumId && thId === activeThemeNumId);
+            });
+            const goalHasTheme = (act.goalAllocatedThemes || []).some((th) => {
+              const thId = String(th.themeId || th.id || th._theme_id || '').trim();
+              return (activeThemeIdStr && thId === activeThemeIdStr) || (activeThemeNumId && thId === activeThemeNumId);
+            });
+
+            if (!contentHasTheme && !goalHasTheme) {
+              return false;
+            }
+          }
         }
       }
 
-      // 3. Lọc theo lĩnh vực đã chọn
+      return true;
+    });
+  }, [allActivities, targetSlotKey, activeThemeForDate, allowedGoalSet, allowedContentSet]);
+
+  const displayedActivities = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+
+    return baseActivities.filter((act) => {
       if (selectedDomain !== 'ALL' && act.domain !== selectedDomain) {
         return false;
       }
 
-      // 4. Tìm kiếm theo từ khóa
       if (q) {
         const matchTitle = act.title?.toLowerCase().includes(q);
         const matchGoal =
@@ -304,21 +359,65 @@ export function HierarchicalActivityPickerModal({
 
       return true;
     });
-  }, [allActivities, allowedGoalSet, targetSlotKey, activeThemeForDate, selectedDomain, searchQuery]);
+  }, [baseActivities, selectedDomain, searchQuery]);
 
-  // Nhóm hoạt động theo từng lĩnh vực (chuẩn xác như bảng cấu trúc mục tiêu)
-  const groupedByDomain = useMemo(() => {
-    return DOMAIN_SECTIONS.map((sec) => {
-      if (selectedDomain !== 'ALL' && sec.domain !== selectedDomain) return null;
-      const acts = filteredActivities.filter((a) => a.domain === sec.domain);
-      // Khi đang tìm kiếm theo từ khóa, nếu lĩnh vực không có hoạt động khớp thì ẩn đi để kết quả tìm kiếm gọn gàng
-      if (searchQuery.trim() && acts.length === 0) return null;
-      return {
-        ...sec,
-        activities: acts,
-      };
-    }).filter(Boolean);
-  }, [filteredActivities, selectedDomain, searchQuery]);
+  const groupedDisplayed = useMemo(() => {
+    const domainMap = new Map();
+
+    displayedActivities.forEach((act) => {
+      if (!domainMap.has(act.domain)) {
+        const domainDef = DOMAIN_SECTIONS.find((d) => d.domain === act.domain) || {
+          domain: act.domain,
+          code: '',
+          label: act.domainLabel || act.domain,
+        };
+        domainMap.set(act.domain, {
+          ...domainDef,
+          goalGroupsMap: new Map(),
+        });
+      }
+
+      const domainGroup = domainMap.get(act.domain);
+      const goalKey = act.goalCode || (act.goalId ? `ID_${act.goalId}` : 'OTHER');
+      if (!domainGroup.goalGroupsMap.has(goalKey)) {
+        domainGroup.goalGroupsMap.set(goalKey, {
+          goalKey,
+          goalCode: act.goalCode || '',
+          goalTitle: act.goalTitle || '',
+          activities: [],
+        });
+      }
+      domainGroup.goalGroupsMap.get(goalKey).activities.push(act);
+    });
+
+    return Array.from(domainMap.values()).map((dg) => ({
+      ...dg,
+      goalGroups: Array.from(dg.goalGroupsMap.values()),
+    }));
+  }, [displayedActivities]);
+
+  const toggleDomainCollapse = (domainKey) => {
+    setCollapsedDomains((prev) => {
+      const next = new Set(prev);
+      if (next.has(domainKey)) {
+        next.delete(domainKey);
+      } else {
+        next.add(domainKey);
+      }
+      return next;
+    });
+  };
+
+  const currentViewTitle = useMemo(() => {
+    if (searchQuery.trim()) {
+      return `Kết quả tìm kiếm cho: "${searchQuery}"`;
+    }
+    if (selectedDomain === 'ALL') {
+      return 'Tất cả lĩnh vực';
+    }
+    const currentDomainDef = DOMAIN_SECTIONS.find((d) => d.domain === selectedDomain);
+    return currentDomainDef ? `${currentDomainDef.code} ${currentDomainDef.label}` : selectedDomain;
+  }, [selectedDomain, searchQuery]);
 
   if (!isOpen || !targetCell) return null;
 
@@ -326,37 +425,52 @@ export function HierarchicalActivityPickerModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[1px] p-4 animate-in fade-in-0 duration-150"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 backdrop-blur-[1px] p-3 sm:p-5 animate-in fade-in-0 duration-150"
       onClick={onClose}
       data-name="HierarchicalActivityPickerModal"
     >
       <div
-        className="w-full max-w-[780px] bg-card border border-border shadow-2xl rounded-none flex flex-col max-h-[85vh] text-foreground select-none animate-in zoom-in-95 duration-150 overflow-hidden"
+        className="w-full max-w-[1100px] h-[82vh] max-h-[720px] bg-card border border-border shadow-2xl rounded-none flex flex-col text-foreground select-none animate-in zoom-in-95 duration-150 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* 1. Modal Header: Rất sạch sẽ, tối giản */}
-        <div className="px-5 py-3.5 border-b border-border flex items-start justify-between bg-card shrink-0">
-          <div className="space-y-1">
-            <h3 className="text-[16px] font-semibold text-foreground tracking-tight">
+        {/* 1. Modal Header: 2 dòng phân cấp chuẩn mực & chuyên nghiệp */}
+        <div className="px-6 py-3 border-b border-border flex items-start justify-between bg-card shrink-0 gap-4">
+          <div className="space-y-1 min-w-0 flex-1">
+            {/* Dòng 1: Tiêu đề chính độc lập, trang trọng */}
+            <h3 className="text-[15px] font-semibold text-foreground tracking-tight">
               Chọn hoạt động giáo dục
             </h3>
 
-            {/* Ô được chọn & Khung giờ: Nhìn gọn, sạch, tinh tế */}
+            {/* Dòng 2: Toàn bộ thông tin ngữ cảnh thời gian & chủ đề liền mạch, khoa học */}
             <p className="text-[12.5px] text-muted-foreground flex items-center gap-1.5 flex-wrap">
               <span className="font-medium text-foreground">
                 {day.name || day.shortName} ({day.date})
               </span>
-              <span>·</span>
-              <span className="text-foreground/90 font-medium">{slotDef.name}</span>
+              <span className="text-muted-foreground/40 select-none">·</span>
+              <span className="font-medium text-foreground">
+                {slotDef.name}
+              </span>
               {slotDef.defaultTime && (
-                <span className="text-muted-foreground">({slotDef.defaultTime})</span>
+                <span className="text-muted-foreground font-normal">
+                  ({slotDef.defaultTime})
+                </span>
               )}
-              {activeThemeForDate && (
+              {(activeThemeForDate || cleanSubThemeName) && (
                 <>
-                  <span>·</span>
-                  <span className="inline-flex items-center gap-1 text-[11px] text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 border border-blue-200 dark:border-blue-800 font-medium">
-                    Chủ đề: {activeThemeForDate.themeName}
-                  </span>
+                  <span className="text-muted-foreground/40 select-none">·</span>
+                  {activeThemeForDate && (
+                    <span className="font-medium text-foreground/85">
+                      Chủ đề: {activeThemeForDate.themeName}
+                    </span>
+                  )}
+                  {activeThemeForDate && cleanSubThemeName && (
+                    <span className="text-muted-foreground/40 font-light select-none">›</span>
+                  )}
+                  {cleanSubThemeName && (
+                    <span className="text-muted-foreground font-normal">
+                      {cleanSubThemeName}
+                    </span>
+                  )}
                 </>
               )}
             </p>
@@ -365,234 +479,259 @@ export function HierarchicalActivityPickerModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer rounded-none shrink-0"
+            className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer rounded-none shrink-0 -mr-1"
             title="Đóng modal"
           >
             <HugeiconsIcon icon={Cancel01Icon} size={18} />
           </button>
         </div>
 
-        {/* 2. Toolbar: Tìm kiếm + Lọc Lĩnh vực */}
-        <div className="px-5 py-2.5 border-b border-border bg-muted/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shrink-0">
-          <div className="flex items-center gap-2 flex-1">
-            {/* Input tìm kiếm */}
-            <div className="relative flex-1">
-              <HugeiconsIcon
-                icon={Search01Icon}
-                size={14}
-                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
-              />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Tìm kiếm theo tên hoạt động, mục tiêu..."
-                className="w-full h-8 pl-8 pr-2.5 bg-background border border-border text-[12.5px] rounded-none outline-none focus:border-foreground/50 transition-colors"
-              />
+        {/* 2. Body: Master - Detail (Active state thanh lịch, êm ái theo chuẩn Linear / GitHub) */}
+        <div className="flex-1 min-h-0 flex flex-row overflow-hidden bg-background">
+          {/* CỘT TRÁI: SIDEBAR 5 LĨNH VỰC PHÁT TRIỂN (Rộng rãi, không bị cụt chữ, màu chọn êm dịu) */}
+          <div className="w-[260px] sm:w-[285px] shrink-0 border-r border-border bg-muted/15 dark:bg-muted/10 flex flex-col justify-between overflow-hidden">
+            {/* Header Sidebar */}
+            <div className="px-3.5 py-2.5 border-b border-border flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-muted-foreground shrink-0 bg-muted/20">
+              <span>Lĩnh vực phát triển</span>
+              <button
+                type="button"
+                onClick={() => setSelectedDomain('ALL')}
+                className={cn(
+                  'px-2 py-0.5 text-[11px] transition-colors cursor-pointer rounded-none border',
+                  selectedDomain === 'ALL'
+                    ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200/80 dark:border-blue-800/80 font-semibold'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:underline'
+                )}
+              >
+                Tất cả
+              </button>
             </div>
 
-            {/* Filter Dropdown chuẩn thiết kế quản trị */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className={cn(
-                    'h-8 px-2.5 bg-background border border-border text-foreground hover:bg-muted/50 rounded-none flex items-center gap-1.5 text-[12.5px] transition-colors cursor-pointer select-none shrink-0',
-                    selectedDomain !== 'ALL' && 'border-primary text-primary bg-primary/5'
-                  )}
-                  title="Lọc theo lĩnh vực"
-                >
-                  <HugeiconsIcon icon={FilterHorizontalIcon} size={15} />
-                  <span>{selectedDomainLabel}</span>
-                  <HugeiconsIcon icon={ArrowDown01Icon} size={12} className="text-muted-foreground ml-0.5" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="w-56 p-1.5 rounded-none border border-border bg-card shadow-xl z-50 text-foreground"
-              >
-                <DropdownMenuLabel className="px-2 py-1 text-[12px] font-medium text-muted-foreground">
-                  Lĩnh vực phát triển
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator className="my-1 border-t border-border" />
-                {DOMAIN_FILTER_OPTIONS.map((item) => (
-                  <DropdownMenuItem
-                    key={item.value}
-                    onClick={() => setSelectedDomain(item.value)}
+            {/* Danh sách 5 Lĩnh vực: Active state nền xanh phấn nhẹ + viền trái 3px sang trọng */}
+            <div className="py-1 space-y-0.5 overflow-y-auto flex-1">
+              {DOMAIN_SECTIONS.map((sec) => {
+                const isDomainActive = selectedDomain === sec.domain;
+                const actsCount = baseActivities.filter((a) => a.domain === sec.domain).length;
+                const hasActs = actsCount > 0;
+
+                return (
+                  <div
+                    key={sec.domain}
+                    onClick={() => {
+                      if (hasActs) setSelectedDomain(sec.domain);
+                    }}
+                    title={sec.label}
                     className={cn(
-                      'flex items-center justify-between h-8 px-2 text-[13px] cursor-pointer rounded-none hover:bg-muted/60',
-                      selectedDomain === item.value && 'font-medium text-primary'
+                      'px-3.5 py-2.5 text-[12.5px] flex items-center justify-between cursor-pointer transition-colors select-none rounded-none border-l-[3px]',
+                      isDomainActive
+                        ? 'bg-blue-50/70 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-semibold border-l-blue-600 dark:border-l-blue-400'
+                        : hasActs
+                        ? 'border-l-transparent text-foreground/80 hover:bg-muted/50 hover:text-foreground font-normal'
+                        : 'border-l-transparent opacity-30 text-muted-foreground cursor-not-allowed'
                     )}
                   >
-                    <span>{item.label}</span>
-                    {selectedDomain === item.value && (
-                      <HugeiconsIcon
-                        icon={CheckmarkSquare02Icon}
-                        size={14}
-                        className="text-primary shrink-0"
-                      />
-                    )}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                    <span className="truncate">
+                      {sec.code} {sec.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
 
-        {/* 3. Danh sách hoạt động: Chuẩn 100% theo bảng Cấu trúc mục tiêu */}
-        <div className="flex-1 overflow-y-auto p-4 bg-background/50">
-          <div className="border border-border/70 bg-card rounded-none overflow-hidden">
-            {/* Table Header Bar giống hệt Cấu trúc mục tiêu */}
-            <div className="px-4 py-2.5 border-b border-border bg-muted/30 text-[13px] font-medium text-foreground">
-              <span>Cấu trúc hoạt động theo lĩnh vực</span>
+          {/* CỘT PHẢI: CANVAS HIỂN THỊ HOẠT ĐỘNG CỦA LĨNH VỰC ĐÃ CHỌN */}
+          <div className="flex-1 min-w-0 bg-background flex flex-col justify-between overflow-hidden">
+            {/* Toolbar Cột phải */}
+            <div className="px-5 py-2 border-b border-border bg-muted/10 flex items-center justify-between gap-3 shrink-0">
+              <div className="text-[12.5px] font-semibold text-foreground/90 truncate">
+                {currentViewTitle}
+              </div>
+
+              {/* Ô tìm kiếm nhanh */}
+              <div className="relative w-52 sm:w-60 shrink-0">
+                <HugeiconsIcon
+                  icon={Search01Icon}
+                  size={13}
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+                />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Tìm kiếm nhanh..."
+                  className="w-full h-7 pl-8 pr-2.5 bg-background border border-border text-[12px] rounded-none outline-none focus:border-foreground/50 transition-colors"
+                />
+              </div>
             </div>
 
-            {/* Tree Rows */}
-            {groupedByDomain.length === 0 ? (
-              <div className="py-12 px-4 text-center flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                <HugeiconsIcon icon={BookOpen01Icon} size={28} className="opacity-30 mb-1" />
-                <p className="text-[13px] font-medium text-foreground">
-                  Không tìm thấy hoạt động nào phù hợp
-                </p>
-                <p className="text-[12px] max-w-md text-muted-foreground leading-relaxed">
-                  Chưa có hoạt động giáo dục nào thuộc chế độ sinh hoạt <strong>{slotDef.name}</strong> khớp với điều kiện tìm kiếm.
-                </p>
-              </div>
-            ) : (
-              <div className="divide-y divide-border/60">
-                {groupedByDomain.map((group) => {
-                  const isExpanded = !!expandedDomains[group.domain];
+            {/* Vùng danh sách hoạt động: Lưới 2 cột card */}
+            <div className="p-4 space-y-4 overflow-y-auto flex-1">
+              {groupedDisplayed.length === 0 ? (
+                <div className="py-16 px-4 text-center flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                  <HugeiconsIcon icon={BookOpen01Icon} size={28} className="opacity-30 mb-1" />
+                  <p className="text-[13px] font-medium text-foreground">
+                    Không tìm thấy hoạt động nào phù hợp
+                  </p>
+                  <p className="text-[12px] max-w-md text-muted-foreground leading-relaxed">
+                    Không có hoạt động giáo dục nào thuộc điều kiện lọc hiện tại. Thử chọn <strong>Tất cả</strong> hoặc xóa từ khóa tìm kiếm.
+                  </p>
+                </div>
+              ) : (
+                groupedDisplayed.map((dg) => {
+                  const isCollapsed = selectedDomain === 'ALL' && !searchQuery.trim() && collapsedDomains.has(dg.domain);
+                  const totalActsInDomain = dg.goalGroups.reduce(
+                    (sum, gg) => sum + gg.activities.length,
+                    0
+                  );
 
                   return (
-                    <div key={group.domain} className="text-[13.5px]">
-                      {/* Level 1: Domain Row (Không còn số lượng hoạt động thừa) */}
-                      <div
-                        onClick={() => toggleDomain(group.domain)}
-                        className="flex items-center justify-between px-4 py-2.5 bg-muted/20 hover:bg-muted/40 cursor-pointer select-none transition-colors group"
-                      >
-                        <div className="flex items-center gap-2 font-semibold text-foreground">
-                          <button
-                            type="button"
-                            className="size-5 flex items-center justify-center text-muted-foreground group-hover:text-foreground"
-                          >
+                    <div key={dg.domain} className="space-y-3.5">
+                      {/* Header Lĩnh vực (chỉ hiển thị khi đang xem 'Tất cả') */}
+                      {selectedDomain === 'ALL' && (
+                        <div
+                          onClick={() => toggleDomainCollapse(dg.domain)}
+                          title={isCollapsed ? 'Nhấp để mở rộng' : 'Nhấp để thu gọn'}
+                          className="flex items-center justify-between pt-2 pb-1.5 border-b border-border/70 cursor-pointer hover:bg-muted/30 px-1 -mx-1 transition-colors group select-none"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
                             <HugeiconsIcon
-                              icon={isExpanded ? ArrowDown01Icon : ArrowRight01Icon}
+                              icon={ArrowDown01Icon}
                               size={14}
+                              className={cn(
+                                'text-muted-foreground group-hover:text-foreground transition-transform duration-200 shrink-0',
+                                isCollapsed && '-rotate-90'
+                              )}
                             />
-                          </button>
-                          <span>{group.code}</span>
-                          <span>{group.label}</span>
+                            <span className="text-[12px] font-bold text-foreground/85 uppercase tracking-wider truncate">
+                              {dg.code} {dg.label}
+                            </span>
+                            <span className="text-[11px] font-normal text-muted-foreground/80 shrink-0">
+                              ({totalActsInDomain} hoạt động)
+                            </span>
+                          </div>
                         </div>
-                      </div>
+                      )}
 
-                      {/* Level 2: Hoạt động trong lĩnh vực (Click bất kỳ đâu trên hàng để chọn) */}
-                      {isExpanded && (
-                        <div className="bg-background">
-                          {group.activities.length === 0 ? (
-                            <div className="px-4 py-3 pl-11 text-[12.5px] text-muted-foreground/80 italic select-none">
-                              Không có hoạt động giáo dục
-                            </div>
-                          ) : (
-                            <div className="divide-y divide-border/30">
-                              {group.activities.map((act) => {
-                                const isCurrent = currentActivityId === act.id;
-                                const scheduledDates = getScheduledDates(act);
-                                const otherScheduledDates = scheduledDates.filter((d) => d !== day?.date);
-                                const scheduledDatesStr = scheduledDates.join(', ');
+                      {/* Các nhóm Mục tiêu trong Lĩnh vực */}
+                      {!isCollapsed && (
+                        <div className="space-y-4">
+                          {dg.goalGroups.map((goalGroup) => (
+                            <div key={goalGroup.goalKey} className="space-y-2.5">
+                              {/* Header Mục tiêu trong Canvas: Badge MT đồng bộ với Xác định hoạt động & Phân bổ mục tiêu */}
+                              <div className="flex items-center gap-2.5 pt-1 pb-0.5 min-w-0">
+                                {goalGroup.goalCode && (
+                                  <span className="px-2 py-0.5 bg-[#1447e6]/10 text-[#1447e6] font-mono font-bold text-[11.5px] border border-[#1447e6]/20 rounded-none shrink-0 select-none">
+                                    {formatGoalCode(goalGroup.goalCode)}
+                                  </span>
+                                )}
+                                <span className="font-medium text-[13px] text-foreground/90 truncate flex-1 min-w-0" title={goalGroup.goalTitle}>
+                                  {goalGroup.goalTitle || 'Mục tiêu giáo dục'}
+                                </span>
+                              </div>
 
-                                return (
-                                  <div
-                                    key={act.id}
-                                    onClick={() => {
-                                      onSelectActivity(act, day.key, slotDef.key, day.date);
-                                      onClose();
-                                    }}
-                                    title={act.objective ? `Mục tiêu: ${act.objective}` : act.title}
-                                    className={cn(
-                                      'group/row flex items-center justify-between px-4 py-3 pl-11 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors cursor-pointer select-none',
-                                      isCurrent && 'bg-primary/5'
-                                    )}
-                                  >
-                                    {/* Cột Trái: Tên Hoạt động + Trạng thái & Nội dung giáo dục */}
-                                    <div className="flex flex-col gap-1 min-w-0 pr-4 flex-1">
-                                      {/* Dòng 1: Tên hoạt động & trạng thái */}
-                                      <div className="flex items-center gap-2 flex-wrap leading-5">
-                                        <span className="text-[13.5px] font-medium text-foreground group-hover/row:text-[#1447e6] transition-colors">
+                              {/* LƯỚI 2 CỘT CARD HOẠT ĐỘNG: Gọn gàng, sạch sẽ */}
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                                {goalGroup.activities.map((act) => {
+                                  const isCurrent = currentActivityId === act.id;
+                                  const usage = getActivityUsage(act, activeThemeForDate);
+
+                                  return (
+                                    <div
+                                      key={act.id}
+                                      onClick={() => {
+                                        onSelectActivity(act, day.key, slotDef.key, day.date);
+                                        onClose();
+                                      }}
+                                      title={act.objective ? `Mục tiêu: ${act.objective}` : act.title}
+                                      className={cn(
+                                        'p-3 rounded-none bg-card border border-border/80 hover:border-primary/50 hover:shadow-xs transition-all flex flex-col justify-between gap-2.5 group cursor-pointer select-none',
+                                        isCurrent && 'bg-primary/5 border-primary/50 ring-1 ring-primary/20'
+                                      )}
+                                    >
+                                      {/* Khối Thông tin Hoạt động & Nội dung giáo dục */}
+                                      <div className="space-y-1.5">
+                                        {/* Hiển thị tên chủ đề trên từng hoạt động để giáo viên nhận biết trước khi chọn */}
+                                        <div className="flex items-center gap-1.5">
+                                          <span className="text-[10.5px] font-medium px-1.5 py-0.5 bg-muted/80 text-muted-foreground border border-border/70 rounded-none truncate max-w-full">
+                                            {act.themeName || activeThemeForDate?.themeName || 'Chủ đề giáo dục'}
+                                          </span>
+                                        </div>
+
+                                        <div className="text-[13px] font-medium text-foreground group-hover:text-primary transition-colors leading-snug line-clamp-2">
                                           {act.title}
-                                        </span>
+                                        </div>
 
-                                        {act.themeName && (
-                                          <span className="inline-flex items-center px-1.5 py-0.5 text-[11px] font-medium bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-900/50 select-none">
-                                            Chủ đề: {act.themeName}
-                                          </span>
-                                        )}
-
-                                        {isCurrent ? (
-                                          <div className="flex items-center gap-1.5 flex-wrap">
-                                            {otherScheduledDates.length > 0 && (
-                                              <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium text-muted-foreground bg-muted/50 border border-border/60 rounded-none shrink-0">
-                                                Đã xếp ({otherScheduledDates.join(', ')})
-                                              </span>
-                                            )}
+                                        {act.contentTitle && (
+                                          <div
+                                            className="text-[11.5px] text-muted-foreground flex items-center gap-1.5 leading-normal"
+                                            title={`Nội dung giáo dục: ${act.contentTitle}`}
+                                          >
+                                            <span className="text-muted-foreground/60 font-medium shrink-0">Nội dung:</span>
+                                            <span className="truncate text-foreground/75 font-normal">{act.contentTitle}</span>
                                           </div>
-                                        ) : scheduledDatesStr ? (
-                                          <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium text-muted-foreground bg-muted/50 border border-border/60 rounded-none shrink-0">
-                                            Đã xếp ({scheduledDatesStr})
-                                          </span>
-                                        ) : null}
+                                        )}
                                       </div>
 
-                                      {/* Dòng 2: Nội dung giáo dục */}
-                                      {act.contentTitle && (
-                                        <div className="text-[12px] text-muted-foreground flex items-baseline gap-1.5 leading-normal">
-                                          <span className="text-foreground/75 font-medium shrink-0">Nội dung:</span>
-                                          <span className="line-clamp-1">{act.contentTitle}</span>
+                                      {/* Dòng Footer: Trạng thái xếp & Nút chọn */}
+                                      <div className="flex items-center justify-between text-[11px] gap-2 pt-1.5 border-t border-border/40">
+                                        <div className="truncate text-muted-foreground">
+                                          {usage.currentTheme.count > 0 ? (
+                                            <span
+                                              className="font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 truncate text-[11px]"
+                                              title={`Các ngày đã xếp trong chủ đề này (${usage.currentTheme.count} lần): ${usage.currentTheme.dates.join(', ')}`}
+                                            >
+                                              <span className="shrink-0">Chủ đề này</span>
+                                              <span className="text-muted-foreground/40 font-light select-none shrink-0">·</span>
+                                              <span className="truncate">
+                                                {usage.currentTheme.dates.length <= 2 ? (
+                                                  `Đã xếp ${usage.currentTheme.dates.join(', ')}${usage.currentTheme.count > usage.currentTheme.dates.length ? ` (${usage.currentTheme.count} lần)` : ''}`
+                                                ) : (
+                                                  `Đã xếp ${usage.currentTheme.count} lần (${usage.currentTheme.dates.slice(0, 2).join(', ')} +${usage.currentTheme.dates.length - 2})`
+                                                )}
+                                              </span>
+                                            </span>
+                                          ) : usage.otherThemes.length > 0 ? (
+                                            <span
+                                              className="text-muted-foreground flex items-center gap-1.5 truncate text-[11px]"
+                                              title={usage.otherThemes[0].dates?.length > 0 ? `${usage.otherThemes[0].label}: ${usage.otherThemes[0].dates.join(', ')}` : undefined}
+                                            >
+                                              <span className="font-medium text-foreground/80 shrink-0">{usage.otherThemes[0].label}</span>
+                                              <span className="text-muted-foreground/40 font-light select-none shrink-0">·</span>
+                                              <span className="truncate">Đã xếp {usage.otherThemes[0].count} lần</span>
+                                            </span>
+                                          ) : (
+                                            <span className="text-muted-foreground/50 font-normal">Chưa xếp lịch</span>
+                                          )}
                                         </div>
-                                      )}
-                                    </div>
 
-                                    {/* Cột Phải: Gợi ý chọn nhẹ nhàng khi hover, hoặc badge Đang chọn */}
-                                    <div className="shrink-0 flex items-center justify-end pl-2">
-                                      {isCurrent ? (
-                                        <span className="inline-flex items-center gap-1.5 text-[12px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 select-none">
-                                          <HugeiconsIcon icon={CheckmarkCircle01Icon} size={13} />
-                                          <span>Đang chọn</span>
-                                        </span>
-                                      ) : (
-                                        <span className="inline-flex items-center gap-1 text-[12.5px] font-medium text-[#1447e6] opacity-0 group-hover/row:opacity-100 transition-opacity select-none">
-                                          <span>Chọn</span>
-                                          <HugeiconsIcon icon={ArrowRight01Icon} size={14} />
-                                        </span>
-                                      )}
+                                        <div className="shrink-0">
+                                          {isCurrent ? (
+                                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-none">
+                                              <HugeiconsIcon icon={CheckmarkCircle01Icon} size={12} />
+                                              <span>Đang chọn</span>
+                                            </span>
+                                          ) : (
+                                            <span className="text-primary font-medium text-[11.5px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
+                                              <span>Chọn</span>
+                                              <HugeiconsIcon icon={ArrowRight01Icon} size={12} />
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
                                     </div>
-                                  </div>
-                                );
-                              })}
+                                  );
+                                })}
+                              </div>
                             </div>
-                          )}
+                          ))}
                         </div>
                       )}
                     </div>
                   );
-                })}
-              </div>
-            )}
+                })
+              )}
+            </div>
           </div>
-        </div>
-
-        {/* 4. Modal Footer: Tối giản, sạch sẽ */}
-        <div className="px-5 py-3 border-t border-border bg-muted/20 flex items-center justify-between shrink-0">
-          <span className="text-[12.5px] text-muted-foreground">
-            Hiển thị <strong>{filteredActivities.length}</strong> hoạt động phù hợp
-          </span>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            className="h-9 px-6 text-[13px] font-medium rounded-none border border-border bg-background hover:bg-muted text-foreground cursor-pointer shadow-none transition-colors"
-          >
-            Đóng
-          </Button>
         </div>
       </div>
     </div>
