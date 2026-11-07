@@ -14,12 +14,25 @@ import {
   ArrowDown01Icon,
   ArrowRight01Icon,
   Calendar03Icon,
+  Clock01Icon,
+  AlertCircleIcon,
 } from '@hugeicons/core-free-icons';
-import { Info, Copy, Check } from 'lucide-react';
+import { Info, Copy, Check, Printer } from 'lucide-react';
+import { ExcelActionsDropdown } from '@/components/ExcelActionsDropdown';
+import { downloadBlob } from '@/shared/utils/download';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { cn } from '@/shared/lib/utils';
 import { toast } from 'sonner';
 import { planningApi } from '../planning.api';
+import { PlanningTabLoading } from './PlanningTabLoading';
 import {
   TeacherTimetableGrid,
   DEFAULT_DAYS,
@@ -46,7 +59,91 @@ const ROUTINE_SLOT_SHORT_LABELS = {
 };
 
 
-export function WeeklyTimetableTab({ classId = '1' }) {
+const formatGoalCode = (code) => {
+  if (!code) return '';
+  const raw = String(code).trim().toUpperCase();
+  const digitsMatch = raw.match(/\d+/);
+  if (digitsMatch) {
+    const num = parseInt(digitsMatch[0], 10);
+    if (!isNaN(num)) {
+      return `MT ${num < 10 ? '0' + num : num}`;
+    }
+  }
+  return raw;
+};
+
+/**
+ * Tìm tuần tương ứng cho một chủ đề:
+ * - Nếu là chủ đề hiện tại (ngày hôm nay nằm trong khoảng thời gian của chủ đề):
+ *   -> Di chuyển tới tuần hiện tại (tuần chứa ngày hôm nay).
+ * - Nếu không phải chủ đề hiện tại:
+ *   -> Di chuyển tới tuần chứa ngày bắt đầu (startDate) của chủ đề đó.
+ */
+export function resolveWeekForTheme(themeId, themesList = [], calendarWeeks = CALENDAR_WEEKS) {
+  if (!themeId || !themesList?.length) return null;
+
+  const cleanId = String(themeId).trim();
+  const matchedTheme = themesList.find(
+    (th) =>
+      th.id === cleanId ||
+      th.publicId === cleanId ||
+      String(th.themeId) === cleanId ||
+      th.code === cleanId ||
+      String(th.code).padStart(2, '0') === cleanId.padStart(2, '0')
+  );
+  if (!matchedTheme) return null;
+
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+
+  const startDateStr = matchedTheme.startDate ? String(matchedTheme.startDate).slice(0, 10) : '';
+  const endDateStr = matchedTheme.endDate ? String(matchedTheme.endDate).slice(0, 10) : '';
+
+  // 1. Kiểm tra xem có phải "Chủ đề hiện tại" không (ngày hôm nay nằm trong khoảng thời gian của chủ đề)
+  // -> Di chuyển tới tuần hiện tại (tuần chứa ngày hôm nay)
+  const isCurrentTheme = Boolean(
+    matchedTheme.isCurrent ||
+    (startDateStr && endDateStr && todayStr >= startDateStr && todayStr <= endDateStr)
+  );
+
+  if (isCurrentTheme) {
+    const curWeek = calendarWeeks.find((w) => w.isCurrentWeek) || calendarWeeks[0];
+    return curWeek?.id || null;
+  }
+
+  // 2. Nếu không phải chủ đề hiện tại -> di chuyển tới tuần có ngày bắt đầu (startDate) của chủ đề đó
+  if (startDateStr) {
+    const foundWeek = calendarWeeks.find((w) => {
+      if (w.dayDetails && w.dayDetails.some((d) => d.dateStr === startDateStr)) {
+        return true;
+      }
+      if (w.dayDetails && w.dayDetails.length >= 7) {
+        const wStart = w.dayDetails[0].dateStr;
+        const wEnd = w.dayDetails[6].dateStr;
+        if (startDateStr >= wStart && startDateStr <= wEnd) {
+          return true;
+        }
+      }
+      return false;
+    });
+
+    if (foundWeek) {
+      return foundWeek.id;
+    }
+  }
+
+  return null;
+}
+
+export function WeeklyTimetableTab({
+  classId = '1',
+  isReadOnly: propReadOnly = false,
+  selectedThemeId = null,
+  onThemeChange = null,
+  planStatus = null,
+  themes = [],
+}) {
   const { t } = useTranslation();
 
   const user = useAuthStore((state) => state.user);
@@ -68,8 +165,6 @@ export function WeeklyTimetableTab({ classId = '1' }) {
       null
     );
   }, [academicYears, selectedYearId]);
-
-  const isReadOnly = isPrincipal || Boolean(currentAcademicYear?.status === 'COMPLETED');
 
   const { academicStartCutoff, academicEndCutoff, academicStartDate } = useMemo(() => {
     let startDate = new Date(2026, 8, 7); // Default: Thứ 2, 07/09/2026
@@ -117,8 +212,96 @@ export function WeeklyTimetableTab({ classId = '1' }) {
     () => CALENDAR_WEEKS.find((w) => w.isCurrentWeek)?.id || 'w-2',
     []
   );
-  const [selectedWeekId, setSelectedWeekId] = useState(initialCurrentWeekId);
+
+  const updateUrlWeek = (weekId, themeId) => {
+    if (typeof window === 'undefined') return;
+    try {
+      const url = new URL(window.location.href);
+      if (weekId) {
+        url.searchParams.set('weekId', weekId);
+      }
+      if (themeId) {
+        url.searchParams.set('themeId', themeId);
+      }
+      window.history.replaceState(null, '', url.pathname + url.search);
+      if (classId && weekId) {
+        sessionStorage.setItem(`sorak_timetable_week_${classId}`, weekId);
+      }
+    } catch (e) {
+      console.warn('Failed to update URL weekId:', e);
+    }
+  };
+
+  // Tính toán tuần ban đầu:
+  // 1. Ưu tiên tuần đã lưu trên URL (ví dụ người dùng vừa F5)
+  // 2. Ưu tiên tuần đã lưu trong sessionStorage của lớp học này (nếu còn trong cùng phiên)
+  // 3. Nếu chuyển chủ đề từ Phân bổ mục tiêu -> tính toán theo chủ đề (hiện tại -> tuần hiện tại; khác -> ngày bắt đầu)
+  // 4. Mặc định: tuần hiện tại
+  const initialResolvedWeekId = useMemo(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlWeekId = urlParams.get('weekId');
+      if (urlWeekId && CALENDAR_WEEKS.some((w) => w.id === urlWeekId)) {
+        return urlWeekId;
+      }
+      try {
+        const savedWeek = sessionStorage.getItem(`sorak_timetable_week_${classId}`);
+        if (savedWeek && CALENDAR_WEEKS.some((w) => w.id === savedWeek)) {
+          return savedWeek;
+        }
+      } catch {}
+    }
+
+    const effectiveThemeId =
+      selectedThemeId ||
+      (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('themeId') : null);
+    if (effectiveThemeId && themes?.length > 0) {
+      const resolved = resolveWeekForTheme(effectiveThemeId, themes, CALENDAR_WEEKS);
+      if (resolved) return resolved;
+    }
+    return initialCurrentWeekId;
+  }, [selectedThemeId, themes, initialCurrentWeekId, classId]);
+
+  const [selectedWeekId, setSelectedWeekId] = useState(initialResolvedWeekId);
+  const selectedWeekIdRef = React.useRef(selectedWeekId);
+  selectedWeekIdRef.current = selectedWeekId;
+  const lastResolvedThemeRef = React.useRef(selectedThemeId || null);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+
+  // Lưu weekId vào URL và sessionStorage bất kỳ khi nào selectedWeekId thay đổi (đảm bảo F5 không bị mất)
+  useEffect(() => {
+    if (!selectedWeekId) return;
+    updateUrlWeek(selectedWeekId);
+  }, [selectedWeekId]);
+
+  // Đồng bộ tuần khi chuyển từ Phân bổ mục tiêu sang Kế hoạch tuần:
+  // - Nếu chủ đề được chọn là chủ đề hiện tại -> di chuyển tới tuần hiện tại
+  // - Nếu là chủ đề khác -> di chuyển tới tuần có ngày bắt đầu của chủ đề đó
+  // - ĐẶC BIỆT: Nếu URL đã có sẵn weekId hợp lệ (ví dụ người dùng vừa F5 lại trang), KHÔNG được tự ý reset tuần!
+  useEffect(() => {
+    const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const urlWeekId = urlParams?.get('weekId');
+
+    if (urlWeekId && CALENDAR_WEEKS.some((w) => w.id === urlWeekId)) {
+      lastResolvedThemeRef.current = selectedThemeId || urlParams?.get('themeId');
+      return;
+    }
+
+    const effectiveThemeId =
+      selectedThemeId ||
+      urlParams?.get('themeId');
+    if (!effectiveThemeId || !themes?.length) return;
+
+    if (lastResolvedThemeRef.current === effectiveThemeId) return;
+
+    const targetWeekId = resolveWeekForTheme(effectiveThemeId, themes, CALENDAR_WEEKS);
+    if (targetWeekId && targetWeekId !== selectedWeekIdRef.current) {
+      lastResolvedThemeRef.current = effectiveThemeId;
+      selectedWeekIdRef.current = targetWeekId;
+      setSelectedWeekId(targetWeekId);
+      updateUrlWeek(targetWeekId, effectiveThemeId);
+    }
+  }, [selectedThemeId, themes]);
 
   const activeWeekObj =
     CALENDAR_WEEKS.find((w) => w.id === selectedWeekId) ||
@@ -162,6 +345,48 @@ export function WeeklyTimetableTab({ classId = '1' }) {
   const [availableActivities, setAvailableActivities] = useState([]);
   const [hierarchicalGoals, setHierarchicalGoals] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+  const [isExportingExcel, setIsExportingExcel] = useState(false);
+
+  const currentWeekNumber = useMemo(() => {
+    const idx = CALENDAR_WEEKS.findIndex((w) => w.id === selectedWeekId);
+    return idx >= 0 ? idx + 1 : 1;
+  }, [selectedWeekId]);
+
+  const handlePrintWeeklyPlan = () => {
+    const printUrl = planningApi.getWeeklyTeachingPlanPrintUrl(classId, currentWeekNumber);
+    window.open(printUrl, '_blank');
+  };
+
+  const handleExportWeeklyExcel = async () => {
+    try {
+      setIsExportingExcel(true);
+      const blob = await planningApi.exportWeeklyTeachingPlanExcel(classId, currentWeekNumber);
+      const subThemeName = timetableData?.selectedSubTheme?.name || `Tuan_${currentWeekNumber}`;
+      const cleanSubTheme = subThemeName.replace(/[^a-zA-Z0-9_\u00C0-\u024F\u1EA0-\u1EF9]/g, '_');
+      downloadBlob(blob, `Ke_Hoach_Chi_Tiet_Tuan_${currentWeekNumber}_${cleanSubTheme}.xlsx`);
+      toast.success(`Đã xuất kế hoạch chi tiết tuần ${currentWeekNumber} ra file Excel thành công`);
+    } catch (err) {
+      console.error('Export weekly excel failed:', err);
+      toast.error('Có lỗi xảy ra khi xuất file Excel');
+    } finally {
+      setIsExportingExcel(false);
+    }
+  };
+
+  // Trạng thái của kế hoạch tuần / chủ đề hiện tại
+  const currentPlanStatus = timetableData?.planStatus || (selectedThemeId === planStatus?.themeId ? planStatus?.status : null);
+  const isApproved = currentPlanStatus === 'USED';
+  const isPendingApproval = currentPlanStatus === 'PENDING_APPROVAL' || currentPlanStatus === 'SUBMITTED' || (Boolean(planStatus?.status === 'PENDING_APPROVAL' || planStatus?.status === 'SUBMITTED') && (!selectedThemeId || selectedThemeId === planStatus?.themeId));
+  const isRejected = Boolean(
+    currentPlanStatus === 'REJECTED' ||
+    (planStatus?.status === 'REJECTED' && (!selectedThemeId || selectedThemeId === planStatus?.themeId))
+  );
+  const rejectionReason = timetableData?.rejectionReason || planStatus?.rejectionReason || '';
+
+  // Chỉ khóa nếu tuần này thuộc một chủ đề ĐÃ DUYỆT hoặc ĐANG CHỜ DUYỆT
+  const isThemeReadOnly = Boolean(timetableData?.isReadOnly || isApproved || isPendingApproval);
+  const isReadOnly = isPrincipal || isThemeReadOnly || Boolean(currentAcademicYear?.status === 'COMPLETED');
 
   // Format dynamic dates for timetable header according to active week (T2 - CN)
   const currentDays = useMemo(() => {
@@ -200,7 +425,7 @@ export function WeeklyTimetableTab({ classId = '1' }) {
               if (dateIsoStr >= h.startDate && dateIsoStr <= h.endDate) {
                 isHolidayLocked = true;
                 lockReason = h.name;
-                lockLabel = h.name;
+                lockLabel = 'Ngày nghỉ';
                 activeHoliday = h;
                 break;
               }
@@ -309,7 +534,6 @@ export function WeeklyTimetableTab({ classId = '1' }) {
   lastClickedCellRef.current = lastClickedCell;
   const selectedSlotForPopoverRef = React.useRef(selectedSlotForPopover);
   selectedSlotForPopoverRef.current = selectedSlotForPopover;
-  const selectedWeekIdRef = React.useRef(selectedWeekId);
   selectedWeekIdRef.current = selectedWeekId;
   const currentDaysRef = React.useRef(currentDays);
   currentDaysRef.current = currentDays;
@@ -329,8 +553,32 @@ export function WeeklyTimetableTab({ classId = '1' }) {
       });
       setTimetableData(data);
       setSlots(data?.slots || []);
-      setAvailableActivities(data?.availableActivities || []);
-      setHierarchicalGoals(data?.goals || []);
+      const formattedActivities = (data?.availableActivities || []).map((a) => ({
+        ...a,
+        goalCode: formatGoalCode(a.goalCode),
+      }));
+      setAvailableActivities(formattedActivities);
+
+      const formattedGoals = (data?.goals || []).map((g) => ({
+        ...g,
+        goalCode: formatGoalCode(g.goalCode || g.code),
+        contents: (g.contents || []).map((cnt) => ({
+          ...cnt,
+          activities: (cnt.activities || []).map((act) => ({
+            ...act,
+            goalCode: formatGoalCode(act.goalCode || g.goalCode || g.code),
+          })),
+        })),
+      }));
+      setHierarchicalGoals(formattedGoals);
+      const activeThId = data?.selectedTheme?.id || data?.theme?.id || '';
+      if (activeThId) {
+        lastResolvedThemeRef.current = activeThId;
+      }
+      updateUrlWeek(targetWeek, activeThId || undefined);
+      if (onThemeChange) {
+        onThemeChange(activeThId, undefined, true);
+      }
     } catch (err) {
       console.warn('Failed to load weekly timetable:', err);
       setTimetableData(null);
@@ -366,16 +614,23 @@ export function WeeklyTimetableTab({ classId = '1' }) {
           (s.routineSlot === routineSlotKey || s.routine_slot === routineSlotKey)
       );
 
+      if (existingInCell.length > 0 && !replacingSlotId) {
+        const confirmed = window.confirm(
+          'Khung giờ này đã có hoạt động. Bạn có muốn thay thế hoạt động hiện tại không?'
+        );
+        if (!confirmed) return;
+      }
+
       const payload = {
         activityId: activity.id,
         day: dayKey,
         routineSlot: routineSlotKey,
         date: targetDay?.dateStr || dateStr || targetDay?.date || '2026-10-14',
-        slotId: replacingSlotId,
-        isAdd,
+        slotId: replacingSlotId || existingInCell[0]?.id || null,
+        isAdd: false,
         weekId: currentWeek,
         subThemeId: timetableData?.selectedSubTheme?.id || timetableData?.theme?.id,
-        orderIndex: isAdd ? existingInCell.length + 1 : 1,
+        orderIndex: 1,
       };
       await planningApi.assignActivityToSlot(classId, payload);
 
@@ -490,6 +745,23 @@ export function WeeklyTimetableTab({ classId = '1' }) {
         );
         return;
       }
+      if (targetExistingSlots.length > 0) {
+        const confirmed = window.confirm(
+          'Khung giờ này đã có hoạt động. Bạn có muốn thay thế hoạt động hiện tại không?'
+        );
+        if (!confirmed) return;
+
+        // Delete existing slot(s) in target cell to guarantee at most 1 activity per slot
+        for (const existing of targetExistingSlots) {
+          if (existing.id && !String(existing.id).startsWith('s-')) {
+            try {
+              await planningApi.deleteWeeklySlot(classId, existing.id);
+            } catch (delErr) {
+              console.warn('Failed to delete existing slot during duplicate:', delErr);
+            }
+          }
+        }
+      }
       const routineKey = targetSlotDef.key;
       let saved;
 
@@ -500,8 +772,9 @@ export function WeeklyTimetableTab({ classId = '1' }) {
           routineSlot: routineKey,
           date: targetDay.dateStr || targetDay.date,
           subThemeId: timetableData?.selectedSubTheme?.id || timetableData?.theme?.id,
-          isAdd: true,
-          orderIndex: targetExistingSlots.length + 1,
+          isAdd: false,
+          slotId: targetExistingSlots[0]?.id || null,
+          orderIndex: 1,
         });
       } else {
         const newSlot = {
@@ -511,8 +784,8 @@ export function WeeklyTimetableTab({ classId = '1' }) {
           date: targetDay.date,
           routineSlot: routineKey,
           routine_slot: routineKey,
-          orderIndex: targetExistingSlots.length + 1,
-          order_index: targetExistingSlots.length + 1,
+          orderIndex: 1,
+          order_index: 1,
           status: 'SCHEDULED',
         };
         saved = await planningApi.saveWeeklySlot(classId, {
@@ -521,7 +794,11 @@ export function WeeklyTimetableTab({ classId = '1' }) {
         });
       }
 
-      setSlots((prev) => [...prev, { ...saved, date: targetDay.date, orderIndex: targetExistingSlots.length + 1, order_index: targetExistingSlots.length + 1 }]);
+      const targetIds = new Set(targetExistingSlots.map((s) => s.id));
+      setSlots((prev) => [
+        ...prev.filter((s) => !targetIds.has(s.id)),
+        { ...saved, date: targetDay.date, orderIndex: 1, order_index: 1 },
+      ]);
       await loadTimetable();
       toast.success(
         `Đã nhân bản "${sourceSlot.title || sourceSlot.shortTitle}" sang ${targetDay.name || targetDay.shortName}`
@@ -716,7 +993,23 @@ export function WeeklyTimetableTab({ classId = '1' }) {
             s.day === target.dayKey &&
             (s.routineSlot === target.routineKey || s.routine_slot === target.routineKey)
         );
-        const nextOrderIndex = existingInTarget.length + 1;
+
+        if (existingInTarget.length > 0) {
+          const confirmed = window.confirm(
+            'Khung giờ này đã có hoạt động. Bạn có muốn thay thế hoạt động hiện tại không?'
+          );
+          if (!confirmed) return null;
+
+          for (const existing of existingInTarget) {
+            if (existing.id && !String(existing.id).startsWith('s-')) {
+              try {
+                await planningApi.deleteWeeklySlot(classId, existing.id);
+              } catch (delErr) {
+                console.warn('Failed to delete existing slot during paste:', delErr);
+              }
+            }
+          }
+        }
 
         if (activeClipboard.activityId) {
           saved = await planningApi.assignActivityToSlot(classId, {
@@ -725,9 +1018,10 @@ export function WeeklyTimetableTab({ classId = '1' }) {
             routineSlot: target.routineKey,
             date: targetDate,
             subThemeId: timetableData?.selectedSubTheme?.id || timetableData?.theme?.id,
-            isAdd: true,
+            isAdd: false,
+            slotId: existingInTarget[0]?.id || null,
             weekId: targetWeek,
-            orderIndex: nextOrderIndex,
+            orderIndex: 1,
           });
         } else {
           const newSlot = {
@@ -737,8 +1031,8 @@ export function WeeklyTimetableTab({ classId = '1' }) {
             date: targetDate,
             routineSlot: target.routineKey,
             routine_slot: target.routineKey,
-            orderIndex: nextOrderIndex,
-            order_index: nextOrderIndex,
+            orderIndex: 1,
+            order_index: 1,
             status: 'SCHEDULED',
             weekId: targetWeek,
           };
@@ -895,16 +1189,75 @@ export function WeeklyTimetableTab({ classId = '1' }) {
       );
 
     const currentWeek = selectedWeekIdRef.current || selectedWeekId;
-    const nextOrder = targetSlotsInCell.length + 1;
+
+    // Khi đem qua ô đã có hoạt động: Hiện alert confirm của browser đơn giản, clean
+    if (targetSlotsInCell.length > 0) {
+      const targetSlot = targetSlotsInCell[0];
+      if (sourceSlot.id === targetSlot.id) return;
+
+      const sourceName = sourceSlot.title || sourceSlot.shortTitle || 'hoạt động này';
+      const targetName = targetSlot.title || targetSlot.shortTitle || 'hoạt động đã có';
+      const cellName = `${targetDay.name} (${targetSlotDef.name})`;
+
+      const confirmed = window.confirm(
+        `Ô ${cellName} đã có hoạt động "${targetName}".\n\nBạn có muốn đổi chỗ hai hoạt động này cho nhau không?`
+      );
+
+      if (!confirmed) return;
+
+      // Optimistic update trong UI ngay lập tức
+      setSlots((prev) => {
+        return prev.map((s) => {
+          if (s.id === sourceSlot.id) {
+            return {
+              ...s,
+              day: targetDay.key,
+              date: targetDay.dateStr || targetDay.date,
+              routineSlot: targetSlotDef.key,
+              routine_slot: targetSlotDef.key,
+              weekId: currentWeek,
+            };
+          }
+          if (s.id === targetSlot.id) {
+            return {
+              ...s,
+              day: sourceDay.key,
+              date: sourceDay.dateStr || sourceDay.date,
+              routineSlot: sourceSlotDef.key,
+              routine_slot: sourceSlotDef.key,
+              weekId: currentWeek,
+            };
+          }
+          return s;
+        });
+      });
+
+      try {
+        await planningApi.swapWeeklySlots(classId, {
+          sourceSlotId: sourceSlot.id,
+          targetSlotId: targetSlot.id,
+        });
+        await loadTimetable();
+        toast.success(`Đã đổi chỗ "${sourceName}" và "${targetName}"`);
+      } catch (err) {
+        console.error('Swap slots error:', err);
+        toast.error(err.response?.data?.message || err.message || 'Lỗi khi đổi chỗ hoạt động.');
+        await loadTimetable();
+      }
+      return;
+    }
+
+    // Di chuyển sang ô trống
     const updatedSourceSlot = {
       ...sourceSlot,
+      id: sourceSlot.id,
       day: targetDay.key,
-      date: targetDay.date,
+      date: targetDay.dateStr || targetDay.date,
       routineSlot: targetSlotDef.key,
       routine_slot: targetSlotDef.key,
       weekId: currentWeek,
-      orderIndex: nextOrder,
-      order_index: nextOrder,
+      orderIndex: 1,
+      order_index: 1,
     };
 
     setSlots((prev) => {
@@ -918,21 +1271,24 @@ export function WeeklyTimetableTab({ classId = '1' }) {
         date: targetDay.dateStr || targetDay.date,
       });
       await loadTimetable();
+      toast.success(
+        `Đã chuyển "${sourceSlot.title || sourceSlot.shortTitle}" sang ${targetDay.name || targetDay.shortName}`
+      );
     } catch (err) {
       console.warn('Failed to save moved slot:', err);
+      toast.error('Lỗi khi chuyển hoạt động.');
+      await loadTimetable();
     }
-
-    toast.success(
-      targetSlotsInCell.length > 0
-        ? `Đã thêm "${sourceSlot.title || sourceSlot.shortTitle}" vào ${targetDay.name || targetDay.shortName}`
-        : `Đã chuyển "${sourceSlot.title || sourceSlot.shortTitle}" sang ${targetDay.name || targetDay.shortName}`
-    );
   };
 
   // Lọc danh sách ô đã chọn dán thuộc về tuần đang hiển thị
   const currentWeekSelectedTargetCells = useMemo(() => {
     return selectedTargetCells.filter((c) => !c.weekId || c.weekId === selectedWeekId);
   }, [selectedTargetCells, selectedWeekId]);
+
+  if (isLoading && !timetableData) {
+    return <PlanningTabLoading message="Đang tải dữ liệu kế hoạch tuần..." />;
+  }
 
   return (
     <div
@@ -941,16 +1297,55 @@ export function WeeklyTimetableTab({ classId = '1' }) {
     >
       {/* 1. Header Toolbar - Hoàn toàn đồng nhất với Nhật ký ngày */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/60 shrink-0">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-[26px] font-semibold text-foreground tracking-tight">
-            {t('planning.tabTimetable', 'Kế hoạch tuần')}
-          </h1>
-          <p className="text-[12px] text-muted-foreground font-normal">
-            {t(
-              'planning.timetableDesc',
-              'Sắp xếp kế hoạch tuần và các hoạt động học tập, sinh hoạt theo từng ngày trong tuần'
-            )}
-          </p>
+        <div className="flex flex-col gap-1 min-w-0">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h1 className="text-[26px] font-semibold text-foreground tracking-tight">
+              {t('planning.tabTimetable', 'Kế hoạch tuần')}
+            </h1>
+            {isRejected ? (
+              <button
+                type="button"
+                onClick={() => setIsFeedbackModalOpen(true)}
+                className="inline-flex items-center gap-1.5 text-[11.5px] font-medium px-2 py-0.5 select-none border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100/80 dark:hover:bg-rose-900/60 transition-colors cursor-pointer shrink-0"
+                title="Nhấn để xem chi tiết ý kiến phản hồi"
+              >
+                <HugeiconsIcon icon={AlertCircleIcon} size={12} className="shrink-0 text-rose-600 dark:text-rose-400" />
+                <span>Yêu cầu sửa</span>
+              </button>
+            ) : isPendingApproval ? (
+              <span
+                className="inline-flex items-center gap-1.5 text-[11.5px] font-medium px-2 py-0.5 select-none border shrink-0 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/50"
+                title="Kế hoạch tuần đang chờ phê duyệt"
+              >
+                <HugeiconsIcon
+                  icon={Clock01Icon}
+                  size={12}
+                  className="shrink-0 text-amber-600 dark:text-amber-400"
+                />
+                <span>Chờ duyệt</span>
+              </span>
+            ) : isApproved ? (
+              <span
+                className="inline-flex items-center gap-1.5 text-[11.5px] font-medium px-2 py-0.5 select-none border shrink-0 text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/50"
+                title="Kế hoạch tuần đã được phê duyệt"
+              >
+                <HugeiconsIcon
+                  icon={CheckmarkCircle01Icon}
+                  size={12}
+                  className="shrink-0 text-emerald-600 dark:text-emerald-400"
+                />
+                <span>Đã duyệt</span>
+              </span>
+            ) : null}
+          </div>
+          {!isRejected && !isPendingApproval && !isApproved && (
+            <p className="text-[12px] text-muted-foreground font-normal">
+              {t(
+                'planning.timetableDesc',
+                'Sắp xếp kế hoạch tuần và các hoạt động học tập, sinh hoạt theo từng ngày trong tuần'
+              )}
+            </p>
+          )}
         </div>
 
         {/* Cụm điều chỉnh date & buttons: Tuần hiện tại + Khung tuần đồng bộ + Nút mở lịch + Khay hoạt động */}
@@ -989,8 +1384,13 @@ export function WeeklyTimetableTab({ classId = '1' }) {
               <HugeiconsIcon icon={ArrowLeft02Icon} size={14} />
             </button>
 
-            <div className="w-[195px] h-8 flex items-center justify-center font-medium select-none text-[12.5px] text-foreground tabular-nums shrink-0">
+            <div className="w-[195px] h-8 flex items-center justify-center font-medium select-none text-[12.5px] text-foreground tabular-nums shrink-0 gap-1.5">
               <span>{t('planning.weekPrefix', 'Tuần')} {activeWeekObj?.label}</span>
+              {isReadOnly && isThemeReadOnly && (
+                <span title="Tuần thuộc chủ đề đã duyệt (Chỉ đọc)">
+                  <HugeiconsIcon icon={Clock01Icon} size={12} className="text-blue-600 dark:text-blue-400 shrink-0" />
+                </span>
+              )}
             </div>
 
             <button
@@ -1034,8 +1434,27 @@ export function WeeklyTimetableTab({ classId = '1' }) {
             <HugeiconsIcon icon={Calendar03Icon} size={14} />
             <span>{showWeekend ? 'Ẩn T7, CN' : 'Hiện T7, CN'}</span>
           </button>
+
+          {/* Nút In Kế hoạch Tuần A4 */}
+          <button
+            type="button"
+            onClick={handlePrintWeeklyPlan}
+            className="size-8 flex items-center justify-center border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer rounded-none shrink-0"
+            title="In Kế hoạch tuần (Khổ A4)"
+          >
+            <Printer size={15} />
+          </button>
+
+          {/* Nút Xuất Excel Kế hoạch tuần */}
+          <ExcelActionsDropdown
+            onExport={handleExportWeeklyExcel}
+            isExporting={isExportingExcel}
+            showImport={false}
+          />
         </div>
       </div>
+
+
 
       {/* 2. Main Workspace: Full-width Timetable Grid tái sử dụng TeacherTimetableGrid */}
       <TeacherTimetableGrid
@@ -1100,7 +1519,7 @@ export function WeeklyTimetableTab({ classId = '1' }) {
               dangerouslySetInnerHTML={{
                 __html: t(
                   'planning.dragActivityDesc',
-                  'Kéo hoạt động sang ô khác để chuyển/thêm vào ô đó. Giữ phím <strong>Alt / Ctrl</strong> khi kéo để nhân bản.'
+                  'Kéo hoạt động sang ô khác để di chuyển. Nếu ô đích đã có hoạt động, hệ thống sẽ tự động <strong>hoán đổi vị trí</strong> (đổi chỗ) giữa 2 hoạt động. Giữ phím <strong>Alt / Ctrl</strong> khi kéo để nhân bản.'
                 ),
               }}
             />
@@ -1206,6 +1625,7 @@ export function WeeklyTimetableTab({ classId = '1' }) {
         targetCell={pickerCell}
         goals={hierarchicalGoals}
         themeAllocations={timetableData?.themeAllocations || []}
+        subThemeName={timetableData?.selectedSubTheme?.name}
         onSelectActivity={handleAssignActivityToSlot}
         currentActivityId={pickerCell?.currentActivityId}
       />
@@ -1285,6 +1705,40 @@ export function WeeklyTimetableTab({ classId = '1' }) {
         lockRoutineSlot={true}
         onSave={handleSaveEditedSlot}
       />
+      {/* 8. Modal: BGH Feedback / Rejection Details */}
+      <Dialog open={isFeedbackModalOpen} onOpenChange={setIsFeedbackModalOpen}>
+        <DialogContent className="max-w-md rounded-none">
+          <DialogHeader>
+            <DialogTitle className="text-base font-semibold text-foreground">
+              Ý kiến phản hồi của Ban Giám Hiệu
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground pt-1">
+              Chủ đề: <strong>{timetableData?.selectedTheme?.name || timetableData?.theme?.name || 'Kế hoạch tuần'}</strong>
+              {activeWeekObj?.label && <span> ({activeWeekObj.label})</span>}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2 text-xs">
+            <div className="bg-rose-50/70 dark:bg-rose-950/25 border border-rose-200/80 dark:border-rose-900/40 p-3.5 text-rose-800 dark:text-rose-200 text-xs leading-relaxed font-medium">
+              "{rejectionReason || 'Ban Giám Hiệu yêu cầu rà soát và bổ sung kế hoạch.'}"
+            </div>
+            <p className="text-muted-foreground text-[11.5px] leading-relaxed">
+              Vui lòng kiểm tra lại các nội dung theo góp ý trên và nộp lại cho Ban Giám Hiệu duyệt.
+            </p>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0 pt-2 border-t border-border/60">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsFeedbackModalOpen(false)}
+              className="text-xs rounded-none h-8 px-4"
+            >
+              Đóng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
