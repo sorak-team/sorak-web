@@ -104,4 +104,15 @@ export const curriculumApi = {
     const response = await apiClient.post('/curriculum/goals/ai-assistant', payload);
     return response.data?.data || response.data;
   },
+
+  /**
+   * Xuất Khung Chương trình & Mục tiêu Giáo dục Mầm non đa sheet ra Excel
+   */
+  async exportFrameworkExcel(params = {}) {
+    const response = await apiClient.get('/curriculum/framework/export/excel', {
+      params,
+      responseType: 'blob',
+    });
+    return response.data;
+  },
 };

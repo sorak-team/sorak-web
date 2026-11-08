@@ -17,12 +17,22 @@ import {
   CheckmarkCircle01Icon,
 } from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { cn } from '@/shared/lib/utils';
 import { toast } from 'sonner';
 import { curriculumApi } from './curriculum.api';
 import { GoalItemDrawer } from './components/GoalItemDrawer';
 import { GoalImportDrawer } from './components/GoalImportDrawer';
 import { GoalAiAssistantDrawer } from './components/GoalAiAssistantDrawer';
+import { ExcelActionsDropdown } from '@/components/ExcelActionsDropdown';
+import { downloadBlob } from '@/shared/utils/download';
 
 const GRADE_LABELS_FULL = {
   nhatre: 'Khối Nhà trẻ (12–36 tháng)',
@@ -138,6 +148,19 @@ const normalizeGoalCode = (code) => {
   return raw.replace(/[^A-Z0-9]/g, '');
 };
 
+export const formatGoalCode = (code) => {
+  if (!code) return '';
+  const raw = String(code).trim().toUpperCase();
+  const digitsMatch = raw.match(/\d+/);
+  if (digitsMatch) {
+    const num = parseInt(digitsMatch[0], 10);
+    if (!isNaN(num)) {
+      return `MT ${num < 10 ? '0' + num : num}`;
+    }
+  }
+  return raw;
+};
+
 const cleanDisplayGoalTitle = (g) => {
   if (!g) return '';
   const title = g.title || '';
@@ -203,14 +226,14 @@ const cleanDisplayGoalTitle = (g) => {
   return STANDARD_GOAL_FALLBACKS[norm] || title;
 };
 
-// Helper: normalize goals and domain counts while preserving database goal codes (MT01, MT02...)
+// Helper: normalize goals and domain counts while preserving database goal codes (MT 01, MT 02...)
 const reindexGoalTree = (domains) => {
   return domains.map((domain) => {
     const rawGoals = domain.children || [];
     const directGoals = rawGoals.flatMap((item) => (item.children ? item.children : [item]));
     const normalized = directGoals.map((g) => ({
       ...g,
-      code: g.code || g.goal_code || g.goalCode || 'MT',
+      code: formatGoalCode(g.code || g.goal_code || g.goalCode || 'MT'),
       domain: g.domain || domain.domain,
       domainLabel: g.domainLabel || domain.domainLabel,
       title: cleanDisplayGoalTitle(g),
@@ -259,8 +282,28 @@ export function CurriculumGoalDetailPage() {
   // Drawer states
   const [isItemDrawerOpen, setIsItemDrawerOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
+  const [goalToDelete, setGoalToDelete] = useState(null);
   const [isImportDrawerOpen, setIsImportDrawerOpen] = useState(false);
   const [isAiDrawerOpen, setIsAiDrawerOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportExcel = async () => {
+    try {
+      setIsExporting(true);
+      const blob = await curriculumApi.exportFrameworkExcel({
+        year: yearId?.replace('-', '–'),
+      });
+      const safeYear = (yearId || '2026-2027').replace(/\s+/g, '_');
+      downloadBlob(blob, `Khung_Chuong_Trinh_GDMN_${safeYear}.xlsx`);
+      toast.success('Đã xuất khung chương trình GDMN thành công');
+    } catch (err) {
+      toast.error('Lỗi khi xuất khung chương trình', {
+        description: err.message || 'Vui lòng thử lại sau.',
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   // Load Goal Bank Detail
   useEffect(() => {
@@ -272,8 +315,7 @@ export function CurriculumGoalDetailPage() {
           ageGroup,
         });
         setBankInfo(data.info);
-        const localStatus = localStorage.getItem(`sorak_goal_bank_${yearId}_${ageGroup}_status`);
-        const effectiveStatus = localStatus || data.info?.status || 'DRAFT';
+        const effectiveStatus = data.info?.status || 'DRAFT';
         setStatus(effectiveStatus);
         setUpdatedAt(data.info?.updatedAt || new Date());
         setGoalTree(reindexGoalTree(data.tree || []));
@@ -292,27 +334,43 @@ export function CurriculumGoalDetailPage() {
   // Toggle publish status for the entire goal bank
   const handleTogglePublish = async () => {
     const nextStatus = isPublished ? 'DRAFT' : 'PUBLISHED';
-    setStatus(nextStatus);
-    const nextDate = new Date();
-    setUpdatedAt(nextDate);
+
+    if (nextStatus === 'PUBLISHED') {
+      // Validate BR-80, BR-82, BR-205: Check that ALL goals have at least 1 educational content
+      const allGoalsList = goalTree.flatMap((d) => d.children || []);
+      const emptyGoal = allGoalsList.find((g) => (g.contentsCount ?? (g.contents || []).length) === 0);
+      if (emptyGoal) {
+        toast.error('Không thể xuất bản khung giáo dục vì một hoặc nhiều mục tiêu giáo dục chưa có nội dung giáo dục.');
+        return;
+      }
+    }
 
     try {
-      await curriculumApi.updateGoalBankStatus({
+      const res = await curriculumApi.updateGoalBankStatus({
         year: yearId.replace('-', '–'),
         ageGroup,
         status: nextStatus,
       });
-      localStorage.setItem(`sorak_goal_bank_${yearId}_${ageGroup}_status`, nextStatus);
+      if (res && res.success === false) {
+        throw new Error(res.message || 'Không thể cập nhật trạng thái ngân hàng mục tiêu');
+      }
+
+      const updatedStatus = res.info?.status || nextStatus;
+      setStatus(updatedStatus);
+      const nextDate = new Date();
+      setUpdatedAt(nextDate);
+      localStorage.removeItem(`sorak_goal_bank_${yearId}_${ageGroup}_status`);
+
+      toast.success(
+        nextStatus === 'PUBLISHED'
+          ? 'Đã công bố toàn bộ mục tiêu trong năm học cho khối này!'
+          : 'Đã chuyển toàn bộ mục tiêu về bản nháp (Được phép chỉnh sửa và lưu)',
+      );
     } catch (err) {
       console.warn('Failed to update goal bank status on server:', err);
-      localStorage.setItem(`sorak_goal_bank_${yearId}_${ageGroup}_status`, nextStatus);
+      const errMsg = err.response?.data?.message || err.message || 'Không thể công bố ngân hàng mục tiêu.';
+      toast.error(errMsg);
     }
-
-    toast.success(
-      nextStatus === 'PUBLISHED'
-        ? 'Đã công bố toàn bộ mục tiêu trong năm học cho khối này!'
-        : 'Đã chuyển toàn bộ mục tiêu về bản nháp (Được phép chỉnh sửa và lưu)',
-    );
   };
 
   // Toggle node expansion
@@ -369,7 +427,7 @@ export function CurriculumGoalDetailPage() {
       .filter(Boolean);
   }, [goalTree, searchQuery, selectedDomain]);
 
-  // Calculate total filtered goals
+  // Calculate total filtered goals and next goal code suggestion (MT 01, MT 02...)
   const totalGoalsCount = useMemo(() => {
     let count = 0;
     goalTree.forEach((d) => {
@@ -377,6 +435,23 @@ export function CurriculumGoalDetailPage() {
     });
     return count;
   }, [goalTree]);
+
+  const nextCodeSuggestion = useMemo(() => {
+    let maxNum = 0;
+    goalTree.forEach((d) => {
+      (d.children || []).forEach((g) => {
+        const match = String(g.code || '').match(/\d+/);
+        if (match) {
+          const n = parseInt(match[0], 10);
+          if (!isNaN(n) && n > maxNum) {
+            maxNum = n;
+          }
+        }
+      });
+    });
+    const nextNum = maxNum > 0 ? maxNum + 1 : totalGoalsCount + 1;
+    return `MT ${nextNum < 10 ? '0' + nextNum : nextNum}`;
+  }, [goalTree, totalGoalsCount]);
 
   // Move goal up or down within a domain
   const handleMoveGoal = (domainId, goalId, direction) => {
@@ -464,6 +539,32 @@ export function CurriculumGoalDetailPage() {
       toast.warning('Ngân hàng mục tiêu đã công bố. Vui lòng gỡ công bố để chỉnh sửa.');
       return;
     }
+
+    const trimmedTitle = (goalData.title || '').trim();
+    if (!trimmedTitle) {
+      toast.error('Vui lòng nhập nội dung mục tiêu');
+      return;
+    }
+
+    // Kiểm tra trùng lặp nội dung mục tiêu trên toàn bộ ngân hàng mục tiêu (bất kể lĩnh vực phát triển)
+    const normalizedNewTitle = trimmedTitle.toLowerCase();
+    const allExistingGoals = [];
+    (goalTree || []).forEach((dom) => {
+      (dom.children || []).forEach((g) => allExistingGoals.push(g));
+    });
+
+    const isDuplicate = allExistingGoals.some((g) => {
+      if (editingGoal && (g.id === editingGoal.id || (editingGoal.code && g.code === editingGoal.code))) {
+        return false;
+      }
+      return (g.title || '').trim().toLowerCase() === normalizedNewTitle;
+    });
+
+    if (isDuplicate) {
+      const msg = 'Mục tiêu đã tồn tại trong ngân hàng mục tiêu. Vui lòng kiểm tra hoặc nhập nội dung khác.';
+      throw new Error(msg);
+    }
+
     const DOMAIN_DEFS = {
       PHYSICAL: { title: 'Phát triển thể chất', domainLabel: 'Thể chất' },
       COGNITIVE: { title: 'Phát triển nhận thức', domainLabel: 'Nhận thức' },
@@ -481,7 +582,9 @@ export function CurriculumGoalDetailPage() {
           data: goalData,
         });
       } catch (err) {
-        console.warn('API updateGoal failed, updating locally:', err);
+        console.error('API updateGoal failed:', err);
+        const errMsg = err?.response?.data?.message || err?.message || 'Có lỗi xảy ra khi cập nhật mục tiêu';
+        throw new Error(errMsg);
       }
 
       setGoalTree((prev) => {
@@ -561,13 +664,15 @@ export function CurriculumGoalDetailPage() {
         });
         createdGoal = res.goal;
       } catch (err) {
-        console.warn('API createGoal failed, creating locally:', err);
+        console.error('API createGoal failed:', err);
+        // Error toast will be displayed cleanly once by GoalItemDrawer
+        throw err;
       }
 
       const targetDomain = goalData.domain || 'PHYSICAL';
       const newGoal = {
         id: createdGoal?.id || `g-${Date.now()}`,
-        code: createdGoal?.code || 'MT01',
+        code: formatGoalCode(createdGoal?.code || goalData.code || nextCodeSuggestion),
         title: goalData.title,
         indicatorCode: goalData.indicatorCode,
         type: 'Mục tiêu học tập',
@@ -610,17 +715,20 @@ export function CurriculumGoalDetailPage() {
 
   return (
     <div
-      className="w-full flex-1 flex flex-col bg-background text-foreground select-none pb-16"
+      className="w-full flex-1 flex flex-col gap-5 max-w-[1360px] mx-auto text-foreground select-none pb-14"
       data-node-id="4947:13246"
       data-name="Curriculum Goal Detail Page"
     >
-      {/* Page Title Header & Primary Actions */}
-      <div className="px-6 py-5 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/60">
-        <div className="flex flex-col gap-1">
+      {/* 1. Page Title Header & Primary Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border/70 shrink-0">
+        <div className="flex flex-col gap-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="text-[24px] font-semibold text-foreground tracking-tight">
+            <h1 className="text-[22px] sm:text-[24px] font-bold text-foreground tracking-tight">
               {t('curriculum.tabGoals', 'Ngân hàng mục tiêu')}
             </h1>
+            <span className="px-2 py-0.5 text-[11px] font-medium bg-muted text-foreground border border-border">
+              {GRADE_LABELS_FULL[ageGroup] || ageGroup}
+            </span>
             <span
               className={cn(
                 'px-2 py-0.5 text-[11px] font-medium tracking-wide uppercase',
@@ -631,41 +739,23 @@ export function CurriculumGoalDetailPage() {
             >
               {isPublished ? t('curriculum.published', 'Đã công bố') : t('curriculum.draft', 'Bản nháp')}
             </span>
-            <span className="text-muted-foreground/30 text-xs hidden sm:inline">•</span>
-            <span className="text-[12.5px] text-muted-foreground">
-              <span>Thời gian cập nhật: </span>
-              <span className="font-mono font-medium text-foreground">{formatDateTime(updatedAt)}</span>
-            </span>
           </div>
-          <p className="text-[13px] text-muted-foreground font-normal">
-            Quản lý và thiết lập hệ thống mục tiêu giáo dục theo các lĩnh vực phát triển
+          <p className="text-[12.5px] text-muted-foreground font-normal">
+            Quản lý và thiết lập hệ thống mục tiêu giáo dục theo các lĩnh vực phát triển · Cập nhật: <span className="font-mono text-foreground font-medium">{formatDateTime(updatedAt)}</span>
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* Button Import */}
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              if (isPublished) {
-                toast.warning('Ngân hàng mục tiêu đã công bố. Vui lòng gỡ công bố để import mục tiêu.');
-                return;
-              }
-              setIsImportDrawerOpen(true);
-            }}
-            disabled={isPublished}
-            className={cn(
-              'h-8 px-3.5 border border-border text-[13px] font-medium rounded-none flex items-center gap-1.5 shadow-none transition-colors',
-              isPublished
-                ? 'opacity-50 cursor-not-allowed hover:bg-transparent'
-                : 'hover:bg-muted cursor-pointer',
-            )}
-            title={isPublished ? 'Vui lòng gỡ công bố để import mục tiêu' : t('curriculum.importGoals', 'Import mục tiêu')}
-          >
-            <HugeiconsIcon icon={Upload04Icon} size={14} />
-            <span>{t('curriculum.importGoals', 'Import mục tiêu')}</span>
-          </Button>
+        {/* Action Buttons: Giữ trên 1 hàng không bị rớt dòng */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Excel Actions (Export Framework & Import Goals) */}
+          <ExcelActionsDropdown
+            onExport={handleExportExcel}
+            onImport={!isPublished ? () => setIsImportDrawerOpen(true) : null}
+            isExporting={isExporting}
+            showImport={!isPublished}
+            exportLabel="Xuất tệp Excel"
+            importLabel="Nhập tệp Excel"
+          />
 
           {/* Button Thêm mục tiêu */}
           <Button
@@ -673,15 +763,15 @@ export function CurriculumGoalDetailPage() {
             onClick={handleAddGoal}
             disabled={isPublished}
             className={cn(
-              'h-8 px-3.5 text-white text-[13px] font-medium rounded-none shadow-none flex items-center gap-1.5 transition-colors',
+              'h-8 px-3.5 text-white text-[12.5px] font-medium rounded-none shadow-none flex items-center gap-1.5 transition-colors',
               isPublished
                 ? 'bg-[#1447e6]/50 opacity-50 cursor-not-allowed'
                 : 'bg-[#1447e6] hover:bg-[#1447e6]/90 cursor-pointer',
             )}
-            title={isPublished ? 'Vui lòng gỡ công bố để thêm mục tiêu' : t('curriculum.addGoal', 'Thêm mục tiêu')}
+            title={isPublished ? 'Vui lòng gỡ công bố để thêm mục tiêu' : 'Thêm mục tiêu'}
           >
             <HugeiconsIcon icon={PlusSignIcon} size={14} />
-            <span>{t('curriculum.addGoal', 'Thêm mục tiêu')}</span>
+            <span>Thêm mục tiêu</span>
           </Button>
 
           {/* Button Công bố / Gỡ công bố ngân hàng */}
@@ -690,7 +780,7 @@ export function CurriculumGoalDetailPage() {
               type="button"
               variant="outline"
               onClick={handleTogglePublish}
-              className="h-8 px-3.5 border border-border bg-card hover:bg-muted text-foreground text-[13px] font-normal rounded-none shadow-none cursor-pointer flex items-center gap-1.5 transition-colors"
+              className="h-8 px-3.5 border border-border bg-card hover:bg-muted text-foreground text-[12.5px] font-medium rounded-none shadow-none cursor-pointer flex items-center gap-1.5 transition-colors"
             >
               <HugeiconsIcon icon={Cancel01Icon} size={14} className="text-muted-foreground" />
               <span>Gỡ công bố</span>
@@ -699,7 +789,7 @@ export function CurriculumGoalDetailPage() {
             <Button
               type="button"
               onClick={handleTogglePublish}
-              className="h-8 px-3.5 bg-[#1447e6] hover:bg-[#1447e6]/90 text-white text-[13px] font-medium rounded-none shadow-none cursor-pointer flex items-center gap-1.5 transition-colors"
+              className="h-8 px-3.5 bg-[#1447e6] hover:bg-[#1447e6]/90 text-white text-[12.5px] font-medium rounded-none shadow-none cursor-pointer flex items-center gap-1.5 transition-colors"
             >
               <HugeiconsIcon icon={SentIcon} size={14} />
               <span>Công bố ngân hàng</span>
@@ -708,11 +798,11 @@ export function CurriculumGoalDetailPage() {
         </div>
       </div>
 
-      {/* 3. Filter Toolbar (No age dropdown) */}
-      <div className="px-6 py-3 flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/20">
-        <div className="flex flex-wrap items-center gap-2.5">
+      {/* 2. Filter Toolbar */}
+      <div className="p-3 flex flex-wrap items-center justify-between gap-3 border border-border bg-card shadow-2xs">
+        <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
           {/* Search Input */}
-          <div className="relative min-w-[220px] sm:w-[260px]">
+          <div className="relative flex-1 min-w-[220px] max-w-[340px]">
             <HugeiconsIcon
               icon={Search01Icon}
               size={14}
@@ -722,8 +812,8 @@ export function CurriculumGoalDetailPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t('curriculum.searchGoals', 'Tìm kiếm mục tiêu...')}
-              className="w-full h-8 pl-8 pr-2.5 bg-background border border-border text-[13px] text-foreground placeholder:text-muted-foreground rounded-none outline-none focus:border-primary transition-colors"
+              placeholder="Tìm kiếm mã MT, tên mục tiêu..."
+              className="w-full h-8 pl-8 pr-2.5 bg-background border border-border text-[12.5px] text-foreground placeholder:text-muted-foreground rounded-none outline-none focus:border-primary transition-colors"
             />
           </div>
 
@@ -731,7 +821,7 @@ export function CurriculumGoalDetailPage() {
           <select
             value={selectedDomain}
             onChange={(e) => setSelectedDomain(e.target.value)}
-            className="h-8 px-2.5 bg-background border border-border text-[13px] text-foreground rounded-none outline-none focus:border-primary cursor-pointer"
+            className="h-8 px-2.5 bg-background border border-border text-[12.5px] text-foreground rounded-none outline-none focus:border-primary cursor-pointer shrink-0"
           >
             {domainOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -742,12 +832,12 @@ export function CurriculumGoalDetailPage() {
         </div>
 
         {/* Tree Expand / Collapse controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <Button
             type="button"
             variant="outline"
             onClick={handleExpandAll}
-            className="h-8 px-2.5 border border-border text-[12.5px] rounded-none hover:bg-muted shadow-none cursor-pointer"
+            className="h-8 px-3 border border-border text-[12px] rounded-none hover:bg-muted shadow-none cursor-pointer"
           >
             {t('curriculum.expandAll', 'Mở rộng tất cả')}
           </Button>
@@ -755,33 +845,35 @@ export function CurriculumGoalDetailPage() {
             type="button"
             variant="outline"
             onClick={handleCollapseAll}
-            className="h-8 px-2.5 border border-border text-[12.5px] rounded-none hover:bg-muted shadow-none cursor-pointer"
+            className="h-8 px-3 border border-border text-[12px] rounded-none hover:bg-muted shadow-none cursor-pointer"
           >
             {t('curriculum.collapseAll', 'Thu gọn tất cả')}
           </Button>
         </div>
       </div>
 
-      {/* 4. Goal Structure Table (Direct Domain -> Goals hierarchy with Reorder) */}
-      <div className="px-6 py-4">
-        <div className="border border-border bg-card rounded-none overflow-hidden shadow-2xs">
-          {/* Table Header Bar */}
-          <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-muted/40 text-[13px] font-medium text-foreground select-none">
-            <div className="flex items-center gap-3">
-              <span>{t('curriculum.goalStructure', 'Cấu trúc mục tiêu')}</span>
-              <span className="text-muted-foreground/40">•</span>
-              <span className="text-muted-foreground text-[12px] font-normal">
-                {totalGoalsCount} {t('curriculum.tabGoals', 'mục tiêu')}
-              </span>
-            </div>
-            <div className="text-[12px] text-muted-foreground font-normal">
-              <span>Thời gian cập nhật: </span>
-              <span className="font-mono font-medium text-foreground">{formatDateTime(updatedAt)}</span>
-            </div>
+      {/* 3. Goal Structure Table (Direct Domain -> Goals hierarchy with Reorder) */}
+      <div className="border border-border bg-card rounded-none overflow-hidden shadow-2xs">
+        {/* Table Header Bar */}
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-muted/30 text-[13px] font-medium text-foreground select-none">
+          <div className="flex items-center gap-2.5">
+            <span className="font-semibold text-foreground">{t('curriculum.goalStructure', 'Cấu trúc mục tiêu')}</span>
+            <span className="text-muted-foreground/40">•</span>
+            <span className="text-muted-foreground text-[12px] font-mono">
+              {totalGoalsCount} mục tiêu
+            </span>
           </div>
+          <div className="text-[12px] text-muted-foreground font-normal">
+            <span>Hiển thị: </span>
+            <span className="font-mono font-semibold text-foreground">
+              {filteredTree.reduce((acc, d) => acc + (d.children || []).length, 0)}/{totalGoalsCount}
+            </span>
+            <span> mục tiêu</span>
+          </div>
+        </div>
 
-          {/* Tree Rows */}
-          <div className="divide-y divide-border/60">
+        {/* Tree Rows */}
+        <div className="divide-y divide-border/60">
             {isLoading ? (
               <div className="p-8 text-center text-muted-foreground text-[13px]">
                 {t('curriculum.loadingGoals', 'Đang tải dữ liệu mục tiêu...')}
@@ -800,9 +892,9 @@ export function CurriculumGoalDetailPage() {
                     {/* Level 1: Domain Row */}
                     <div
                       onClick={() => toggleNode(domain.id)}
-                      className="flex items-center justify-between px-4 py-2.5 bg-muted/20 hover:bg-muted/40 cursor-pointer select-none transition-colors group"
+                      className="flex items-center justify-between px-4 py-2.5 bg-muted/20 hover:bg-muted/35 cursor-pointer select-none transition-colors group border-b border-border/50"
                     >
-                      <div className="flex items-center gap-2 font-semibold text-foreground">
+                      <div className="flex items-center gap-2.5 font-semibold text-[13.5px] text-foreground">
                         <button
                           type="button"
                           className="size-5 flex items-center justify-center text-muted-foreground group-hover:text-foreground"
@@ -816,7 +908,7 @@ export function CurriculumGoalDetailPage() {
                         <span>{domain.title}</span>
                       </div>
 
-                      <span className="text-[12.5px] text-muted-foreground font-normal">
+                      <span className="px-2 py-0.5 bg-background border border-border/70 text-[11.5px] font-mono text-muted-foreground font-normal">
                         {goals.length} mục tiêu
                       </span>
                     </div>
@@ -825,7 +917,7 @@ export function CurriculumGoalDetailPage() {
                     {isDomainExpanded && (
                       <div className="divide-y divide-border/30 bg-background">
                         {goals.length === 0 ? (
-                          <div className="py-3 px-4 pl-11 text-[12.5px] text-muted-foreground italic">
+                          <div className="py-3 px-4 pl-10 text-[12.5px] text-muted-foreground italic">
                             Chưa có mục tiêu nào trong lĩnh vực này
                           </div>
                         ) : (
@@ -836,23 +928,23 @@ export function CurriculumGoalDetailPage() {
                             return (
                               <div
                                 key={goal.id}
-                                className="group/row flex items-center justify-between px-4 py-2.5 pl-11 hover:bg-muted/30 transition-colors"
+                                className="group/row flex items-center justify-between px-4 py-2.5 pl-8 sm:pl-10 hover:bg-muted/25 transition-colors border-b border-border/30 last:border-b-0"
                               >
                                 {/* Left: Code, Title, Inline Indicator Badge (Click to open detail) */}
                                 <div
                                   onClick={() => navigate(`/curriculum/goals/${yearId}/${ageGroup}/${goal.id}`)}
-                                  className="flex items-baseline gap-3 min-w-0 pr-4 flex-1 cursor-pointer group/title"
+                                  className="flex items-start sm:items-center gap-3 min-w-0 pr-4 flex-1 cursor-pointer group/title"
                                   title="Bấm để xem chi tiết và thiết lập nội dung giáo dục"
                                 >
-                                  <span className="text-[13px] font-semibold text-foreground/80 shrink-0 min-w-[48px] font-mono select-none">
+                                  <span className="px-2 py-0.5 bg-muted/70 border border-border/80 text-[12px] font-bold text-foreground shrink-0 min-w-[56px] text-center font-mono select-none">
                                     {goal.code}
                                   </span>
-                                  <div className="flex items-baseline gap-2 flex-wrap min-w-0 flex-1 leading-5">
-                                    <span className="text-[13px] font-medium text-foreground group-hover/title:text-[#1447e6] group-hover/title:underline underline-offset-2 transition-colors">
+                                  <div className="flex items-center gap-2 flex-wrap min-w-0 flex-1 leading-relaxed">
+                                    <span className="text-[13px] font-medium text-foreground group-hover/title:underline transition-colors">
                                       {goal.title}
                                     </span>
                                     {goal.indicatorCode && ageGroup?.toLowerCase() !== 'mam' && (
-                                      <span className="inline-flex items-center px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground bg-muted/70 border border-border/60 rounded-none shrink-0 select-none">
+                                      <span className="inline-flex items-center px-1.5 py-0.2 text-[10.5px] font-medium text-muted-foreground bg-muted/50 border border-border/60 shrink-0 select-none font-mono">
                                         {goal.indicatorCode}
                                       </span>
                                     )}
@@ -864,8 +956,8 @@ export function CurriculumGoalDetailPage() {
                                   className={cn(
                                     'flex items-center gap-0.5 transition-opacity shrink-0',
                                     isPublished
-                                      ? 'opacity-40 group-hover/row:opacity-75'
-                                      : 'opacity-0 group-hover/row:opacity-100',
+                                      ? 'opacity-30'
+                                      : 'opacity-40 group-hover/row:opacity-100',
                                   )}
                                 >
                                   {/* Di chuyển lên */}
@@ -947,7 +1039,11 @@ export function CurriculumGoalDetailPage() {
                                     type="button"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handleDeleteGoal(goal.id);
+                                      if (isPublished) {
+                                        toast.error('Không thể xóa mục tiêu khi ngân hàng mục tiêu đã công bố.');
+                                        return;
+                                      }
+                                      setGoalToDelete(goal);
                                     }}
                                     className={cn(
                                       'size-7 flex items-center justify-center rounded-none transition-colors',
@@ -973,7 +1069,6 @@ export function CurriculumGoalDetailPage() {
             )}
           </div>
         </div>
-      </div>
 
       {/* 5. Floating Mascot AI Assistant Button (bottom-right) - Tạm thời ẩn */}
       {/* <button
@@ -1000,7 +1095,7 @@ export function CurriculumGoalDetailPage() {
           setEditingGoal(null);
         }}
         initialData={editingGoal}
-        nextCodeSuggestion={`MT ${totalGoalsCount + 1}`}
+        nextCodeSuggestion={nextCodeSuggestion}
         ageGroup={ageGroup}
         currentAgeGroupLabel={GRADE_LABELS_FULL[ageGroup] || 'Khối Nhà trẻ (12–36 tháng)'}
         onSave={handleSaveGoal}
@@ -1021,6 +1116,61 @@ export function CurriculumGoalDetailPage() {
           toast.success('Đã áp dụng đề xuất của AI vào ngân hàng mục tiêu!');
         }}
       /> */}
+      {/* Hộp thoại xác nhận xóa mục tiêu giáo dục */}
+      <Dialog open={!!goalToDelete} onOpenChange={(open) => !open && setGoalToDelete(null)}>
+        <DialogContent className="sm:max-w-[440px] rounded-none border border-border bg-card p-5 shadow-2xl space-y-4 select-none">
+          <DialogHeader className="space-y-1.5 pb-0">
+            <DialogTitle className="text-[16px] font-semibold text-foreground tracking-tight">
+              Xác nhận xóa mục tiêu giáo dục
+            </DialogTitle>
+            <DialogDescription className="text-[12.5px] text-muted-foreground leading-relaxed pt-1">
+              Mục tiêu giáo dục và toàn bộ danh sách nội dung liên quan sẽ bị xóa khỏi ngân hàng mục tiêu. Thao tác này không thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+
+          {goalToDelete && (
+            <div className="p-3 bg-muted/20 border border-border/70 rounded-none space-y-1.5">
+              <div className="flex items-center gap-2">
+                <span className="px-1.5 py-0.5 font-mono text-[11px] font-semibold bg-muted text-foreground border border-border/60">
+                  {goalToDelete.code}
+                </span>
+                {goalToDelete.domainLabel && (
+                  <span className="text-[11.5px] text-muted-foreground font-medium">
+                    {goalToDelete.domainLabel}
+                  </span>
+                )}
+              </div>
+              <p className="text-[13px] text-foreground font-normal leading-relaxed">
+                {goalToDelete.title}
+              </p>
+            </div>
+          )}
+
+          <DialogFooter className="flex items-center justify-end gap-2.5 pt-2 border-t border-border/60 sm:space-x-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setGoalToDelete(null)}
+              className="h-8 px-3.5 text-[12.5px] rounded-none border border-border cursor-pointer shadow-none"
+            >
+              Hủy bỏ
+            </Button>
+            <Button
+              type="button"
+              onClick={async () => {
+                const target = goalToDelete;
+                setGoalToDelete(null);
+                if (target?.id) {
+                  await handleDeleteGoal(target.id);
+                }
+              }}
+              className="h-8 px-4 text-[12.5px] font-medium rounded-none bg-destructive hover:bg-destructive/90 text-white cursor-pointer shadow-none"
+            >
+              Xác nhận xóa
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

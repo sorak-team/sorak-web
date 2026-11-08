@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
@@ -11,6 +11,11 @@ import {
   FilterHorizontalIcon,
   CheckmarkSquare02Icon,
   Calendar03Icon,
+  SidebarRightIcon,
+  Clock01Icon,
+  AlertCircleIcon,
+  Menu01Icon,
+  FileSpreadsheetIcon,
 } from '@hugeicons/core-free-icons';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import {
@@ -22,6 +27,17 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { downloadBlob } from '@/shared/utils/download';
+import { PlanningTabLoading } from './PlanningTabLoading';
+import { ExcelActionsDropdown } from '@/components/ExcelActionsDropdown';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { cn } from '@/shared/lib/utils';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/features/auth';
@@ -139,6 +155,19 @@ export const normalizeGoalCode = (code) => {
     }
   }
   return raw.replace(/[^A-Z0-9]/g, '');
+};
+
+export const formatGoalCode = (code) => {
+  if (!code) return '';
+  const raw = String(code).trim().toUpperCase();
+  const digitsMatch = raw.match(/\d+/);
+  if (digitsMatch) {
+    const num = parseInt(digitsMatch[0], 10);
+    if (!isNaN(num)) {
+      return `MT ${num < 10 ? '0' + num : num}`;
+    }
+  }
+  return raw;
 };
 
 export const cleanDisplayGoalTitle = (goal) => {
@@ -286,23 +315,50 @@ function generateMonthDays(year, month) {
   return days;
 }
 
-export function TargetAllocationTab({ classId = '1' }) {
+export function TargetAllocationTab({
+  classId = '1',
+  isReadOnly = false,
+  selectedThemeId = null,
+  onThemeChange = null,
+  planStatus = null,
+}) {
   const { t } = useTranslation();
-  const currentUser = useAuthStore((state) => state.user);
-  const isBgh = useMemo(() => {
-    const r = String(currentUser?.role || '').toUpperCase();
-    return r === 'PRINCIPAL_BGH' || r === 'PRINCIPAL' || r === 'VICE_PRINCIPAL' || r.includes('BGH') || r.includes('PRINCIPAL');
-  }, [currentUser?.role]);
   const [allocationData, setAllocationData] = useState(null);
   const [themes, setThemes] = useState([]);
-  const [selectedThemeCode, setSelectedThemeCode] = useState('01');
+  const [selectedThemeCode, setSelectedThemeCode] = useState(() => {
+    const urlThemeId = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('themeId') : null;
+    const effectiveThemeId = selectedThemeId || urlThemeId;
+    if (effectiveThemeId) {
+      const clean = String(effectiveThemeId).trim();
+      if (/^\d{1,2}$/.test(clean)) {
+        return clean.padStart(2, '0');
+      }
+    }
+    return '';
+  });
   const [allGoals, setAllGoals] = useState([]);
-  const [selectedDomainFilter, setSelectedDomainFilter] = useState('ALL');
+  const [selectedDomainFilters, setSelectedDomainFilters] = useState([]); // Array các key lĩnh vực được chọn cùng lúc
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('CODE_ASC'); // 'CODE_ASC' (Theo số thứ tự MT) | 'NEWEST' (Mục tiêu mới nhất)
   const [showContents, setShowContents] = useState(true);
   const [onlySelected, setOnlySelected] = useState(false);
-  const [showCalendar, setShowCalendar] = useState(true);
+  const [showCalendar, setShowCalendar] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 1280;
+    }
+    return true;
+  });
+  const [showMobileThemes, setShowMobileThemes] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [lastSavedTime, setLastSavedTime] = useState(null);
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const saveTimeoutRef = useRef(null);
+  const pendingSaveRef = useRef(null);
+  const prevPropThemeIdRef = useRef(selectedThemeId);
 
   // Calendar year & month state
   const [calendarYear, setCalendarYear] = useState(2026);
@@ -318,10 +374,33 @@ export function TargetAllocationTab({ classId = '1' }) {
         const fetchedThemes = data.publishedThemes || [];
         setThemes(fetchedThemes);
         if (fetchedThemes.length > 0) {
-          const first = fetchedThemes[0];
-          setSelectedThemeCode(first.code);
-          if (first.startDate) {
-            const parts = first.startDate.split('-').map(Number);
+          const urlThemeId = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('themeId') : null;
+          const targetThemeId = selectedThemeId || urlThemeId;
+
+          let targetTheme = null;
+          if (targetThemeId) {
+            targetTheme = fetchedThemes.find(
+              (th) =>
+                th.id === targetThemeId ||
+                th.publicId === targetThemeId ||
+                String(th.themeId) === String(targetThemeId) ||
+                th.code === targetThemeId ||
+                String(th.code).padStart(2, '0') === String(targetThemeId).padStart(2, '0')
+            );
+          }
+          if (!targetTheme && selectedThemeCode) {
+            targetTheme = fetchedThemes.find((th) => th.code === selectedThemeCode);
+          }
+          if (!targetTheme) {
+            targetTheme = fetchedThemes[0];
+          }
+
+          setSelectedThemeCode(targetTheme.code);
+          if (onThemeChange && !urlThemeId && (targetTheme.code || targetTheme.id || targetTheme.publicId)) {
+            onThemeChange(targetTheme.code || targetTheme.id || targetTheme.publicId);
+          }
+          if (targetTheme.startDate) {
+            const parts = targetTheme.startDate.split('-').map(Number);
             if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1])) {
               setCalendarYear(parts[0]);
               setCalendarMonth(parts[1] - 1);
@@ -330,24 +409,26 @@ export function TargetAllocationTab({ classId = '1' }) {
         }
         const rawGoals = data.bankGoals || [];
         const enrichedGoals = rawGoals.map((g) => {
+          const formattedCode = formatGoalCode(g.code || g.goalCode);
+          const baseGoal = {
+            ...g,
+            code: formattedCode,
+            goalCode: formattedCode,
+          };
           // Luôn giữ nguyên nội dung giáo dục thực tế từ Ngân hàng mục tiêu do BGH thiết lập
           if (Array.isArray(g.contents) && g.contents.length > 0) {
-            return g;
+            return baseGoal;
           }
-          // Chỉ fallback khi mục tiêu hoàn toàn chưa có nội dung nào trong hệ thống
-          const normCode = normalizeGoalCode(g.code || g.goalCode);
-          const sampleList = SAMPLE_MULTI_CONTENTS[normCode];
-          if (sampleList && sampleList.length > 0) {
-            const enrichedContents = sampleList.map((sample, idx) => ({
-              id: `mock-${normCode.toLowerCase()}-${idx + 1}`,
-              title: sample.title,
-            }));
-            return {
-              ...g,
-              contents: enrichedContents,
-            };
-          }
-          return g;
+          return {
+            ...baseGoal,
+            contents: [
+              {
+                id: g.id || g.goalId,
+                title: baseGoal.title,
+                activitiesCount: 0,
+              },
+            ],
+          };
         });
         setAllGoals(enrichedGoals);
       } catch (err) {
@@ -362,8 +443,104 @@ export function TargetAllocationTab({ classId = '1' }) {
 
   // Current active main theme
   const currentTheme = useMemo(() => {
-    return themes.find((th) => th.code === selectedThemeCode) || themes[0] || null;
-  }, [themes, selectedThemeCode]);
+    if (!themes || themes.length === 0) return null;
+    const urlThemeId = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('themeId') : null;
+    const targetThemeId = selectedThemeId || urlThemeId;
+
+    if (selectedThemeCode) {
+      const matchByCode = themes.find((th) => th.code === selectedThemeCode);
+      if (matchByCode) return matchByCode;
+    }
+    if (targetThemeId) {
+      const matchById = themes.find(
+        (th) =>
+          th.id === targetThemeId ||
+          th.publicId === targetThemeId ||
+          String(th.themeId) === String(targetThemeId) ||
+          th.code === targetThemeId ||
+          String(th.code).padStart(2, '0') === String(targetThemeId).padStart(2, '0')
+      );
+      if (matchById) return matchById;
+    }
+    return themes[0] || null;
+  }, [themes, selectedThemeCode, selectedThemeId]);
+
+  const currentUser = useAuthStore((state) => state.user);
+  const isPrincipal = Boolean(
+    currentUser?.role === 'PRINCIPAL_BGH' ||
+    currentUser?.role === 'PRINCIPAL' ||
+    currentUser?.role === 'VICE_PRINCIPAL' ||
+    currentUser?.role?.toLowerCase()?.includes('principal') ||
+    currentUser?.role?.toLowerCase()?.includes('bgh')
+  );
+
+  // Trạng thái của chủ đề hiện tại
+  const currentPlanStatus = currentTheme?.planStatus || (selectedThemeId === planStatus?.themeId ? planStatus?.status : null);
+  const isApproved = currentPlanStatus === 'USED';
+  const isPendingApproval = currentPlanStatus === 'PENDING_APPROVAL' || currentPlanStatus === 'SUBMITTED' || (Boolean(planStatus?.status === 'PENDING_APPROVAL' || planStatus?.status === 'SUBMITTED') && (!selectedThemeId || selectedThemeId === planStatus?.themeId));
+  const isRejected = Boolean(
+    currentPlanStatus === 'REJECTED' ||
+    (planStatus?.status === 'REJECTED' && (!selectedThemeId || selectedThemeId === planStatus?.themeId))
+  );
+  const rejectionReason = currentTheme?.rejectionReason || planStatus?.rejectionReason || '';
+
+  // Chỉ khóa nếu chủ đề hiện tại đang chọn ở trạng thái ĐÃ DUYỆT hoặc CHỜ DUYỆT
+  const isCurrentThemeReadOnly = Boolean(
+    currentTheme?.isReadOnly ||
+    isApproved ||
+    isPendingApproval
+  );
+  const effectiveReadOnly = isPrincipal || isCurrentThemeReadOnly;
+
+  // Kiểm tra quyền và trạng thái công bố bộ chủ đề/mục tiêu của BGH
+  const isCurriculumPublished = useMemo(() => {
+    if (isPrincipal) return true;
+    if (allocationData?.isCurriculumPublished === false) return false;
+    if (!themes || themes.length === 0) return false;
+    return themes.some((t) => t.status === 'PUBLISHED');
+  }, [isPrincipal, allocationData, themes]);
+
+  // Thông tin khối lớp và niên khóa phục vụ thông báo chuyên nghiệp
+  const classGradeText = useMemo(() => {
+    const rawAge = allocationData?.classInfo?.ageGroup;
+    const AGE_MAP = {
+      NHA_TRE: 'Khối Nhà trẻ',
+      MAM: 'Khối Mầm',
+      CHOI: 'Khối Chồi',
+      LA: 'Khối Lá',
+      nhatre: 'Khối Nhà trẻ',
+      mam: 'Khối Mầm',
+      choi: 'Khối Chồi',
+      la: 'Khối Lá',
+    };
+    return (
+      allocationData?.classInfo?.ageGroupLabel ||
+      AGE_MAP[rawAge] ||
+      (allocationData?.classInfo?.name ? `lớp ${allocationData.classInfo.name}` : 'khối lớp này')
+    );
+  }, [allocationData?.classInfo]);
+
+  const classYearText = useMemo(() => {
+    return allocationData?.classInfo?.yearName || '';
+  }, [allocationData?.classInfo]);
+
+  // Sync selected theme code if selectedThemeId prop changes from outside
+  useEffect(() => {
+    if (selectedThemeId && selectedThemeId !== prevPropThemeIdRef.current && themes.length > 0) {
+      prevPropThemeIdRef.current = selectedThemeId;
+      const match = themes.find(
+        (th) =>
+          th.id === selectedThemeId ||
+          th.publicId === selectedThemeId ||
+          String(th.themeId) === String(selectedThemeId) ||
+          th.code === selectedThemeId ||
+          String(th.code).padStart(2, '0') === String(selectedThemeId).padStart(2, '0')
+      );
+      if (match && match.code && match.code !== selectedThemeCode) {
+        setSelectedThemeCode(match.code);
+      }
+    }
+  }, [selectedThemeId, themes]);
 
   // When theme changes, update calendar month to theme's start date
   useEffect(() => {
@@ -394,10 +571,8 @@ export function TargetAllocationTab({ classId = '1' }) {
     const set = new Set();
     (currentTheme?.allocatedContentIds || []).forEach((cId) => set.add(String(cId)));
     (currentTheme?.allocatedGoals || []).forEach((g) => {
-      if (Array.isArray(g.selectedContentIds) && g.selectedContentIds.length > 0) {
+      if (Array.isArray(g.selectedContentIds)) {
         g.selectedContentIds.forEach((cId) => set.add(String(cId)));
-      } else if (Array.isArray(g.contents)) {
-        g.contents.forEach((c) => set.add(String(c.id || c.content_id)));
       }
     });
     return set;
@@ -465,9 +640,120 @@ export function TargetAllocationTab({ classId = '1' }) {
     return allGoals.filter((g) => getGoalContentStatus(g).isSelected).length;
   }, [allGoals, getGoalContentStatus]);
 
+  // Count of allocated educational contents (NDGD) and total NDGD across allGoals
+  const { actualSelectedContentCount, totalContentsCount } = useMemo(() => {
+    let selected = 0;
+    let total = 0;
+    allGoals.forEach((g) => {
+      const status = getGoalContentStatus(g);
+      selected += status.selectedCount;
+      total += status.totalCount;
+    });
+    return { actualSelectedContentCount: selected, totalContentsCount: total };
+  }, [allGoals, getGoalContentStatus]);
+
+  // Toggle chọn nhiều lĩnh vực cùng lúc (Multi-select)
+  const handleToggleDomainFilter = useCallback((domainKey) => {
+    if (domainKey === 'ALL') {
+      setSelectedDomainFilters([]);
+      return;
+    }
+
+    setSelectedDomainFilters((prev) => {
+      if (prev.includes(domainKey)) {
+        return prev.filter((k) => k !== domainKey);
+      } else {
+        return [...prev, domainKey];
+      }
+    });
+  }, []);
+
+  // Lưu ngay lập tức các thay đổi đang chờ lưu (khi chuyển chủ đề hoặc rời trang)
+  const flushPendingSave = useCallback(async () => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
+    }
+    if (pendingSaveRef.current) {
+      const payload = pendingSaveRef.current;
+      pendingSaveRef.current = null;
+      setIsSaving(true);
+      try {
+        await planningApi.saveTargetAllocation(classId, payload);
+        setLastSavedTime(new Date());
+        setHasChanges(false);
+      } catch (err) {
+        console.warn('Flush autosave warning:', err);
+      } finally {
+        setIsSaving(false);
+      }
+    }
+  }, [classId]);
+
+  // Xếp hàng lưu tự động (Debounced autosave 1000ms chuẩn UX - hiện "Chưa lưu" rồi "Đang lưu...")
+  const queueAutosave = useCallback(
+    (theme, contentIds, goals) => {
+      setHasChanges(true);
+      pendingSaveRef.current = {
+        themeId: theme.id,
+        themeCode: theme.code,
+        contentIds: Array.from(contentIds),
+        goalIds: goals.map((g) => g.id),
+      };
+
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+
+      saveTimeoutRef.current = setTimeout(async () => {
+        if (!pendingSaveRef.current) return;
+        const payload = pendingSaveRef.current;
+        pendingSaveRef.current = null;
+        setIsSaving(true);
+        try {
+          await planningApi.saveTargetAllocation(classId, payload);
+          setLastSavedTime(new Date());
+          setHasChanges(false);
+        } catch (err) {
+          console.warn('Autosave warning:', err);
+        } finally {
+          setIsSaving(false);
+        }
+      }, 350);
+    },
+    [classId]
+  );
+
+  // Dọn dẹp timer và lưu nốt nếu rời trang hoặc tải lại (F5)
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (pendingSaveRef.current) {
+        planningApi.saveTargetAllocation(classId, pendingSaveRef.current).catch(() => { });
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      if (pendingSaveRef.current) {
+        planningApi.saveTargetAllocation(classId, pendingSaveRef.current).catch(() => { });
+      }
+    };
+  }, [classId]);
+
   // Select a theme from Column 1
   const handleSelectTheme = (th) => {
-    setSelectedThemeCode(th.code);
+    if (th.code !== selectedThemeCode) {
+      flushPendingSave();
+      prevPropThemeIdRef.current = th.code;
+      setSelectedThemeCode(th.code);
+      if (onThemeChange) {
+        onThemeChange(th.code || th.id || th.publicId);
+      }
+    }
   };
 
   // Lắng nghe phím mũi tên Trái / Phải trên bàn phím để chuyển chủ đề nhanh
@@ -487,24 +773,40 @@ export function TargetAllocationTab({ classId = '1' }) {
         const curIdx = themes.findIndex((th) => th.code === selectedThemeCode);
         if (curIdx > 0) {
           e.preventDefault();
-          setSelectedThemeCode(themes[curIdx - 1].code);
+          flushPendingSave();
+          const target = themes[curIdx - 1];
+          prevPropThemeIdRef.current = target.code;
+          setSelectedThemeCode(target.code);
+          if (onThemeChange && (target.code || target.id || target.publicId)) {
+            onThemeChange(target.code || target.id || target.publicId);
+          }
         }
       } else if (e.key === 'ArrowRight') {
         const curIdx = themes.findIndex((th) => th.code === selectedThemeCode);
         if (curIdx >= 0 && curIdx < themes.length - 1) {
           e.preventDefault();
-          setSelectedThemeCode(themes[curIdx + 1].code);
+          flushPendingSave();
+          const target = themes[curIdx + 1];
+          prevPropThemeIdRef.current = target.code;
+          setSelectedThemeCode(target.code);
+          if (onThemeChange && (target.code || target.id || target.publicId)) {
+            onThemeChange(target.code || target.id || target.publicId);
+          }
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedThemeCode, themes]);
+  }, [selectedThemeCode, themes, flushPendingSave]);
 
   // Toggle selection of a single NDGD (EducationalContent)
   const handleToggleContentAllocation = async (goalId, contentId) => {
-    if (isBgh || !currentTheme) return;
+    if (effectiveReadOnly) {
+      toast.warning(`Chủ đề "${currentTheme?.name}" đang ở chế độ Chỉ đọc. Bạn có thể chọn các chủ đề ở trạng thái "Bản nháp" để phân bổ!`);
+      return;
+    }
+    if (!currentTheme) return;
     const sCId = String(contentId);
     const targetGoal = allGoals.find((g) => g.id === goalId || String(g.id) === String(goalId));
     const targetContent = (targetGoal?.contents || []).find(
@@ -515,26 +817,39 @@ export function TargetAllocationTab({ classId = '1' }) {
         (c.publicId && String(c.publicId) === sCId)
     );
 
-    const isCurrentlySelected =
-      currentThemeContentSet.has(sCId) ||
-      (targetContent?.id && currentThemeContentSet.has(String(targetContent.id))) ||
-      (targetContent?.content_id && currentThemeContentSet.has(String(targetContent.content_id))) ||
-      (targetContent?.public_id && currentThemeContentSet.has(String(targetContent.public_id))) ||
-      (targetContent?.publicId && currentThemeContentSet.has(String(targetContent.publicId)));
+    // Thu thập tất cả các biến thể ID có thể có của NDGD này (UUID public_id, numeric content_id,...)
+    const allMatchingIds = new Set([sCId]);
+    if (targetContent) {
+      if (targetContent.id) allMatchingIds.add(String(targetContent.id));
+      if (targetContent.content_id) allMatchingIds.add(String(targetContent.content_id));
+      if (targetContent.contentId) allMatchingIds.add(String(targetContent.contentId));
+      if (targetContent.public_id) allMatchingIds.add(String(targetContent.public_id));
+      if (targetContent.publicId) allMatchingIds.add(String(targetContent.publicId));
+    }
+    (currentTheme?.allocatedGoals || []).forEach((ag) => {
+      (ag.contents || []).forEach((ac) => {
+        if (
+          String(ac.id) === sCId ||
+          String(ac.contentId) === sCId ||
+          String(ac.publicId) === sCId ||
+          (targetContent?.title && ac.title === targetContent.title)
+        ) {
+          if (ac.id) allMatchingIds.add(String(ac.id));
+          if (ac.contentId) allMatchingIds.add(String(ac.contentId));
+          if (ac.content_id) allMatchingIds.add(String(ac.content_id));
+          if (ac.publicId) allMatchingIds.add(String(ac.publicId));
+          if (ac.public_id) allMatchingIds.add(String(ac.public_id));
+        }
+      });
+    });
+
+    const isCurrentlySelected = Array.from(allMatchingIds).some((id) => currentThemeContentSet.has(id));
 
     const newAllocatedContentIds = new Set(currentThemeContentSet);
     if (isCurrentlySelected) {
-      newAllocatedContentIds.delete(sCId);
-      if (targetContent?.id) newAllocatedContentIds.delete(String(targetContent.id));
-      if (targetContent?.content_id) newAllocatedContentIds.delete(String(targetContent.content_id));
-      if (targetContent?.public_id) newAllocatedContentIds.delete(String(targetContent.public_id));
-      if (targetContent?.publicId) newAllocatedContentIds.delete(String(targetContent.publicId));
+      allMatchingIds.forEach((id) => newAllocatedContentIds.delete(id));
     } else {
-      newAllocatedContentIds.add(sCId);
-      if (targetContent?.id) newAllocatedContentIds.add(String(targetContent.id));
-      if (targetContent?.content_id) newAllocatedContentIds.add(String(targetContent.content_id));
-      if (targetContent?.public_id) newAllocatedContentIds.add(String(targetContent.public_id));
-      if (targetContent?.publicId) newAllocatedContentIds.add(String(targetContent.publicId));
+      allMatchingIds.forEach((id) => newAllocatedContentIds.add(id));
     }
 
     const checkContentInSet = (c) => {
@@ -593,12 +908,12 @@ export function TargetAllocationTab({ classId = '1' }) {
       prev.map((th) =>
         th.code === currentTheme.code
           ? {
-              ...th,
-              allocatedGoals: newAllocatedGoals,
-              allocatedContentIds: Array.from(newAllocatedContentIds),
-              count: newAllocatedGoals.length,
-              domainCounts: updatedDomainCounts,
-            }
+            ...th,
+            allocatedGoals: newAllocatedGoals,
+            allocatedContentIds: Array.from(newAllocatedContentIds),
+            count: newAllocatedGoals.length,
+            domainCounts: updatedDomainCounts,
+          }
           : th
       )
     );
@@ -616,22 +931,17 @@ export function TargetAllocationTab({ classId = '1' }) {
       })
     );
 
-    try {
-      await planningApi.saveTargetAllocation(classId, {
-        themeId: currentTheme.id,
-        themeCode: currentTheme.code,
-        contentIds: Array.from(newAllocatedContentIds),
-        goalIds: newAllocatedGoals.map((g) => g.id),
-      });
-      setLastSavedTime(new Date());
-    } catch (err) {
-      console.warn('Autosave warning:', err);
-    }
+    // Kích hoạt debounce lưu tự động (hiện "Chưa lưu" rồi tự động lưu)
+    queueAutosave(currentTheme, newAllocatedContentIds, newAllocatedGoals);
   };
 
   // Toggle selection of all contents of a goal (Master checkbox)
   const handleToggleGoalAllocation = async (goalId) => {
-    if (isBgh || !currentTheme) return;
+    if (effectiveReadOnly) {
+      toast.warning(`Chủ đề "${currentTheme?.name}" đang ở chế độ Chỉ đọc. Bạn có thể chọn các chủ đề ở trạng thái "Bản nháp" để phân bổ!`);
+      return;
+    }
+    if (!currentTheme) return;
     const targetGoal = allGoals.find((g) => g.id === goalId || String(g.id) === String(goalId));
     if (!targetGoal) return;
 
@@ -639,19 +949,37 @@ export function TargetAllocationTab({ classId = '1' }) {
     const contents = targetGoal.contents || [];
     const newAllocatedContentIds = new Set(currentThemeContentSet);
 
-    if (status.isFullySelected || status.isPartiallySelected) {
+    if (status.isSelected || status.isFullySelected || status.isPartiallySelected) {
       // Deselect ALL contents of this goal
       contents.forEach((c) => {
-        if (c.id) newAllocatedContentIds.delete(String(c.id));
-        if (c.content_id) newAllocatedContentIds.delete(String(c.content_id));
-        if (c.public_id) newAllocatedContentIds.delete(String(c.public_id));
-        if (c.publicId) newAllocatedContentIds.delete(String(c.publicId));
+        const cIds = new Set([String(c.id)]);
+        if (c.content_id) cIds.add(String(c.content_id));
+        if (c.contentId) cIds.add(String(c.contentId));
+        if (c.public_id) cIds.add(String(c.public_id));
+        if (c.publicId) cIds.add(String(c.publicId));
+
+        (currentTheme?.allocatedGoals || []).forEach((ag) => {
+          (ag.contents || []).forEach((ac) => {
+            if (String(ac.id) === String(c.id) || (c.title && ac.title === c.title)) {
+              if (ac.id) cIds.add(String(ac.id));
+              if (ac.contentId) cIds.add(String(ac.contentId));
+              if (ac.content_id) cIds.add(String(ac.content_id));
+              if (ac.publicId) cIds.add(String(ac.publicId));
+              if (ac.public_id) cIds.add(String(ac.public_id));
+            }
+          });
+        });
+
+        cIds.forEach((id) => newAllocatedContentIds.delete(id));
       });
     } else {
       // Select ALL contents of this goal
       contents.forEach((c) => {
+        const cid = String(c.id || c.content_id);
+        newAllocatedContentIds.add(cid);
         if (c.id) newAllocatedContentIds.add(String(c.id));
         if (c.content_id) newAllocatedContentIds.add(String(c.content_id));
+        if (c.contentId) newAllocatedContentIds.add(String(c.contentId));
         if (c.public_id) newAllocatedContentIds.add(String(c.public_id));
         if (c.publicId) newAllocatedContentIds.add(String(c.publicId));
       });
@@ -712,12 +1040,12 @@ export function TargetAllocationTab({ classId = '1' }) {
       prev.map((th) =>
         th.code === currentTheme.code
           ? {
-              ...th,
-              allocatedGoals: newAllocatedGoals,
-              allocatedContentIds: Array.from(newAllocatedContentIds),
-              count: newAllocatedGoals.length,
-              domainCounts: updatedDomainCounts,
-            }
+            ...th,
+            allocatedGoals: newAllocatedGoals,
+            allocatedContentIds: Array.from(newAllocatedContentIds),
+            count: newAllocatedGoals.length,
+            domainCounts: updatedDomainCounts,
+          }
           : th
       )
     );
@@ -737,25 +1065,22 @@ export function TargetAllocationTab({ classId = '1' }) {
       })
     );
 
-    try {
-      await planningApi.saveTargetAllocation(classId, {
-        themeId: currentTheme.id,
-        themeCode: currentTheme.code,
-        contentIds: Array.from(newAllocatedContentIds),
-        goalIds: newAllocatedGoals.map((g) => g.id),
-      });
-      setLastSavedTime(new Date());
-    } catch (err) {
-      console.warn('Autosave warning:', err);
-    }
+    // Kích hoạt debounce lưu tự động (hiện "Chưa lưu" rồi tự động lưu)
+    queueAutosave(currentTheme, newAllocatedContentIds, newAllocatedGoals);
   };
-
-  const [isSaving, setIsSaving] = useState(false);
-  const [lastSavedTime, setLastSavedTime] = useState(null);
 
   // Helper: Lưu phân bổ mục tiêu & NDGD cho chủ đề hiện tại
   const handleSaveAllocation = async () => {
+    if (effectiveReadOnly) {
+      toast.warning(`Chủ đề "${currentTheme?.name}" đang ở chế độ Chỉ đọc. Bạn có thể chọn các chủ đề ở trạng thái "Bản nháp" để phân bổ!`);
+      return;
+    }
     if (!currentTheme) return;
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
+    }
+    pendingSaveRef.current = null;
     setIsSaving(true);
     try {
       const allocatedContentIds = Array.from(currentThemeContentSet);
@@ -767,6 +1092,7 @@ export function TargetAllocationTab({ classId = '1' }) {
         goalIds: allocatedGoalIds,
       });
       setLastSavedTime(new Date());
+      setHasChanges(false);
       toast.success(`Đã lưu ${allocatedContentIds.length} NDGD (${allocatedGoalIds.length} mục tiêu) cho Chủ đề "${currentTheme.name}" thành công!`);
     } catch (err) {
       console.error('Save target allocation error:', err);
@@ -776,26 +1102,43 @@ export function TargetAllocationTab({ classId = '1' }) {
     }
   };
 
-  // Thời gian cập nhật định dạng HH:mm - DD/MM/YYYY chuẩn UX
+  // Xuất kế hoạch phân bổ mục tiêu và hoạt động giáo dục ra file Excel (.xlsx)
+  const handleExportExcel = async () => {
+    try {
+      setIsExporting(true);
+      const targetThemeId = currentTheme?.id || currentTheme?.publicId || currentTheme?.themeId;
+      const blob = await planningApi.exportThemeTeachingPlanExcel(classId, targetThemeId);
+      const cleanTheme = (currentTheme?.name || 'Ke_hoach_giao_duc').replace(/[^a-zA-Z0-9_\u00C0-\u024F\u1EA0-\u1EF9]/g, '_');
+      const filename = `Ke_hoach_giao_duc_${cleanTheme}.xlsx`;
+      downloadBlob(blob, filename);
+      toast.success('Đã xuất kế hoạch giáo dục theo chủ đề & hoạt động ra file Excel.');
+    } catch (err) {
+      console.error('Export Excel error:', err);
+      toast.error('Không thể xuất file Excel. Vui lòng thử lại sau.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Thời gian cập nhật định dạng HH:mm:ss chuẩn UX đồng bộ hệ thống
   const updatedAt = useMemo(() => {
     const d = lastSavedTime || new Date();
     const hours = String(d.getHours()).padStart(2, '0');
     const minutes = String(d.getMinutes()).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = d.getFullYear();
-    return `${hours}:${minutes} - ${day}/${month}/${year}`;
+    const seconds = String(d.getSeconds()).padStart(2, '0');
+    return `${hours}:${minutes}:${seconds}`;
   }, [lastSavedTime]);
 
-  // Filtered goals for the unified list in Column 2 (theo lĩnh vực phát triển & tìm kiếm từ khóa & chỉ xem đã chọn)
+  // Filtered and sorted goals for the unified list in Column 2 (theo lĩnh vực, tìm kiếm & sắp xếp)
   const filteredGoals = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return allGoals.filter((g) => {
+    const list = allGoals.filter((g) => {
       // 1. Lọc theo trạng thái đã chọn (nếu bật onlySelected)
       if (onlySelected && !checkIsGoalSelected(g)) return false;
 
-      // 2. Lọc theo lĩnh vực
-      const matchDomain = selectedDomainFilter === 'ALL' || g.domain === selectedDomainFilter;
+      // 2. Lọc theo nhiều lĩnh vực cùng lúc (nếu rỗng = xem tất cả)
+      const matchDomain =
+        selectedDomainFilters.length === 0 || selectedDomainFilters.includes(g.domain);
       if (!matchDomain) return false;
 
       // 3. Lọc theo từ khóa tìm kiếm
@@ -806,7 +1149,20 @@ export function TargetAllocationTab({ classId = '1' }) {
         (g.contents && g.contents.some((c) => c.title?.toLowerCase().includes(q)));
       return matchGoal;
     });
-  }, [allGoals, selectedDomainFilter, searchQuery, onlySelected, checkIsGoalSelected]);
+
+    // 4. Sắp xếp mục tiêu
+    return [...list].sort((a, b) => {
+      if (sortBy === 'NEWEST') {
+        const timeB = new Date(b.updatedAt || b.createdAt || 0).getTime();
+        const timeA = new Date(a.updatedAt || a.createdAt || 0).getTime();
+        if (timeB !== timeA) return timeB - timeA;
+      }
+      // Mặc định hoặc 'CODE_ASC': Sắp xếp theo số thứ tự mục tiêu (MT 01 → MT 02 → MT 03 → ...)
+      const numA = parseInt(String(a.code || a.goalCode || '').match(/\d+/)?.[0] || '0', 10);
+      const numB = parseInt(String(b.code || b.goalCode || '').match(/\d+/)?.[0] || '0', 10);
+      return numA - numB;
+    });
+  }, [allGoals, selectedDomainFilters, searchQuery, onlySelected, checkIsGoalSelected, sortBy]);
 
   // Calendar calculations
   const month2Year = calendarMonth === 11 ? calendarYear + 1 : calendarYear;
@@ -885,62 +1241,76 @@ export function TargetAllocationTab({ classId = '1' }) {
   );
 
   if (isLoading) {
+    return <PlanningTabLoading message="Đang tải dữ liệu phân bổ mục tiêu..." />;
+  }
+
+  // Giáo viên không được xem hoặc sử dụng dữ liệu chưa công bố (Thiết kế clean, icon trung tính không màu)
+  if (!isCurriculumPublished) {
     return (
-      <div className="w-full h-80 flex flex-col items-center justify-center gap-3 text-muted-foreground">
-        <div className="size-6 border-2 border-primary border-t-transparent animate-spin rounded-full" />
-        <span className="text-[13px] font-medium">Đang tải phân bổ mục tiêu giáo dục...</span>
+      <div className="w-full h-[calc(100vh-104px)] lg:h-[calc(100vh-120px)] flex flex-col items-center justify-center p-8 text-center bg-background select-none">
+        <div className="max-w-md flex flex-col items-center space-y-2">
+          <div className="size-12 rounded-full bg-muted/60 border border-border/80 flex items-center justify-center text-muted-foreground mb-2">
+            <HugeiconsIcon icon={AlertCircleIcon} size={22} />
+          </div>
+          <h3 className="text-[16px] font-semibold text-foreground tracking-tight">
+            Kế hoạch giáo dục chưa được công bố
+          </h3>
+          <p className="text-[13px] text-muted-foreground leading-relaxed">
+            {allocationData?.message ||
+              `Hiện tại Ban Giám Hiệu chưa ban hành bộ chủ đề và mục tiêu giáo dục áp dụng cho ${classGradeText}${classYearText ? ` (${classYearText})` : ''}. Giáo viên vui lòng liên hệ Ban Giám Hiệu để cập nhật kế hoạch chính thức.`}
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
     <div
-      className="w-full flex-1 h-full bg-background text-foreground flex overflow-hidden select-none"
+      className="w-full h-[calc(100vh-104px)] lg:h-[calc(100vh-120px)] max-h-[calc(100vh-104px)] lg:max-h-[calc(100vh-120px)] min-h-0 flex overflow-hidden bg-background text-foreground select-none"
       data-name="Target Allocation Clean View"
     >
       {/* =========================================================================
-          COLUMN 1: DANH SÁCH CHỦ ĐỀ
+          COLUMN 1: DANH SÁCH CHỦ ĐỀ (Đồng bộ chuẩn Bộ chủ đề)
          ========================================================================= */}
-      <div className="w-[260px] lg:w-[280px] shrink-0 border-r border-border bg-card flex flex-col h-full overflow-hidden">
+      <div className="hidden lg:flex w-[240px] xl:w-[260px] shrink-0 border-r border-border bg-card flex-col h-full min-h-0 overflow-hidden">
         {/* Header Column 1 */}
-        <div className="p-3.5 border-b border-border bg-card shrink-0">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-foreground tracking-tight">
-              Danh sách chủ đề
-            </h2>
-            <span className="text-[11px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 border border-border">
-              {themes.length} chủ đề
-            </span>
-          </div>
-          <p className="text-[11.5px] text-muted-foreground mt-0.5 leading-snug">
+        <div className="p-4 border-b border-border/80 bg-card shrink-0">
+          <h2 className="text-[17px] font-semibold text-foreground tracking-tight">
+            Danh sách chủ đề
+          </h2>
+          <p className="text-[12px] text-muted-foreground mt-0.5">
             Phân bổ mục tiêu theo năm học
           </p>
         </div>
 
         {/* Theme List */}
-        <div className="flex-1 overflow-y-auto divide-y divide-border/50">
+        <div className="flex-1 min-h-0 overflow-y-auto divide-y divide-border/40 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          {themes.length === 0 && (
+            <div className="p-6 text-center text-[12.5px] text-muted-foreground italic select-none">
+              Chưa có chủ đề nào
+            </div>
+          )}
           {themes.map((th) => {
             const isSelected = selectedThemeCode === th.code;
-            const allocatedCount = th.allocatedGoals?.length || th.count || 0;
 
             return (
               <div
                 key={th.code}
                 onClick={() => handleSelectTheme(th)}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors text-left select-none',
+                  'flex items-center gap-3 px-3.5 py-3 cursor-pointer transition-colors select-none text-left',
                   isSelected
-                    ? 'bg-muted/80 font-semibold'
+                    ? 'bg-muted/70 font-semibold'
                     : 'hover:bg-muted/40 text-foreground',
                 )}
               >
-                {/* Topic Index square */}
+                {/* Topic Index square badge - Đồng bộ chuẩn xanh Sorak #1447e6 */}
                 <div
                   className={cn(
-                    'size-6 flex items-center justify-center text-xs font-mono font-bold shrink-0',
+                    'size-7 rounded-none flex items-center justify-center text-[12px] font-semibold shrink-0 overflow-hidden',
                     isSelected
-                      ? 'bg-foreground text-background'
-                      : 'bg-muted text-muted-foreground border border-border',
+                      ? 'bg-[#1447e6] text-white'
+                      : 'bg-muted text-muted-foreground border border-border/60',
                   )}
                 >
                   {th.code}
@@ -950,416 +1320,563 @@ export function TargetAllocationTab({ classId = '1' }) {
                 <div className="flex flex-col min-w-0 flex-1 leading-tight">
                   <span
                     className={cn(
-                      'text-xs lg:text-[13px] truncate',
+                      'text-[13.5px] truncate',
                       isSelected ? 'text-foreground font-semibold' : 'text-foreground/85 font-medium',
                     )}
                   >
                     {th.name}
                   </span>
-                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-normal mt-0.5">
-                    <span>{formatDateRangeDdMm(th.startDate, th.endDate)}</span>
-                    {th.subThemes && th.subThemes.length > 0 && (
-                      <span className="text-muted-foreground/70">· {th.subThemes.length} nhánh</span>
+                  <div className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground font-normal mt-0.5 min-w-0">
+                    {th.planStatus === 'USED' && (
+                      <span className="inline-flex items-center text-emerald-600 dark:text-emerald-400 shrink-0" title="Đã phê duyệt (Chỉ đọc)">
+                        <HugeiconsIcon icon={CheckmarkCircle01Icon} size={12} />
+                      </span>
                     )}
+                    {(th.planStatus === 'SUBMITTED' || th.planStatus === 'PENDING_APPROVAL') && (
+                      <span className="inline-flex items-center text-amber-600 dark:text-amber-400 shrink-0" title="Đang chờ duyệt (Chỉ đọc)">
+                        <HugeiconsIcon icon={Clock01Icon} size={12} />
+                      </span>
+                    )}
+                    {th.planStatus === 'REJECTED' && (
+                      <span className="inline-flex items-center text-rose-600 dark:text-rose-400 shrink-0" title="Yêu cầu sửa">
+                        <HugeiconsIcon icon={Cancel01Icon} size={12} />
+                      </span>
+                    )}
+                    <span className="truncate">{formatDateRangeDdMm(th.startDate, th.endDate)}</span>
                   </div>
                 </div>
-
-                {/* Target count badge */}
-                {allocatedCount > 0 && (
-                  <span
-                    className={cn(
-                      'text-[10px] font-mono px-1 py-0.2 border shrink-0',
-                      isSelected
-                        ? 'bg-foreground/10 text-foreground border-foreground/25 font-semibold'
-                        : 'bg-muted text-muted-foreground border-border',
-                    )}
-                    title={`Chủ đề này đã có ${allocatedCount} mục tiêu`}
-                  >
-                    {allocatedCount} MT
-                  </span>
-                )}
               </div>
             );
           })}
-
-          {/* Thời gian cập nhật đặt ngay sau chủ đề cuối cùng */}
-          <div className="py-2.5 px-3.5 bg-muted/15 border-t border-border flex items-center justify-between text-xs text-muted-foreground select-none">
-            <span className="text-[11.5px]">Thời gian cập nhật:</span>
-            <span className="text-[11.5px] font-mono font-medium text-foreground/85">{updatedAt}</span>
-          </div>
         </div>
       </div>
 
-      {/* =========================================================================
-          COLUMN 2: MỤC TIÊU GIÁO DỤC (DANH SÁCH DUY NHẤT & SELECT TRỰC TIẾP)
-         ========================================================================= */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
-        {/* HÀNG 1: Header Bar tinh gọn - Đã chuyển nhánh con xuống dưới lịch */}
-        <div className="h-11 px-4 border-b border-border bg-card flex items-center justify-between gap-3 shrink-0 select-none">
-          {/* Cụm bên trái: Tên chủ đề dạng chữ trực tiếp, không dùng badge */}
-          <div className="flex items-center gap-2 min-w-0">
-            <h1 className="text-sm font-bold text-foreground tracking-tight truncate">
-              Chủ đề {currentTheme?.code}: {currentTheme?.name || 'Chủ đề năm học'}
-            </h1>
-            {currentTheme?.startDate && (
-              <span className="text-xs text-muted-foreground shrink-0 hidden sm:inline">
-                ({formatDateRangeDdMm(currentTheme.startDate, currentTheme.endDate)})
-              </span>
-            )}
-          </div>
-
-          {/* Cụm bên phải: Tiến độ chọn mục tiêu & Nút lưu thay đổi duy nhất */}
-          <div className="flex items-center gap-3 shrink-0">
-            <span className="text-xs text-muted-foreground whitespace-nowrap">
-              Đã chọn <strong className="font-mono font-bold text-foreground">{actualSelectedCount}</strong> / {allGoals.length} mục tiêu
-            </span>
-
-            {!isBgh && (
-              <Button
-                type="button"
-                onClick={handleSaveAllocation}
-                disabled={isSaving}
-                className="h-7 px-3 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium rounded-none cursor-pointer flex items-center gap-1.5"
-              >
-                <HugeiconsIcon icon={CheckmarkCircle01Icon} size={13} />
-                <span>{isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}</span>
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* HÀNG 2: Toolbar tìm kiếm & biểu tượng Bộ lọc (Không list ngang) */}
-        <div className="h-10 px-4 border-b border-border bg-muted/20 flex items-center justify-between gap-3 shrink-0 select-none">
-          {/* Bên trái: Input tìm kiếm + Biểu tượng Filter giống các trang khác + Chip bộ lọc */}
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            {/* Input tìm kiếm */}
-            <div className="relative w-44 sm:w-56 lg:w-64 shrink-0">
-              <HugeiconsIcon
-                icon={Search01Icon}
-                size={13}
-                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
-              />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Tìm mã MT, tên nội dung..."
-                className="w-full h-7 pl-7 pr-6 bg-card border border-border text-xs text-foreground placeholder:text-muted-foreground rounded-none outline-none focus:border-primary transition-colors"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
-                  title="Xóa tìm kiếm"
-                >
-                  <HugeiconsIcon icon={Cancel01Icon} size={11} />
-                </button>
-              )}
-            </div>
-
-            {/* Biểu tượng Filter chuẩn các trang khác */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className={cn(
-                    'h-7 px-2.5 bg-card border border-border text-foreground hover:bg-muted/60 rounded-none flex items-center gap-1.5 transition-colors cursor-pointer select-none text-xs shrink-0',
-                    (selectedDomainFilter !== 'ALL' || onlySelected) &&
-                      'border-primary text-primary bg-primary/5 font-semibold',
-                  )}
-                  title="Bộ lọc mục tiêu giáo dục"
-                  data-name="Filter · Goals"
-                >
-                  <HugeiconsIcon icon={FilterHorizontalIcon} size={14} />
-                  <span>Bộ lọc</span>
-                  {(selectedDomainFilter !== 'ALL' || onlySelected) && (
-                    <span className="size-1.5 bg-primary rounded-none" />
-                  )}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="start"
-                className="w-56 p-1.5 rounded-none border border-border bg-card shadow-xl z-50 text-foreground"
-              >
-                {/* Lĩnh vực phát triển */}
-                <DropdownMenuLabel className="px-2 py-1 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                  Lĩnh vực phát triển
-                </DropdownMenuLabel>
-                {DOMAIN_OPTIONS.map((item) => {
-                  const isAll = item.key === 'ALL';
-                  const domainGoals = isAll ? allGoals : allGoals.filter((g) => g.domain === item.key);
-                  const domainSelectedCount = domainGoals.filter((g) => checkIsGoalSelected(g)).length;
-                  const isDomainActive = selectedDomainFilter === item.key;
-
-                  return (
-                    <DropdownMenuItem
-                      key={item.key}
-                      onClick={() => setSelectedDomainFilter(item.key)}
-                      className={cn(
-                        'flex items-center justify-between h-7.5 px-2 text-xs cursor-pointer rounded-none hover:bg-muted/60',
-                        isDomainActive && 'bg-muted/80 font-semibold text-primary',
-                      )}
-                    >
-                      <span>{item.label}</span>
-                      <div className="flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground">
-                        <span>{isAll ? domainGoals.length : `${domainSelectedCount}/${domainGoals.length}`}</span>
-                        {isDomainActive && (
-                          <HugeiconsIcon icon={CheckmarkSquare02Icon} size={13} className="text-primary shrink-0" />
-                        )}
-                      </div>
-                    </DropdownMenuItem>
-                  );
-                })}
-
-                <DropdownMenuSeparator className="my-1 border-t border-border" />
-
-                {/* Trạng thái phân bổ */}
-                <DropdownMenuLabel className="px-2 py-1 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                  Trạng thái phân bổ
-                </DropdownMenuLabel>
-                <DropdownMenuItem
-                  onClick={() => setOnlySelected(false)}
-                  className={cn(
-                    'flex items-center justify-between h-7.5 px-2 text-xs cursor-pointer rounded-none hover:bg-muted/60',
-                    !onlySelected && 'bg-muted/80 font-semibold text-primary',
-                  )}
-                >
-                  <span>Tất cả mục tiêu ({allGoals.length})</span>
-                  {!onlySelected && (
-                    <HugeiconsIcon icon={CheckmarkSquare02Icon} size={13} className="text-primary shrink-0" />
-                  )}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setOnlySelected(true)}
-                  className={cn(
-                    'flex items-center justify-between h-7.5 px-2 text-xs cursor-pointer rounded-none hover:bg-muted/60',
-                    onlySelected && 'bg-muted/80 font-semibold text-primary',
-                  )}
-                >
-                  <span>Chỉ xem đã chọn ({actualSelectedCount})</span>
-                  {onlySelected && (
-                    <HugeiconsIcon icon={CheckmarkSquare02Icon} size={13} className="text-primary shrink-0" />
-                  )}
-                </DropdownMenuItem>
-
-                {/* Đặt lại bộ lọc */}
-                {(selectedDomainFilter !== 'ALL' || onlySelected) && (
-                  <>
-                    <DropdownMenuSeparator className="my-1 border-t border-border" />
-                    <DropdownMenuItem
-                      onClick={() => {
-                        setSelectedDomainFilter('ALL');
-                        setOnlySelected(false);
-                      }}
-                      className="flex items-center justify-center h-7 px-2 text-xs text-primary hover:bg-primary/10 cursor-pointer rounded-none font-medium text-center"
-                    >
-                      Đặt lại bộ lọc
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Active Filter Chips */}
-            {selectedDomainFilter !== 'ALL' && (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-muted text-foreground border border-border text-[11px] font-medium shrink-0">
-                <span>Lĩnh vực: {DOMAIN_SHORT_LABELS[selectedDomainFilter]}</span>
-                <button
-                  type="button"
-                  onClick={() => setSelectedDomainFilter('ALL')}
-                  className="hover:bg-muted-foreground/20 size-3.5 flex items-center justify-center cursor-pointer font-bold leading-none"
-                  title="Bỏ lọc lĩnh vực"
-                >
-                  ×
-                </button>
-              </span>
-            )}
-
-            {onlySelected && (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-muted text-foreground border border-border text-[11px] font-medium shrink-0">
-                <span>Đã chọn ({actualSelectedCount})</span>
-                <button
-                  type="button"
-                  onClick={() => setOnlySelected(false)}
-                  className="hover:bg-muted-foreground/20 size-3.5 flex items-center justify-center cursor-pointer font-bold leading-none"
-                  title="Xem tất cả"
-                >
-                  ×
-                </button>
-              </span>
-            )}
-          </div>
-
-          {/* Bên phải: Toggle ND chi tiết & Toggle Lịch */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            {/* Toggle Show/Hide Educational Contents */}
-            <button
-              type="button"
-              onClick={() => setShowContents((prev) => !prev)}
-              className={cn(
-                'h-7 px-2.5 text-xs font-medium border rounded-none transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap select-none',
-                showContents
-                  ? 'bg-muted border-border text-foreground font-medium'
-                  : 'bg-card border-border text-muted-foreground hover:text-foreground',
-              )}
-              title={showContents ? 'Thu gọn nội dung giáo dục' : 'Hiện nội dung giáo dục'}
-            >
-              <span>{showContents ? 'Ẩn ND chi tiết' : 'Hiện ND chi tiết'}</span>
-            </button>
-
-            {/* Toggle Show/Hide Calendar Sidebar */}
-            <button
-              type="button"
-              onClick={() => setShowCalendar((prev) => !prev)}
-              className={cn(
-                'h-7 px-2.5 text-xs font-medium border rounded-none transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap select-none',
-                showCalendar
-                  ? 'bg-muted border-border text-foreground font-medium'
-                  : 'bg-card border-border text-muted-foreground hover:text-foreground',
-              )}
-              title={showCalendar ? 'Thu gọn cột lịch' : 'Hiện cột lịch năm học'}
-            >
-              <HugeiconsIcon icon={Calendar03Icon} size={13} />
-              <span>{showCalendar ? 'Ẩn lịch' : 'Hiện lịch'}</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Goal Cards List */}
-        <div className="flex-1 overflow-y-auto p-3.5 space-y-2">
-          {/* Thông báo đang lọc */}
-          {(searchQuery || onlySelected || selectedDomainFilter !== 'ALL') && (
-            <div className="flex items-center justify-between text-xs text-muted-foreground pb-0.5 px-1">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span>
-                  Đang lọc <strong className="text-foreground">{filteredGoals.length}</strong> mục tiêu:
-                </span>
-                {selectedDomainFilter !== 'ALL' && (
-                  <span className="text-primary font-medium font-mono">[{DOMAIN_SHORT_LABELS[selectedDomainFilter]}]</span>
-                )}
-                {onlySelected && (
-                  <span className="text-primary font-medium font-mono">[Đã chọn]</span>
-                )}
-                {searchQuery && (
-                  <span>từ khóa &quot;{searchQuery}&quot;</span>
-                )}
+      {/* Mobile/Tablet Topics Drawer */}
+      {showMobileThemes && (
+        <div className="fixed inset-0 z-50 flex lg:hidden">
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
+            onClick={() => setShowMobileThemes(false)}
+          />
+          <div className="relative w-[280px] max-w-[85vw] bg-card border-r border-border h-full flex flex-col shadow-2xl z-10 animate-in slide-in-from-left duration-200">
+            <div className="p-3.5 border-b border-border flex items-center justify-between bg-card shrink-0">
+              <div>
+                <h2 className="text-[15px] font-semibold text-foreground tracking-tight">
+                  Danh sách chủ đề
+                </h2>
+                <p className="text-[11.5px] text-muted-foreground mt-0.5">
+                  {themes.length} chủ đề trong năm học
+                </p>
               </div>
               <button
                 type="button"
-                onClick={() => {
-                  setSelectedDomainFilter('ALL');
-                  setOnlySelected(false);
-                  setSearchQuery('');
-                }}
-                className="text-primary hover:underline cursor-pointer text-xs"
+                onClick={() => setShowMobileThemes(false)}
+                className="size-7 flex items-center justify-center hover:bg-muted text-muted-foreground rounded-xs cursor-pointer"
+                title="Đóng danh sách chủ đề"
               >
-                Xóa bộ lọc
+                <HugeiconsIcon icon={Cancel01Icon} size={15} />
               </button>
             </div>
-          )}
 
-          {/* Cards Grid */}
-          <div className={cn(
-            'grid gap-2',
-            !showCalendar ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-1',
-          )}>
-            {filteredGoals.map((goal) => {
-              const status = getGoalContentStatus(goal);
-              const otherThemes = themes.filter(
-                (th) =>
-                  th.code !== currentTheme?.code &&
-                  (th.allocatedGoals || []).some((g) => g.id === goal.id),
-              );
+            <div className="flex-1 min-h-0 overflow-y-auto divide-y divide-border/40 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+              {themes.length === 0 ? (
+                <div className="p-6 text-center text-[12.5px] text-muted-foreground italic select-none">
+                  Chưa có chủ đề nào
+                </div>
+              ) : (
+                themes.map((th) => {
+                  const isSelected = selectedThemeCode === th.code;
 
-              return (
-                <div
-                  key={goal.id}
-                  onClick={() => !isBgh && handleToggleGoalAllocation(goal.id)}
-                  className={cn(
-                    'p-3 border transition-colors select-none text-left rounded-none',
-                    isBgh ? 'cursor-default' : 'cursor-pointer',
-                    status.isSelected
-                      ? 'border-border bg-muted/25'
-                      : 'border-border/70 bg-card hover:border-border hover:bg-muted/15',
-                  )}
-                >
-                  <div className="flex items-start gap-2.5">
-                    {/* Master Checkbox to select/deselect entire goal */}
-                    <input
-                      type="checkbox"
-                      checked={status.isFullySelected}
-                      ref={(el) => {
-                        if (el) el.indeterminate = status.isPartiallySelected;
+                  return (
+                    <div
+                      key={th.code}
+                      onClick={() => {
+                        handleSelectTheme(th);
+                        setShowMobileThemes(false);
                       }}
-                      disabled={isBgh}
-                      onChange={() => !isBgh && handleToggleGoalAllocation(goal.id)}
-                      onClick={(e) => e.stopPropagation()}
                       className={cn(
-                        "size-4 rounded-none accent-primary mt-0.5 shrink-0",
-                        isBgh ? "cursor-default opacity-80" : "cursor-pointer",
+                        'flex items-center gap-3 px-3.5 py-3 cursor-pointer transition-colors select-none text-left',
+                        isSelected
+                          ? 'bg-muted/70 font-semibold'
+                          : 'hover:bg-muted/40 text-foreground',
                       )}
-                      title={
-                        status.isFullySelected
-                          ? 'Bỏ chọn toàn bộ NDGD của mục tiêu này'
-                          : status.isPartiallySelected
-                          ? 'Đang chọn một số NDGD. Bấm để bỏ chọn hết.'
-                          : 'Chọn tất cả NDGD của mục tiêu này'
-                      }
-                    />
-
-                    <div className="flex-1 min-w-0 space-y-1">
-                      {/* Top row: Code + Domain + Other themes warning + Status text */}
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="font-mono font-bold text-xs text-foreground">
-                            {goal.code}
-                          </span>
-                          {selectedDomainFilter === 'ALL' && (
-                            <span className="text-xs text-muted-foreground font-normal">
-                              · {DOMAIN_SHORT_LABELS[goal.domain] || goal.domain}
-                            </span>
-                          )}
-                          {otherThemes.length > 0 && (
-                            <span className="text-[11px] text-muted-foreground italic font-normal">
-                              (Đã có ở CĐ {otherThemes.map((t) => t.code).join(', ')})
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Status text: Gọn nhẹ, không dùng màu sắc lòe loẹt */}
-                        {status.isFullySelected && (
-                          <span className="text-[11px] text-muted-foreground font-mono shrink-0">
-                            ✓ Đã chọn {status.totalCount > 1 ? `đủ ${status.totalCount}/${status.totalCount} ND` : 'cả MT'}
-                          </span>
+                    >
+                      <div
+                        className={cn(
+                          'size-7 rounded-none flex items-center justify-center text-[12px] font-semibold shrink-0 overflow-hidden',
+                          isSelected
+                            ? 'bg-[#1447e6] text-white'
+                            : 'bg-muted text-muted-foreground border border-border/60',
                         )}
-                        {status.isPartiallySelected && (
-                          <span className="text-[11px] text-muted-foreground font-mono shrink-0">
-                            ◐ Chọn lẻ {status.selectedCount}/{status.totalCount} ND
+                      >
+                        {th.code}
+                      </div>
+
+                      <div className="flex flex-col min-w-0 flex-1 leading-tight">
+                        <span
+                          className={cn(
+                            'text-[13.5px] truncate',
+                            isSelected ? 'text-foreground font-semibold' : 'text-foreground/85 font-medium',
+                          )}
+                        >
+                          {th.name}
+                        </span>
+                        <div className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground font-normal mt-0.5 min-w-0">
+                          {th.planStatus === 'USED' && (
+                            <span className="inline-flex items-center text-emerald-600 dark:text-emerald-400 shrink-0" title="Đã phê duyệt (Chỉ đọc)">
+                              <HugeiconsIcon icon={CheckmarkCircle01Icon} size={12} />
+                            </span>
+                          )}
+                          {(th.planStatus === 'SUBMITTED' || th.planStatus === 'PENDING_APPROVAL') && (
+                            <span className="inline-flex items-center text-amber-600 dark:text-amber-400 shrink-0" title="Đang chờ duyệt (Chỉ đọc)">
+                              <HugeiconsIcon icon={Clock01Icon} size={12} />
+                            </span>
+                          )}
+                          {th.planStatus === 'REJECTED' && (
+                            <span className="inline-flex items-center text-rose-600 dark:text-rose-400 shrink-0" title="Yêu cầu sửa">
+                              <HugeiconsIcon icon={Cancel01Icon} size={12} />
+                            </span>
+                          )}
+                          <span className="truncate">{formatDateRangeDdMm(th.startDate, th.endDate)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          COLUMN 2: MỤC TIÊU GIÁO DỤC (Thông thoáng, mở rộng theo chuẩn Bộ chủ đề)
+         ========================================================================= */}
+      <div className="flex-1 min-h-0 flex flex-col h-full overflow-hidden bg-background">
+        {!currentTheme || themes.length === 0 ? (
+          <div className="flex-1 min-h-0 flex flex-col items-center justify-center p-8 text-center select-none">
+            {themes.length > 0 && (
+              <div className="lg:hidden mb-6">
+                <button
+                  type="button"
+                  onClick={() => setShowMobileThemes(true)}
+                  className="h-8 px-3 flex items-center gap-1.5 border border-border bg-background hover:bg-muted text-foreground text-[12px] font-medium rounded-none transition-colors shrink-0 cursor-pointer"
+                  title="Xem danh sách chủ đề"
+                >
+                  <HugeiconsIcon icon={Menu01Icon} size={15} />
+                  <span>Danh sách chủ đề ({themes.length})</span>
+                </button>
+              </div>
+            )}
+            <div className="size-16 rounded-full bg-muted/60 border border-border/80 flex items-center justify-center text-muted-foreground mb-4">
+              <HugeiconsIcon icon={Calendar03Icon} size={30} />
+            </div>
+            <h3 className="text-[17px] font-semibold text-foreground tracking-tight">
+              Chưa có chủ đề giáo dục nào
+            </h3>
+            <p className="text-[13px] text-muted-foreground mt-1.5 max-w-md leading-relaxed">
+              Lớp học này chưa có chủ đề giáo dục nào được công bố. Vui lòng chờ Ban Giám Hiệu công bố kế hoạch chủ đề trước khi phân bổ mục tiêu.
+            </p>
+          </div>
+        ) : (
+          <div className="flex-1 min-h-0 flex flex-col h-full overflow-hidden">
+            {/* Header Chủ đề & Toolbar được PIN (Cố định ở đỉnh, nén dẹp theo Cách 2) */}
+            <div className="px-3 sm:px-5 py-2 sm:py-2.5 border-b border-border/60 bg-card space-y-1.5 shrink-0 z-10 shadow-xs">
+              {/* Header Row: Title with status badge & Top right action controls */}
+              <div className="flex items-center justify-between gap-2 sm:gap-3">
+                {/* Hàng trên: Tiêu đề chủ đề */}
+                <div className="min-w-0 flex-1 flex items-center gap-2 overflow-hidden mr-2">
+                  {/* Mobile Topics List Toggle Button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowMobileThemes(true)}
+                    className="lg:hidden h-8 px-2.5 flex items-center gap-1.5 border border-border bg-background hover:bg-muted text-foreground text-[12px] font-medium rounded-none transition-colors shrink-0 cursor-pointer"
+                    title="Xem danh sách chủ đề"
+                  >
+                    <HugeiconsIcon icon={Menu01Icon} size={15} />
+                    <span className="hidden sm:inline">Chủ đề</span>
+                    <span>({themes.length})</span>
+                  </button>
+
+                  <h1
+                    className="text-[17px] sm:text-[19px] md:text-[20px] font-semibold text-foreground tracking-tight truncate"
+                    title={currentTheme?.name || 'Phân bổ mục tiêu'}
+                  >
+                    {currentTheme?.name || 'Phân bổ mục tiêu'}
+                  </h1>
+                </div>
+
+                {/* Top Right Controls: Tìm kiếm + Nút Toggle Lịch + Nút Xuất Excel */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {/* Ô tìm kiếm mục tiêu */}
+                  <div className="relative flex items-center">
+                    <HugeiconsIcon
+                      icon={Search01Icon}
+                      size={14}
+                      className="absolute left-2.5 text-muted-foreground pointer-events-none z-10"
+                    />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Tìm kiếm mục tiêu..."
+                      className="h-8 pl-8 pr-7 w-28 sm:w-36 md:w-44 text-[12px] bg-background border border-border rounded-none focus:outline-none focus:border-[#1447e6] transition-colors placeholder:text-muted-foreground/60"
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchQuery('')}
+                        className="absolute right-2 text-muted-foreground hover:text-foreground cursor-pointer"
+                        title="Xóa tìm kiếm"
+                      >
+                        <HugeiconsIcon icon={Cancel01Icon} size={11} />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Nút 1: Toggle Lịch (Icon only) */}
+                  <button
+                    type="button"
+                    onClick={() => setShowCalendar((prev) => !prev)}
+                    className={cn(
+                      'size-8 flex items-center justify-center border border-border transition-colors cursor-pointer rounded-none',
+                      showCalendar
+                        ? 'bg-muted text-foreground'
+                        : 'bg-background hover:bg-muted text-muted-foreground hover:text-foreground',
+                    )}
+                    title={showCalendar ? 'Thu gọn lịch' : 'Mở lịch'}
+                  >
+                    <HugeiconsIcon icon={SidebarRightIcon} size={18} />
+                  </button>
+
+                  {/* Nút 2: Thao tác Excel Kế hoạch phân bổ mục tiêu */}
+                  <ExcelActionsDropdown
+                    onExport={handleExportExcel}
+                    isExporting={isExporting}
+                    showImport={false}
+                    exportLabel="Xuất tệp Excel"
+                  />
+                </div>
+              </div>
+
+              {/* Hàng 2: Micro-bar siêu mỏng (Badge trạng thái + Đã lưu bên trái, Bộ lọc + Đã chọn bên phải) */}
+              <div className="flex items-center justify-between gap-2 sm:gap-3 pt-1.5 border-t border-border/40 select-none text-[11px] sm:text-[11.5px] text-muted-foreground">
+                {/* Trạng thái duyệt + Trạng thái lưu tự động */}
+                <div className="flex items-center gap-2 shrink-0">
+                  {isRejected ? (
+                    <button
+                      type="button"
+                      onClick={() => setIsFeedbackModalOpen(true)}
+                      className="inline-flex items-center gap-1 text-[11px] font-medium px-1.5 py-0.5 select-none border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100/80 dark:hover:bg-rose-900/60 transition-colors cursor-pointer shrink-0"
+                      title="Nhấn để xem chi tiết ý kiến phản hồi"
+                    >
+                      <HugeiconsIcon icon={AlertCircleIcon} size={11} className="shrink-0 text-rose-600 dark:text-rose-400" />
+                      <span>Yêu cầu sửa</span>
+                    </button>
+                  ) : isPendingApproval ? (
+                    <span
+                      className="inline-flex items-center gap-1 text-[11px] font-medium px-1.5 py-0.5 select-none border shrink-0 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/50"
+                      title="Kế hoạch chủ đề đang chờ phê duyệt"
+                    >
+                      <HugeiconsIcon
+                        icon={Clock01Icon}
+                        size={11}
+                        className="shrink-0 text-amber-600 dark:text-amber-400"
+                      />
+                      <span>Chờ duyệt</span>
+                    </span>
+                  ) : isApproved ? (
+                    <span
+                      className="inline-flex items-center gap-1 text-[11px] font-medium px-1.5 py-0.5 select-none border shrink-0 text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/50"
+                      title="Kế hoạch chủ đề đã được Ban Giám Hiệu phê duyệt"
+                    >
+                      <HugeiconsIcon
+                        icon={CheckmarkCircle01Icon}
+                        size={11}
+                        className="shrink-0 text-emerald-600 dark:text-emerald-400"
+                      />
+                      <span>Đã duyệt</span>
+                    </span>
+                  ) : null}
+
+                  {/* Trạng thái lưu tự động */}
+                  <span className="text-[11.5px] text-muted-foreground/70 shrink-0 font-sans tracking-tight select-none">
+                    Đã lưu lúc <span className="font-mono text-muted-foreground font-medium">{updatedAt}</span>
+                  </span>
+                </div>
+
+                {/* Góc phải: Đã chọn bao nhiêu nội dung giáo dục & Nút Bộ lọc */}
+                <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+                  {/* Đã chọn bao nhiêu nội dung giáo dục */}
+                  <span className="whitespace-nowrap">
+                    Đã chọn <strong className="font-mono font-bold text-foreground">{actualSelectedContentCount}</strong> / {totalContentsCount} NDGD
+                  </span>
+
+                  {/* Nút Bộ lọc & Sắp xếp mục tiêu (nằm sát bên phải) */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className={cn(
+                          'h-6 px-2 flex items-center gap-1 border transition-colors cursor-pointer rounded-none text-[11px] select-none',
+                          (selectedDomainFilters.length > 0 || onlySelected || sortBy !== 'CODE_ASC')
+                            ? 'border-[#1447e6] text-[#1447e6] bg-[#1447e6]/10 font-semibold'
+                            : 'border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground',
+                        )}
+                        title="Bộ lọc & Sắp xếp mục tiêu"
+                      >
+                        <HugeiconsIcon icon={FilterHorizontalIcon} size={12} />
+                        <span>Bộ lọc</span>
+                        {(selectedDomainFilters.length > 0 || onlySelected || sortBy !== 'CODE_ASC') && (
+                          <span className="size-1.5 rounded-full bg-[#1447e6]" />
+                        )}
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      className="w-64 p-1.5 rounded-none border border-border bg-card shadow-xl z-50 text-foreground"
+                    >
+                      {/* Sắp xếp mục tiêu */}
+                      <DropdownMenuLabel className="px-2 py-1 text-[11px] font-bold text-muted-foreground uppercase tracking-wider select-none">
+                        Sắp xếp
+                      </DropdownMenuLabel>
+                      <DropdownMenuItem
+                        onSelect={(e) => e.preventDefault()}
+                        onClick={() => setSortBy('CODE_ASC')}
+                        className={cn(
+                          'flex items-center justify-between h-7.5 px-2 text-[12px] cursor-pointer rounded-none hover:bg-muted/60 select-none',
+                          sortBy === 'CODE_ASC' && 'bg-muted/80 font-semibold text-[#1447e6]',
+                        )}
+                      >
+                        <span>Theo số thứ tự mục tiêu</span>
+                        {sortBy === 'CODE_ASC' && (
+                          <HugeiconsIcon icon={CheckmarkSquare02Icon} size={13} className="text-[#1447e6] shrink-0" />
+                        )}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={(e) => e.preventDefault()}
+                        onClick={() => setSortBy('NEWEST')}
+                        className={cn(
+                          'flex items-center justify-between h-7.5 px-2 text-[12px] cursor-pointer rounded-none hover:bg-muted/60 select-none',
+                          sortBy === 'NEWEST' && 'bg-muted/80 font-semibold text-[#1447e6]',
+                        )}
+                      >
+                        <span>Mục tiêu mới nhất</span>
+                        {sortBy === 'NEWEST' && (
+                          <HugeiconsIcon icon={CheckmarkSquare02Icon} size={13} className="text-[#1447e6] shrink-0" />
+                        )}
+                      </DropdownMenuItem>
+
+                      <DropdownMenuSeparator className="my-1 border-t border-border" />
+
+                      {/* Header: Lĩnh vực phát triển */}
+                      <div className="flex items-center justify-between px-2 py-1 text-[11px] font-bold text-muted-foreground uppercase tracking-wider select-none">
+                        <span>Lĩnh vực phát triển</span>
+                        {selectedDomainFilters.length > 0 && (
+                          <button
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => setSelectedDomainFilters([])}
+                            className="text-[11px] text-[#1447e6] hover:underline font-normal normal-case cursor-pointer"
+                          >
+                            Chọn tất cả
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Option: Tất cả lĩnh vực */}
+                      <DropdownMenuItem
+                        onSelect={(e) => e.preventDefault()}
+                        onClick={() => setSelectedDomainFilters([])}
+                        className={cn(
+                          'flex items-center justify-between h-7.5 px-2 text-[12px] cursor-pointer rounded-none hover:bg-muted/60 select-none',
+                          selectedDomainFilters.length === 0 && 'bg-muted/80 font-semibold text-[#1447e6]',
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={cn(
+                              'size-3.5 border rounded-none flex items-center justify-center shrink-0 transition-colors',
+                              selectedDomainFilters.length === 0
+                                ? 'bg-[#1447e6] border-[#1447e6] text-white'
+                                : 'border-border/80 bg-background',
+                            )}
+                          >
+                            {selectedDomainFilters.length === 0 && (
+                              <svg className="size-2.5 text-white" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="2.5 7 5.5 10 11.5 4" />
+                              </svg>
+                            )}
+                          </div>
+                          <span>Tất cả lĩnh vực</span>
+                        </div>
+                        <span className="font-mono text-[11px] text-muted-foreground">{allGoals.length}</span>
+                      </DropdownMenuItem>
+
+                      {/* Các lựa chọn lĩnh vực cụ thể (chọn nhiều cùng lúc) */}
+                      {DOMAIN_OPTIONS.filter((d) => d.key !== 'ALL').map((item) => {
+                        const domainGoals = allGoals.filter((g) => g.domain === item.key);
+                        const domainSelectedCount = domainGoals.filter((g) => checkIsGoalSelected(g)).length;
+                        const isDomainActive = selectedDomainFilters.includes(item.key);
+
+                        return (
+                          <DropdownMenuItem
+                            key={item.key}
+                            onSelect={(e) => e.preventDefault()}
+                            onClick={() => handleToggleDomainFilter(item.key)}
+                            className={cn(
+                              'flex items-center justify-between h-7.5 px-2 text-[12px] cursor-pointer rounded-none hover:bg-muted/60 select-none',
+                              isDomainActive && 'bg-muted/80 font-semibold text-[#1447e6]',
+                            )}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div
+                                className={cn(
+                                  'size-3.5 border rounded-none flex items-center justify-center shrink-0 transition-colors',
+                                  isDomainActive
+                                    ? 'bg-[#1447e6] border-[#1447e6] text-white'
+                                    : 'border-border/80 bg-background',
+                                )}
+                              >
+                                {isDomainActive && (
+                                  <svg className="size-2.5 text-white" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="2.5 7 5.5 10 11.5 4" />
+                                  </svg>
+                                )}
+                              </div>
+                              <span className="truncate">{item.label}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground shrink-0">
+                              <span>{`${domainSelectedCount}/${domainGoals.length}`}</span>
+                            </div>
+                          </DropdownMenuItem>
+                        );
+                      })}
+
+                      <DropdownMenuSeparator className="my-1 border-t border-border" />
+
+                      {/* Trạng thái phân bổ */}
+                      <DropdownMenuLabel className="px-2 py-1 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                        Trạng thái phân bổ
+                      </DropdownMenuLabel>
+                      <DropdownMenuItem
+                        onSelect={(e) => e.preventDefault()}
+                        onClick={() => setOnlySelected(false)}
+                        className={cn(
+                          'flex items-center justify-between h-7.5 px-2 text-[12px] cursor-pointer rounded-none hover:bg-muted/60',
+                          !onlySelected && 'bg-muted/80 font-semibold text-[#1447e6]',
+                        )}
+                      >
+                        <span>Tất cả mục tiêu ({allGoals.length})</span>
+                        {!onlySelected && (
+                          <HugeiconsIcon icon={CheckmarkSquare02Icon} size={13} className="text-[#1447e6] shrink-0" />
+                        )}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={(e) => e.preventDefault()}
+                        onClick={() => setOnlySelected(true)}
+                        className={cn(
+                          'flex items-center justify-between h-7.5 px-2 text-[12px] cursor-pointer rounded-none hover:bg-muted/60',
+                          onlySelected && 'bg-muted/80 font-semibold text-[#1447e6]',
+                        )}
+                      >
+                        <span>Chỉ xem đã chọn ({actualSelectedCount})</span>
+                        {onlySelected && (
+                          <HugeiconsIcon icon={CheckmarkSquare02Icon} size={13} className="text-[#1447e6] shrink-0" />
+                        )}
+                      </DropdownMenuItem>
+
+                      {/* Đặt lại bộ lọc */}
+                      {(selectedDomainFilters.length > 0 || onlySelected || sortBy !== 'CODE_ASC') && (
+                        <>
+                          <DropdownMenuSeparator className="my-1 border-t border-border" />
+                          <DropdownMenuItem
+                            onSelect={(e) => e.preventDefault()}
+                            onClick={() => {
+                              setSelectedDomainFilters([]);
+                              setOnlySelected(false);
+                              setSortBy('CODE_ASC');
+                            }}
+                            className="flex items-center justify-center h-7 px-2 text-[12px] text-[#1447e6] hover:bg-[#1447e6]/10 cursor-pointer rounded-none font-medium text-center"
+                          >
+                            Đặt lại mặc định
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+            </div>
+
+            {/* Vùng danh sách mục tiêu CUỘN ĐỘC LẬP */}
+            <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-5 md:p-6 space-y-3.5 sm:space-y-4 [scrollbar-width:thin]">
+            {/* Cards Grid: Thiết kế theo đúng chuẩn card của Bộ chủ đề */}
+            <div className={cn(
+              'grid gap-3.5',
+              !showCalendar ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-1',
+            )}>
+              {filteredGoals.map((goal) => {
+                const status = getGoalContentStatus(goal);
+                const otherThemes = themes.filter(
+                  (th) =>
+                    th.code !== currentTheme?.code &&
+                    (th.allocatedGoals || []).some((g) => g.id === goal.id),
+                );
+
+                // Đếm số lượng hoạt động giáo dục của mục tiêu này
+                const goalActivitiesCount = (goal.contents || []).reduce(
+                  (acc, c) => acc + (c.activitiesCount || (c.activities?.length || 0)),
+                  0
+                );
+                const hasGoalActivities = goalActivitiesCount > 0;
+
+                return (
+                  <div
+                    key={goal.id}
+                    onClick={() => handleToggleGoalAllocation(goal.id)}
+                    className={cn(
+                      'border bg-card p-4 sm:p-5 rounded-none shadow-2xs space-y-3 transition-colors text-left select-none cursor-pointer',
+                      status.isSelected
+                        ? 'border-[#1447e6]/40 bg-[#1447e6]/[0.015]'
+                        : 'border-border bg-card hover:border-border hover:bg-muted/15',
+                    )}
+                  >
+                    <div className="space-y-2">
+                      {/* Tên mục tiêu lên trên cùng với mã MT */}
+                      <div className="flex items-start gap-2.5">
+                        <span className="px-2 py-0.5 bg-[#1447e6]/10 text-[#1447e6] font-mono font-bold text-[11.5px] border border-[#1447e6]/20 rounded-none shrink-0 mt-0.5">
+                          {formatGoalCode(goal.code)}
+                        </span>
+                        <p
+                          className={cn(
+                            'text-[13.5px] sm:text-[14px] leading-relaxed flex-1',
+                            status.isSelected ? 'text-foreground font-medium' : 'text-foreground/90 font-normal',
+                          )}
+                        >
+                          {cleanDisplayGoalTitle(goal)}
+                        </p>
+                      </div>
+
+                      {/* Tên lĩnh vực xuống dưới */}
+                      <div className="flex items-center gap-2 flex-wrap text-[12px] text-muted-foreground">
+                        <span className="font-medium">
+                          {DOMAIN_FULL_LABELS[goal.domain] || goal.domainLabel || goal.domain}
+                        </span>
+                        {otherThemes.length > 0 && (
+                          <span className="text-[11.5px] text-muted-foreground/80 italic font-normal">
+                            (Đã có ở Chủ đề {otherThemes.map((t) => t.code).join(', ')})
                           </span>
                         )}
                       </div>
 
-                      {/* Goal Title */}
-                      <p
-                        className={cn(
-                          'text-[13px] leading-relaxed',
-                          status.isSelected ? 'text-foreground font-medium' : 'text-foreground/90 font-normal',
-                        )}
-                      >
-                        {cleanDisplayGoalTitle(goal)}
-                      </p>
-
                       {/* Danh sách nội dung giáo dục chi tiết để tick chọn lẻ */}
                       {showContents && goal.contents && goal.contents.length > 0 && (
-                        <div className="mt-2.5 pt-2 border-t border-border/50 space-y-1.5" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center justify-between text-[11px] text-muted-foreground font-medium">
+                        <div className="pt-2.5 border-t border-border/60 space-y-2" onClick={(e) => e.stopPropagation()}>
+                          <div className="text-[12px] text-muted-foreground font-medium">
                             <span>Nội dung giáo dục ({status.selectedCount}/{status.totalCount}):</span>
-                            {goal.contents.length > 1 && (
-                              <span className="text-[10px] text-muted-foreground/75 italic">Tick chọn lẻ cho chủ đề này</span>
-                            )}
                           </div>
-                          <div className="space-y-1">
+                          <div className="space-y-1.5">
                             {goal.contents.map((cnt) => {
                               const cId = String(cnt.id || cnt.content_id);
                               const cNum = cnt.content_id ? String(cnt.content_id) : null;
@@ -1368,36 +1885,77 @@ export function TargetAllocationTab({ classId = '1' }) {
                                 currentThemeContentSet.has(cId) ||
                                 (cNum && currentThemeContentSet.has(cNum)) ||
                                 (cPub && currentThemeContentSet.has(cPub));
+
+                              // Hiển thị đúng số hoạt động giáo dục thực tế thuộc nội dung trong chủ đề này (tester_24+1 Item 8)
+                              const currentThemeId = currentTheme?.id;
+                              const currentThemeDbId = currentTheme?._theme_id ? String(currentTheme._theme_id) : null;
+                              const themeActivitiesCount =
+                                (currentThemeId && typeof cnt.themeActivitiesCount?.[String(currentThemeId)] === 'number')
+                                  ? cnt.themeActivitiesCount[String(currentThemeId)]
+                                  : (currentThemeDbId && typeof cnt.themeActivitiesCount?.[currentThemeDbId] === 'number')
+                                    ? cnt.themeActivitiesCount[currentThemeDbId]
+                                    : (typeof cnt.activitiesCount === 'number' && !cnt.themeActivitiesCount ? cnt.activitiesCount : 0);
+
                               return (
-                                <label
+                                <div
                                   key={cId}
-                                  onClick={(e) => e.stopPropagation()}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleToggleContentAllocation(goal.id, cId);
+                                  }}
                                   className={cn(
-                                    'flex items-start gap-2.5 p-1.5 border rounded-none text-xs select-none transition-colors cursor-pointer',
+                                    'flex items-center justify-between gap-3 p-2.5 sm:p-3 border rounded-none text-[12.5px] select-none transition-colors cursor-pointer',
                                     isCntSelected
-                                      ? 'bg-muted/40 border-border text-foreground font-medium'
-                                      : 'bg-card border-border/50 text-muted-foreground hover:bg-muted/20 hover:text-foreground',
-                                    isBgh && 'cursor-default',
+                                      ? 'bg-[#1447e6]/[0.04] border-[#1447e6]/35 text-foreground font-medium'
+                                      : 'bg-card border-border/60 text-muted-foreground hover:bg-muted/30 hover:text-foreground',
                                   )}
                                 >
-                                  <input
-                                    type="checkbox"
-                                    checked={isCntSelected}
-                                    disabled={isBgh}
-                                    onChange={() => !isBgh && handleToggleContentAllocation(goal.id, cId)}
-                                    className="size-3.5 rounded-none accent-primary mt-0.5 shrink-0 cursor-pointer"
-                                  />
-                                  <span className="flex-1 leading-snug">{cnt.title}</span>
-                                </label>
+                                  <div className="flex items-start gap-2.5 flex-1 min-w-0">
+                                    {/* Checkbox tự vẽ theo chuẩn SVG: Đảm bảo phản hồi trạng thái 100% chuẩn xác */}
+                                    <div
+                                      role="checkbox"
+                                      aria-checked={Boolean(isCntSelected)}
+                                      className={cn(
+                                        'size-4 rounded-none border flex items-center justify-center shrink-0 mt-0.5 transition-colors',
+                                        isCntSelected
+                                          ? 'bg-[#1447e6] border-[#1447e6] text-white'
+                                          : 'border-border/80 bg-background hover:border-[#1447e6]',
+                                      )}
+                                    >
+                                      {isCntSelected && (
+                                        <svg
+                                          className="size-3 text-white pointer-events-none"
+                                          viewBox="0 0 14 14"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          strokeWidth="2.5"
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                        >
+                                          <polyline points="2.5 7 5.5 10 11.5 4" />
+                                        </svg>
+                                      )}
+                                    </div>
+                                    <span className="leading-snug flex-1">{cnt.title}</span>
+                                  </div>
+
+                                  {/* Hiển thị đúng số lượng HĐGD nếu có hoạt động giáo dục thực tế */}
+                                  {themeActivitiesCount > 0 && (
+                                    <span className="text-[11px] font-mono text-muted-foreground/75 px-1 py-0.5 shrink-0">
+                                      {themeActivitiesCount} HĐGD
+                                    </span>
+                                  )}
+                                </div>
                               );
                             })}
                           </div>
                         </div>
                       )}
 
+                      {/* Khi thu gọn nội dung chi tiết */}
                       {!showContents && goal.contents && goal.contents.length > 0 && (
-                        <div className="pt-0.5 text-[11px] text-muted-foreground">
-                          · {goal.contents.length} nội dung giáo dục
+                        <div className="pt-0.5 text-[11.5px] text-muted-foreground flex items-center gap-2">
+                          <span>· {goal.contents.length} nội dung giáo dục</span>
                           {status.selectedCount > 0 && (
                             <span className="ml-1 text-foreground font-medium">
                               (Đã chọn {status.selectedCount}/{status.totalCount})
@@ -1405,394 +1963,458 @@ export function TargetAllocationTab({ classId = '1' }) {
                           )}
                         </div>
                       )}
+
+                      {/* Mục tiêu chưa có nội dung giáo dục thì hiển thị Chưa có NDGD ở bên dưới */}
+                      {(!goal.contents || goal.contents.length === 0) && (
+                        <div className="pt-1 text-[12px] text-muted-foreground/60 italic select-none">
+                          Chưa có NDGD
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {filteredGoals.length === 0 && (
-            <div className="h-48 flex flex-col items-center justify-center text-center p-6 space-y-1.5 text-muted-foreground bg-card border border-dashed border-border rounded-none">
-              <p className="text-sm font-semibold text-foreground">
-                Không tìm thấy mục tiêu nào phù hợp
-              </p>
-              <p className="text-xs">
-                {onlySelected
-                  ? 'Chủ đề này chưa có mục tiêu nào được chọn trong lĩnh vực hiện tại.'
-                  : searchQuery
-                  ? `Không có kết quả nào cho từ khóa "${searchQuery}".`
-                  : 'Thử chọn bộ lọc "Tất cả" hoặc lĩnh vực phát triển khác.'}
-              </p>
-              {(onlySelected || selectedDomainFilter !== 'ALL' || searchQuery) && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedDomainFilter('ALL');
-                    setOnlySelected(false);
-                    setSearchQuery('');
-                  }}
-                  className="mt-1 text-xs text-primary hover:underline cursor-pointer font-medium"
-                >
-                  Xem tất cả {allGoals.length} mục tiêu
-                </button>
-              )}
+                );
+              })}
             </div>
-          )}
-        </div>
+
+            {filteredGoals.length === 0 && (
+              <div className="h-48 flex flex-col items-center justify-center text-center p-6 space-y-1.5 text-muted-foreground bg-card border border-dashed border-border rounded-none">
+                <p className="text-[14px] font-semibold text-foreground">
+                  Không tìm thấy mục tiêu nào phù hợp
+                </p>
+                <p className="text-[12.5px]">
+                  {onlySelected
+                    ? 'Chủ đề này chưa có mục tiêu nào được chọn trong lĩnh vực hiện tại.'
+                    : searchQuery
+                      ? `Không có kết quả nào cho từ khóa "${searchQuery}".`
+                      : 'Thử chọn bộ lọc "Tất cả" hoặc lĩnh vực phát triển khác.'}
+                </p>
+                {(onlySelected || selectedDomainFilters.length > 0 || searchQuery) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedDomainFilters([]);
+                      setOnlySelected(false);
+                      setSearchQuery('');
+                    }}
+                    className="mt-1 text-[12.5px] text-[#1447e6] hover:underline cursor-pointer font-medium"
+                  >
+                    Xem tất cả {allGoals.length} mục tiêu
+                  </button>
+                )}
+              </div>
+            )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* =========================================================================
-          COLUMN 3: LỊCH 2 THÁNG LIÊN TIẾP & CÁC CHỦ ĐỀ NHÁNH ĐẶT NGAY DƯỚI LỊCH
+          COLUMN 3: LỊCH 2 THÁNG LIÊN TIẾP & CÁC CHỦ ĐỀ NHÁNH (Đồng bộ chuẩn Bộ chủ đề)
          ========================================================================= */}
       {showCalendar && (
-      <div className="w-[320px] lg:w-[330px] shrink-0 border-l border-border bg-card flex flex-col h-full select-none">
-        <div className="flex-1 overflow-y-auto p-3.5 space-y-3.5">
-          {/* Month Header Toolbar */}
-          <div className="flex items-center justify-between py-1 border-b border-border/70 pb-2">
-            <button
-              type="button"
-              onClick={handlePrevMonth}
-              disabled={isPrevDisabled}
-              className={cn(
-                'size-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors rounded-none',
-                isPrevDisabled
-                  ? 'opacity-25 cursor-not-allowed hover:bg-transparent text-muted-foreground/40'
-                  : 'cursor-pointer',
-              )}
-              title={isPrevDisabled ? 'Đã ở tháng đầu tiên của năm học' : 'Lùi 1 tháng'}
-            >
-              <HugeiconsIcon icon={ArrowLeft01Icon} size={15} />
-            </button>
+        <>
+          {/* Mobile/Tablet Backdrop when opened on screen < xl */}
+          <div
+            onClick={() => setShowCalendar(false)}
+            className="fixed inset-0 bg-black/50 z-40 xl:hidden backdrop-blur-xs transition-opacity"
+          />
+          <div className="fixed inset-y-0 right-0 z-50 w-[340px] max-w-[92vw] shadow-2xl border-l border-border bg-card flex flex-col h-full min-h-0 select-none overflow-hidden xl:static xl:z-auto xl:w-[320px] 2xl:w-[340px] xl:shadow-none animate-in slide-in-from-right duration-200">
+            {/* Mobile close bar */}
+            <div className="xl:hidden p-3 border-b border-border flex items-center justify-between bg-muted/30 shrink-0">
+              <span className="text-[13px] font-semibold text-foreground">Lịch chủ đề & nhánh</span>
+              <button
+                type="button"
+                onClick={() => setShowCalendar(false)}
+                className="size-7 flex items-center justify-center hover:bg-muted text-muted-foreground rounded-xs cursor-pointer"
+                title="Đóng lịch"
+              >
+                <HugeiconsIcon icon={Cancel01Icon} size={15} />
+              </button>
+            </div>
 
-            <span className="text-xs font-bold text-foreground tracking-tight tabular-nums select-none">
-              Tháng {calendarMonth + 1}/{calendarYear} – {month2 + 1}/{month2Year}
-            </span>
+            <div className="flex-1 min-h-0 overflow-y-auto p-3.5 space-y-3.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            {/* Month Header Toolbar */}
+            <div className="flex items-center justify-between py-1 border-b border-border/70 pb-2">
+              <button
+                type="button"
+                onClick={handlePrevMonth}
+                disabled={isPrevDisabled}
+                className={cn(
+                  'size-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors rounded-none',
+                  isPrevDisabled
+                    ? 'opacity-25 cursor-not-allowed hover:bg-transparent text-muted-foreground/40'
+                    : 'cursor-pointer',
+                )}
+                title={isPrevDisabled ? 'Đã ở tháng đầu tiên của năm học' : 'Lùi 1 tháng'}
+              >
+                <HugeiconsIcon icon={ArrowLeft01Icon} size={15} />
+              </button>
 
-            <button
-              type="button"
-              onClick={handleNextMonth}
-              disabled={isNextDisabled}
-              className={cn(
-                'size-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors rounded-none',
-                isNextDisabled
-                  ? 'opacity-25 cursor-not-allowed hover:bg-transparent text-muted-foreground/40'
-                  : 'cursor-pointer',
-              )}
-              title={isNextDisabled ? 'Đã ở tháng cuối cùng của năm học' : 'Tiến 1 tháng'}
-            >
-              <HugeiconsIcon icon={ArrowRight01Icon} size={15} />
-            </button>
-          </div>
+              <span className="text-[13px] font-semibold text-foreground tracking-tight tabular-nums select-none">
+                Tháng {calendarMonth + 1}/{calendarYear} – {month2 + 1}/{month2Year}
+              </span>
 
-          {/* 2 Tháng Lịch Liên Tiếp */}
-          <div className="space-y-4 pt-0.5">
-            {[
-              { key: 'm1', year: calendarYear, month: calendarMonth, days: calendarDaysM1, isFirst: true },
-              { key: 'm2', year: month2Year, month: month2, days: calendarDaysM2, isFirst: false },
-            ].map((mObj) => (
-              <div key={mObj.key} className={cn('flex flex-col gap-1.5', !mObj.isFirst && 'pt-3.5 border-t border-border/70')}>
-                <div className="flex items-center justify-between px-0.5">
-                  <span className="text-xs font-bold text-foreground tracking-tight">
-                    Tháng {mObj.month + 1}/{mObj.year}
-                  </span>
-                </div>
+              <button
+                type="button"
+                onClick={handleNextMonth}
+                disabled={isNextDisabled}
+                className={cn(
+                  'size-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors rounded-none',
+                  isNextDisabled
+                    ? 'opacity-25 cursor-not-allowed hover:bg-transparent text-muted-foreground/40'
+                    : 'cursor-pointer',
+                )}
+                title={isNextDisabled ? 'Đã ở tháng cuối cùng của năm học' : 'Tiến 1 tháng'}
+              >
+                <HugeiconsIcon icon={ArrowRight01Icon} size={15} />
+              </button>
+            </div>
 
-                {/* Weekday headers: T2, T3, T4, T5, T6, T7, CN */}
-                <div className="grid grid-cols-7 text-center text-[11px] font-medium text-muted-foreground/80 py-1">
-                  {WEEKDAYS.map((wd) => (
-                    <div key={wd}>{wd}</div>
-                  ))}
-                </div>
+            {/* 2 Tháng Lịch Liên Tiếp */}
+            <div className="space-y-4 pt-0.5">
+              {[
+                { key: 'm1', year: calendarYear, month: calendarMonth, days: calendarDaysM1, isFirst: true },
+                { key: 'm2', year: month2Year, month: month2, days: calendarDaysM2, isFirst: false },
+              ].map((mObj) => (
+                <div key={mObj.key} className={cn('flex flex-col gap-1.5', !mObj.isFirst && 'pt-3.5 border-t border-border/70')}>
+                  <div className="flex items-center justify-between px-0.5">
+                    <span className="text-[13px] font-bold text-foreground tracking-tight">
+                      Tháng {mObj.month + 1}/{mObj.year}
+                    </span>
+                  </div>
 
-                {/* Dates Grid */}
-                <div className="grid grid-cols-7 gap-y-1 text-center text-xs">
-                  {mObj.days.map((d, i) => {
-                    if (!d.isCurrentMonth) {
+                  {/* Weekday headers: T2, T3, T4, T5, T6, T7, CN */}
+                  <div className="grid grid-cols-7 text-center text-[11px] font-medium text-muted-foreground/80 py-1">
+                    {WEEKDAYS.map((wd) => (
+                      <div key={wd}>{wd}</div>
+                    ))}
+                  </div>
+
+                  {/* Dates Grid */}
+                  <div className="grid grid-cols-7 gap-y-1 text-center text-[12px]">
+                    {mObj.days.map((d, i) => {
+                      if (!d.isCurrentMonth) {
+                        return (
+                          <div
+                            key={i}
+                            className="h-8 flex items-center justify-center select-none opacity-20 pointer-events-none text-muted-foreground/30 text-[12px] font-light rounded-none"
+                          >
+                            {d.day}
+                          </div>
+                        );
+                      }
+
+                      const col = i % 7;
+                      const normStart = (currentTheme?.startDate || '').slice(0, 10);
+                      const normEnd = (currentTheme?.endDate || '').slice(0, 10);
+                      const isSelectedDate = Boolean(
+                        normStart && normEnd && d.dateStr >= normStart && d.dateStr <= normEnd,
+                      );
+
+                      const isOutsideAcademicYear = Boolean(
+                        academicYearBounds.start &&
+                        academicYearBounds.end &&
+                        (d.dateStr < academicYearBounds.start || d.dateStr > academicYearBounds.end),
+                      );
+
+                      const otherTheme = !isSelectedDate ? getThemeForDate(d.dateStr) : null;
+                      const isInOtherTheme = Boolean(otherTheme);
+
+                      const isUnassignedInAcademicYear = Boolean(
+                        !isOutsideAcademicYear && !isSelectedDate && !isInOtherTheme,
+                      );
+
+                      const prevObj = col > 0 ? mObj.days[i - 1] : null;
+                      const nextObj = col < 6 ? mObj.days[i + 1] : null;
+                      const prevDate = prevObj?.isCurrentMonth ? prevObj.dateStr : null;
+                      const nextDate = nextObj?.isCurrentMonth ? nextObj.dateStr : null;
+
+                      const prevTheme = prevDate ? getThemeForDate(prevDate) : null;
+                      const nextTheme = nextDate ? getThemeForDate(nextDate) : null;
+                      const prevSameOtherTheme = Boolean(
+                        isInOtherTheme && prevTheme && (prevTheme.id === otherTheme?.id || prevTheme.code === otherTheme?.code),
+                      );
+                      const nextSameOtherTheme = Boolean(
+                        isInOtherTheme && nextTheme && (nextTheme.id === otherTheme?.id || nextTheme.code === otherTheme?.code),
+                      );
+
+                      const matchedSubTheme = isSelectedDate ? getSubThemeForDate(d.dateStr) : null;
+                      const matchedSubIdx = matchedSubTheme
+                        ? (currentTheme?.subThemes || []).findIndex((st) => st.id === matchedSubTheme.id)
+                        : -1;
+                      const isSubThemeStart = Boolean(matchedSubTheme && d.dateStr === matchedSubTheme.startDate);
+
+                      const isAssignedSubTheme = Boolean(isSelectedDate && matchedSubTheme);
+                      const isUnassignedInTheme = Boolean(isSelectedDate && !matchedSubTheme);
+
+                      const prevSubTheme = prevDate && normStart && normEnd && prevDate >= normStart && prevDate <= normEnd
+                        ? getSubThemeForDate(prevDate)
+                        : null;
+                      const nextSubTheme = nextDate && normStart && normEnd && nextDate >= normStart && nextDate <= normEnd
+                        ? getSubThemeForDate(nextDate)
+                        : null;
+
+                      const prevInAssigned = Boolean(col > 0 && isAssignedSubTheme && prevSubTheme);
+                      const nextInAssigned = Boolean(col < 6 && isAssignedSubTheme && nextSubTheme);
+
+                      const prevInUnassigned = Boolean(
+                        col > 0 && isUnassignedInTheme && prevDate && normStart && normEnd && prevDate >= normStart && prevDate <= normEnd && !prevSubTheme,
+                      );
+                      const nextInUnassigned = Boolean(
+                        col < 6 && isUnassignedInTheme && nextDate && normStart && normEnd && nextDate >= normStart && nextDate <= normEnd && !nextSubTheme,
+                      );
+
                       return (
                         <div
                           key={i}
-                          className="h-8 flex items-center justify-center select-none opacity-20 pointer-events-none text-muted-foreground/30 text-xs font-light rounded-none"
+                          className={cn(
+                            'h-8 flex items-center justify-center relative select-none transition-all rounded-none',
+                            isOutsideAcademicYear
+                              ? 'opacity-20 pointer-events-none select-none bg-transparent cursor-not-allowed'
+                              : isSelectedDate
+                                ? 'cursor-pointer group/day'
+                                : 'cursor-not-allowed opacity-40 pointer-events-none',
+                          )}
+                          title={
+                            isOutsideAcademicYear
+                              ? `Ngày ${formatDateVn(d.dateStr)} · Ngoài khung năm học`
+                              : isUnassignedInAcademicYear
+                                ? `Ngày ${formatDateVn(d.dateStr)} · Trong năm học (Chưa xếp chủ đề)`
+                                : isAssignedSubTheme
+                                  ? `Ngày ${formatDateVn(d.dateStr)} · Chủ đề: ${currentTheme?.name} · Nhánh: ${matchedSubTheme.name}`
+                                  : isUnassignedInTheme
+                                    ? `Ngày ${formatDateVn(d.dateStr)} · Chủ đề: ${currentTheme?.name} (Chưa xếp nhánh)`
+                                    : isInOtherTheme
+                                      ? `Ngày ${formatDateVn(d.dateStr)} · Chủ đề: ${otherTheme.name} (Khác chủ đề)`
+                                      : `Ngày ${formatDateVn(d.dateStr)}`
+                          }
                         >
-                          {d.day}
+                          {/* Ngày trong năm học nhưng chưa có chủ đề: Viền nét đứt nhẹ */}
+                          {isUnassignedInAcademicYear && (
+                            <div className="absolute inset-0.5 border border-dashed border-border/80 bg-muted/15 pointer-events-none rounded-none" />
+                          )}
+
+                          {/* Ngày trong chủ đề ĐÃ CÓ NHÁNH - Xanh Sorak #1447e6 */}
+                          {isAssignedSubTheme && (
+                            <div
+                              className={cn(
+                                'absolute inset-y-0.5 bg-[#1447e6] rounded-none',
+                                prevInAssigned ? 'left-0' : 'left-0.5',
+                                nextInAssigned ? 'right-0' : 'right-0.5',
+                              )}
+                            />
+                          )}
+
+                          {/* Ngày trong chủ đề CHƯA XẾP NHÁNH (Dải sọc chéo #1447e6 mờ) */}
+                          {isUnassignedInTheme && (
+                            <div
+                              className={cn(
+                                'absolute inset-y-0.5 border-y border-[#1447e6]/35 z-10 pointer-events-none rounded-none',
+                                prevInUnassigned ? 'left-0' : 'left-0.5 border-l',
+                                nextInUnassigned ? 'right-0' : 'right-0.5 border-r',
+                              )}
+                              style={{
+                                background:
+                                  'repeating-linear-gradient(45deg, rgba(20, 71, 230, 0.08), rgba(20, 71, 230, 0.08) 5px, rgba(20, 71, 230, 0.20) 5px, rgba(20, 71, 230, 0.20) 10px)',
+                              }}
+                            />
+                          )}
+
+                          {/* Chủ đề khác - Dải màu xám nhạt nhẹ nhàng */}
+                          {isInOtherTheme && (
+                            <div
+                              className={cn(
+                                'absolute inset-y-0.5 bg-slate-100/90 dark:bg-slate-800/40 transition-colors rounded-none',
+                                prevSameOtherTheme ? 'left-0' : 'left-0.5',
+                                nextSameOtherTheme ? 'right-0' : 'right-0.5',
+                              )}
+                            />
+                          )}
+
+                          {/* Badge mốc bắt đầu của chủ đề nhánh (N1, N2, ...) */}
+                          {isSubThemeStart && matchedSubIdx !== -1 && (
+                            <span
+                              className="absolute top-0.5 left-0.5 z-20 text-[8px] font-mono font-bold leading-none px-1 py-0.2 shadow-xs bg-slate-900 text-white rounded-none"
+                              title={`Bắt đầu Nhánh ${matchedSubIdx + 1}: ${matchedSubTheme.name}`}
+                            >
+                              N{matchedSubIdx + 1}
+                            </span>
+                          )}
+
+                          {/* Số ngày */}
+                          <span
+                            className={cn(
+                              'relative z-20 w-full h-full flex items-center justify-center text-[12px] transition-colors rounded-none',
+                              isAssignedSubTheme && 'text-white font-semibold',
+                              isUnassignedInTheme && 'text-[#1447e6] font-bold',
+                              isInOtherTheme && 'text-muted-foreground/80 dark:text-muted-foreground font-normal',
+                              isUnassignedInAcademicYear && 'text-foreground/80 font-normal',
+                              isOutsideAcademicYear && 'text-muted-foreground/30 font-light',
+                              !isSelectedDate && !isInOtherTheme && !isUnassignedInAcademicYear && !isOutsideAcademicYear && 'text-foreground/75',
+                            )}
+                          >
+                            {d.day}
+                          </span>
                         </div>
                       );
-                    }
-
-                    const col = i % 7;
-                    const normStart = (currentTheme?.startDate || '').slice(0, 10);
-                    const normEnd = (currentTheme?.endDate || '').slice(0, 10);
-                    const isSelectedDate = Boolean(
-                      normStart && normEnd && d.dateStr >= normStart && d.dateStr <= normEnd,
-                    );
-
-                    const isOutsideAcademicYear = Boolean(
-                      academicYearBounds.start &&
-                      academicYearBounds.end &&
-                      (d.dateStr < academicYearBounds.start || d.dateStr > academicYearBounds.end),
-                    );
-
-                    const otherTheme = !isSelectedDate ? getThemeForDate(d.dateStr) : null;
-                    const isInOtherTheme = Boolean(otherTheme);
-
-                    const isUnassignedInAcademicYear = Boolean(
-                      !isOutsideAcademicYear && !isSelectedDate && !isInOtherTheme,
-                    );
-
-                    const prevObj = col > 0 ? mObj.days[i - 1] : null;
-                    const nextObj = col < 6 ? mObj.days[i + 1] : null;
-                    const prevDate = prevObj?.isCurrentMonth ? prevObj.dateStr : null;
-                    const nextDate = nextObj?.isCurrentMonth ? nextObj.dateStr : null;
-
-                    const prevTheme = prevDate ? getThemeForDate(prevDate) : null;
-                    const nextTheme = nextDate ? getThemeForDate(nextDate) : null;
-                    const prevSameOtherTheme = Boolean(
-                      isInOtherTheme && prevTheme && (prevTheme.id === otherTheme?.id || prevTheme.code === otherTheme?.code),
-                    );
-                    const nextSameOtherTheme = Boolean(
-                      isInOtherTheme && nextTheme && (nextTheme.id === otherTheme?.id || nextTheme.code === otherTheme?.code),
-                    );
-
-                    const matchedSubTheme = isSelectedDate ? getSubThemeForDate(d.dateStr) : null;
-                    const matchedSubIdx = matchedSubTheme
-                      ? (currentTheme?.subThemes || []).findIndex((st) => st.id === matchedSubTheme.id)
-                      : -1;
-                    const isSubThemeStart = Boolean(matchedSubTheme && d.dateStr === matchedSubTheme.startDate);
-
-                    const isAssignedSubTheme = Boolean(isSelectedDate && matchedSubTheme);
-                    const isUnassignedInTheme = Boolean(isSelectedDate && !matchedSubTheme);
-
-                    const prevSubTheme = prevDate && normStart && normEnd && prevDate >= normStart && prevDate <= normEnd
-                      ? getSubThemeForDate(prevDate)
-                      : null;
-                    const nextSubTheme = nextDate && normStart && normEnd && nextDate >= normStart && nextDate <= normEnd
-                      ? getSubThemeForDate(nextDate)
-                      : null;
-
-                    const prevInAssigned = Boolean(col > 0 && isAssignedSubTheme && prevSubTheme);
-                    const nextInAssigned = Boolean(col < 6 && isAssignedSubTheme && nextSubTheme);
-
-                    const prevInUnassigned = Boolean(
-                      col > 0 && isUnassignedInTheme && prevDate && normStart && normEnd && prevDate >= normStart && prevDate <= normEnd && !prevSubTheme,
-                    );
-                    const nextInUnassigned = Boolean(
-                      col < 6 && isUnassignedInTheme && nextDate && normStart && normEnd && nextDate >= normStart && nextDate <= normEnd && !nextSubTheme,
-                    );
-
-                    return (
-                      <div
-                        key={i}
-                        className={cn(
-                          'h-8 flex items-center justify-center relative select-none transition-all rounded-none',
-                          isOutsideAcademicYear
-                            ? 'opacity-20 pointer-events-none select-none bg-transparent cursor-not-allowed'
-                            : isSelectedDate
-                              ? 'cursor-pointer group/day'
-                              : 'cursor-not-allowed opacity-40 pointer-events-none',
-                        )}
-                        title={
-                          isOutsideAcademicYear
-                            ? `Ngày ${formatDateVn(d.dateStr)} · Ngoài khung năm học`
-                            : isUnassignedInAcademicYear
-                              ? `Ngày ${formatDateVn(d.dateStr)} · Trong năm học (Chưa xếp chủ đề)`
-                              : isAssignedSubTheme
-                                ? `Ngày ${formatDateVn(d.dateStr)} · Chủ đề: ${currentTheme?.name} · Nhánh: ${matchedSubTheme.name}`
-                                : isUnassignedInTheme
-                                  ? `Ngày ${formatDateVn(d.dateStr)} · Chủ đề: ${currentTheme?.name} (Chưa xếp nhánh)`
-                                  : isInOtherTheme
-                                    ? `Ngày ${formatDateVn(d.dateStr)} · Chủ đề: ${otherTheme.name} (Khác chủ đề)`
-                                    : `Ngày ${formatDateVn(d.dateStr)}`
-                        }
-                      >
-                        {/* Ngày trong năm học nhưng chưa có chủ đề: Viền nét đứt nhẹ */}
-                        {isUnassignedInAcademicYear && (
-                          <div className="absolute inset-0.5 border border-dashed border-border/80 bg-muted/15 pointer-events-none rounded-none" />
-                        )}
-
-                        {/* Ngày trong chủ đề ĐÃ CÓ NHÁNH */}
-                        {isAssignedSubTheme && (
-                          <div
-                            className={cn(
-                              'absolute inset-y-0.5 bg-primary rounded-none',
-                              prevInAssigned ? 'left-0' : 'left-0.5',
-                              nextInAssigned ? 'right-0' : 'right-0.5',
-                            )}
-                          />
-                        )}
-
-                        {/* Ngày trong chủ đề CHƯA XẾP NHÁNH (Dải sọc chéo mờ) */}
-                        {isUnassignedInTheme && (
-                          <div
-                            className={cn(
-                              'absolute inset-y-0.5 border-y border-primary/35 z-10 pointer-events-none rounded-none',
-                              prevInUnassigned ? 'left-0' : 'left-0.5 border-l',
-                              nextInUnassigned ? 'right-0' : 'right-0.5 border-r',
-                            )}
-                            style={{
-                              background:
-                                'repeating-linear-gradient(45deg, rgba(20, 71, 230, 0.08), rgba(20, 71, 230, 0.08) 5px, rgba(20, 71, 230, 0.20) 5px, rgba(20, 71, 230, 0.20) 10px)',
-                            }}
-                          />
-                        )}
-
-                        {/* Chủ đề khác - Dải màu xám liền mạch */}
-                        {isInOtherTheme && (
-                          <div
-                            className={cn(
-                              'absolute inset-y-0.5 bg-slate-200 dark:bg-slate-800 transition-colors rounded-none',
-                              prevSameOtherTheme ? 'left-0' : 'left-0.5',
-                              nextSameOtherTheme ? 'right-0' : 'right-0.5',
-                            )}
-                          />
-                        )}
-
-                        {/* Badge mốc bắt đầu của chủ đề nhánh (N1, N2, ...) */}
-                        {isSubThemeStart && matchedSubIdx !== -1 && (
-                          <span
-                            className="absolute top-0.5 left-0.5 z-20 text-[8px] font-mono font-bold leading-none px-1 py-0.2 shadow-xs bg-slate-900 text-white rounded-none"
-                            title={`Bắt đầu Nhánh ${matchedSubIdx + 1}: ${matchedSubTheme.name}`}
-                          >
-                            N{matchedSubIdx + 1}
-                          </span>
-                        )}
-
-                        {/* Số ngày */}
-                        <span
-                          className={cn(
-                            'relative z-20 w-full h-full flex items-center justify-center text-xs transition-colors rounded-none',
-                            isAssignedSubTheme && 'text-primary-foreground font-semibold',
-                            isUnassignedInTheme && 'text-primary font-bold',
-                            isInOtherTheme && 'text-slate-800 dark:text-slate-100 font-medium',
-                            isUnassignedInAcademicYear && 'text-foreground/80 font-normal',
-                            isOutsideAcademicYear && 'text-muted-foreground/30 font-light',
-                            !isSelectedDate && !isInOtherTheme && !isUnassignedInAcademicYear && !isOutsideAcademicYear && 'text-foreground/75',
-                          )}
-                        >
-                          {d.day}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* =========================================================================
-              CÁC CHỦ ĐỀ NHÁNH: Trình bày tối giản, thanh lịch, ít màu sắc
-             ========================================================================= */}
-          {currentTheme?.subThemes && currentTheme.subThemes.length > 0 && (
-            <div className="pt-3 border-t border-border space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-semibold text-foreground">
-                <span>Chủ đề nhánh</span>
-                <span className="text-[11px] text-muted-foreground font-mono">
-                  {currentTheme.subThemes.length} nhánh
-                </span>
-              </div>
-              <div className="divide-y divide-border/50 text-xs">
-                {currentTheme.subThemes.map((st, idx) => (
-                  <div key={st.id || idx} className="py-2 space-y-0.5">
-                    <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                      <span className="font-mono font-medium text-foreground/80">
-                        Nhánh {idx + 1}
-                      </span>
-                      <span className="font-mono tabular-nums">
-                        {formatDateRangeDdMm(st.startDate, st.endDate)}
-                      </span>
-                    </div>
-                    <p className="text-xs text-foreground font-medium leading-snug">
-                      {st.name}
-                    </p>
+                    })}
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Thanh chú thích tinh gọn */}
-          <div className="pt-2.5 border-t border-border flex items-center justify-between text-xs text-muted-foreground select-none">
-            <div className="flex items-center gap-2.5">
-              <div className="flex items-center gap-1.5" title="Chủ đề đang xem">
-                <span className="size-2.5 bg-primary shrink-0 rounded-none" />
-                <span className="font-medium text-foreground/85 text-[11px]">Chủ đề này</span>
-              </div>
-              <div className="flex items-center gap-1.5" title="Chưa xếp nhánh">
-                <span
-                  className="size-2.5 border border-primary/40 shrink-0 rounded-none"
-                  style={{
-                    background:
-                      'repeating-linear-gradient(45deg, rgba(20, 71, 230, 0.2), rgba(20, 71, 230, 0.2) 2px, rgba(20, 71, 230, 0.4) 2px, rgba(20, 71, 230, 0.4) 4px)',
-                  }}
-                />
-                <span className="text-[11px]">Chưa xếp nhánh</span>
-              </div>
+                </div>
+              ))}
             </div>
 
-            {/* Popover Hướng dẫn quy ước */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer shrink-0 whitespace-nowrap rounded-none"
-                  title="Xem quy ước hiển thị lịch"
-                >
-                  <HugeiconsIcon icon={InformationCircleIcon} size={13} className="shrink-0" />
-                  <span>Quy ước</span>
-                </button>
-              </PopoverTrigger>
-              <PopoverContent
-                side="bottom"
-                avoidCollisions={false}
-                align="end"
-                sideOffset={6}
-                className="w-72 p-3 bg-card border border-border shadow-md rounded-none text-xs space-y-2.5 z-50"
-              >
-                <div className="flex items-center justify-between pb-1 border-b border-border/60">
-                  <span className="font-semibold text-foreground text-xs">
-                    Quy ước hiển thị lịch
+            {/* =========================================================================
+              CÁC CHỦ ĐỀ NHÁNH: Trình bày tối giản, thanh lịch theo chuẩn Bộ chủ đề
+             ========================================================================= */}
+            {currentTheme?.subThemes && currentTheme.subThemes.length > 0 && (
+              <div className="pt-3 border-t border-border/70 space-y-2">
+                <div className="flex items-center justify-between text-[12.5px] font-semibold text-foreground">
+                  <span>Chủ đề nhánh</span>
+                  <span className="text-[11px] text-muted-foreground font-mono">
+                    {currentTheme.subThemes.length} nhánh
                   </span>
                 </div>
-
-                <div className="space-y-1.5 text-[11px]">
-                  <div className="flex items-center gap-2">
-                    <span className="size-3 bg-primary shrink-0 rounded-none" />
-                    <span className="text-foreground">Chủ đề đang chọn</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="size-3 border border-primary/40 shrink-0 rounded-none"
-                      style={{
-                        background:
-                          'repeating-linear-gradient(45deg, rgba(20, 71, 230, 0.2), rgba(20, 71, 230, 0.2) 2px, rgba(20, 71, 230, 0.4) 2px, rgba(20, 71, 230, 0.4) 4px)',
-                      }}
-                    />
-                    <span className="text-foreground">Chưa xếp nhánh</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="size-3 bg-slate-200 dark:bg-slate-700 shrink-0 rounded-none" />
-                    <span className="text-muted-foreground">Chủ đề khác</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="size-3 border border-dashed border-border/80 bg-muted/20 shrink-0 rounded-none" />
-                    <span className="text-muted-foreground">Chưa có chủ đề</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="size-3 opacity-25 bg-muted/40 shrink-0 rounded-none" />
-                    <span className="text-muted-foreground/70">Ngoài năm học</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono font-bold px-1 py-0.2 bg-slate-900 text-white shrink-0 rounded-none">
-                      N1
-                    </span>
-                    <span className="text-foreground">Mốc bắt đầu chủ đề nhánh</span>
-                  </div>
+                <div className="border border-border/80 bg-card divide-y divide-border/40 text-[12px]">
+                  {currentTheme.subThemes.map((st, idx) => (
+                    <div key={st.id || idx} className="p-2.5 space-y-1">
+                      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                        <span className="font-mono font-semibold text-[#1447e6]">
+                          Nhánh {idx + 1}
+                        </span>
+                        <span className="font-mono tabular-nums">
+                          {formatDateRangeDdMm(st.startDate, st.endDate)}
+                        </span>
+                      </div>
+                      <p className="text-[12.5px] text-foreground font-medium leading-snug">
+                        {st.name}
+                      </p>
+                    </div>
+                  ))}
                 </div>
-              </PopoverContent>
-            </Popover>
+              </div>
+            )}
+
+            {/* Thanh chú thích tinh gọn & Popover quy ước */}
+            <div className="pt-2.5 border-t border-border/70 flex items-center justify-between text-[11px] text-muted-foreground select-none">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5" title="Chủ đề đang xem">
+                  <span className="size-2.5 bg-[#1447e6] shrink-0 rounded-none" />
+                  <span className="font-medium text-foreground/85 text-[11px]">Chủ đề này</span>
+                </div>
+                <div className="flex items-center gap-1.5" title="Chưa xếp nhánh">
+                  <span
+                    className="size-2.5 border border-[#1447e6]/40 shrink-0 rounded-none"
+                    style={{
+                      background:
+                        'repeating-linear-gradient(45deg, rgba(20, 71, 230, 0.2), rgba(20, 71, 230, 0.2) 2px, rgba(20, 71, 230, 0.4) 2px, rgba(20, 71, 230, 0.4) 4px)',
+                    }}
+                  />
+                  <span className="text-[11px]">Chưa xếp nhánh</span>
+                </div>
+              </div>
+
+              {/* Popover Hướng dẫn quy ước */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer shrink-0 whitespace-nowrap rounded-none"
+                    title="Xem quy ước hiển thị lịch"
+                  >
+                    <HugeiconsIcon icon={InformationCircleIcon} size={12} className="shrink-0" />
+                    <span>Quy ước</span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  side="bottom"
+                  avoidCollisions={false}
+                  align="end"
+                  sideOffset={6}
+                  className="w-72 p-3 bg-card border border-border shadow-md rounded-none text-[11.5px] space-y-2.5 z-50"
+                >
+                  <div className="flex items-center justify-between pb-1 border-b border-border/60">
+                    <span className="font-semibold text-foreground text-[12px]">
+                      Quy ước hiển thị lịch
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5 text-[11px]">
+                    <div className="flex items-center gap-2">
+                      <span className="size-3 bg-[#1447e6] shrink-0 rounded-none" />
+                      <span className="text-foreground">Chủ đề đang chọn</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="size-3 border border-[#1447e6]/40 shrink-0 rounded-none"
+                        style={{
+                          background:
+                            'repeating-linear-gradient(45deg, rgba(20, 71, 230, 0.2), rgba(20, 71, 230, 0.2) 2px, rgba(20, 71, 230, 0.4) 2px, rgba(20, 71, 230, 0.4) 4px)',
+                        }}
+                      />
+                      <span className="text-foreground">Chưa xếp nhánh</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="size-3 bg-slate-100 dark:bg-slate-800/60 border border-border/60 shrink-0 rounded-none" />
+                      <span className="text-muted-foreground">Chủ đề khác</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="size-3 border border-dashed border-border/80 bg-muted/20 shrink-0 rounded-none" />
+                      <span className="text-muted-foreground">Chưa có chủ đề</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="size-3 opacity-25 bg-muted/40 shrink-0 rounded-none" />
+                      <span className="text-muted-foreground/70">Ngoài năm học</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono font-bold px-1 py-0.2 bg-slate-900 text-white shrink-0 rounded-none">
+                        N1
+                      </span>
+                      <span className="text-foreground">Mốc bắt đầu chủ đề nhánh</span>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
         </div>
-      </div>
-      )}
+      </>
+    )}
+      {/* Modal: BGH Feedback / Rejection Details */}
+      <Dialog open={isFeedbackModalOpen} onOpenChange={setIsFeedbackModalOpen}>
+        <DialogContent className="max-w-md rounded-none">
+          <DialogHeader>
+            <DialogTitle className="text-base font-semibold text-foreground">
+              Ý kiến phản hồi của Ban Giám Hiệu
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground pt-1">
+              Chủ đề: <strong>{currentTheme?.name || 'Kế hoạch giáo dục'}</strong>
+              {currentTheme?.startDate && currentTheme?.endDate && (
+                <span> ({formatDateRangeDdMm(currentTheme.startDate, currentTheme.endDate)})</span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2 text-xs">
+            <div className="bg-rose-50/70 dark:bg-rose-950/25 border border-rose-200/80 dark:border-rose-900/40 p-3.5 text-rose-800 dark:text-rose-200 text-xs leading-relaxed font-medium">
+              "{rejectionReason || 'Ban Giám Hiệu yêu cầu rà soát và bổ sung kế hoạch.'}"
+            </div>
+            <p className="text-muted-foreground text-[11.5px] leading-relaxed">
+              Vui lòng kiểm tra lại các nội dung theo góp ý trên và nộp lại cho Ban Giám Hiệu duyệt.
+            </p>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0 pt-2 border-t border-border/60">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsFeedbackModalOpen(false)}
+              className="text-xs rounded-none h-8 px-4"
+            >
+              Đóng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
