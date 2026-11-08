@@ -1,7 +1,9 @@
 export { ClassPlanningPage } from './ClassPlanningPage';
+export { ThemePlanReviewListPage } from './ThemePlanReviewListPage';
 export { WeeklyTimetableTab } from './components/WeeklyTimetableTab';
 export { TargetAllocationTab } from './components/TargetAllocationTab';
 export { ActivitySlotDrawer } from './components/ActivitySlotDrawer';
 export { ActivitySlotPopover } from './components/ActivitySlotPopover';
 export { AllocationAiDrawer } from './components/AllocationAiDrawer';
+export { ThemePlanStatusBar } from './components/ThemePlanStatusBar';
 export { planningApi } from './planning.api';
