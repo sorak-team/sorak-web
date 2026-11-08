@@ -266,37 +266,29 @@ export function TeacherTimetableGrid({
                 ({dateRange})
               </span>
             )}
-            {(themeName || subThemeName) && (
+            <span className="text-muted-foreground/35 select-none">•</span>
+            <span className="text-[12.5px] text-muted-foreground font-normal">
+              {t('daily.theme', 'Chủ đề')}:{' '}
+              <span className={cn(themeName ? 'font-semibold text-foreground' : 'font-normal italic text-muted-foreground/80')}>
+                {themeName || t('daily.noTheme', 'Chưa có chủ đề')}
+              </span>
+            </span>
+            {subThemeName && (
               <>
                 <span className="text-muted-foreground/35 select-none">•</span>
                 <span className="text-[12.5px] text-muted-foreground font-normal">
-                  {t('daily.theme', 'Chủ đề')}:{' '}
-                  <span className="font-semibold text-foreground">
-                    {themeName || t('daily.noTheme', 'Chưa có chủ đề')}
+                  {t('daily.subTheme', 'Chủ đề nhánh')}:{' '}
+                  <span className="font-semibold text-primary">
+                    {subThemeName}
                   </span>
                 </span>
-                {subThemeName && (
-                  <>
-                    <span className="text-muted-foreground/35 select-none">•</span>
-                    <span className="text-[12.5px] text-muted-foreground font-normal">
-                      {t('daily.subTheme', 'Chủ đề nhánh')}:{' '}
-                      <span className="font-semibold text-primary">
-                        {subThemeName}
-                      </span>
-                    </span>
-                  </>
-                )}
               </>
             )}
           </div>
 
-          {headerActions ? (
+          {headerActions && (
             <div className="flex items-center gap-2 shrink-0">{headerActions}</div>
-          ) : dateRange ? (
-            <span className="text-[12.5px] text-muted-foreground font-normal hidden sm:inline">
-              {dateRange}
-            </span>
-          ) : null}
+          )}
         </div>
       )}
 
@@ -335,8 +327,11 @@ export function TeacherTimetableGrid({
                 let statusBadge = null;
                 if (mode === 'daily') {
                   if (day.isLocked) {
+                    const lockText = (day.isHolidayLocked || day.holiday || day.lockLabel === 'Ngày nghỉ')
+                      ? t('daily.badgeHoliday', 'Ngày nghỉ')
+                      : (day.lockLabel && day.lockLabel.length <= 15 ? day.lockLabel : t('daily.badgeHoliday', 'Ngày nghỉ'));
                     statusBadge = {
-                      label: day.lockLabel || 'Khóa',
+                      label: lockText,
                       className: 'bg-muted/75 text-muted-foreground border border-border/70 font-normal',
                     };
                   } else if (isDismissalDone) {
@@ -407,16 +402,17 @@ export function TeacherTimetableGrid({
 
                       {/* Khung cố định chiều cao cho nhãn trạng thái: Giữ cho mọi cột luôn thẳng hàng 100% giống phụ huynh */}
                       {mode === 'daily' ? (
-                        <div className="h-5 min-h-[20px] flex items-center justify-center mt-1">
+                        <div className="h-5 min-h-[20px] flex items-center justify-center mt-1 w-full px-1">
                           {statusBadge ? (
                             <span
+                              title={day.lockReason || statusBadge.label}
                               className={cn(
-                                'text-[10px] px-1.5 py-0.5 border leading-none shrink-0 shadow-2xs select-none inline-flex items-center gap-0.5',
+                                'text-[10px] px-1.5 py-0.5 border leading-none shadow-2xs select-none inline-flex items-center justify-center gap-0.5 max-w-full',
                                 statusBadge.className
                               )}
                             >
-                              {statusBadge.icon && <span className="text-[9px]">{statusBadge.icon}</span>}
-                              <span>{statusBadge.label}</span>
+                              {statusBadge.icon && <span className="text-[9px] shrink-0">{statusBadge.icon}</span>}
+                              <span className="truncate">{statusBadge.label}</span>
                             </span>
                           ) : (
                             <span className="text-[10px] px-1.5 py-0.5 leading-none invisible select-none" aria-hidden="true">
@@ -424,14 +420,52 @@ export function TeacherTimetableGrid({
                             </span>
                           )}
                         </div>
-                      ) : day.isLocked ? (
-                        <div
-                          className="mt-0.5 flex items-center justify-center max-w-[105px]"
-                          title={day.lockReason || 'Đã khóa'}
-                        >
-                          <span className="inline-flex items-center text-[10px] font-normal px-1.5 py-0.5 bg-muted/75 text-muted-foreground border border-border/70 truncate max-w-full">
-                            <span className="truncate">{day.lockLabel || 'Khóa'}</span>
-                          </span>
+                      ) : mode === 'planning' ? (
+                        <div className="h-5 min-h-[20px] flex items-center justify-center mt-1 w-full px-1">
+                          {(() => {
+                            const dayActsCount = (slots || []).filter(
+                              (s) => (s.day === day.key || s.dayOfWeek === day.dayOfWeek) && (s.activityId || s.title)
+                            ).length;
+                            if (day.isLocked) {
+                              return (
+                                <span className="text-[10px] px-1.5 py-0.5 border leading-none bg-muted/60 text-muted-foreground/70 border-border/60">
+                                  Nghỉ
+                                </span>
+                              );
+                            }
+                            if (day.key === 'CN') {
+                              return dayActsCount > 0 ? (
+                                <span title="Không được xếp lịch học vào Chủ nhật" className="text-[10px] px-1.5 py-0.5 border leading-none bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800">
+                                  CN không học
+                                </span>
+                              ) : null;
+                            }
+                            if (dayActsCount === 0) {
+                              return (
+                                <span className="text-[10px] px-1.5 py-0.5 leading-none text-muted-foreground/40 select-none">
+                                  0 HĐ
+                                </span>
+                              );
+                            }
+                            if (dayActsCount < 3) {
+                              return (
+                                <span
+                                  title="Theo quy định của nhà trường, mỗi ngày dạy học cần có tối thiểu 3 hoạt động giáo dục"
+                                  className="text-[10px] px-1.5 py-0.5 border leading-none shadow-2xs bg-amber-50 text-amber-700 border-amber-200/90 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60 font-medium"
+                                >
+                                  {dayActsCount}/3 HĐ
+                                </span>
+                              );
+                            }
+                            return (
+                              <span
+                                title="Đạt định mức tối thiểu (min 3 – max 7 HĐ)"
+                                className="text-[10px] px-1.5 py-0.5 border leading-none shadow-2xs bg-emerald-50 text-emerald-700 border-emerald-200/90 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60 font-medium"
+                              >
+                                {dayActsCount} HĐ
+                              </span>
+                            );
+                          })()}
                         </div>
                       ) : null}
                     </div>
@@ -853,24 +887,22 @@ export function TeacherTimetableGrid({
                               </div>
                             );
                           })()
+                        ) : day.isLocked ? (
+                          <div
+                            className="w-full h-full min-h-[85px] flex flex-col items-center justify-center p-2.5 text-center select-none bg-muted/10 border border-dashed border-border/30 opacity-60 cursor-not-allowed"
+                            title={day.lockReason ? `Đã khóa: ${day.lockReason}` : t('planning.locked', 'Đã khóa')}
+                          >
+                            <span
+                              className="text-[11.5px] font-normal text-muted-foreground line-clamp-3 leading-snug px-1 select-none"
+                              title={day.lockReason || day.lockLabel}
+                            >
+                              {day.lockReason || day.lockLabel || t('planning.locked', 'Đã khóa')}
+                            </span>
+                          </div>
                         ) : mode === 'planning' ? (
                           readOnly ? (
                             <div className="w-full h-full min-h-[85px] flex items-center justify-center p-2 text-center select-none border border-dashed border-border/20 opacity-30">
                               <span className="text-[12px] text-muted-foreground/60 font-light">—</span>
-                            </div>
-                          ) : day.isLocked ? (
-                            <div
-                              className="w-full h-full min-h-[85px] flex flex-col items-center justify-center p-2 text-center select-none bg-muted/15 border border-dashed border-border/30 opacity-70 cursor-not-allowed"
-                              title={day.lockReason ? `Đã khóa dạy: ${day.lockReason}` : "Ngày nằm ngoài năm học đang chọn (Đã khóa)"}
-                            >
-                              <div className="flex items-center gap-1 text-[11px] font-normal text-muted-foreground">
-                                <span>{day.lockLabel ? (day.lockLabel.length > 20 ? `${day.lockLabel.slice(0, 18)}…` : day.lockLabel) : t('planning.locked', 'Đã khóa')}</span>
-                              </div>
-                              {day.lockReason && (
-                                <span className="text-[10px] text-muted-foreground line-clamp-2 mt-0.5 px-1 leading-tight" title={day.lockReason}>
-                                  {day.lockReason}
-                                </span>
-                              )}
                             </div>
                           ) : (
                             <div
