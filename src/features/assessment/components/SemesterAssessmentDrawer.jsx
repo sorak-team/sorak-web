@@ -8,6 +8,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/shared/lib/utils';
 import { useAuthStore, isBghRole } from '@/features/auth';
+import { resolveStudentHealthEvaluations, formatExamDateDescription, formatMeasurement } from '../assessment.utils';
 
 export function SemesterAssessmentDrawer({
   student,
@@ -53,14 +54,50 @@ export function SemesterAssessmentDrawer({
   const semesterLabel = semester === 'SEMESTER_2' ? t('assessment.semester2', 'Học kỳ 2') : t('assessment.semester1', 'Học kỳ 1');
 
   const getHealthStatusLabel = (status) => {
-    if (!status) return t('health.statusNormal', 'Bình thường');
-    if (status === 'Bình thường') return t('health.statusNormal', 'Bình thường');
-    if (status === 'Theo dõi nhẹ cân') return t('health.statusUnderweight', 'Theo dõi nhẹ cân');
-    if (status === 'Theo dõi thừa cân/béo phì') return t('health.statusOverweight', 'Theo dõi thừa cân/béo phì');
-    if (status === 'Theo dõi thấp còi') return t('health.statusStunted', 'Theo dõi thấp còi');
-    if (status === 'Theo dõi suy dinh dưỡng') return t('health.statusMalnutrition', 'Theo dõi suy dinh dưỡng');
-    if (status === 'Nguy cơ thừa cân') return t('health.statusOverweightRisk', 'Nguy cơ thừa cân');
-    return status;
+    if (!status || status === 'Chưa đánh giá') return t('health.notEvaluated', 'Chưa đánh giá');
+    const clean = String(status)
+      .replace(/\s*\(Đạt chuẩn WHO\)/gi, '')
+      .replace(/\s*Đạt chuẩn WHO/gi, '')
+      .trim();
+    if (clean === 'Bình thường' || clean.toLowerCase() === 'bình thường') return t('health.statusNormal', 'Bình thường');
+    if (clean === 'Theo dõi nhẹ cân') return t('health.statusUnderweight', 'Theo dõi nhẹ cân');
+    if (clean === 'Theo dõi thừa cân/béo phì') return t('health.statusOverweight', 'Theo dõi thừa cân/béo phì');
+    if (clean === 'Theo dõi thấp còi') return t('health.statusStunted', 'Theo dõi thấp còi');
+    if (clean === 'Theo dõi suy dinh dưỡng') return t('health.statusMalnutrition', 'Theo dõi suy dinh dưỡng');
+    if (clean === 'Nguy cơ thừa cân') return t('health.statusOverweightRisk', 'Nguy cơ thừa cân');
+    return clean;
+  };
+
+  const getHealthBadgeClass = (status) => {
+    const raw = String(status || '').trim();
+    const clean = raw
+      .replace(/\s*\(Đạt chuẩn WHO\)/gi, '')
+      .replace(/\s*Đạt chuẩn WHO/gi, '')
+      .trim();
+
+    if (!clean || clean === 'Chưa đánh giá' || clean === '--') {
+      return 'bg-muted/70 text-muted-foreground border border-border/60';
+    }
+
+    if (
+      clean === 'Bình thường' ||
+      clean === 'Tốt' ||
+      clean.toLowerCase() === 'bình thường' ||
+      clean.includes('Bình thường')
+    ) {
+      return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60';
+    }
+
+    if (
+      clean.includes('độ 2') ||
+      clean.includes('nặng') ||
+      clean.includes('Béo phì') ||
+      clean.includes('Thừa cân')
+    ) {
+      return 'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200/80 dark:border-rose-800/60';
+    }
+
+    return 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60';
   };
 
   // Check if student has evaluated goals in this semester
@@ -195,8 +232,8 @@ export function SemesterAssessmentDrawer({
 
         {/* 2. Scrollable Body */}
         <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5">
-          {/* Key Semester Overview Cards: Attendance + Health (2 cards) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Key Semester Overview Cards: Attendance + Height + Weight (3 cards) */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {/* 1. Đi học đủ của kỳ (Green when >= 90%) */}
             <div className="p-3.5 border border-border bg-card flex flex-col justify-between gap-1.5 shadow-2xs">
               <span className="text-[12px] font-medium text-muted-foreground">
@@ -230,27 +267,73 @@ export function SemesterAssessmentDrawer({
               </div>
             </div>
 
-            {/* 2. Tình trạng sức khỏe */}
-            <div className="p-3.5 border border-border bg-card flex flex-col justify-between gap-1.5 shadow-2xs">
-              <span className="text-[12px] font-medium text-muted-foreground">
-                {t('health.title', 'Sức khỏe')}
-              </span>
-              <div className="flex items-center gap-2">
-                <span
-                  className={cn(
-                    'inline-flex items-center px-2 py-0.5 text-[12px] font-medium rounded-none border',
-                    student.health?.status === 'Bình thường'
-                      ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200'
-                      : 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200'
-                  )}
-                >
-                  {getHealthStatusLabel(student.health?.status)}
-                </span>
-              </div>
-              <span className="font-mono text-[11px] text-muted-foreground truncate">
-                {t('assessment.examDate', 'Ngày khám:')} {student.health?.examDate || (semester === 'SEMESTER_2' ? '15/04/2027' : '15/10/2026')}
-              </span>
-            </div>
+            {/* Chiều cao & Cân nặng (Tách 2 card theo dõi sức khỏe như báo cáo học sinh) */}
+            {(() => {
+              const { heightEvaluation, weightEvaluation } = resolveStudentHealthEvaluations(student.health);
+              const examDate = student.health?.examDate || (semester === 'SEMESTER_2' ? '15/04/2027' : '15/10/2026');
+              const isAssessed = student.health?.status && student.health?.status !== '--' && student.health?.status !== '—';
+              const dateDesc = isAssessed ? formatExamDateDescription(examDate) : '—';
+              const heightFormatted = formatMeasurement(student.health?.height, 'cm');
+              const weightFormatted = formatMeasurement(student.health?.weight, 'kg');
+              const heightTooltip = heightFormatted
+                ? `Chiều cao: ${heightFormatted} · ${heightEvaluation.label}`
+                : heightEvaluation.label;
+              const weightTooltip = weightFormatted
+                ? `Cân nặng: ${weightFormatted} · ${weightEvaluation.label}`
+                : weightEvaluation.label;
+
+              return (
+                <>
+                  {/* 2. Chiều cao */}
+                  <div className="p-3.5 border border-border bg-card flex flex-col justify-between gap-1.5 shadow-2xs">
+                    <span className="text-[12px] font-medium text-muted-foreground">
+                      {t('health.heightColumn', 'Chiều cao')}
+                    </span>
+                    <div className="flex items-baseline justify-between gap-2">
+                      {isAssessed && heightFormatted ? (
+                        <span className="text-[20px] font-bold tracking-tight text-foreground">
+                          {heightFormatted}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground/40 text-[18px]">—</span>
+                      )}
+                      {isAssessed && (
+                        <span className={cn('text-[12px] font-medium', heightEvaluation.textColor)}>
+                          {heightEvaluation.label}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[11px] text-muted-foreground truncate font-normal">
+                      {dateDesc}
+                    </span>
+                  </div>
+
+                  {/* 3. Cân nặng */}
+                  <div className="p-3.5 border border-border bg-card flex flex-col justify-between gap-1.5 shadow-2xs">
+                    <span className="text-[12px] font-medium text-muted-foreground">
+                      {t('health.weightColumn', 'Cân nặng')}
+                    </span>
+                    <div className="flex items-baseline justify-between gap-2">
+                      {isAssessed && weightFormatted ? (
+                        <span className="text-[20px] font-bold tracking-tight text-foreground">
+                          {weightFormatted}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground/40 text-[18px]">—</span>
+                      )}
+                      {isAssessed && (
+                        <span className={cn('text-[12px] font-medium', weightEvaluation.textColor)}>
+                          {weightEvaluation.label}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[11px] text-muted-foreground truncate font-normal">
+                      {dateDesc}
+                    </span>
+                  </div>
+                </>
+              );
+            })()}
           </div>
 
           {/* Section: 5 Lĩnh vực phát triển */}
