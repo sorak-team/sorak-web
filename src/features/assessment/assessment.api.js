@@ -50,6 +50,14 @@ export const assessmentApi = {
   },
 
   /**
+   * Publish / Unpublish Monthly Assessments
+   */
+  async publishMonthlyAssessments(classId = '1', payload = {}) {
+    const response = await apiClient.post(`/assessment/classes/${classId}/monthly/publish`, payload);
+    return response.data?.data || response.data;
+  },
+
+  /**
    * Get Semester Assessments (Đánh giá học kỳ - Table 27)
    */
   async getSemesterAssessments(classId = '1', params = {}) {
@@ -62,6 +70,14 @@ export const assessmentApi = {
    */
   async saveSemesterAssessments(classId = '1', payload = {}) {
     const response = await apiClient.post(`/assessment/classes/${classId}/semester`, payload);
+    return response.data?.data || response.data;
+  },
+
+  /**
+   * Publish / Unpublish Semester Assessments
+   */
+  async publishSemesterAssessments(classId = '1', payload = {}) {
+    const response = await apiClient.post(`/assessment/classes/${classId}/semester/publish`, payload);
     return response.data?.data || response.data;
   },
 };
