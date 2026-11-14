@@ -71,6 +71,12 @@ export function AppSidebar({
     (location.pathname === '/curriculum' && new URLSearchParams(location.search).get('tab') === 'goals');
 
   const selectedYearId = useAcademicYearStore((state) => state.selectedYearId);
+  const academicYears = useAcademicYearStore((state) => state.academicYears);
+  const selectActiveYear = useAcademicYearStore((state) => state.selectActiveYear);
+  const activeYear = useMemo(
+    () => academicYears.find((y) => y.status === 'ACTIVE' || y.active) || academicYears[0],
+    [academicYears]
+  );
 
   const teacherClass = useMemo(() => {
     if (!isTeacher) return null;
@@ -148,6 +154,7 @@ export function AppSidebar({
     { key: 'allocation', label: t('planning.tabAllocation', 'Phân bổ mục tiêu'), icon: Target02Icon },
     { key: 'activities', label: t('planning.tabActivities', 'Xác định hoạt động'), icon: TaskDone01Icon },
     { key: 'timetable', label: t('planning.tabTimetable', 'Kế hoạch tuần'), icon: Calendar03Icon },
+    { key: 'submission', label: t('planning.tabSubmission', 'Tổng hợp & Nộp duyệt'), icon: CheckListIcon },
   ];
 
   const assessmentSubNav = [
@@ -269,7 +276,9 @@ export function AppSidebar({
                   key={sub.key}
                   type="button"
                   onClick={() => {
-                    navigate(`/classes/${currentClass.id}/planning?tab=${sub.key}`);
+                    const currentSearchParams = new URLSearchParams(location.search);
+                    currentSearchParams.set('tab', sub.key);
+                    navigate(`/classes/${currentClass.id}/planning?${currentSearchParams.toString()}`);
                   }}
                   title={sidebarCollapsed ? sub.label : undefined}
                   className={cn(
@@ -373,6 +382,22 @@ export function AppSidebar({
                       className="shrink-0"
                     />
                     {!sidebarCollapsed && <span>{t('nav.transfers', 'Chuyển lớp')}</span>}
+                  </Link>
+
+                  {/* 3. Duyệt kế hoạch */}
+                  <Link
+                    to="/planning/reviews"
+                    title={sidebarCollapsed ? t('nav.planReviews', 'Duyệt kế hoạch') : undefined}
+                    className={cn(
+                      'flex items-center gap-2 px-2 h-8 rounded-none text-[14px] font-normal transition-colors',
+                      sidebarCollapsed ? 'justify-center px-0' : '',
+                      location.pathname.startsWith('/planning/reviews') || location.pathname.startsWith('/curriculum/reviews')
+                        ? 'bg-[#f5f5f5] dark:bg-muted text-foreground font-medium'
+                        : 'text-foreground/80 hover:text-foreground hover:bg-muted/50',
+                    )}
+                  >
+                    <HugeiconsIcon icon={TaskDone01Icon} size={16} className="shrink-0" />
+                    {!sidebarCollapsed && <span>{t('nav.planReviews', 'Duyệt kế hoạch')}</span>}
                   </Link>
 
                   {/* 3. Bộ chủ đề */}
@@ -537,38 +562,59 @@ export function AppSidebar({
                   {!sidebarCollapsed && <span>{t('nav.assessment', 'Đánh giá giai đoạn')}</span>}
                 </Link>
 
-                {/* 5. Kế hoạch giáo dục */}
-                <Link
-                  to={`/classes/${currentClass.id}/planning?tab=allocation`}
-                  title={sidebarCollapsed ? t('planning.title', 'Kế hoạch giáo dục') : undefined}
-                  className={cn(
-                    'flex items-center gap-2 px-2 h-8 rounded-none text-[14px] font-normal transition-colors',
-                    sidebarCollapsed ? 'justify-center px-0' : '',
-                    location.pathname.includes('/planning')
-                      ? 'bg-[#f5f5f5] dark:bg-muted text-foreground font-medium'
-                      : 'text-foreground/80 hover:text-foreground hover:bg-muted/50',
-                  )}
-                >
-                  <HugeiconsIcon icon={Target02Icon} size={16} className="shrink-0" />
-                  {!sidebarCollapsed && <span>{t('planning.title', 'Kế hoạch giáo dục')}</span>}
-                </Link>
-
-                {/* 6. Xuất danh sách (Dành cho Giáo viên) */}
+                {/* 5. Kế hoạch giáo dục (Chỉ dành cho Giáo viên) */}
                 {isTeacher && (
                   <Link
-                    to={`/classes/${currentClass.id}/export`}
-                    title={sidebarCollapsed ? t('classes.settingsExport', 'Xuất danh sách') : undefined}
+                    to={`/classes/${currentClass.id}/planning?tab=allocation`}
+                    title={sidebarCollapsed ? t('planning.title', 'Kế hoạch giáo dục') : undefined}
                     className={cn(
                       'flex items-center gap-2 px-2 h-8 rounded-none text-[14px] font-normal transition-colors',
                       sidebarCollapsed ? 'justify-center px-0' : '',
-                      location.pathname.includes('/export')
+                      location.pathname.includes('/planning')
                         ? 'bg-[#f5f5f5] dark:bg-muted text-foreground font-medium'
                         : 'text-foreground/80 hover:text-foreground hover:bg-muted/50',
                     )}
                   >
-                    <HugeiconsIcon icon={Download01Icon} size={16} className="shrink-0" />
-                    {!sidebarCollapsed && <span>{t('classes.settingsExport', 'Xuất danh sách')}</span>}
+                    <HugeiconsIcon icon={Target02Icon} size={16} className="shrink-0" />
+                    {!sidebarCollapsed && <span>{t('planning.title', 'Kế hoạch giáo dục')}</span>}
                   </Link>
+                )}
+
+                {/* 6. Chuyển lớp & Xuất danh sách (Dành cho Giáo viên) */}
+                {isTeacher && (
+                  <>
+                    {/* Chuyển lớp (Dành cho Giáo viên) */}
+                    <Link
+                      to="/transfers"
+                      title={sidebarCollapsed ? t('nav.transfers', 'Chuyển lớp') : undefined}
+                      className={cn(
+                        'flex items-center gap-2 px-2 h-8 rounded-none text-[14px] font-normal transition-colors',
+                        sidebarCollapsed ? 'justify-center px-0' : '',
+                        location.pathname.startsWith('/transfers')
+                          ? 'bg-[#f5f5f5] dark:bg-muted text-foreground font-medium'
+                          : 'text-foreground/80 hover:text-foreground hover:bg-muted/50',
+                      )}
+                    >
+                      <HugeiconsIcon icon={ArrowDataTransferHorizontalIcon} size={16} className="shrink-0" />
+                      {!sidebarCollapsed && <span>{t('nav.transfers', 'Chuyển lớp')}</span>}
+                    </Link>
+
+                    {/* Xuất danh sách (Dành cho Giáo viên) */}
+                    <Link
+                      to={`/classes/${currentClass.id}/export`}
+                      title={sidebarCollapsed ? t('classes.settingsExport', 'Xuất danh sách') : undefined}
+                      className={cn(
+                        'flex items-center gap-2 px-2 h-8 rounded-none text-[14px] font-normal transition-colors',
+                        sidebarCollapsed ? 'justify-center px-0' : '',
+                        location.pathname.includes('/export')
+                          ? 'bg-[#f5f5f5] dark:bg-muted text-foreground font-medium'
+                          : 'text-foreground/80 hover:text-foreground hover:bg-muted/50',
+                      )}
+                    >
+                      <HugeiconsIcon icon={Download01Icon} size={16} className="shrink-0" />
+                      {!sidebarCollapsed && <span>{t('classes.settingsExport', 'Xuất danh sách')}</span>}
+                    </Link>
+                  </>
                 )}
 
                 {/* 7. Cấu hình & Quản lý lớp (Chỉ dành cho BGH, ẩn đối với Giáo viên) */}
@@ -628,14 +674,26 @@ export function AppSidebar({
               )}
               {navGroups[1]?.items.map((item) => {
                 const isClassContext = Boolean(specificClassId);
+                const isSchoolYears = item.path === '/school-years' || item.path?.startsWith('/school-years');
                 const isActive = item.path === '/students'
                   ? (location.pathname.startsWith('/students') && !isClassContext)
-                  : location.pathname.startsWith(item.path);
+                  : isSchoolYears
+                    ? location.pathname.startsWith('/school-years')
+                    : location.pathname.startsWith(item.path);
+
+                const targetPath = isSchoolYears && activeYear?.id
+                  ? `/school-years/${activeYear.id}`
+                  : item.path;
 
                 return (
                   <Link
                     key={item.path}
-                    to={item.path}
+                    to={targetPath}
+                    onClick={() => {
+                      if (isSchoolYears) {
+                        selectActiveYear();
+                      }
+                    }}
                     title={sidebarCollapsed ? item.title : undefined}
                     className={cn(
                       'flex items-center gap-2 px-2 h-8 rounded-none text-[14px] font-normal transition-colors',

@@ -2,7 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { PencilEdit02Icon } from '@hugeicons/core-free-icons';
+import {
+  PencilEdit02Icon,
+  ArrowRight01Icon,
+  ArrowUpRight01Icon,
+  Menu01Icon,
+} from '@hugeicons/core-free-icons';
 import {
   useAcademicYearStore,
   getDayAfterDisplayDate,
@@ -13,6 +18,7 @@ import { QuickColorPopover } from './components/QuickColorPopover';
 import { AcademicYearDrawer } from './components/AcademicYearDrawer';
 import { AcademicYearTransitionView } from './components/AcademicYearTransitionView';
 import { AcademicCalendarView } from './components/AcademicCalendarView';
+import { SchoolOverviewDashboard } from './components/SchoolOverviewDashboard';
 import { academicYearsApi } from './academic-years.api';
 import { Button } from '@/components/ui/button';
 import { NotFoundPage } from '@/features/error';
@@ -24,7 +30,7 @@ export function AcademicYearOverviewPage() {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const validTabs = ['OVERVIEW', 'CALENDAR', 'TRANSITION'];
+  const validTabs = ['OVERVIEW', 'STATISTICS', 'CALENDAR', 'TRANSITION'];
   const rawTab = searchParams.get('tab');
   const activeTab = validTabs.includes(rawTab) ? rawTab : 'OVERVIEW';
   const setActiveTab = (tab) => {
@@ -217,6 +223,15 @@ export function AcademicYearOverviewPage() {
 
         {/* Topbar Actions (Figma 5229:23394) */}
         <div className="flex items-center gap-1.5 self-start sm:self-center shrink-0">
+          <Link
+            to="/school-years?view=all"
+            title="Danh sách tất cả các năm học"
+            className="h-8 px-2.5 rounded-none border border-border bg-background hover:bg-muted text-foreground text-[12px] font-normal cursor-pointer flex items-center gap-1.5 transition-colors"
+          >
+            <HugeiconsIcon icon={Menu01Icon} size={14} className="text-muted-foreground" />
+            <span className="hidden sm:inline">Tất cả năm học</span>
+          </Link>
+
           <QuickColorPopover year={year} triggerClassName="size-8" />
 
           <button
@@ -262,6 +277,20 @@ export function AcademicYearOverviewPage() {
                 data-node-id="5229:23402"
               >
                 <span className="truncate">Tổng quan</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('STATISTICS')}
+                className={cn(
+                  'w-full h-8.5 sm:h-9 px-2 sm:px-3 flex items-center justify-center lg:justify-start text-[12px] sm:text-[13px] font-medium text-center lg:text-left transition-colors cursor-pointer rounded-none',
+                  activeTab === 'STATISTICS'
+                    ? 'bg-blue-50 text-[#1447e6] font-semibold dark:bg-blue-950/40 dark:text-blue-400'
+                    : 'text-foreground hover:bg-muted/60',
+                )}
+                data-node-id="5229:23404"
+              >
+                <span className="truncate">Thống kê trường</span>
               </button>
 
               <button
@@ -331,11 +360,11 @@ export function AcademicYearOverviewPage() {
 
         {/* Right Main Pane */}
         <div className="flex-1 min-w-0 p-4 sm:p-5 bg-card flex flex-col gap-5 overflow-y-auto">
-          {/* Subtab 1: Tổng quan */}
+          {/* Subtab 1: Tổng quan hoạt động năm học (Thiết lập & Khởi tạo gốc) */}
           {activeTab === 'OVERVIEW' && (
             <div className="flex flex-col gap-5">
               {/* Overview Header */}
-              <div className="flex items-center justify-between pb-1">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1">
                 <div>
                   <h2 className="text-[17px] font-semibold text-foreground tracking-tight">
                     Tổng quan & Chỉ số hoạt động
@@ -344,6 +373,18 @@ export function AcademicYearOverviewPage() {
                     Tổng hợp quy mô đào tạo, nhân sự và kế hoạch hoạt động năm học
                   </p>
                 </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setActiveTab('STATISTICS')}
+                  className="h-8 px-3 rounded-none border-border bg-background hover:bg-muted/60 text-foreground text-[12px] font-normal cursor-pointer shadow-none flex items-center gap-1.5 shrink-0 self-start sm:self-center"
+                  title="Xem thống kê trường"
+                >
+                  <span>Xem thống kê trường</span>
+                  <HugeiconsIcon icon={ArrowRight01Icon} size={14} className="text-muted-foreground" />
+                </Button>
               </div>
 
               {/* 4 Stats Cards */}
@@ -351,38 +392,38 @@ export function AcademicYearOverviewPage() {
                 {/* Lớp học */}
                 <div className="border border-border bg-card p-3.5 rounded-none flex flex-col justify-between h-[88px] shadow-2xs">
                   <span className="text-[12px] text-muted-foreground font-medium">Quy mô lớp</span>
-                  <span className="text-[22px] font-semibold text-[#1447e6] dark:text-blue-400 tracking-tight leading-none font-mono">
+                  <span className="text-[22px] font-semibold text-foreground tracking-tight leading-none font-mono">
                     {totalClassesCount}
                   </span>
-                  <span className="text-[11px] text-muted-foreground">4 khối đào tạo</span>
+                  <span className="text-[11.5px] text-muted-foreground">4 khối đào tạo</span>
                 </div>
 
                 {/* Học sinh */}
                 <div className="border border-border bg-card p-3.5 rounded-none flex flex-col justify-between h-[88px] shadow-2xs">
                   <span className="text-[12px] text-muted-foreground font-medium">Tổng học sinh</span>
-                  <span className="text-[22px] font-semibold text-[#1447e6] dark:text-blue-400 tracking-tight leading-none font-mono">
+                  <span className="text-[22px] font-semibold text-foreground tracking-tight leading-none font-mono">
                     {totalStudentsCount}
                   </span>
-                  <span className="text-[11px] text-muted-foreground">Đã nhập học</span>
+                  <span className="text-[11.5px] text-muted-foreground">Đã nhập học</span>
                 </div>
 
                 {/* Giáo viên */}
                 <div className="border border-border bg-card p-3.5 rounded-none flex flex-col justify-between h-[88px] shadow-2xs">
                   <span className="text-[12px] text-muted-foreground font-medium">Đội ngũ giáo viên</span>
-                  <span className="text-[22px] font-semibold text-[#1447e6] dark:text-blue-400 tracking-tight leading-none font-mono">
+                  <span className="text-[22px] font-semibold text-foreground tracking-tight leading-none font-mono">
                     {totalTeachersCount}
                   </span>
-                  <span className="text-[11px] text-muted-foreground">Đang công tác</span>
+                  <span className="text-[11.5px] text-muted-foreground">Đang công tác</span>
                 </div>
 
                 {/* Lớp đã có GV */}
                 <div className="border border-border bg-card p-3.5 rounded-none flex flex-col justify-between h-[88px] shadow-2xs">
                   <span className="text-[12px] text-muted-foreground font-medium">Lớp đã có GV</span>
-                  <span className="text-[22px] font-semibold text-[#1447e6] dark:text-blue-400 tracking-tight leading-none font-mono">
+                  <span className="text-[22px] font-semibold text-foreground tracking-tight leading-none font-mono">
                     {classesWithTeacher}{' '}
-                    <span className="text-[14px] text-muted-foreground font-normal">/ {totalClassesCount}</span>
+                    <span className="text-[13px] text-muted-foreground font-normal">/ {totalClassesCount}</span>
                   </span>
-                  <span className="text-[11px] text-muted-foreground">
+                  <span className="text-[11.5px] text-muted-foreground">
                     {classesWithoutTeacher > 0 ? `${classesWithoutTeacher} lớp cần phân công` : 'Đã đủ giáo viên'}
                   </span>
                 </div>
@@ -392,7 +433,7 @@ export function AcademicYearOverviewPage() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Panel 1: Tiến độ phân lớp & Nhân sự */}
                 <div className="border border-border bg-card p-4 sm:p-5 rounded-none flex flex-col justify-between gap-4 shadow-2xs">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between pb-1 border-b border-border/60">
                     <div>
                       <h3 className="text-[14.5px] font-semibold text-foreground tracking-tight">
                         Tiến độ phân lớp & Nhân sự
@@ -403,10 +444,15 @@ export function AcademicYearOverviewPage() {
                     </div>
                     <Link
                       to="/classes"
-                      className="text-[12px] text-[#1447e6] dark:text-blue-400 hover:underline font-medium inline-flex items-center gap-1 cursor-pointer transition-colors"
+                      title="Quản lý lớp"
+                      aria-label="Quản lý lớp"
+                      className="h-7 w-7 flex items-center justify-center border border-border/70 bg-muted/20 hover:bg-muted text-muted-foreground hover:text-foreground transition-all rounded-none shrink-0 group"
                     >
-                      <span>Quản lý lớp</span>
-                      <span>→</span>
+                      <HugeiconsIcon
+                        icon={ArrowUpRight01Icon}
+                        size={14}
+                        className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                      />
                     </Link>
                   </div>
 
@@ -422,13 +468,13 @@ export function AcademicYearOverviewPage() {
                       </div>
 
                       <div className="flex-1 w-full sm:max-w-[220px] flex items-center gap-2.5">
-                        <div className="h-1.5 w-full bg-muted overflow-hidden rounded-none">
+                        <div className="h-1.5 w-full bg-muted/70 overflow-hidden rounded-none">
                           <div
-                            className="h-full bg-[#1447e6] dark:bg-blue-500"
+                            className="h-full bg-foreground/80 dark:bg-foreground/70"
                             style={{ width: `${studentsPct}%` }}
                           />
                         </div>
-                        <span className="text-[11.5px] font-mono font-medium text-[#1447e6] dark:text-blue-400 w-8 text-right">
+                        <span className="text-[11.5px] font-mono font-medium text-foreground w-8 text-right">
                           {studentsPct}%
                         </span>
                       </div>
@@ -450,13 +496,13 @@ export function AcademicYearOverviewPage() {
                       </div>
 
                       <div className="flex-1 w-full sm:max-w-[220px] flex items-center gap-2.5">
-                        <div className="h-1.5 w-full bg-muted overflow-hidden rounded-none">
+                        <div className="h-1.5 w-full bg-muted/70 overflow-hidden rounded-none">
                           <div
-                            className="h-full bg-[#1447e6] dark:bg-blue-500"
+                            className="h-full bg-foreground/80 dark:bg-foreground/70"
                             style={{ width: `${teachersPct}%` }}
                           />
                         </div>
-                        <span className="text-[11.5px] font-mono font-medium text-[#1447e6] dark:text-blue-400 w-8 text-right">
+                        <span className="text-[11.5px] font-mono font-medium text-foreground w-8 text-right">
                           {teachersPct}%
                         </span>
                       </div>
@@ -482,13 +528,13 @@ export function AcademicYearOverviewPage() {
                       </div>
 
                       <div className="flex-1 w-full sm:max-w-[220px] flex items-center gap-2.5">
-                        <div className="h-1.5 w-full bg-muted overflow-hidden rounded-none">
+                        <div className="h-1.5 w-full bg-muted/70 overflow-hidden rounded-none">
                           <div
-                            className="h-full bg-[#1447e6] dark:bg-blue-500"
+                            className="h-full bg-foreground/80 dark:bg-foreground/70"
                             style={{ width: `${classesPct}%` }}
                           />
                         </div>
-                        <span className="text-[11.5px] font-mono font-medium text-[#1447e6] dark:text-blue-400 w-8 text-right">
+                        <span className="text-[11.5px] font-mono font-medium text-foreground w-8 text-right">
                           {classesPct}%
                         </span>
                       </div>
@@ -504,7 +550,7 @@ export function AcademicYearOverviewPage() {
 
                 {/* Panel 2: Lịch & Sự kiện sắp tới */}
                 <div className="border border-border bg-card p-4 sm:p-5 rounded-none flex flex-col justify-between gap-4 shadow-2xs">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between pb-1 border-b border-border/60">
                     <div>
                       <h3 className="text-[14.5px] font-semibold text-foreground tracking-tight">
                         Lịch & Sự kiện sắp tới
@@ -516,10 +562,15 @@ export function AcademicYearOverviewPage() {
                     <button
                       type="button"
                       onClick={() => setActiveTab('CALENDAR')}
-                      className="text-[12px] text-[#1447e6] dark:text-blue-400 hover:underline font-medium inline-flex items-center gap-1 cursor-pointer transition-colors"
+                      title="Xem lịch năm học"
+                      aria-label="Xem lịch năm học"
+                      className="h-7 w-7 flex items-center justify-center border border-border/70 bg-muted/20 hover:bg-muted text-muted-foreground hover:text-foreground transition-all rounded-none shrink-0 group cursor-pointer"
                     >
-                      <span>Xem lịch</span>
-                      <span>→</span>
+                      <HugeiconsIcon
+                        icon={ArrowUpRight01Icon}
+                        size={14}
+                        className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                      />
                     </button>
                   </div>
 
@@ -546,9 +597,8 @@ export function AcademicYearOverviewPage() {
                         return (
                           <div key={item.id} className="py-2.5 first:pt-0 last:pb-0 flex items-center justify-between gap-3">
                             <div className="flex items-center gap-3 min-w-0">
-                              {/* Clean Vertical Calendar Block with gentle blue styling */}
-                              <div className="w-10 h-10 shrink-0 bg-blue-50/70 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 flex flex-col items-center justify-center rounded-none select-none">
-                                <span className="text-[13.5px] font-semibold font-mono text-[#1447e6] dark:text-blue-400 leading-none">
+                              <div className="w-10 h-10 shrink-0 bg-muted/30 border border-border/80 flex flex-col items-center justify-center rounded-none select-none">
+                                <span className="text-[13.5px] font-semibold font-mono text-foreground leading-none">
                                   {dayNumber}
                                 </span>
                                 <span className="text-[9.5px] font-medium text-muted-foreground leading-none mt-1">
@@ -579,7 +629,7 @@ export function AcademicYearOverviewPage() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Khung thời gian */}
                 <div className="border border-border bg-card p-4 sm:p-5 rounded-none shadow-2xs flex flex-col justify-between gap-3">
-                  <div>
+                  <div className="pb-1 border-b border-border/60">
                     <h3 className="text-[14px] font-semibold text-foreground tracking-tight">
                       Khung thời gian đào tạo
                     </h3>
@@ -613,7 +663,7 @@ export function AcademicYearOverviewPage() {
 
                 {/* Các khối đào tạo */}
                 <div className="border border-border bg-card p-4 sm:p-5 rounded-none shadow-2xs flex flex-col justify-between gap-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between pb-1 border-b border-border/60">
                     <div>
                       <h3 className="text-[14px] font-semibold text-foreground tracking-tight">
                         Cơ cấu các khối đào tạo
@@ -639,7 +689,7 @@ export function AcademicYearOverviewPage() {
                         className="border border-border/70 bg-muted/20 p-2 rounded-none flex flex-col gap-0.5 text-center sm:text-left"
                       >
                         <span className="text-[11.5px] font-medium text-foreground">{g.name}</span>
-                        <span className="text-[13.5px] font-bold font-mono text-[#1447e6] dark:text-blue-400 leading-tight">
+                        <span className="text-[13.5px] font-semibold font-mono text-foreground leading-tight">
                           {g.count}
                         </span>
                         <span className="text-[10px] text-muted-foreground">{g.age}</span>
@@ -649,6 +699,11 @@ export function AcademicYearOverviewPage() {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Subtab 2: Thống kê trường & Sĩ số 9 tháng (Module School-wide Statistics theo BA) */}
+          {activeTab === 'STATISTICS' && (
+            <SchoolOverviewDashboard year={year} yearId={id} />
           )}
 
           {/* Subtab 2: Lịch năm học (Figma 5232:24798) */}

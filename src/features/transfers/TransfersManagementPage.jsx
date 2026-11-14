@@ -13,6 +13,7 @@ import {
   ViewIcon,
   Tick01Icon,
   Cancel01Icon,
+  Calendar03Icon,
 } from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,7 +36,7 @@ import {
 import { TablePagination } from '@/shared/components/TablePagination';
 import { usePaginationStore } from '@/shared/stores/pagination.store';
 import { useAcademicYearStore } from '@/features/academic-years';
-import { useAuthStore } from '@/features/auth';
+import { useAuthStore, isTeacherRole, isBghRole } from '@/features/auth';
 import { useClassesStore, findTeacherClassForYear } from '@/features/classes';
 import { cn } from '@/shared/lib/utils';
 import { classesApi } from '../classes/classes.api';
@@ -56,10 +57,14 @@ export function TransfersManagementPage() {
   const classes = useClassesStore((state) => state.classes) || [];
   const selectedYearId = useAcademicYearStore((state) => state.selectedYearId);
   const academicYears = useAcademicYearStore((state) => state.academicYears);
-  const isTeacher = user?.role === 'TEACHER_GV';
+  const isTeacher =
+    isTeacherRole(user?.role) ||
+    user?.role === 'TEACHER_GV' ||
+    user?.role === 'TEACHER' ||
+    user?.role?.toLowerCase()?.includes('teacher');
   const teacherClass = useMemo(
-    () => findTeacherClassForYear(user, classes, selectedYearId),
-    [user, classes, selectedYearId],
+    () => (isTeacher ? findTeacherClassForYear(user, classes, selectedYearId) : null),
+    [isTeacher, user, classes, selectedYearId],
   );
   const selectedYear = useMemo(
     () => academicYears.find((y) => String(y.id) === String(selectedYearId)) || academicYears[0],
@@ -105,16 +110,69 @@ export function TransfersManagementPage() {
   const [availableClasses, setAvailableClasses] = useState([]);
   const [isLoadingFormOptions, setIsLoadingFormOptions] = useState(false);
   const [studentSearchInput, setStudentSearchInput] = useState('');
+  const [drawerClassFilter, setDrawerClassFilter] = useState('ALL');
+  const [isStudentComboboxOpen, setIsStudentComboboxOpen] = useState(false);
+
+  // Helper to convert any date (YYYY-MM-DD or ISO) to DD/MM/YYYY
+  const toDmyString = (dateStr) => {
+    if (!dateStr) return '';
+    const clean = String(dateStr).trim();
+    if (clean.includes('/')) return clean;
+    const iso = clean.split('T')[0];
+    const parts = iso.split('-');
+    if (parts.length === 3) {
+      const [y, m, d] = parts;
+      return `${d.padStart(2, '0')}/${m.padStart(2, '0')}/${y}`;
+    }
+    return clean;
+  };
+
+  // Helper to convert DD/MM/YYYY to YYYY-MM-DD for backend or native date picker
+  const toIsoDateString = (dmy) => {
+    if (!dmy) return '';
+    const clean = String(dmy).trim();
+    if (clean.includes('-')) return clean.split('T')[0];
+    const parts = clean.split('/');
+    if (parts.length === 3) {
+      const [d, m, y] = parts;
+      return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+    }
+    return clean;
+  };
 
   // Create Form fields
   const [formStudentId, setFormStudentId] = useState('');
   const [formToClassId, setFormToClassId] = useState('');
-  const [formTransferDate, setFormTransferDate] = useState(
-    new Date().toISOString().split('T')[0],
-  );
+  const [formTransferDate, setFormTransferDate] = useState(() => {
+    return toDmyString(new Date().toISOString().split('T')[0]);
+  });
   const [formReason, setFormReason] = useState('');
-  const [formAutoApprove, setFormAutoApprove] = useState(true); // Default to autoApprove = true for BGH
+  const [formAutoApprove, setFormAutoApprove] = useState(false);
   const [isSubmittingCreate, setIsSubmittingCreate] = useState(false);
+
+  // Helper to strip Vietnamese diacritics for insensitive search
+  const stripDiacritics = (str) => {
+    if (!str) return '';
+    return str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D')
+      .toLowerCase();
+  };
+
+  // Set of student IDs currently having a PENDING transfer request
+  const pendingStudentIds = useMemo(() => {
+    const ids = new Set();
+    (data?.items || []).forEach((item) => {
+      if (item.status === 'PENDING') {
+        if (item.studentId) ids.add(String(item.studentId));
+        if (item.student?.id) ids.add(String(item.student.id));
+        if (item.studentCode) ids.add(String(item.studentCode));
+      }
+    });
+    return ids;
+  }, [data?.items]);
 
   const loadData = useCallback(async () => {
     try {
@@ -198,11 +256,18 @@ export function TransfersManagementPage() {
       setAvailableStudents(enrolledStudents);
       setAvailableClasses(classList);
 
-      if (enrolledStudents.length > 0) {
-        setFormStudentId(String(enrolledStudents[0].id || enrolledStudents[0].student_id));
+      setFormStudentId('');
+      setFormToClassId('');
+      setFormTransferDate(toDmyString(new Date().toISOString().split('T')[0]));
+      if (isTeacher) {
+        setFormAutoApprove(false);
+        const tCId = String(teacherClass?.id || teacherClass?.publicId || teacherClass?.class_id || 'ALL');
+        setDrawerClassFilter(tCId);
       } else {
-        setFormStudentId('');
+        setFormAutoApprove(true);
+        setDrawerClassFilter('ALL');
       }
+      setIsStudentComboboxOpen(false);
     } catch (err) {
       console.error('Failed to load students/classes for transfer drawer:', err);
       toast.error('Không thể tải danh sách học sinh và lớp học');
@@ -211,17 +276,24 @@ export function TransfersManagementPage() {
     }
   };
 
-  // Filter available students for search input inside drawer
+  // Filter available students for search input inside drawer (diacritics-insensitive)
   const filteredAvailableStudents = useMemo(() => {
-    if (!studentSearchInput.trim()) return availableStudents;
-    const q = studentSearchInput.toLowerCase().trim();
-    return availableStudents.filter(
-      (s) =>
-        (s.fullName || s.full_name || '').toLowerCase().includes(q) ||
-        (s.studentCode || s.student_code || '').toLowerCase().includes(q) ||
-        (s.currentClass?.className || '').toLowerCase().includes(q),
-    );
-  }, [availableStudents, studentSearchInput]);
+    let list = availableStudents;
+    if (!isTeacher && drawerClassFilter !== 'ALL') {
+      list = list.filter((s) => {
+        const sClassId = String(s.currentClass?.classId || s.currentClass?.id || '');
+        return sClassId === String(drawerClassFilter);
+      });
+    }
+    if (!studentSearchInput.trim()) return list;
+    const q = stripDiacritics(studentSearchInput.trim());
+    return list.filter((s) => {
+      const name = stripDiacritics(s.fullName || s.full_name || '');
+      const code = stripDiacritics(s.studentCode || s.student_code || '');
+      const className = stripDiacritics(s.currentClass?.className || '');
+      return name.includes(q) || code.includes(q) || className.includes(q);
+    });
+  }, [availableStudents, drawerClassFilter, studentSearchInput, isTeacher]);
 
   const selectedStudent = useMemo(() => {
     return availableStudents.find(
@@ -229,37 +301,32 @@ export function TransfersManagementPage() {
     );
   }, [availableStudents, formStudentId]);
 
-  // Automatically select the first search result when quick-searching students in drawer
-  useEffect(() => {
-    if (!studentSearchInput.trim()) return;
-    if (filteredAvailableStudents.length > 0) {
-      const isAlreadyInResults = filteredAvailableStudents.some(
-        (s) => String(s.id || s.student_id) === String(formStudentId),
-      );
-      if (!isAlreadyInResults) {
-        setFormStudentId(String(filteredAvailableStudents[0].id || filteredAvailableStudents[0].student_id));
-        setFormToClassId('');
-      }
-    } else {
-      setFormStudentId('');
-      setFormToClassId('');
-    }
-  }, [studentSearchInput, filteredAvailableStudents, formStudentId]);
-
   const filteredTargetClasses = useMemo(() => {
-    if (!selectedStudent?.currentClass) return availableClasses;
-    const currentClassId = String(
-      selectedStudent.currentClass.classId || selectedStudent.currentClass.id,
-    );
+    // Current class id to exclude
+    const currentClassId = selectedStudent?.currentClass
+      ? String(selectedStudent.currentClass.classId || selectedStudent.currentClass.id || '')
+      : isTeacher && teacherClass
+        ? String(teacherClass.id || teacherClass.publicId || teacherClass.class_id || '')
+        : '';
+
     const studentAgeGroup = String(
-      selectedStudent.currentClass.ageGroup || selectedStudent.currentClass.grade || '',
+      selectedStudent?.currentClass?.ageGroup ||
+      selectedStudent?.currentClass?.grade ||
+      (isTeacher && teacherClass?.grade ? teacherClass.grade : '')
     )
       .toUpperCase()
       .replace(/[^A-Z]/g, '');
 
     return availableClasses.filter((c) => {
+      const cId = String(c.id || c.publicId || c.class_id || '');
       // Cannot transfer to current class
-      if (String(c.id || c.class_id) === currentClassId) return false;
+      if (currentClassId && cId === currentClassId) return false;
+
+      // Also if teacher, ensure teacherClass is never in target
+      if (isTeacher && teacherClass) {
+        const tId = String(teacherClass.id || teacherClass.publicId || teacherClass.class_id || '');
+        if (tId && cId === tId) return false;
+      }
 
       // BR-43: Target class must match the student's age group / grade
       if (studentAgeGroup) {
@@ -272,19 +339,17 @@ export function TransfersManagementPage() {
       }
       return true;
     });
-  }, [availableClasses, selectedStudent]);
+  }, [availableClasses, selectedStudent, isTeacher, teacherClass]);
 
   // Keep target class select valid when selected student or filtered target classes change
   useEffect(() => {
-    if (filteredTargetClasses.length > 0) {
+    if (formToClassId) {
       const isTargetValid = filteredTargetClasses.some(
         (c) => String(c.id || c.class_id) === String(formToClassId),
       );
       if (!isTargetValid) {
-        setFormToClassId(String(filteredTargetClasses[0].id || filteredTargetClasses[0].class_id));
+        setFormToClassId('');
       }
-    } else {
-      setFormToClassId('');
     }
   }, [filteredTargetClasses, formToClassId]);
 
@@ -306,28 +371,37 @@ export function TransfersManagementPage() {
       return;
     }
 
+    const effectiveDateIso = toIsoDateString(formTransferDate);
+    if (!effectiveDateIso || !/^\d{4}-\d{2}-\d{2}$/.test(effectiveDateIso)) {
+      toast.error('Ngày hiệu lực không hợp lệ. Vui lòng nhập theo định dạng dd/mm/yyyy');
+      return;
+    }
+
     try {
       setIsSubmittingCreate(true);
       const currentClassId = selectedStudent?.currentClass
         ? String(selectedStudent.currentClass.classId || selectedStudent.currentClass.id)
         : undefined;
 
+      const isAutoApproveActive = !isTeacher && formAutoApprove;
       await classesApi.createGlobalTransferRequest({
         studentId: formStudentId,
         fromClassId: currentClassId,
         toClassId: formToClassId,
-        transferDate: formTransferDate,
+        transferDate: effectiveDateIso,
         reason: formReason.trim() || 'Chuyển theo nguyện vọng phụ huynh',
-        autoApprove: isTeacher ? false : formAutoApprove,
+        autoApprove: isAutoApproveActive,
       });
 
-      if (formAutoApprove) {
+      if (isAutoApproveActive) {
         toast.success(
           `BGH đã điều chuyển học sinh ${selectedStudent?.fullName || ''} sang lớp mới thành công!`,
         );
       } else {
         toast.success(
-          `Đã tạo yêu cầu chuyển lớp cho học sinh ${selectedStudent?.fullName || ''} thành công!`,
+          isTeacher
+            ? `Đã gửi yêu cầu chuyển lớp cho học sinh ${selectedStudent?.fullName || ''} thành công (chờ BGH xét duyệt)!`
+            : `Đã tạo yêu cầu chuyển lớp cho học sinh ${selectedStudent?.fullName || ''} thành công!`,
         );
       }
       setIsCreateDrawerOpen(false);
@@ -905,30 +979,27 @@ export function TransfersManagementPage() {
 
           {/* Drawer Panel */}
           <div
-            className="relative w-full max-w-[560px] h-full bg-card border-l border-border shadow-2xl flex flex-col animate-in slide-in-from-right duration-250 ease-out z-10 text-foreground"
-            data-name="Create Transfer Drawer · BGH"
+            className="relative w-full max-w-[540px] h-full bg-card border-l border-border shadow-2xl flex flex-col animate-in slide-in-from-right duration-250 ease-out z-10 text-foreground select-none"
+            data-name="Create Transfer Drawer"
           >
             {/* Drawer Header */}
-            <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-border shrink-0 bg-card">
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-[18px] font-semibold text-foreground tracking-tight">
-                    Tạo yêu cầu chuyển lớp
-                  </h2>
-                  <span className="text-[11px] font-medium bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-none">
-                    Ban Giám Hiệu
-                  </span>
-                </div>
-                <p className="text-[12px] text-muted-foreground font-normal">
-                  Điều phối và chuyển học sinh giữa các lớp học trong năm học hiện tại
+            <div className="flex items-start justify-between px-7 pt-6 pb-5 border-b border-border shrink-0 bg-card">
+              <div className="flex flex-col gap-1.5">
+                <h2 className="text-[19px] font-semibold text-foreground tracking-tight">
+                  Tạo yêu cầu chuyển lớp
+                </h2>
+                <p className="text-[12.5px] text-muted-foreground font-normal leading-relaxed">
+                  {isTeacher
+                    ? 'Khởi tạo đề xuất chuyển học sinh sang lớp mới để Ban Giám Hiệu xét duyệt'
+                    : 'Điều phối và chuyển học sinh giữa các lớp học trong năm học hiện tại'}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsCreateDrawerOpen(false)}
-                className="size-8 flex items-center justify-center border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer rounded-none"
+                className="size-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-none transition-colors cursor-pointer"
               >
-                <HugeiconsIcon icon={Cancel01Icon} className="size-4" />
+                <HugeiconsIcon icon={Cancel01Icon} size={17} />
               </button>
             </div>
 
@@ -940,164 +1011,178 @@ export function TransfersManagementPage() {
               </div>
             ) : (
               <form onSubmit={handleCreateTransferSubmit} className="flex-1 flex flex-col min-h-0">
-                <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
-                  {/* Select Student */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="transferStudent" className="text-[12px] font-medium text-foreground">
-                        Học sinh chuyển lớp <span className="text-destructive">*</span>
-                      </Label>
-                      <span className="text-[11px] text-muted-foreground">
-                        {availableStudents.length} học sinh đang học
-                      </span>
-                    </div>
+                <div className="flex-1 overflow-y-auto px-7 py-7 space-y-6">
+                  {/* Field 1: Chọn học sinh chuyển lớp */}
+                  <div className="space-y-2">
+                    <Label htmlFor="studentSelect" className="text-[12.5px] font-medium text-foreground">
+                      Học sinh chuyển lớp <span className="text-destructive">*</span>
+                    </Label>
 
-                    {/* Quick Search Student Input */}
-                    <div className="relative">
-                      <HugeiconsIcon
-                        icon={Search01Icon}
-                        size={14}
-                        className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
-                      />
-                      <Input
-                        type="text"
-                        value={studentSearchInput}
-                        onChange={(e) => setStudentSearchInput(e.target.value)}
-                        placeholder="Tìm nhanh theo tên, mã HS..."
-                        className="h-8 pl-8 text-[12px] bg-background border-border rounded-none shadow-none"
-                      />
-                    </div>
+                    {/* BGH Only: Filter by Class */}
+                    {!isTeacher && (
+                      <div className="space-y-1 mb-2">
+                        <select
+                          value={drawerClassFilter}
+                          onChange={(e) => {
+                            setDrawerClassFilter(e.target.value);
+                            setFormStudentId('');
+                            setFormToClassId('');
+                          }}
+                          className="w-full h-9 px-3 bg-background border border-border rounded-none text-[12.5px] text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer mb-2"
+                        >
+                          <option value="ALL">Tất cả các lớp ({availableStudents.length} học sinh)</option>
+                          {availableClasses.map((c) => (
+                            <option key={c.id || c.class_id} value={c.id || c.class_id}>
+                              {c.name} {c.room ? `(${c.room})` : ''}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
 
+                    {/* Standard Select - Familiar, instant, reliable */}
                     <select
-                      id="transferStudent"
+                      id="studentSelect"
                       value={formStudentId}
                       onChange={(e) => {
-                        setFormStudentId(e.target.value);
+                        const val = e.target.value;
+                        setFormStudentId(val);
                         setFormToClassId('');
                       }}
-                      className="w-full h-9 px-3 bg-background border border-border rounded-none text-[13px] text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer"
+                      className="w-full h-10 px-3.5 bg-background border border-border rounded-none text-[13.5px] text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer"
                       required
                     >
                       <option value="">
-                        {filteredAvailableStudents.length === 0
-                          ? '-- Không tìm thấy học sinh phù hợp --'
-                          : `-- Chọn học sinh (${filteredAvailableStudents.length}) --`}
+                        {isTeacher
+                          ? `-- Chọn học sinh lớp ${teacherClass?.name || ''} (${availableStudents.length} học sinh) --`
+                          : `-- Chọn học sinh cần chuyển (${filteredAvailableStudents.length} học sinh) --`}
                       </option>
-                      {filteredAvailableStudents.map((s) => (
-                        <option key={s.id || s.student_id} value={s.id || s.student_id}>
-                          {s.fullName || s.full_name} ({s.studentCode || s.student_code}) · {s.currentClass?.className || 'Đang học'}
-                        </option>
-                      ))}
+                      {filteredAvailableStudents.map((s) => {
+                        const sId = String(s.id || s.student_id);
+                        const hasPending =
+                          pendingStudentIds.has(sId) ||
+                          pendingStudentIds.has(String(s.studentCode || '')) ||
+                          pendingStudentIds.has(String(s.student_code || ''));
+                        return (
+                          <option key={sId} value={sId} disabled={hasPending}>
+                            {s.studentCode || s.student_code} · {s.fullName || s.full_name} {s.currentClass?.className ? `(${s.currentClass.className})` : ''} {hasPending ? '— [Đang chờ duyệt]' : ''}
+                          </option>
+                        );
+                      })}
                     </select>
+
+                    {/* Selected Student Confirmation Preview with Avatar */}
+                    {selectedStudent && (
+                      <div className="mt-2.5 p-3 border border-border bg-muted/20 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="size-9 rounded-none overflow-hidden border border-border bg-muted shrink-0">
+                            <img
+                              src={getStudentAvatarUrl(
+                                selectedStudent.avatarUrl || selectedStudent.avatar,
+                                selectedStudent.studentCode || selectedStudent.fullName,
+                              )}
+                              alt={selectedStudent.fullName}
+                              className="size-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.src = getStudentAvatarUrl(
+                                  null,
+                                  selectedStudent.studentCode || selectedStudent.fullName,
+                                );
+                              }}
+                            />
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[13.5px] font-semibold text-foreground truncate">
+                                {selectedStudent.fullName}
+                              </span>
+                              <span className="font-mono text-[11.5px] text-muted-foreground">
+                                ({selectedStudent.studentCode})
+                              </span>
+                            </div>
+                            <span className="text-[12px] text-muted-foreground truncate font-normal">
+                              Lớp hiện tại: {selectedStudent.currentClass?.className || teacherClass?.name || 'Chưa phân lớp'}
+                              {selectedStudent.gender && ` · Giới tính: ${selectedStudent.gender === 'FEMALE' ? 'Nữ' : 'Nam'}`}
+                            </span>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFormStudentId('');
+                            setFormToClassId('');
+                          }}
+                          className="text-[12px] text-muted-foreground hover:text-destructive cursor-pointer px-2 py-1 shrink-0 font-normal hover:underline"
+                          title="Bỏ chọn học sinh"
+                        >
+                          Bỏ chọn
+                        </button>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Selected Student Card */}
-                  {selectedStudent && (
-                    <div className="p-3.5 border border-border bg-muted/20 flex flex-col gap-2.5">
-                      <div className="flex items-center gap-3">
-                        <div className="size-10 rounded-none overflow-hidden border border-border bg-muted shrink-0">
-                          <img
-                            src={getStudentAvatarUrl(
-                              selectedStudent.avatarUrl || selectedStudent.avatar,
-                              selectedStudent.studentCode || selectedStudent.fullName,
-                            )}
-                            alt={selectedStudent.fullName}
-                            className="size-full object-cover"
-                            onError={(e) => {
-                              e.currentTarget.src = getStudentAvatarUrl(
-                                null,
-                                selectedStudent.studentCode || selectedStudent.fullName,
-                              );
-                            }}
-                          />
-                        </div>
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-[14px] font-semibold text-foreground truncate">
-                            {selectedStudent.fullName}
-                          </span>
-                          <span className="font-mono text-[12px] text-muted-foreground">
-                            Mã HS: {selectedStudent.studentCode || '—'}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/60 text-[12px]">
-                        <div>
-                          <span className="text-muted-foreground block text-[11px]">Lớp hiện tại:</span>
-                          <span className="font-semibold text-foreground">
-                            {selectedStudent.currentClass?.className || 'Chưa phân lớp'}
-                          </span>
-                          {selectedStudent.currentClass?.roomNumber && (
-                            <span className="text-muted-foreground block text-[11px]">
-                              {selectedStudent.currentClass.roomNumber}
-                            </span>
-                          )}
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground block text-[11px]">Phụ huynh liên hệ:</span>
-                          <span className="font-medium text-foreground truncate block">
-                            {selectedStudent.primaryParent?.fullName || 'Chưa cập nhật'}
-                          </span>
-                          {selectedStudent.primaryParent?.phone && (
-                            <span className="font-mono text-muted-foreground block text-[11px]">
-                              {selectedStudent.primaryParent.phone}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Target Class */}
-                  <div className="space-y-1.5">
-                    <Label htmlFor="toClass" className="text-[12px] font-medium text-foreground">
+                  {/* Field 2: Lớp chuyển đến */}
+                  <div className="space-y-2">
+                    <Label htmlFor="toClass" className="text-[12.5px] font-medium text-foreground">
                       Lớp chuyển đến <span className="text-destructive">*</span>
                     </Label>
                     <select
                       id="toClass"
                       value={formToClassId}
                       onChange={(e) => setFormToClassId(e.target.value)}
-                      className="w-full h-9 px-3 bg-background border border-border rounded-none text-[13px] text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer"
+                      className="w-full h-10 px-3.5 bg-background border border-border rounded-none text-[13.5px] text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer"
                       required
                     >
                       <option value="">-- Chọn lớp học tiếp nhận --</option>
                       {filteredTargetClasses.map((c) => (
                         <option key={c.id || c.class_id} value={c.id || c.class_id}>
-                          {c.name} {c.room ? `(${c.room})` : ''} · Sĩ số: {c.studentCount || 0}/{c.capacity || 25}
+                          {c.name} {c.room ? `(${c.room})` : ''} · {c.studentCount || 0}/{c.capacity || 25} học sinh
                         </option>
                       ))}
                     </select>
-                    {selectedTargetClass && (
-                      <div className="flex items-center gap-2 p-2 border border-border bg-muted/10 text-[12px] text-muted-foreground">
-                        <span>
-                          Sĩ số hiện tại: <strong className="text-foreground">{selectedTargetClass.studentCount || 0}/{selectedTargetClass.capacity || 25}</strong>
-                        </span>
-                        <span>•</span>
-                        <span>
-                          Số chỗ còn lại: <strong className="text-foreground">{Math.max(0, (selectedTargetClass.capacity || 25) - (selectedTargetClass.studentCount || 0))}</strong>
-                        </span>
-                      </div>
-                    )}
                   </div>
 
-                  {/* Transfer Date */}
-                  <div className="space-y-1.5">
-                    <Label htmlFor="transferDate" className="text-[12px] font-medium text-foreground">
+                  {/* Field 3: Ngày hiệu lực chuyển lớp (dd/mm/yyyy) */}
+                  <div className="space-y-2">
+                    <Label htmlFor="transferDate" className="text-[12.5px] font-medium text-foreground">
                       Ngày hiệu lực chuyển lớp <span className="text-destructive">*</span>
                     </Label>
-                    <Input
-                      id="transferDate"
-                      type="date"
-                      value={formTransferDate}
-                      onChange={(e) => setFormTransferDate(e.target.value)}
-                      className="h-9 text-[13px] bg-background border-border rounded-none"
-                      required
-                    />
+                    <div className="relative">
+                      <Input
+                        id="transferDate"
+                        type="text"
+                        placeholder="dd/mm/yyyy"
+                        value={formTransferDate}
+                        onChange={(e) => setFormTransferDate(e.target.value)}
+                        className="h-10 px-3.5 pr-10 text-[13.5px] bg-background border-border rounded-none font-mono"
+                        required
+                      />
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center">
+                        <HugeiconsIcon
+                          icon={Calendar03Icon}
+                          size={18}
+                          className="text-muted-foreground pointer-events-none"
+                        />
+                        <input
+                          type="date"
+                          tabIndex={-1}
+                          value={toIsoDateString(formTransferDate)}
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              setFormTransferDate(toDmyString(e.target.value));
+                            }
+                          }}
+                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                          title="Chọn ngày từ lịch"
+                        />
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Reason */}
-                  <div className="space-y-1.5">
-                    <Label htmlFor="transferReason" className="text-[12px] font-medium text-foreground">
+                  {/* Field 4: Lý do chuyển lớp */}
+                  <div className="space-y-2">
+                    <Label htmlFor="transferReason" className="text-[12.5px] font-medium text-foreground">
                       Lý do chuyển lớp <span className="text-destructive">*</span>
                     </Label>
                     <textarea
@@ -1105,35 +1190,30 @@ export function TransfersManagementPage() {
                       value={formReason}
                       onChange={(e) => setFormReason(e.target.value)}
                       placeholder="Nhập lý do chuyển lớp (VD: Nguyện vọng phụ huynh, sắp xếp sĩ số phòng học, chuyển theo độ tuổi...)"
-                      rows={3}
-                      className="w-full p-2.5 text-[13px] bg-background border border-border rounded-none outline-none focus:border-primary resize-none text-foreground"
+                      rows={4}
+                      className="w-full min-h-[110px] p-3 text-[13.5px] bg-background border border-border rounded-none outline-none focus:border-primary resize-none text-foreground placeholder:text-muted-foreground/60 leading-relaxed"
                       required
                     />
                   </div>
 
-                  {/* BGH Privilege: Auto Approve and Move Immediately */}
+                  {/* BGH Privilege Checkbox (ONLY for BGH) */}
                   {!isTeacher && (
-                    <div className="p-3.5 border border-border bg-muted/20 flex items-start gap-3">
+                    <div className="p-3.5 border border-border bg-muted/20 flex items-start gap-3 mt-1">
                       <input
                         type="checkbox"
                         id="autoApproveToggle"
                         checked={formAutoApprove}
                         onChange={(e) => setFormAutoApprove(e.target.checked)}
-                        className="size-4 mt-0.5 rounded-none text-primary border-border focus:ring-primary cursor-pointer"
+                        className="size-4 mt-0.5 rounded-none accent-[#1447e6] cursor-pointer"
                       />
-                      <label htmlFor="autoApproveToggle" className="cursor-pointer select-none">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[13px] font-semibold text-foreground">
-                            Phê duyệt & Điều chuyển ngay vào lớp mới
-                          </span>
-                          <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 bg-primary/10 text-primary border border-primary/20">
-                            Quyền BGH
-                          </span>
-                        </div>
-                        <span className="text-[12px] text-muted-foreground block mt-1 leading-relaxed">
+                      <label htmlFor="autoApproveToggle" className="cursor-pointer select-none text-[12.5px]">
+                        <span className="font-semibold text-foreground block">
+                          Phê duyệt & Điều chuyển ngay vào lớp mới
+                        </span>
+                        <span className="text-muted-foreground text-[12px] block mt-1 leading-relaxed">
                           {formAutoApprove
-                            ? 'Học sinh sẽ được rút khỏi lớp cũ và ghi danh vào lớp tiếp nhận ngay lập tức. Hồ sơ chuyển lớp được lưu ở trạng thái Đã duyệt.'
-                            : 'Yêu cầu sẽ được tạo ở trạng thái Chờ duyệt để rà soát hoặc biểu quyết thêm.'}
+                            ? 'Học sinh sẽ được chuyển lớp ngay lập tức và lưu ở trạng thái Đã duyệt.'
+                            : 'Yêu cầu sẽ được tạo ở trạng thái Chờ duyệt.'}
                         </span>
                       </label>
                     </div>
@@ -1141,34 +1221,28 @@ export function TransfersManagementPage() {
                 </div>
 
                 {/* Sticky Drawer Footer */}
-                <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-card shrink-0">
+                <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-border bg-card shrink-0">
                   <Button
                     type="button"
                     variant="outline"
                     disabled={isSubmittingCreate}
                     onClick={() => setIsCreateDrawerOpen(false)}
-                    className="h-8 px-4 rounded-none border-border text-[13px] font-normal shadow-none cursor-pointer"
+                    className="h-8 px-4 text-[13px] rounded-none border-border cursor-pointer shadow-none"
                   >
                     Hủy
                   </Button>
                   <Button
                     type="submit"
                     disabled={isSubmittingCreate || !formStudentId || !formToClassId}
-                    className={cn(
-                      'h-8 px-4 rounded-none text-white text-[13px] font-medium shadow-none cursor-pointer disabled:opacity-40 flex items-center gap-1.5',
-                      formAutoApprove
-                        ? 'bg-emerald-600 hover:bg-emerald-700'
-                        : 'bg-[#1447e6] hover:bg-[#1447e6]/90',
-                    )}
+                    className="h-8 px-4 text-[13px] rounded-none bg-[#1447e6] hover:bg-[#1447e6]/90 text-white cursor-pointer font-medium shadow-none disabled:opacity-40"
                   >
-                    <HugeiconsIcon icon={formAutoApprove ? Tick01Icon : Add01Icon} size={15} />
-                    <span>
-                      {isSubmittingCreate
-                        ? 'Đang xử lý...'
+                    {isSubmittingCreate
+                      ? 'Đang gửi...'
+                      : isTeacher
+                        ? 'Gửi yêu cầu chuyển lớp'
                         : formAutoApprove
                           ? 'Phê duyệt & Điều chuyển ngay'
                           : 'Tạo yêu cầu (Chờ duyệt)'}
-                    </span>
                   </Button>
                 </div>
               </form>

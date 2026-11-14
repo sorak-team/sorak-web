@@ -204,6 +204,7 @@ export const useAccountStore = create((set, get) => ({
   viewMode: 'list', // 'list' | 'grid'
   searchQuery: '',
   statusFilter: 'all', // 'all' | 'active' | 'inactive' | 'locked'
+  roleFilter: 'all', // 'all' | 'leader' | 'teacher'
   currentPage: 1,
   pageSize: 5,
 
@@ -263,10 +264,11 @@ export const useAccountStore = create((set, get) => ({
   },
 
   // Actions
-  setActiveTab: (activeTab) => set({ activeTab, currentPage: 1, searchQuery: '', statusFilter: 'all' }),
+  setActiveTab: (activeTab) => set({ activeTab, currentPage: 1, searchQuery: '', statusFilter: 'all', roleFilter: 'all' }),
   setViewMode: (viewMode) => set({ viewMode }),
   setSearchQuery: (searchQuery) => set({ searchQuery, currentPage: 1 }),
   setStatusFilter: (statusFilter) => set({ statusFilter, currentPage: 1 }),
+  setRoleFilter: (roleFilter) => set({ roleFilter, currentPage: 1 }),
   setCurrentPage: (currentPage) => set({ currentPage }),
 
   toggleColumn: (key, targetTab) =>
@@ -338,19 +340,35 @@ export const useAccountStore = create((set, get) => ({
     const u2 = upper.charAt(Math.floor(Math.random() * upper.length));
     const tempPass = `Sorak@${u1}${l1}${d1}${d2}${s1}${u2}`;
 
-    if (account?.id) {
-      try {
-        await accountsApi.resetPassword(account.id, tempPass);
-      } catch (e) {
-        console.warn('API reset password failed, continuing locally:', e.message);
-      }
+    const targetId = account?.publicId || account?.id || account?.username;
+    if (!targetId) {
+      toast.error('Không tìm thấy tài khoản cần đặt lại mật khẩu');
+      set({
+        isResetPasswordConfirmOpen: false,
+        resetPasswordAccount: null,
+        temporaryPassword: '',
+      });
+      return;
     }
 
-    set({
-      isResetPasswordConfirmOpen: false,
-      isTemporaryPasswordModalOpen: true,
-      temporaryPassword: tempPass,
-    });
+    try {
+      await accountsApi.resetPassword(targetId, tempPass);
+      set({
+        isResetPasswordConfirmOpen: false,
+        isTemporaryPasswordModalOpen: true,
+        temporaryPassword: tempPass,
+      });
+    } catch (e) {
+      console.error('API reset password failed:', e);
+      set({
+        isResetPasswordConfirmOpen: false,
+        isTemporaryPasswordModalOpen: false,
+        temporaryPassword: '',
+        resetPasswordAccount: null,
+      });
+      const errMsg = e.response?.data?.message || e.message || 'Không thể đặt lại mật khẩu. Vui lòng thử lại.';
+      toast.error(errMsg);
+    }
   },
 
   closeTemporaryPasswordModal: () =>
@@ -412,117 +430,48 @@ export const useAccountStore = create((set, get) => ({
   },
 
   createAccount: async (newAccount) => {
-    const now = new Date();
-    const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    
     // Backend API mapping
     const roleEnum = newAccount.role === 'leader' ? 'PRINCIPAL_BGH' : newAccount.role === 'teacher' ? 'TEACHER_GV' : 'PARENT_PH';
-    try {
+    const created = await accountsApi.create({
+      username:
+        newAccount.username ||
+        newAccount.studentCode ||
+        newAccount.email?.split('@')[0] ||
+        (newAccount.phone ? `PH_${newAccount.phone.slice(-6)}` : `user_${Date.now()}`),
+      email: newAccount.email || null,
+      phone: newAccount.phone || null,
+      role: roleEnum,
+      isActive: newAccount.accountStatus === 'active',
+      password: 'SorakPassword123!',
+    });
+
+    await get().fetchAccounts();
+    set({ isAddModalOpen: false });
+    return created;
+  },
+
+  createBulkAccounts: async (accountsList) => {
+    for (const newAccount of accountsList) {
+      const roleEnum = newAccount.role === 'leader' ? 'PRINCIPAL_BGH' : newAccount.role === 'teacher' ? 'TEACHER_GV' : 'PARENT_PH';
       await accountsApi.create({
         username:
           newAccount.username ||
           newAccount.studentCode ||
+          newAccount.employeeCode ||
           newAccount.email?.split('@')[0] ||
-          (newAccount.phone ? `PH_${newAccount.phone.slice(-6)}` : `user_${Date.now()}`),
+          `user_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
         email: newAccount.email || null,
         phone: newAccount.phone || null,
         role: roleEnum,
-        isActive: newAccount.accountStatus === 'active',
+        isActive: newAccount.accountStatus !== 'inactive',
         password: 'SorakPassword123!',
+        teacherId: newAccount.teacherId || null,
+        studentId: newAccount.studentId || null,
       });
-    } catch (e) {
-      console.warn('API create account failed, storing locally:', e.message);
     }
 
-    if (get().activeTab === 'staff') {
-      const item = {
-        ...newAccount,
-        id: String(Date.now()),
-        createdAt: dateStr,
-        activatedAt: newAccount.accountStatus === 'active' ? dateStr : null,
-        lastLogin: null,
-        lastPasswordChange: newAccount.passwordChangedAt
-      ? new Date(newAccount.passwordChangedAt).toLocaleString('vi-VN')
-      : null,
-        accessStatus: 'normal',
-        department: 'Mầm non Sorak',
-        avatar: newAccount.avatar || getAccountAvatarUrl(null, newAccount.fullName, 'teacher'),
-      };
-      set((state) => ({
-        staffAccounts: [item, ...state.staffAccounts],
-        isAddModalOpen: false,
-      }));
-    } else {
-      const item = {
-        ...newAccount,
-        id: String(Date.now()),
-        createdAt: dateStr,
-        lastLogin: null,
-        avatar: newAccount.avatar || getAccountAvatarUrl(null, newAccount.fullName, 'parent'),
-      };
-      set((state) => ({
-        parentAccounts: [item, ...state.parentAccounts],
-        isAddModalOpen: false,
-      }));
-    }
-  },
-
-  createBulkAccounts: async (accountsList) => {
-    const now = new Date();
-    const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    const isStaff = get().activeTab === 'staff';
-
-    const newItems = [];
-    for (const newAccount of accountsList) {
-      const roleEnum = newAccount.role === 'leader' ? 'PRINCIPAL_BGH' : newAccount.role === 'teacher' ? 'TEACHER_GV' : 'PARENT_PH';
-      try {
-        await accountsApi.create({
-          username:
-            newAccount.username ||
-            newAccount.studentCode ||
-            newAccount.employeeCode ||
-            newAccount.email?.split('@')[0] ||
-            `user_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-          email: newAccount.email || null,
-          phone: newAccount.phone || null,
-          role: roleEnum,
-          isActive: newAccount.accountStatus !== 'inactive',
-          password: 'SorakPassword123!',
-          teacherId: newAccount.teacherId || null,
-          studentId: newAccount.studentId || null,
-        });
-      } catch (e) {
-        console.warn('API create account failed, storing locally:', e.message);
-      }
-
-      const item = {
-        ...newAccount,
-        id: String(Date.now() + Math.floor(Math.random() * 10000)),
-        username: newAccount.username || newAccount.employeeCode || newAccount.studentCode,
-        createdAt: dateStr,
-        activatedAt: newAccount.accountStatus !== 'inactive' ? dateStr : null,
-        lastLogin: null,
-        lastPasswordChange: newAccount.passwordChangedAt
-      ? new Date(newAccount.passwordChangedAt).toLocaleString('vi-VN')
-      : null,
-        accessStatus: 'normal',
-        department: isStaff ? 'Mầm non Sorak' : 'Phụ huynh học sinh',
-        avatar: newAccount.avatar || getAccountAvatarUrl(null, newAccount.fullName),
-      };
-      newItems.push(item);
-    }
-
-    if (isStaff) {
-      set((state) => ({
-        staffAccounts: [...newItems, ...state.staffAccounts],
-        isAddModalOpen: false,
-      }));
-    } else {
-      set((state) => ({
-        parentAccounts: [...newItems, ...state.parentAccounts],
-        isAddModalOpen: false,
-      }));
-    }
+    await get().fetchAccounts();
+    set({ isAddModalOpen: false });
   },
 
   deleteAccount: async (id) => {

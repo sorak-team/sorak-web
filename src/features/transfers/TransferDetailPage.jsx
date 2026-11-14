@@ -308,7 +308,7 @@ export function TransferDetailPage() {
                 {t('transfers.cancelAction', 'Hủy yêu cầu')}
               </Button>
               <span className="text-[13px] text-amber-600 font-medium">
-                {t('transfers.statusPending', 'Chờ BGH duyệt')}
+                {t('transfers.statusPending', 'Chờ duyệt')}
               </span>
             </div>
           )

@@ -8,6 +8,7 @@ import {
   Settings01Icon,
   Delete02Icon,
   Edit02Icon,
+  Download01Icon,
 } from '@hugeicons/core-free-icons';
 import {
   DropdownMenu,
@@ -152,6 +153,17 @@ export function ClassTable({ classes, isYearCompleted = false }) {
                     >
                       <HugeiconsIcon icon={ViewIcon} size={15} />
                       <span>{t('classes.actionView', 'Xem chi tiết')}</span>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem
+                      onClick={() => {
+                        attachClass(cls.id);
+                        navigate(`/classes/${cls.id}/export`);
+                      }}
+                      className="flex items-center gap-2 h-8 px-2 text-[13px] cursor-pointer rounded-none hover:bg-muted/60"
+                    >
+                      <HugeiconsIcon icon={Download01Icon} size={15} />
+                      <span>{t('classes.actionExport', 'Xuất danh sách')}</span>
                     </DropdownMenuItem>
 
                     {!isYearCompleted && (

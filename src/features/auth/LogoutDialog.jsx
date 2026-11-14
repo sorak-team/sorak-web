@@ -36,7 +36,7 @@ export function LogoutDialog({ open, onOpenChange }) {
       toast.success(t('logout.toastSuccess'), {
         description: t('logout.toastDesc'),
       });
-      navigate('/login');
+      window.location.replace('/login');
     }
   };
 
