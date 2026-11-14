@@ -84,19 +84,17 @@ export function DailyRoutinePage() {
     return (
       activeTheme?.name ||
       data?.classInfo?.themeName ||
-      slots.find((s) => s.themeName)?.themeName ||
       ''
     );
-  }, [activeTheme, data?.classInfo?.themeName, slots]);
+  }, [activeTheme, data?.classInfo?.themeName]);
 
   const currentSubThemeName = useMemo(() => {
     return (
       activeSubTheme?.name ||
       data?.classInfo?.subThemeName ||
-      slots.find((s) => s.subThemeName)?.subThemeName ||
       ''
     );
-  }, [activeSubTheme, data?.classInfo?.subThemeName, slots]);
+  }, [activeSubTheme, data?.classInfo?.subThemeName]);
 
   // Trạng thái đã điểm danh theo ngày (mặc định các ngày T2, T3 đã được ghi nhận, T4 hôm nay chưa điểm danh)
   const [attendanceOverrides, setAttendanceOverrides] = useState({});
@@ -169,9 +167,32 @@ export function DailyRoutinePage() {
     () => CALENDAR_WEEKS.find((w) => w.isCurrentWeek)?.id || 'w-2',
     []
   );
-  const [selectedWeekId, setSelectedWeekId] = useState(initialCurrentWeekId);
+  const [selectedWeekId, setSelectedWeekId] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlWeekId = urlParams.get('weekId');
+      if (urlWeekId && CALENDAR_WEEKS.some((w) => w.id === urlWeekId)) {
+        return urlWeekId;
+      }
+    }
+    return initialCurrentWeekId;
+  });
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Lưu weekId vào URL để khi F5 không bị mất tuần
+  useEffect(() => {
+    if (typeof window === 'undefined' || !selectedWeekId) return;
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('weekId') !== selectedWeekId) {
+        url.searchParams.set('weekId', selectedWeekId);
+        window.history.replaceState(null, '', url.pathname + url.search);
+      }
+    } catch (e) {
+      console.warn('Failed to update DailyRoutinePage weekId:', e);
+    }
+  }, [selectedWeekId]);
 
   const activeWeekObj =
     CALENDAR_WEEKS.find((w) => w.id === selectedWeekId) ||
@@ -569,7 +590,45 @@ export function DailyRoutinePage() {
     const weekDayKey = `${activeWeekObj.id}-${day.key}`;
     const isWeekend = day.key === 'T7' || day.key === 'CN';
     const isWeekendLocked = isWeekend && !hasWeekendSlots;
-    const isDayLocked = isOutsideAcademicYear || isWeekendLocked;
+
+    // Kiểm tra khóa bởi ngày nghỉ / sự kiện (SchoolHoliday)
+    const holidays = data?.holidays || [];
+    const classAgeGroup = currentClass?.ageGroup || data?.classInfo?.ageGroup || 'NHA_TRE';
+    let isHolidayLocked = false;
+    let holidayLockReason = '';
+    let activeHoliday = null;
+
+    if (fullIsoDate && holidays.length > 0) {
+      for (const h of holidays) {
+        if (!h.isTeachingAllowed) {
+          const appliesToGrade = !h.targetGrades?.length || h.targetGrades.includes(classAgeGroup);
+          if (appliesToGrade) {
+            if (fullIsoDate >= h.startDate && fullIsoDate <= h.endDate) {
+              isHolidayLocked = true;
+              holidayLockReason = h.name;
+              activeHoliday = h;
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    const isDayLocked = isOutsideAcademicYear || isWeekendLocked || isHolidayLocked;
+    const finalLockReason = isOutsideAcademicYear
+      ? 'Nằm ngoài năm học đang chọn'
+      : isHolidayLocked
+        ? holidayLockReason
+        : isWeekendLocked
+          ? 'Ngày nghỉ cuối tuần'
+          : 'Khóa';
+    const finalLockLabel = isOutsideAcademicYear
+      ? 'Ngoại khóa'
+      : isHolidayLocked
+        ? 'Ngày nghỉ'
+        : isWeekendLocked
+          ? 'Ngày nghỉ'
+          : 'Khóa';
 
     const isToday = Boolean(fullIsoDate ? fullIsoDate === todayIsoStr : (activeWeekObj?.isCurrentWeek && day.key === 'T4'));
     const isFuture = Boolean(fullIsoDate ? fullIsoDate > todayIsoStr : (selectedWeekIdx > currentWeekIdx));
@@ -622,7 +681,10 @@ export function DailyRoutinePage() {
       isHealthRecorded,
       isDismissalRecorded,
       isLocked: isDayLocked,
-      lockLabel: isWeekendLocked ? 'Ngày nghỉ' : 'Khóa',
+      isHolidayLocked,
+      lockReason: finalLockReason,
+      lockLabel: finalLockLabel,
+      holiday: activeHoliday,
     };
   });
 
@@ -642,7 +704,25 @@ export function DailyRoutinePage() {
     const dt = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const isOutsideAcademicYear = dt < academicStartCutoff || dt > academicEndCutoff;
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-    const isLocked = isOutsideAcademicYear || (isWeekend && !hasWeekendSlots);
+
+    let isTodayHolidayLocked = false;
+    let todayHolidayReason = '';
+    const holidays = data?.holidays || [];
+    const classAgeGroup = currentClass?.ageGroup || data?.classInfo?.ageGroup || 'NHA_TRE';
+    if (fullDate && holidays.length > 0) {
+      for (const h of holidays) {
+        if (!h.isTeachingAllowed) {
+          const appliesToGrade = !h.targetGrades?.length || h.targetGrades.includes(classAgeGroup);
+          if (appliesToGrade && fullDate >= h.startDate && fullDate <= h.endDate) {
+            isTodayHolidayLocked = true;
+            todayHolidayReason = h.name;
+            break;
+          }
+        }
+      }
+    }
+
+    const isLocked = isOutsideAcademicYear || (isWeekend && !hasWeekendSlots) || isTodayHolidayLocked;
 
     return {
       key: todayKey,
@@ -655,9 +735,10 @@ export function DailyRoutinePage() {
       isHealthRecorded: Boolean(data?.healthDays?.[fullDate]),
       isDismissalRecorded: Boolean(data?.dismissalDays?.[fullDate]),
       isLocked,
-      lockLabel: isWeekend && !hasWeekendSlots ? 'Ngày nghỉ' : 'Khóa',
+      lockReason: isTodayHolidayLocked ? todayHolidayReason : isOutsideAcademicYear ? 'Nằm ngoài năm học' : 'Ngày nghỉ',
+      lockLabel: isTodayHolidayLocked ? 'Ngày nghỉ' : isOutsideAcademicYear ? 'Ngoại khóa' : 'Ngày nghỉ',
     };
-  }, [currentDays, data, todayIsoStr, now, academicStartCutoff, academicEndCutoff, hasWeekendSlots, t]);
+  }, [currentDays, data, todayIsoStr, now, academicStartCutoff, academicEndCutoff, hasWeekendSlots, t, currentClass]);
 
   const isTodayLocked = Boolean(todayDay?.isLocked);
 
@@ -948,9 +1029,9 @@ export function DailyRoutinePage() {
       </div>
 
       {/* 1.1 Thanh tổng quan hôm nay (Today's Pulse Strip: Tinh gọn, chuyên nghiệp, gắn liền với nhịp vận hành) */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-3.5 py-2 border border-border bg-card text-[12.5px] rounded-none select-none shadow-2xs">
+      <div className="flex items-center justify-between gap-3 px-3.5 py-2 border border-border bg-card text-[12.5px] rounded-none select-none shadow-2xs overflow-hidden">
         {/* Khối bên trái: Hôm nay & Trạng thái hoạt động & Chủ đề/Chủ đề nhánh trên cùng 1 hàng */}
-        <div className="flex items-center gap-3 flex-wrap min-w-0">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
           {/* Thứ & Ngày */}
           <div className="flex items-center gap-2.5 shrink-0">
             <span className="text-[14px] font-bold tracking-tight text-foreground whitespace-nowrap">
@@ -959,31 +1040,41 @@ export function DailyRoutinePage() {
           </div>
 
           {/* Vạch phân cách */}
-          {(currentThemeName || currentSubThemeName) && (
-            <div className="h-3.5 w-px bg-border/80 hidden sm:block shrink-0" />
-          )}
+          <div className="h-3.5 w-px bg-border/80 hidden sm:block shrink-0" />
 
-          {/* Chủ đề & Chủ đề nhánh dạng phân cấp chuyên nghiệp */}
-          {(currentThemeName || currentSubThemeName) && (
-            <div className="flex items-center gap-1.5 text-[12.5px] text-muted-foreground min-w-0 flex-wrap">
-              <span className="text-muted-foreground/80 font-normal shrink-0">{t('daily.theme', 'Chủ đề')}:</span>
-              <span className="font-semibold text-foreground truncate">
-                {currentThemeName || t('daily.noTheme', 'Chưa có chủ đề')}
-              </span>
-              {currentSubThemeName && (
-                <>
-                  <span className="text-muted-foreground/40 font-light select-none">/</span>
-                  <span className="font-medium text-primary truncate">
-                    {currentSubThemeName}
-                  </span>
-                </>
+          {/* Chủ đề & Chủ đề nhánh dạng phân cấp chuyên nghiệp với Tooltip & Truncate thông minh */}
+          <div
+            className="flex items-center gap-1.5 text-[12.5px] text-muted-foreground min-w-0 flex-1 overflow-hidden"
+            title={`${t('daily.theme', 'Chủ đề')}: ${currentThemeName || t('daily.noTheme', 'Chưa có chủ đề')}${currentSubThemeName ? ` / ${currentSubThemeName}` : ''}`}
+          >
+            <span className="text-muted-foreground/80 font-normal shrink-0">{t('daily.theme', 'Chủ đề')}:</span>
+            <span
+              className={cn(
+                'truncate shrink min-w-0',
+                currentThemeName
+                  ? 'font-semibold text-foreground max-w-[240px]'
+                  : 'font-normal italic text-muted-foreground/80'
               )}
-            </div>
-          )}
+              title={currentThemeName || t('daily.noTheme', 'Chưa có chủ đề')}
+            >
+              {currentThemeName || t('daily.noTheme', 'Chưa có chủ đề')}
+            </span>
+            {currentSubThemeName && (
+              <>
+                <span className="text-muted-foreground/40 font-light select-none shrink-0">/</span>
+                <span
+                  className="font-medium text-primary truncate min-w-0 flex-1"
+                  title={currentSubThemeName}
+                >
+                  {currentSubThemeName}
+                </span>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Khối bên phải (Sát bên phải): Metric thu gọn (1 trong 2: Điểm danh hoặc Đón trẻ; Sức khỏe nếu có) + Nút mở nhật ký */}
-        <div className="flex items-center gap-2.5 ml-auto flex-wrap sm:flex-nowrap">
+        <div className="flex items-center gap-2.5 ml-auto shrink-0">
           {(() => {
             const showDismissalInstead = Boolean(
               todayMetrics.classStatus === 'DISMISSING' ||
@@ -1096,11 +1187,6 @@ export function DailyRoutinePage() {
           })()}
 
           {/* Nút thao tác mở nhật ký hôm nay */}
-          {!activeWeekObj?.isCurrentWeek && !isTodayLocked && (
-            <span className="text-[11.5px] text-muted-foreground hidden xl:inline">
-              ({t('daily.viewingOtherWeek', 'Đang xem tuần khác')})
-            </span>
-          )}
           {isTodayLocked ? (
             <button
               type="button"
@@ -1116,6 +1202,7 @@ export function DailyRoutinePage() {
               type="button"
               onClick={() => handleOpenTodayTab()}
               className="inline-flex items-center gap-1.5 px-3.5 h-8 text-[12px] font-medium bg-[#1447e6] hover:bg-[#1447e6]/90 text-white rounded-none transition-colors cursor-pointer shadow-2xs select-none active:scale-[0.98] shrink-0"
+              title={!activeWeekObj?.isCurrentWeek ? t('daily.openTodayJournalOtherWeekTooltip', 'Mở nhật ký ngày hôm nay (Đang xem tuần khác)') : undefined}
             >
               <span>{t('daily.openTodayJournal', 'Mở nhật ký hôm nay')}</span>
               <HugeiconsIcon icon={ArrowRight02Icon} size={13} />
@@ -1170,6 +1257,9 @@ export function DailyRoutinePage() {
               </div>
               <div className="flex items-center justify-center px-2 py-0.5 bg-muted/75 border border-border/70 text-[11px] shadow-2xs whitespace-nowrap">
                 <span className="text-muted-foreground">{t('daily.badgeNotStarted', 'Chưa điểm danh')}</span>
+              </div>
+              <div className="flex items-center justify-center px-2 py-0.5 bg-muted/75 border border-border/70 text-[11px] shadow-2xs whitespace-nowrap">
+                <span className="text-muted-foreground">{t('daily.badgeHoliday', 'Ngày nghỉ')}</span>
               </div>
             </div>
           </div>
@@ -1266,58 +1356,74 @@ export function DailyRoutinePage() {
       )}
 
       {/* 4. Day Drawer: Điểm danh & Sức khoẻ theo thứ / ngày */}
-      {activeDay && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          {/* Backdrop */}
-          <div
-            onClick={handleCloseDay}
-            className="fixed inset-0 bg-black/15 transition-opacity animate-in fade-in-0 duration-200"
-          />
+      {activeDay && (() => {
+        const isDayInPast = Boolean(
+          activeDay?.fullDate
+            ? activeDay.fullDate < todayIsoStr
+            : activeDay?.key
+            ? (currentDays.find((d) => d.key === activeDay.key)?.isPast ?? false)
+            : false
+        );
+        const isDayLockedForEdit = isBgh || isDayInPast || Boolean(activeDay?.isLocked);
 
-          {/* Large Day Drawer Panel */}
-          <div
-            className="relative w-full max-w-[680px] sm:max-w-[740px] h-full bg-card border-l border-border shadow-2xl flex flex-col justify-between text-foreground select-none overflow-hidden animate-in slide-in-from-right duration-250 ease-out z-10"
-            onClick={(e) => e.stopPropagation()}
-            data-name="DayRoutineDrawer"
-          >
-            {/* Header: Sạch sẽ, có badge thứ/ngày tinh tế để giáo viên không nhầm lẫn */}
-            <div className="px-6 pt-5 pb-0 border-b border-border shrink-0 bg-card flex flex-col gap-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex flex-col gap-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="text-[18px] font-semibold text-foreground tracking-tight truncate">
-                      {t('daily.attendanceHealthDrawerTitle', 'Điểm danh & Sức khỏe')}
-                    </h2>
-                    {activeDay?.isToday && (
-                      <span className="inline-flex items-center h-6 px-2.5 text-[11.5px] font-semibold border border-blue-500/25 bg-blue-500/10 text-[#1447e6] dark:text-blue-400 rounded-none shrink-0 select-none whitespace-nowrap">
-                        {t('daily.badgeToday', 'Hôm nay')}
-                      </span>
-                    )}
-                    {activeDay?.date && (
-                      <span className="inline-flex items-center h-6 px-2 text-[11.5px] font-medium bg-muted/80 text-foreground border border-border/80 shrink-0 select-none">
-                        {activeDay.name ? `${activeDay.name}, ${activeDay.date}` : activeDay.date}
-                      </span>
-                    )}
+        return (
+          <div className="fixed inset-0 z-50 flex justify-end">
+            {/* Backdrop */}
+            <div
+              onClick={handleCloseDay}
+              className="fixed inset-0 bg-black/15 transition-opacity animate-in fade-in-0 duration-200"
+            />
+
+            {/* Large Day Drawer Panel */}
+            <div
+              className="relative w-full max-w-[680px] sm:max-w-[740px] h-full bg-card border-l border-border shadow-2xl flex flex-col justify-between text-foreground select-none overflow-hidden animate-in slide-in-from-right duration-250 ease-out z-10"
+              onClick={(e) => e.stopPropagation()}
+              data-name="DayRoutineDrawer"
+            >
+              {/* Header: Sạch sẽ, có badge thứ/ngày tinh tế để giáo viên không nhầm lẫn */}
+              <div className="px-6 pt-5 pb-0 border-b border-border shrink-0 bg-card flex flex-col gap-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex flex-col gap-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-[18px] font-semibold text-foreground tracking-tight truncate">
+                        {t('daily.attendanceHealthDrawerTitle', 'Điểm danh & Sức khỏe')}
+                      </h2>
+                      {activeDay?.isToday && (
+                        <span className="inline-flex items-center h-6 px-2.5 text-[11.5px] font-semibold border border-blue-500/25 bg-blue-500/10 text-[#1447e6] dark:text-blue-400 rounded-none shrink-0 select-none whitespace-nowrap">
+                          {t('daily.badgeToday', 'Hôm nay')}
+                        </span>
+                      )}
+                      {isDayInPast && (
+                        <span className="inline-flex items-center h-6 px-2.5 text-[11.5px] font-medium border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400 rounded-none shrink-0 select-none whitespace-nowrap">
+                          Đã qua ngày (Chỉ xem)
+                        </span>
+                      )}
+                      {activeDay?.date && (
+                        <span className="inline-flex items-center h-6 px-2 text-[11.5px] font-medium bg-muted/80 text-foreground border border-border/80 shrink-0 select-none">
+                          {activeDay.name ? `${activeDay.name}, ${activeDay.date}` : activeDay.date}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[12px] text-muted-foreground font-normal">
+                      {t('daily.attendanceHealthDrawerDesc', 'Ghi nhận điểm danh và theo dõi chỉ số sức khỏe của học sinh')}
+                    </p>
                   </div>
-                  <p className="text-[12px] text-muted-foreground font-normal">
-                    {t('daily.attendanceHealthDrawerDesc', 'Ghi nhận điểm danh và theo dõi chỉ số sức khỏe của học sinh')}
-                  </p>
-                </div>
 
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {/* Menu 3 chấm Tùy chọn khác */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        type="button"
-                        className="size-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-none transition-colors cursor-pointer shrink-0"
-                        title="Tùy chọn khác"
-                      >
-                        <HugeiconsIcon icon={MoreHorizontalIcon} size={16} />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-52 rounded-none shadow-md">
-                      <DropdownMenuItem
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {/* Menu 3 chấm Tùy chọn khác */}
+                    {!isDayLockedForEdit && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            className="size-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-none transition-colors cursor-pointer shrink-0"
+                            title="Tùy chọn khác"
+                          >
+                            <HugeiconsIcon icon={MoreHorizontalIcon} size={16} />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-52 rounded-none shadow-md">
+                          <DropdownMenuItem
                         disabled={!activeDay?.isAttendanceRecorded || isCleaningDay}
                         onClick={() =>
                           setCleanConfirmDialog({
@@ -1361,6 +1467,7 @@ export function DailyRoutinePage() {
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
+                  )}
 
                   <button
                     type="button"
@@ -1436,9 +1543,10 @@ export function DailyRoutinePage() {
                   date={activeDay?.fullDate || '2026-10-13'}
                   initialStudents={students}
                   isRecorded={Boolean(activeDay?.isAttendanceRecorded)}
-                  readOnly={isBgh}
+                  readOnly={isDayLockedForEdit}
                   onTabChange={setDayTab}
                   onClose={handleCloseDay}
+                  onStudentsChange={setStudents}
                   onSaveSuccess={(updated) => {
                     setStudents(updated);
                     if (activeDay?.key) {
@@ -1490,9 +1598,10 @@ export function DailyRoutinePage() {
                   date={activeDay?.fullDate || '2026-10-12'}
                   initialStudents={students}
                   isRecorded={Boolean(activeDay && (recordedHealthDays[activeDay.key] || activeDay.isHealthRecorded))}
-                  readOnly={isBgh}
+                  readOnly={isDayLockedForEdit}
                   onTabChange={setDayTab}
                   onClose={handleCloseDay}
+                  onStudentsChange={setStudents}
                   onSaveSuccess={(updated) => {
                     setStudents(updated);
                     if (activeDay?.key) {
@@ -1517,7 +1626,7 @@ export function DailyRoutinePage() {
                   key={`${targetClassId}-${activeDay?.fullDate || '2026-10-13'}-${dismissalRefreshKey}`}
                   classId={targetClassId}
                   date={activeDay?.fullDate || '2026-10-13'}
-                  readOnly={isBgh}
+                  readOnly={isDayLockedForEdit}
                   onTabChange={setDayTab}
                   onClose={handleCloseDay}
                   onDismissalChange={handleDismissalChange}
@@ -1527,7 +1636,8 @@ export function DailyRoutinePage() {
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* 5. Slot Drawer: Hoạt động giáo dục (Tab 1: Nội dung, Tab 2: Chấm điểm) */}
       {activeSlot && (() => {
@@ -1569,6 +1679,15 @@ export function DailyRoutinePage() {
         }
 
         const isSlotAssessed = Boolean(activeSlot?.status === 'COMPLETED' || activeSlot?.isEvaluated);
+        const slotFullDate = activeSlot?.fullDate || slotDayObj?.fullDate;
+        const isSlotInPast = Boolean(
+          slotFullDate
+            ? slotFullDate < todayIsoStr
+            : (activeSlot?.dayKey || activeSlot?.day)
+            ? (slotDayObj?.isPast ?? false)
+            : false
+        );
+        const isSlotLockedForEdit = isBgh || isSlotInPast || Boolean(slotDayObj?.isLocked);
 
         return (
           <div className="fixed inset-0 z-50 flex justify-end">
@@ -1588,9 +1707,16 @@ export function DailyRoutinePage() {
               <div className="px-6 pt-5 pb-0 border-b border-border shrink-0 bg-card flex flex-col gap-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex flex-col gap-1 min-w-0">
-                    <h2 className="text-[18px] font-semibold text-foreground tracking-tight truncate">
-                      {activeSlot.title || activeSlot.shortTitle || t('planning.educationalActivity', 'Hoạt động giáo dục')}
-                    </h2>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-[18px] font-semibold text-foreground tracking-tight truncate">
+                        {activeSlot.title || activeSlot.shortTitle || t('planning.educationalActivity', 'Hoạt động giáo dục')}
+                      </h2>
+                      {isSlotInPast && (
+                        <span className="inline-flex items-center h-6 px-2.5 text-[11.5px] font-medium border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400 rounded-none shrink-0 select-none whitespace-nowrap">
+                          Đã qua ngày (Chỉ xem)
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[12px] text-muted-foreground font-normal">
                       {t('daily.activitySlotDrawerDesc', 'Kế hoạch hoạt động và đánh giá kết quả học sinh')}
                     </p>
@@ -1627,26 +1753,28 @@ export function DailyRoutinePage() {
                     )}
 
                     {/* Menu 3 chấm Tùy chọn khác */}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button
-                          type="button"
-                          className="size-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-none transition-colors cursor-pointer shrink-0"
-                          title="Tùy chọn khác"
-                        >
-                          <HugeiconsIcon icon={MoreHorizontalIcon} size={16} />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-52 rounded-none shadow-md">
-                        <DropdownMenuItem
-                          disabled={!isSlotAssessed || isCleaningSlot}
-                          onClick={handleCleanSlotAssessment}
-                          className="cursor-pointer text-[12.5px] py-2 px-3 text-foreground rounded-none disabled:opacity-35 disabled:cursor-not-allowed"
-                        >
-                          <span>Xoá đánh giá tiết này</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    {!isSlotLockedForEdit && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            className="size-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-none transition-colors cursor-pointer shrink-0"
+                            title="Tùy chọn khác"
+                          >
+                            <HugeiconsIcon icon={MoreHorizontalIcon} size={16} />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-52 rounded-none shadow-md">
+                          <DropdownMenuItem
+                            disabled={!isSlotAssessed || isCleaningSlot}
+                            onClick={handleCleanSlotAssessment}
+                            className="cursor-pointer text-[12.5px] py-2 px-3 text-foreground rounded-none disabled:opacity-35 disabled:cursor-not-allowed"
+                          >
+                            <span>Xoá đánh giá tiết này</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
 
                     <button
                       type="button"
@@ -1717,7 +1845,7 @@ export function DailyRoutinePage() {
                   activityDetails={activeSlot}
                   initialStudents={students}
                   isEvaluated={isSlotAssessed}
-                  readOnly={isBgh}
+                  readOnly={isSlotLockedForEdit}
                   tab={activityTab}
                   onTabChange={setActivityTab}
                   onClose={handleCloseSlot}

@@ -8,6 +8,8 @@ import {
   PencilEdit02Icon,
   ArrowLeft01Icon,
   ArrowRight01Icon,
+  Search01Icon,
+  Cancel01Icon,
 } from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/shared/lib/utils';
@@ -55,75 +57,29 @@ const STANDARD_GOAL_FALLBACKS = {
   MT11: 'Trẻ thích nghe hát, vận động theo nhạc và tham gia tạo hình đơn giản.',
 };
 
-// Format timestamp/Date to HH:mm - DD/MM/YYYY chuẩn UX
+// Format timestamp/Date to HH:mm:ss chuẩn UX đồng bộ hệ thống
 const formatDateTime = (val) => {
-  if (!val) {
-    const now = new Date();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const year = now.getFullYear();
-    return `${hours}:${minutes} - ${day}/${month}/${year}`;
-  }
-
-  // 1. Đã đúng định dạng chuẩn "HH:mm - DD/MM/YYYY"
-  if (typeof val === 'string' && /^\d{2}:\d{2}\s*-\s*\d{2}\/\d{2}\/\d{4}$/.test(val)) {
-    return val;
-  }
-
-  // 2. Chuỗi ngày định dạng Việt Nam "DD/MM/YYYY" (ví dụ: "13/10/2026")
-  if (typeof val === 'string') {
-    const vnMatch = val.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
-    if (vnMatch) {
-      const now = new Date();
-      const day = vnMatch[1].padStart(2, '0');
-      const month = vnMatch[2].padStart(2, '0');
-      const year = vnMatch[3];
-      const hours = vnMatch[4] ? vnMatch[4].padStart(2, '0') : String(now.getHours()).padStart(2, '0');
-      const minutes = vnMatch[5] ? vnMatch[5].padStart(2, '0') : String(now.getMinutes()).padStart(2, '0');
-      return `${hours}:${minutes} - ${day}/${month}/${year}`;
-    }
-  }
-
-  // 3. Đối tượng Date (kiểm tra tính hợp lệ tránh Invalid Date / NaN)
-  if (val instanceof Date) {
-    if (!isNaN(val.getTime())) {
-      const hours = String(val.getHours()).padStart(2, '0');
-      const minutes = String(val.getMinutes()).padStart(2, '0');
-      const day = String(val.getDate()).padStart(2, '0');
-      const month = String(val.getMonth() + 1).padStart(2, '0');
-      const year = val.getFullYear();
-      return `${hours}:${minutes} - ${day}/${month}/${year}`;
-    }
-    const now = new Date();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const year = now.getFullYear();
-    return `${hours}:${minutes} - ${day}/${month}/${year}`;
-  }
-
-  // 4. Thử parse chuỗi chuẩn ISO (YYYY-MM-DD...)
-  const d = new Date(val);
-  if (!isNaN(d.getTime())) {
+  const formatTime = (d) => {
     const hours = String(d.getHours()).padStart(2, '0');
     const minutes = String(d.getMinutes()).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = d.getFullYear();
-    return `${hours}:${minutes} - ${day}/${month}/${year}`;
+    const seconds = String(d.getSeconds()).padStart(2, '0');
+    return `${hours}:${minutes}:${seconds}`;
+  };
+
+  if (!val) {
+    return formatTime(new Date());
   }
 
-  // Fallback về thời gian hiện tại
-  const now = new Date();
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const year = now.getFullYear();
-  return `${hours}:${minutes} - ${day}/${month}/${year}`;
+  if (val instanceof Date && !isNaN(val.getTime())) {
+    return formatTime(val);
+  }
+
+  const d = new Date(val);
+  if (!isNaN(d.getTime())) {
+    return formatTime(d);
+  }
+
+  return formatTime(new Date());
 };
 
 const normalizeGoalCode = (code) => {
@@ -137,6 +93,19 @@ const normalizeGoalCode = (code) => {
     }
   }
   return raw.replace(/[^A-Z0-9]/g, '');
+};
+
+export const formatGoalCode = (code) => {
+  if (!code) return '';
+  const raw = String(code).trim().toUpperCase();
+  const digitsMatch = raw.match(/\d+/);
+  if (digitsMatch) {
+    const num = parseInt(digitsMatch[0], 10);
+    if (!isNaN(num)) {
+      return `MT ${num < 10 ? '0' + num : num}`;
+    }
+  }
+  return raw;
 };
 
 const cleanDisplayGoalTitle = (g) => {
@@ -204,6 +173,18 @@ const cleanDisplayGoalTitle = (g) => {
   return STANDARD_GOAL_FALLBACKS[norm] || title;
 };
 
+// Chuẩn hóa tiếng Việt không dấu để tìm kiếm không phân biệt chữ hoa, chữ thường và dấu tiếng Việt
+const removeVietnameseTones = (str) => {
+  if (!str) return '';
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .toLowerCase()
+    .trim();
+};
+
 export function CurriculumSingleGoalDetailPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -221,11 +202,17 @@ export function CurriculumSingleGoalDetailPage() {
     return localStorage.getItem(`sorak_goal_bank_${yearId}_${ageGroup}_status`) || 'DRAFT';
   });
 
+  // Tìm kiếm và phân trang nội dung giáo dục
+  const [contentSearchQuery, setContentSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10); // 10, 20, 50 nội dung / trang
+
   const isBankPublished = bankStatus === 'PUBLISHED';
 
   // Modals / Drawers
   const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [contentToDelete, setContentToDelete] = useState(null);
 
   // Fetch single goal detail and its contents
   const fetchGoalData = useCallback(async () => {
@@ -240,17 +227,21 @@ export function CurriculumSingleGoalDetailPage() {
       const fetchedGoal = data.goal
         ? {
             ...data.goal,
+            code: formatGoalCode(data.goal.code),
             title: cleanDisplayGoalTitle(data.goal),
             domainLabel: DOMAIN_LABELS[data.goal.domain] || data.goal.domainLabel || 'Phát triển thể chất',
           }
         : null;
       setGoal(fetchedGoal);
-      setAllGoals(data.allGoals || []);
+      setAllGoals((data.allGoals || []).map((g) => ({ ...g, code: formatGoalCode(g.code) })));
       if (fetchedGoal) {
         setActiveGoal(fetchedGoal);
       }
 
-      const contentList = data.contents || [];
+      const contentList = (data.contents || []).map((c, idx) => ({
+        ...c,
+        id: c.id || c.public_id || (c.content_id ? c.content_id.toString() : `ec-loaded-${idx}`),
+      }));
       setContents(contentList);
       setOriginalContents(JSON.parse(JSON.stringify(contentList)));
 
@@ -315,7 +306,7 @@ export function CurriculumSingleGoalDetailPage() {
       }
 
       // Do nothing if modal or drawer is open
-      if (isEditDrawerOpen || isDeleteDialogOpen) {
+      if (isEditDrawerOpen || isDeleteDialogOpen || contentToDelete) {
         return;
       }
 
@@ -336,7 +327,7 @@ export function CurriculumSingleGoalDetailPage() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [handlePrevGoal, handleNextGoal, prevGoal, nextGoal, isEditDrawerOpen, isDeleteDialogOpen]);
+  }, [handlePrevGoal, handleNextGoal, prevGoal, nextGoal, isEditDrawerOpen, isDeleteDialogOpen, contentToDelete]);
 
   // Check unsaved changes
   const hasChanges = useMemo(() => {
@@ -355,6 +346,16 @@ export function CurriculumSingleGoalDetailPage() {
 
     const validContents = contents.filter((c) => c.title && c.title.trim() !== '');
 
+    // Kiểm tra trùng lặp ngay trên client
+    const normalized = validContents.map((c) => c.title.trim().replace(/\s+/g, ' ').toLowerCase());
+    const hasLocalDup = normalized.some((t, idx) => normalized.indexOf(t) !== idx);
+    if (hasLocalDup) {
+      toast.error('Nội dung giáo dục này đã tồn tại trong khung giáo dục. Vui lòng nhập nội dung khác.', {
+        id: 'dup-content-error',
+      });
+      return;
+    }
+
     const timer = setTimeout(async () => {
       try {
         const res = await curriculumApi.updateGoalContents({
@@ -369,11 +370,57 @@ export function CurriculumSingleGoalDetailPage() {
         setLastSavedTime(new Date());
       } catch (err) {
         console.warn('Auto-save contents warning:', err);
+        const errMsg = err?.response?.data?.message || err?.message;
+        if (errMsg) {
+          toast.error(errMsg, { id: 'auto-save-content-error' });
+        }
       }
     }, 700);
 
     return () => clearTimeout(timer);
   }, [contents, hasChanges, goal, isBankPublished, isLoading, yearId, ageGroup]);
+
+  // Filter educational contents based on search query (không phân biệt chữ hoa, chữ thường và dấu tiếng Việt)
+  const filteredContents = useMemo(() => {
+    const q = removeVietnameseTones(contentSearchQuery);
+    const enriched = contents.map((item, idx) => ({
+      ...item,
+      originalIndex: idx + 1,
+      formattedIndex: String(idx + 1).padStart(2, '0'),
+    }));
+
+    if (!q) return enriched;
+
+    return enriched.filter((item) => {
+      const matchIndex =
+        String(item.originalIndex) === q ||
+        item.formattedIndex === q ||
+        `#${item.originalIndex}` === q;
+      const matchTitle = removeVietnameseTones(item.title).includes(q);
+      return matchIndex || matchTitle;
+    });
+  }, [contents, contentSearchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredContents.length / pageSize));
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+
+  const displayedContents = useMemo(() => {
+    const start = (safeCurrentPage - 1) * pageSize;
+    return filteredContents.slice(start, start + pageSize);
+  }, [filteredContents, safeCurrentPage, pageSize]);
+
+  const startIndex = filteredContents.length === 0 ? 0 : (safeCurrentPage - 1) * pageSize + 1;
+  const endIndex = Math.min(safeCurrentPage * pageSize, filteredContents.length);
+
+  const handleSearchChange = (val) => {
+    setContentSearchQuery(val);
+    setCurrentPage(1);
+  };
+
+  const handlePageSizeChange = (newSize) => {
+    setPageSize(newSize);
+    setCurrentPage(1);
+  };
 
   // Add new educational content
   const handleAddContent = () => {
@@ -385,29 +432,43 @@ export function CurriculumSingleGoalDetailPage() {
       id: `ec-${Date.now()}`,
       title: '',
     };
-    setContents((prev) => [...prev, newItem]);
+    if (contentSearchQuery) {
+      setContentSearchQuery('');
+    }
+    setContents((prev) => {
+      const next = [...prev, newItem];
+      const nextTotalPages = Math.max(1, Math.ceil(next.length / pageSize));
+      setCurrentPage(nextTotalPages);
+      return next;
+    });
   };
 
   // Update content title inline
-  const handleUpdateContentTitle = (idx, newTitle) => {
+  const handleUpdateContentTitle = (contentId, newTitle) => {
     if (isBankPublished) {
       toast.warning('Ngân hàng mục tiêu đã công bố. Vui lòng gỡ công bố để chỉnh sửa.');
       return;
     }
     setContents((prev) => {
-      const updated = [...prev];
-      updated[idx] = { ...updated[idx], title: newTitle };
-      return updated;
+      return prev.map((item) => (item.id === contentId ? { ...item, title: newTitle } : item));
     });
   };
 
-  // Delete content
-  const handleDeleteContent = (idx) => {
+  // Request delete content (Opens confirmation dialog)
+  const handleRequestDeleteContent = (item) => {
     if (isBankPublished) {
       toast.warning('Ngân hàng mục tiêu đã công bố. Vui lòng gỡ công bố để xóa nội dung giáo dục.');
       return;
     }
-    setContents((prev) => prev.filter((_, i) => i !== idx));
+    setContentToDelete(item);
+  };
+
+  // Confirm delete content
+  const handleConfirmDeleteContent = () => {
+    if (!contentToDelete) return;
+    setContents((prev) => prev.filter((item) => item.id !== contentToDelete.id));
+    setContentToDelete(null);
+    toast.success('Đã xóa nội dung giáo dục thành công.');
   };
 
   // Save educational contents
@@ -420,6 +481,16 @@ export function CurriculumSingleGoalDetailPage() {
 
     // Filter out completely empty items
     const validContents = contents.filter((c) => c.title && c.title.trim() !== '');
+
+    // Check duplicate content titles locally
+    const normalized = validContents.map((c) => c.title.trim().replace(/\s+/g, ' ').toLowerCase());
+    const hasLocalDup = normalized.some((t, idx) => normalized.indexOf(t) !== idx);
+    if (hasLocalDup) {
+      toast.error('Nội dung giáo dục này đã tồn tại trong khung giáo dục. Vui lòng nhập nội dung khác.', {
+        id: 'dup-content-error',
+      });
+      return;
+    }
 
     try {
       const res = await curriculumApi.updateGoalContents({
@@ -436,7 +507,8 @@ export function CurriculumSingleGoalDetailPage() {
       toast.success('Đã lưu nội dung giáo dục thành công!');
     } catch (err) {
       console.error('Failed to save contents:', err);
-      toast.error('Lỗi khi lưu nội dung giáo dục');
+      const errMsg = err?.response?.data?.message || err?.message || 'Lỗi khi lưu nội dung giáo dục';
+      toast.error(errMsg);
     }
   };
 
@@ -675,31 +747,63 @@ export function CurriculumSingleGoalDetailPage() {
 
         {/* Card 2: Danh sách nội dung giáo dục */}
         <div className="border border-border bg-card p-5 space-y-4 shadow-2xs">
-          <div className="flex items-center justify-between pb-2 border-b border-border/60">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-border/60">
             <div className="flex flex-col gap-0.5">
-              <h2 className="text-[14.5px] font-semibold text-foreground">
-                {t('planning.educationalContentListTitle', 'Danh sách nội dung giáo dục')}
+              <h2 className="text-[14.5px] font-semibold text-foreground flex items-center gap-2">
+                <span>{t('planning.educationalContentListTitle', 'Danh sách nội dung giáo dục')}</span>
+                <span className="text-[11.5px] font-mono font-medium px-2 py-0.5 bg-muted text-muted-foreground border border-border">
+                  {contents.length}
+                </span>
               </h2>
               <p className="text-[12px] text-muted-foreground">
                 {t('planning.educationalContentListSubtitle', 'Thiết lập các nội dung giáo dục cụ thể theo chuẩn Thông tư 51/BGDĐT.')}
               </p>
             </div>
 
-            <Button
-              type="button"
-              onClick={handleAddContent}
-              disabled={isBankPublished}
-              className={cn(
-                'h-8 px-3.5 text-[12.5px] font-medium rounded-none flex items-center gap-1.5 shadow-none shrink-0 transition-colors',
-                isBankPublished
-                  ? 'bg-[#1447e6]/50 opacity-50 cursor-not-allowed text-white'
-                  : 'bg-[#1447e6] hover:bg-[#1447e6]/90 text-white cursor-pointer',
-              )}
-              title={isBankPublished ? 'Vui lòng gỡ công bố tại ngân hàng mục tiêu để thêm nội dung' : t('curriculum.addEducationalContent', 'Thêm nội dung giáo dục')}
-            >
-              <HugeiconsIcon icon={PlusSignIcon} size={14} />
-              <span>{t('curriculum.addEducationalContent', 'Thêm nội dung giáo dục')}</span>
-            </Button>
+            <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+              {/* Ô tìm kiếm nội dung giáo dục */}
+              <div className="relative flex items-center">
+                <HugeiconsIcon
+                  icon={Search01Icon}
+                  size={14}
+                  className="absolute left-2.5 text-muted-foreground pointer-events-none"
+                />
+                <input
+                  type="text"
+                  value={contentSearchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  placeholder="Tìm kiếm mã STT, nội dung..."
+                  className="h-8 pl-8 pr-7 w-48 sm:w-60 text-[12.5px] bg-background border border-border rounded-none focus:outline-none focus:border-[#1447e6] transition-colors placeholder:text-muted-foreground/60"
+                />
+                {contentSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => handleSearchChange('')}
+                    className="absolute right-2 text-muted-foreground hover:text-foreground cursor-pointer"
+                    title="Xóa tìm kiếm"
+                  >
+                    <HugeiconsIcon icon={Cancel01Icon} size={12} />
+                  </button>
+                )}
+              </div>
+
+              {/* Nút Thêm nội dung giáo dục */}
+              <Button
+                type="button"
+                onClick={handleAddContent}
+                disabled={isBankPublished}
+                className={cn(
+                  'h-8 px-3.5 text-[12.5px] font-medium rounded-none flex items-center gap-1.5 shadow-none shrink-0 transition-colors',
+                  isBankPublished
+                    ? 'bg-[#1447e6]/50 opacity-50 cursor-not-allowed text-white'
+                    : 'bg-[#1447e6] hover:bg-[#1447e6]/90 text-white cursor-pointer',
+                )}
+                title={isBankPublished ? 'Vui lòng gỡ công bố tại ngân hàng mục tiêu để thêm nội dung' : t('curriculum.addEducationalContent', 'Thêm nội dung giáo dục')}
+              >
+                <HugeiconsIcon icon={PlusSignIcon} size={14} />
+                <span>{t('curriculum.addEducationalContent', 'Thêm nội dung giáo dục')}</span>
+              </Button>
+            </div>
           </div>
 
           {/* Sub-items List */}
@@ -712,25 +816,38 @@ export function CurriculumSingleGoalDetailPage() {
               <div className="py-8 text-center text-[13px] text-muted-foreground">
                 Chưa có nội dung giáo dục
               </div>
+            ) : filteredContents.length === 0 ? (
+              <div className="py-10 text-center space-y-2">
+                <p className="text-[13px] text-muted-foreground">
+                  Không tìm thấy nội dung giáo dục nào khớp với từ khóa "{contentSearchQuery}".
+                </p>
+                <button
+                  type="button"
+                  onClick={() => handleSearchChange('')}
+                  className="text-[12.5px] text-[#1447e6] hover:underline cursor-pointer font-medium"
+                >
+                  Xóa bộ lọc tìm kiếm
+                </button>
+              </div>
             ) : (
-              contents.map((item, idx) => {
+              displayedContents.map((item) => {
                 return (
                   <div
-                    key={item.id || idx}
+                    key={item.id}
                     className="p-3.5 bg-card border border-border rounded-none transition-all group shadow-2xs hover:border-border/90 hover:bg-muted/10"
                   >
                     <div className="flex items-center justify-between gap-3">
                       {/* Left: STT trung tính + Input tên nội dung giáo dục */}
                       <div className="flex items-center gap-3 flex-1 min-w-0">
                         <span className="size-7 flex items-center justify-center text-[12px] font-mono font-medium text-muted-foreground bg-muted border border-border shrink-0">
-                          {String(idx + 1).padStart(2, '0')}
+                          {item.formattedIndex || String(item.originalIndex).padStart(2, '0')}
                         </span>
                         <input
                           type="text"
                           value={item.title || ''}
                           readOnly={isBankPublished}
-                          onChange={(e) => handleUpdateContentTitle(idx, e.target.value)}
-                          placeholder={`Nhập tên nội dung giáo dục ${idx + 1}...`}
+                          onChange={(e) => handleUpdateContentTitle(item.id, e.target.value)}
+                          placeholder={`Nhập tên nội dung giáo dục ${item.originalIndex}...`}
                           className={cn(
                             'flex-1 h-9 px-3 bg-background border border-border text-[13.5px] font-medium text-foreground outline-none transition-colors',
                             isBankPublished ? 'cursor-default bg-muted/20 text-muted-foreground' : 'focus:border-primary',
@@ -743,7 +860,7 @@ export function CurriculumSingleGoalDetailPage() {
                         <button
                           type="button"
                           disabled={isBankPublished}
-                          onClick={() => handleDeleteContent(idx)}
+                          onClick={() => handleRequestDeleteContent(item)}
                           className={cn(
                             'size-8 flex items-center justify-center transition-colors rounded-none border border-transparent',
                             isBankPublished
@@ -762,19 +879,73 @@ export function CurriculumSingleGoalDetailPage() {
               })
             )}
           </div>
+
+          {/* Pagination Controls */}
+          {filteredContents.length > 0 && (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-border/60 text-[12.5px] text-muted-foreground select-none">
+              {/* Range & Total info */}
+              <div className="flex items-center gap-3">
+                <span>
+                  Hiển thị <strong className="font-semibold text-foreground font-mono">{startIndex}–{endIndex}</strong> trên <strong className="font-semibold text-foreground font-mono">{filteredContents.length}</strong> nội dung
+                  {filteredContents.length !== contents.length && (
+                    <span className="text-muted-foreground/70"> (tổng {contents.length})</span>
+                  )}
+                </span>
+
+                {/* Page Size Selector */}
+                <div className="flex items-center gap-1.5 pl-3 border-l border-border/60">
+                  <span className="text-[12px]">Số dòng:</span>
+                  <select
+                    value={pageSize}
+                    onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                    className="h-7 px-2 text-[12px] bg-background border border-border rounded-none text-foreground focus:outline-none focus:border-[#1447e6] cursor-pointer"
+                  >
+                    <option value={10}>10 / trang</option>
+                    <option value={20}>20 / trang</option>
+                    <option value={50}>50 / trang</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Navigation buttons: Trang trước / số trang / Trang sau */}
+              <div className="flex items-center gap-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={safeCurrentPage <= 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className="h-7 px-2.5 text-[12px] rounded-none cursor-pointer disabled:cursor-not-allowed"
+                >
+                  <HugeiconsIcon icon={ArrowLeft01Icon} size={13} className="mr-1" />
+                  <span>Trang trước</span>
+                </Button>
+
+                <div className="px-2.5 text-[12px] font-mono text-foreground font-medium">
+                  Trang {safeCurrentPage} / {totalPages}
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={safeCurrentPage >= totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  className="h-7 px-2.5 text-[12px] rounded-none cursor-pointer disabled:cursor-not-allowed"
+                >
+                  <span>Trang sau</span>
+                  <HugeiconsIcon icon={ArrowRight01Icon} size={13} className="ml-1" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Footer: Thời gian cập nhật (Tự động lưu) */}
+        {/* Footer: Trạng thái tự động lưu đồng bộ hệ thống */}
         <div className="flex items-center justify-end pt-3 pb-6">
-          <div
-            className="text-[12.5px] text-muted-foreground select-none"
-            title="Mọi nội dung giáo dục được lưu tự động lên hệ thống"
-          >
-            <span>Thời gian cập nhật: </span>
-            <span className="font-mono font-medium text-foreground">
-              {updatedAt}
-            </span>
-          </div>
+          <span className="text-[11.5px] text-muted-foreground/70 select-none font-sans tracking-tight">
+            Đã lưu lúc <span className="font-mono text-muted-foreground font-medium">{updatedAt}</span>
+          </span>
         </div>
       </div>
 
@@ -795,33 +966,100 @@ export function CurriculumSingleGoalDetailPage() {
           onClick={() => setIsDeleteDialogOpen(false)}
         >
           <div
-            className="w-full max-w-[420px] bg-card border border-border p-5 shadow-2xl rounded-none space-y-4 text-foreground select-none"
+            className="w-full max-w-[440px] bg-card border border-border p-5 shadow-2xl rounded-none space-y-4 text-foreground select-none"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="space-y-1.5">
-              <h3 className="text-[16px] font-semibold text-foreground">
-                Xác nhận xóa mục tiêu {goal?.code}?
+            <div className="space-y-1.5 pb-0">
+              <h3 className="text-[16px] font-semibold text-foreground tracking-tight">
+                Xác nhận xóa mục tiêu giáo dục
               </h3>
-              <p className="text-[13px] text-muted-foreground leading-relaxed">
-                Mục tiêu "{goal?.title}" và toàn bộ danh sách nội dung giáo dục liên quan sẽ bị xóa khỏi ngân hàng mục tiêu. Thao tác này không thể hoàn tác.
+              <p className="text-[12.5px] text-muted-foreground leading-relaxed pt-1">
+                Mục tiêu giáo dục và toàn bộ danh sách nội dung liên quan sẽ bị xóa khỏi ngân hàng mục tiêu. Thao tác này không thể hoàn tác.
               </p>
             </div>
 
-            <div className="flex items-center justify-end gap-2.5 pt-2">
+            {goal && (
+              <div className="p-3 bg-muted/20 border border-border/70 rounded-none space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="px-1.5 py-0.5 font-mono text-[11px] font-semibold bg-muted text-foreground border border-border/60">
+                    {goal.code}
+                  </span>
+                  {goal.domainLabel && (
+                    <span className="text-[11.5px] text-muted-foreground font-medium">
+                      {goal.domainLabel}
+                    </span>
+                  )}
+                </div>
+                <p className="text-[13px] text-foreground font-normal leading-relaxed">
+                  {goal.title}
+                </p>
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-border/60">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setIsDeleteDialogOpen(false)}
                 className="h-8 px-3.5 text-[12.5px] rounded-none border border-border cursor-pointer shadow-none"
               >
-                Hủy
+                Hủy bỏ
               </Button>
               <Button
                 type="button"
                 onClick={handleConfirmDeleteGoal}
                 className="h-8 px-4 text-[12.5px] font-medium rounded-none bg-destructive hover:bg-destructive/90 text-white cursor-pointer shadow-none"
               >
-                Xóa mục tiêu
+                Xác nhận xóa
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dialog: Xác nhận xóa nội dung giáo dục */}
+      {contentToDelete && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[1px] animate-in fade-in-0 duration-150"
+          onClick={() => setContentToDelete(null)}
+        >
+          <div
+            className="w-full max-w-[440px] bg-card border border-border p-5 shadow-2xl rounded-none space-y-4 text-foreground select-none"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="space-y-1.5 pb-0">
+              <h3 className="text-[16px] font-semibold text-foreground tracking-tight">
+                Xác nhận xóa nội dung giáo dục
+              </h3>
+              <p className="text-[12.5px] text-muted-foreground leading-relaxed pt-1">
+                Nội dung giáo dục sẽ bị gỡ bỏ khỏi mục tiêu {goal?.code}. Thao tác này không thể hoàn tác.
+              </p>
+            </div>
+
+            <div className="p-3 bg-muted/20 border border-border/70 rounded-none space-y-1.5">
+              <span className="px-1.5 py-0.5 font-mono text-[11px] font-semibold bg-muted text-muted-foreground border border-border/60">
+                STT {contentToDelete.formattedIndex || contentToDelete.originalIndex || '01'}
+              </span>
+              <p className="text-[13px] text-foreground font-normal leading-relaxed">
+                {contentToDelete.title || 'Nội dung giáo dục'}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-border/60">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setContentToDelete(null)}
+                className="h-8 px-3.5 text-[12.5px] rounded-none border border-border cursor-pointer shadow-none"
+              >
+                Hủy bỏ
+              </Button>
+              <Button
+                type="button"
+                onClick={handleConfirmDeleteContent}
+                className="h-8 px-4 text-[12.5px] font-medium rounded-none bg-destructive hover:bg-destructive/90 text-white cursor-pointer shadow-none"
+              >
+                Xác nhận xóa
               </Button>
             </div>
           </div>

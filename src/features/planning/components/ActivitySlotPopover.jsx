@@ -21,6 +21,19 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/shared/lib/utils';
 
+const formatGoalCode = (code) => {
+  if (!code) return '';
+  const raw = String(code).trim().toUpperCase();
+  const digitsMatch = raw.match(/\d+/);
+  if (digitsMatch) {
+    const num = parseInt(digitsMatch[0], 10);
+    if (!isNaN(num)) {
+      return `MT ${num < 10 ? '0' + num : num}`;
+    }
+  }
+  return raw;
+};
+
 const ROUTINE_SLOT_NAMES = {
   ARRIVAL_PLAY: 'Đón trẻ, chơi',
   MORNING_EXERCISE: 'Thể dục sáng',
@@ -380,10 +393,16 @@ export function ActivitySlotPopover({
                     {(itemSlot.goalCode || itemSlot.goalTitle) && (
                       <div className="flex items-baseline gap-2">
                         <span className="text-muted-foreground min-w-[85px] shrink-0">Mục tiêu:</span>
-                        <span className="text-foreground font-medium">
-                          {itemSlot.goalCode}
-                          {itemSlot.goalTitle ? ` – ${itemSlot.goalTitle}` : ''}
-                        </span>
+                        <div className="flex items-baseline gap-2 flex-wrap">
+                          {itemSlot.goalCode && (
+                            <span className="px-2 py-0.5 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-mono text-[11px] font-semibold shrink-0 select-none">
+                              {formatGoalCode(itemSlot.goalCode)}
+                            </span>
+                          )}
+                          <span className="text-foreground font-medium">
+                            {itemSlot.goalTitle || ''}
+                          </span>
+                        </div>
                       </div>
                     )}
 
@@ -463,8 +482,8 @@ export function ActivitySlotPopover({
             })}
           </div>
 
-          {/* Nút Thêm hoạt động vào slot này (chỉ khi ngày không bị khóa và không ở chế độ readOnly) */}
-          {onAddActivity && !day?.isLocked && !readOnly && (
+          {/* Nút Thêm hoạt động vào slot này (chỉ khi slot chưa có hoạt động, ngày không bị khóa và không ở chế độ readOnly) */}
+          {onAddActivity && !day?.isLocked && !readOnly && displaySlots.length === 0 && (
             <button
               type="button"
               onClick={() => onAddActivity(slot, day)}

@@ -1,6 +1,5 @@
 export { CurriculumFrameworkPage } from './CurriculumFrameworkPage';
 export { CurriculumThemeDetailPage } from './CurriculumThemeDetailPage';
-export { CurriculumSingleThemeDetailPage } from './CurriculumSingleThemeDetailPage';
 export { CurriculumGoalDetailPage } from './CurriculumGoalDetailPage';
 export { CurriculumSingleGoalDetailPage } from './CurriculumSingleGoalDetailPage';
 export { curriculumApi } from './curriculum.api';
