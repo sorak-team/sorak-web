@@ -270,7 +270,37 @@ export const classesApi = {
     const response = await apiClient.post(`/classes/${classId}/students/${studentId}/graduate`);
     return response.data?.data || response.data;
   },
+
+  /**
+   * Xuất danh sách tất cả các lớp ra file Excel
+   */
+  async exportClassesExcel(params = {}) {
+    const response = await apiClient.get('/classes/export/excel', {
+      params,
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+
+  /**
+   * Xuất sổ danh sách học sinh của một lớp ra Excel
+   */
+  async exportClassRosterExcel(classId) {
+    const response = await apiClient.get(`/classes/${classId}/export/roster`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+
+  /**
+   * Lấy URL mở tab in ấn HTML danh sách học sinh của một lớp
+   */
+  getClassRosterPrintUrl(classId) {
+    const baseURL = import.meta.env.VITE_API_URL || '/api';
+    return `${baseURL}/classes/${classId}/export/roster/print`;
+  },
 };
+
 
 
 

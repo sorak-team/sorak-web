@@ -57,7 +57,7 @@ export function generateTeacherCode(existingTeachers = [], joinDate) {
   const prefix = `CB${yearSuffix}`;
 
   let maxSeq = 0;
-  const regex = new RegExp(`^${prefix}(\\d{3})$`, 'i');
+  const regex = new RegExp(`^${prefix}(\\d{3,})$`, 'i');
   for (const t of existingTeachers) {
     const code = typeof t === 'string' ? t : (t?.employeeCode || t?.code || t?.username);
     const match = String(code || '').trim().match(regex);
@@ -76,12 +76,13 @@ export function generateTeacherCode(existingTeachers = [], joinDate) {
 export const initialTeachers = [];
 
 export function transformBackendTeacher(t) {
+  const isDeleted = Boolean(t.deletedAt || t.deleted_at);
   const status =
-    t.workStatus === 'WORKING'
-      ? 'active'
+    isDeleted || t.workStatus === 'RESIGNED'
+      ? 'resigned'
       : t.workStatus === 'LEAVE_OF_ABSENCE'
         ? 'on_leave'
-        : 'resigned';
+        : 'active';
 
   const fullName = t.fullName || t.name || '';
   const avatar = getTeacherAvatarUrl(t.avatarUrl || t.account?.avatarUrl || t.avatar, fullName);
@@ -94,6 +95,9 @@ export function transformBackendTeacher(t) {
     role: t.position || 'Giáo viên',
     position: t.position || 'Giáo viên',
     status,
+    isDeleted,
+    deletedAt: t.deletedAt || t.deleted_at || null,
+    updatedAt: t.updatedAt || t.updated_at || null,
     citizenId: t.citizenId || '',
     address: t.address || '',
     email: t.email || t.account?.email || '',
@@ -181,7 +185,7 @@ export const useTeacherStore = create((set, get) => ({
   fetchTeachers: async () => {
     set({ isLoading: true, error: null });
     try {
-      const res = await teachersApi.list({ limit: 100 });
+      const res = await teachersApi.list({ limit: 100, includeDeleted: true });
       if (res && Array.isArray(res.items)) {
         const transformed = res.items.map(transformBackendTeacher);
         set({
@@ -273,27 +277,15 @@ export const useTeacherStore = create((set, get) => ({
     });
 
     const created = res?.data || res;
-    const teacherData =
-      created && (created.id || created.publicId)
-        ? transformBackendTeacher(created)
-        : {
-            ...newTeacher,
-            id: String(Date.now()),
-            employeeCode: newTeacher.employeeCode || `CB${String(Date.now()).slice(-4)}`,
-            role: newTeacher.role || 'Giáo viên',
-            avatar: getTeacherAvatarUrl(newTeacher.avatar, newTeacher.fullName),
-          };
-
-    set((state) => ({
-      teachers: [teacherData, ...state.teachers.filter((t) => t.id !== teacherData.id)],
-      isDrawerOpen: false,
-    }));
-    return teacherData;
+    await get().fetchTeachers();
+    set({ isDrawerOpen: false });
+    return created && (created.id || created.publicId) ? transformBackendTeacher(created) : created;
   },
 
   updateTeacher: async (id, updatedFields) => {
     const payload = {};
     if (updatedFields.fullName) payload.fullName = updatedFields.fullName;
+    if (updatedFields.joinDate) payload.startDate = toIsoDate(updatedFields.joinDate);
     if (updatedFields.dob) payload.dateOfBirth = toIsoDate(updatedFields.dob);
     if (updatedFields.gender) payload.gender = updatedFields.gender === 'Nam' ? 'MALE' : 'FEMALE';
     if (updatedFields.role) payload.position = updatedFields.role;
@@ -329,11 +321,11 @@ export const useTeacherStore = create((set, get) => ({
 
   deleteTeacher: async (id) => {
     await teachersApi.delete(id);
-    set((state) => ({
-      teachers: state.teachers.filter((t) => t.id !== id && t.publicId !== id),
+    await get().fetchTeachers();
+    set({
       isDeleteDialogOpen: false,
       deletingTeacherId: null,
-    }));
+    });
   },
 
   assignClass: async (teacherId, payload) => {

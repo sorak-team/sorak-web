@@ -74,6 +74,36 @@ export function StudentDrawer({
 
   // Active form tab: 'basic' | 'parents' | 'health'
   const [activeTab, setActiveTab] = useState('basic');
+  const [concurrencyConflict, setConcurrencyConflict] = useState(false);
+
+  // Helper validation functions for spaces and dates
+  const hasConsecutiveSpaces = (str) => typeof str === 'string' && /\s{2,}/.test(str);
+
+  const parseDobDate = (dobStr) => {
+    if (!dobStr || !dobStr.trim()) return null;
+    const s = dobStr.trim();
+    if (s.includes('/')) {
+      const parts = s.split('/');
+      if (parts.length === 3) {
+        const d = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        const y = parseInt(parts[2], 10);
+        if (!isNaN(d) && !isNaN(m) && !isNaN(y)) {
+          return new Date(y, m, d);
+        }
+      }
+    }
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
+  const isDobInFuture = (dobStr) => {
+    const d = parseDobDate(dobStr);
+    if (!d) return false;
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    return d.getTime() > today.getTime();
+  };
 
   // Student Basic Info
   const [studentCode, setStudentCode] = useState('');
@@ -269,6 +299,7 @@ export function StudentDrawer({
           fullName: '',
           relationship: 'Bố',
           phone: '',
+          citizenId: '',
         },
       ]);
 
@@ -321,6 +352,10 @@ export function StudentDrawer({
 
   // Dynamic Parent Handlers
   const handleAddParent = () => {
+    if (parents.length >= 2) {
+      toast.error('Mỗi học sinh chỉ có tối đa 2 phụ huynh/người giám hộ.');
+      return;
+    }
     setParents((prev) => [
       ...prev,
       {
@@ -334,6 +369,10 @@ export function StudentDrawer({
   };
 
   const handleRemoveParent = (indexToRemove) => {
+    if (parents.length <= 1) {
+      toast.error('Mỗi học sinh phải có tối thiểu 1 phụ huynh/người giám hộ.');
+      return;
+    }
     setParents((prev) => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
@@ -347,7 +386,7 @@ export function StudentDrawer({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isTeacher && drawerMode === 'edit') {
+    if (isTeacher && drawerMode === 'edit' && activeTab !== 'health') {
       toast.error('Giáo viên không có quyền chỉnh sửa hồ sơ học sinh hoặc thông tin phụ huynh.');
       return;
     }
@@ -360,8 +399,18 @@ export function StudentDrawer({
       setActiveTab('basic');
       return;
     }
+    if (hasConsecutiveSpaces(fullName)) {
+      toast.error('Họ tên không được chứa nhiều khoảng trắng liên tiếp.');
+      setActiveTab('basic');
+      return;
+    }
 
     if (dob && dob.trim()) {
+      if (isDobInFuture(dob)) {
+        toast.error('Ngày sinh không được lớn hơn ngày hiện tại.');
+        setActiveTab('basic');
+        return;
+      }
       let yr;
       if (dob.includes('/')) {
         const parts = dob.split('/');
@@ -391,43 +440,68 @@ export function StudentDrawer({
       }
     }
 
-    const validParents = parents
-      .map((p) => ({
-        fullName: p.fullName?.trim() || '',
-        relationship: p.relationship?.trim() || 'Người giám hộ',
-        phone: p.phone?.trim() || '',
-        citizenId: p.citizenId?.trim() || '',
-      }))
-      .filter((p) => p.fullName || p.phone || p.citizenId);
+    if (!parents || parents.length === 0) {
+      toast.error('Vui lòng bổ sung ít nhất một phụ huynh/người giám hộ trước khi tạo học sinh.');
+      setActiveTab('parents');
+      return;
+    }
+    if (parents.length > 2) {
+      toast.error('Mỗi học sinh chỉ có tối đa 2 phụ huynh/người giám hộ.');
+      setActiveTab('parents');
+      return;
+    }
 
-    // Validate parent info only if user actually added a parent
-    if (validParents.length > 0) {
-      for (const p of validParents) {
-        if (!p.fullName) {
-          toast.error(t('student.parentNameRequired', 'Vui lòng nhập họ và tên phụ huynh'));
-          setActiveTab('parents');
-          return;
-        }
-        if (!p.phone || !/^[0-9]{9,15}$/.test(p.phone)) {
-          toast.error(t('student.parentPhoneInvalid', 'Số điện thoại phụ huynh phải từ 9 đến 15 chữ số'));
-          setActiveTab('parents');
-          return;
-        }
-        if (p.citizenId && !/^[0-9]{9,12}$/.test(p.citizenId)) {
-          toast.error('Số CCCD của phụ huynh phải có từ 9 đến 12 chữ số');
-          setActiveTab('parents');
-          return;
-        }
-      }
+    const validParents = [];
+    for (let i = 0; i < parents.length; i++) {
+      const p = parents[i];
+      const pName = (p.fullName || '').trim();
+      const pRel = (p.relationship || '').trim();
+      const pPhone = (p.phone || '').trim();
+      const pCccd = (p.citizenId || '').trim();
 
-      // Check duplicate CCCDs
-      const cccds = validParents.map((p) => p.citizenId).filter(Boolean);
-      const duplicateCccd = cccds.find((cid, idx) => cccds.indexOf(cid) !== idx);
-      if (duplicateCccd) {
-        toast.error(`Số CCCD '${duplicateCccd}' bị trùng giữa các phụ huynh`);
+      if (!pName) {
+        toast.error(`Vui lòng nhập họ và tên cho Phụ huynh #${i + 1}`);
         setActiveTab('parents');
         return;
       }
+      if (!pRel) {
+        toast.error(`Vui lòng nhập mối quan hệ cho Phụ huynh #${i + 1}`);
+        setActiveTab('parents');
+        return;
+      }
+      if (!pPhone || !/^[0-9]{9,15}$/.test(pPhone)) {
+        toast.error(`Số điện thoại Phụ huynh #${i + 1} phải từ 9 đến 15 chữ số`);
+        setActiveTab('parents');
+        return;
+      }
+      if (!pCccd) {
+        toast.error(`Vui lòng nhập số CCCD/định danh cho Phụ huynh #${i + 1}`);
+        setActiveTab('parents');
+        return;
+      }
+      if (!/^[0-9]{12}$/.test(pCccd)) {
+        toast.error(`Số CCCD/định danh Phụ huynh #${i + 1} phải gồm đúng 12 chữ số.`);
+        setActiveTab('parents');
+        return;
+      }
+
+      validParents.push({
+        id: p.id,
+        publicId: p.publicId,
+        fullName: pName,
+        relationship: pRel,
+        phone: pPhone,
+        citizenId: pCccd,
+      });
+    }
+
+    // Check duplicate CCCDs
+    const cccds = validParents.map((p) => p.citizenId).filter(Boolean);
+    const duplicateCccd = cccds.find((cid, idx) => cccds.indexOf(cid) !== idx);
+    if (duplicateCccd) {
+      toast.error(`Số CCCD '${duplicateCccd}' bị trùng giữa các phụ huynh`);
+      setActiveTab('parents');
+      return;
     }
 
     const selectedClass = (classes || []).find((c) => String(c.id) === String(classId));
@@ -437,8 +511,8 @@ export function StudentDrawer({
       fullName: fullName.trim(),
       dob: dob.trim(),
       gender,
-      classId: classId || null,
-      currentClass: selectedClass
+      classId: drawerMode === 'edit' ? (classId || null) : null,
+      currentClass: drawerMode === 'edit' && selectedClass
         ? {
           classId: selectedClass.id,
           className: selectedClass.name,
@@ -470,8 +544,10 @@ export function StudentDrawer({
           status: isInClassContext ? undefined : payload.status,
           classId: undefined,
           currentClass: undefined,
+          updatedAt: detailStudent?.updatedAt || currentStudent?.updatedAt,
         };
         await updateStudent(editingStudentId, editPayload);
+        setConcurrencyConflict(false);
         if (onSuccess) {
           await onSuccess();
         }
@@ -485,12 +561,29 @@ export function StudentDrawer({
       }
     } catch (err) {
       console.error('Save student failed:', err);
-      const errorMsg =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        err.message ||
-        'Lưu hồ sơ học sinh thất bại';
-      toast.error(errorMsg);
+      const isConflict =
+        err.response?.status === 409 ||
+        String(err.response?.data?.code) === 'CONFLICT' ||
+        String(err.response?.data?.message || '').includes('phiên khác') ||
+        String(err.message || '').includes('phiên khác');
+
+      const errorMsg = isConflict
+        ? 'Dữ liệu đã được cập nhật trong một phiên khác. Thay đổi của bạn chưa được lưu. Vui lòng tải lại dữ liệu mới nhất và thực hiện lại.'
+        : err.response?.data?.message ||
+          err.response?.data?.error ||
+          err.message ||
+          'Lưu hồ sơ học sinh thất bại';
+
+      if (isConflict) {
+        setConcurrencyConflict(true);
+        toast.error('Xung đột dữ liệu', {
+          description: errorMsg,
+          duration: 8000,
+        });
+      } else {
+        toast.error(errorMsg);
+      }
+
       if (
         errorMsg.toLowerCase().includes('cccd') ||
         errorMsg.toLowerCase().includes('phụ huynh') ||
@@ -498,6 +591,82 @@ export function StudentDrawer({
       ) {
         setActiveTab('parents');
       }
+    }
+  };
+
+  const handleReloadLatestData = async () => {
+    if (!editingStudentId) return;
+    try {
+      const fullData = await studentsApi.getById(editingStudentId);
+      if (fullData) {
+        const transformed = transformBackendStudent(fullData);
+        if (transformed) {
+          setDetailStudent(transformed);
+          setFullName(transformed.fullName || '');
+          setDob(transformed.dob || '');
+          setGender(transformed.gender || 'Nam');
+          setStatus(transformed.status || 'studying');
+          setJoinDate(transformed.joinDate || '');
+          setEthnic(transformed.ethnic || 'Kinh');
+          setNationality(transformed.nationality || 'Việt Nam');
+          setPlaceOfBirth(transformed.placeOfBirth || '');
+          setPermanentResidence(transformed.permanentResidence || '');
+          setCurrentResidence(transformed.currentResidence || '');
+          setAllergyNotes(transformed.allergyNotes || '');
+          setMedicalNotes(transformed.medicalNotes || '');
+          setPreviousSchool(transformed.previousSchool || '');
+          if (Array.isArray(transformed.parents) && transformed.parents.length > 0) {
+            setParents(
+              transformed.parents.map((p, idx) => ({
+                id: p.id || `p_${idx}`,
+                fullName: p.fullName || '',
+                relationship: p.relationship || '',
+                phone: p.phone || '',
+                citizenId: p.citizenId || p.citizen_id || '',
+              })),
+            );
+          }
+        }
+      }
+      setConcurrencyConflict(false);
+      toast.success('Đã tải lại dữ liệu mới nhất của học sinh');
+    } catch (fetchErr) {
+      toast.error('Không thể tải lại dữ liệu mới nhất');
+    }
+  };
+
+  const handleNextTab = () => {
+    if (activeTab === 'basic') {
+      if (!fullName.trim()) {
+        toast.error('Vui lòng nhập họ và tên học sinh');
+        return;
+      }
+      if (hasConsecutiveSpaces(fullName)) {
+        toast.error('Họ tên không được chứa nhiều khoảng trắng liên tiếp.');
+        return;
+      }
+      if (!dob || !dob.trim()) {
+        toast.error('Vui lòng nhập ngày sinh của học sinh');
+        return;
+      }
+      if (isDobInFuture(dob)) {
+        toast.error('Ngày sinh không được lớn hơn ngày hiện tại.');
+        return;
+      }
+      let yr;
+      if (dob.includes('/')) {
+        const parts = dob.split('/');
+        if (parts.length === 3) yr = parseInt(parts[2], 10);
+      } else {
+        yr = new Date(dob).getFullYear();
+      }
+      if (yr && !isNaN(yr) && yr < 2000) {
+        toast.error('Năm sinh học sinh phải từ năm 2000 trở đi');
+        return;
+      }
+      setActiveTab('parents');
+    } else if (activeTab === 'parents') {
+      setActiveTab('health');
     }
   };
 
@@ -547,6 +716,25 @@ export function StudentDrawer({
             <HugeiconsIcon icon={Cancel01Icon} size={16} />
           </button>
         </div>
+
+        {concurrencyConflict && (
+          <div className="mx-6 my-2.5 p-3.5 bg-destructive/10 border border-destructive/30 text-destructive text-[12.5px] flex flex-col gap-2">
+            <span className="font-semibold">Xung đột phiên chỉnh sửa dữ liệu</span>
+            <p className="text-[12px] text-destructive/90 leading-relaxed">
+              Dữ liệu đã được cập nhật trong một phiên khác. Thay đổi của bạn chưa được lưu. Vui lòng tải lại dữ liệu mới nhất và thực hiện lại.
+            </p>
+            <div className="flex justify-end pt-1">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleReloadLatestData}
+                className="h-7 px-3 text-[12px] border-destructive/40 text-destructive hover:bg-destructive/10 cursor-pointer"
+              >
+                Tải lại dữ liệu
+              </Button>
+            </div>
+          </div>
+        )}
 
         {isStudentGraduated && (
           <div className="mx-6 my-2.5 px-3.5 py-2 bg-purple-500/10 border border-purple-500/30 text-purple-800 dark:text-purple-300 text-[12px] flex items-center gap-2">
@@ -619,9 +807,17 @@ export function StudentDrawer({
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       placeholder="Nguyễn Gia Bảo"
-                      className="h-9 text-[13px] rounded-none border-border"
+                      className={cn(
+                        "h-9 text-[13px] rounded-none border-border",
+                        hasConsecutiveSpaces(fullName) && "border-destructive focus-visible:ring-destructive"
+                      )}
                       required
                     />
+                    {hasConsecutiveSpaces(fullName) && (
+                      <p className="text-[11px] text-destructive mt-1 font-medium">
+                        Họ tên không được chứa nhiều khoảng trắng liên tiếp.
+                      </p>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -633,9 +829,17 @@ export function StudentDrawer({
                         value={dob}
                         onChange={(e) => setDob(e.target.value)}
                         placeholder="15/05/2023"
-                        className="h-9 text-[13px] rounded-none border-border"
+                        className={cn(
+                          "h-9 text-[13px] rounded-none border-border",
+                          isDobInFuture(dob) && "border-destructive focus-visible:ring-destructive"
+                        )}
                         required
                       />
+                      {isDobInFuture(dob) && (
+                        <p className="text-[11px] text-destructive mt-1 font-medium">
+                          Ngày sinh không được lớn hơn ngày hiện tại.
+                        </p>
+                      )}
                     </div>
 
                     <div className="space-y-1.5">
@@ -719,22 +923,18 @@ export function StudentDrawer({
                           </p>
                         </div>
                       ) : (
-                        <select
-                          value={classId}
-                          onChange={(e) => setClassId(e.target.value)}
-                          disabled={isTeacher || isInClassContext}
-                          className={cn(
-                            'w-full h-9 px-3 bg-background border border-border rounded-none text-[13px] text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer',
-                            (isTeacher || isInClassContext) && 'bg-muted cursor-not-allowed opacity-90 pointer-events-none'
-                          )}
-                        >
-                          <option value="">-- Chưa phân lớp --</option>
-                          {(classes || []).map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {c.name} {c.room ? `(${c.room})` : ''}
-                            </option>
-                          ))}
-                        </select>
+                        <div>
+                          <Input
+                            type="text"
+                            value="Chưa phân lớp"
+                            disabled
+                            readOnly
+                            className="h-9 text-[13px] rounded-none border-border bg-muted/50 cursor-not-allowed text-muted-foreground opacity-90 select-none pointer-events-none"
+                          />
+                          <p className="text-[11px] text-muted-foreground mt-1">
+                            Sau khi tạo hồ sơ, vui lòng sử dụng chức năng Phân lớp học sinh để xếp lớp.
+                          </p>
+                        </div>
                       )}
                     </div>
 
@@ -752,7 +952,17 @@ export function StudentDrawer({
                       ) : (
                         <select
                           value={status}
-                          onChange={(e) => setStatus(e.target.value)}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === 'graduated') {
+                              toast.warning(
+                                'Trạng thái Đã tốt nghiệp chỉ được cập nhật thông qua quy trình xác nhận hoàn thành chương trình học của nhà trường.',
+                                { duration: 6000 }
+                              );
+                              return;
+                            }
+                            setStatus(val);
+                          }}
                           className="w-full h-9 px-3 bg-background border border-border rounded-none text-[13px] text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer"
                         >
                           <option value="studying">Đang học</option>
@@ -952,15 +1162,24 @@ export function StudentDrawer({
                           {t('student.parentItemTitle', 'Phụ huynh #{{index}}', { index: idx + 1 })}
                         </h3>
 
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveParent(idx)}
-                          className="size-7 flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-muted/80 rounded-none transition-colors cursor-pointer"
-                          title={t('student.removeParentBtn', 'Xóa phụ huynh này')}
-                          aria-label={t('student.removeParentBtn', 'Xóa phụ huynh này')}
-                        >
-                          <HugeiconsIcon icon={Cancel01Icon} size={15} />
-                        </button>
+                        {parents.length > 1 ? (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveParent(idx)}
+                            className="size-7 flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-muted/80 rounded-none transition-colors cursor-pointer"
+                            title={t('student.removeParentBtn', 'Xóa phụ huynh này')}
+                            aria-label={t('student.removeParentBtn', 'Xóa phụ huynh này')}
+                          >
+                            <HugeiconsIcon icon={Cancel01Icon} size={15} />
+                          </button>
+                        ) : (
+                          <span
+                            className="text-[11px] text-muted-foreground italic px-2 font-medium"
+                            title="Mỗi học sinh bắt buộc có ít nhất 1 phụ huynh/người giám hộ"
+                          >
+                            (Tối thiểu 1 phụ huynh)
+                          </span>
+                        )}
                       </div>
 
                       <div className="p-4 space-y-3.5">
@@ -1005,7 +1224,7 @@ export function StudentDrawer({
 
                           <div className="space-y-1.5">
                             <Label className="text-[12px] font-medium text-foreground">
-                              Số CCCD / Định danh
+                              Số CCCD / Định danh <span className="text-destructive">*</span>
                             </Label>
                             <Input
                               value={p.citizenId || ''}
@@ -1020,15 +1239,17 @@ export function StudentDrawer({
                     </div>
                   ))}
 
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleAddParent}
-                    className="w-full h-9 text-[13px] rounded-none border border-dashed border-border hover:bg-muted text-foreground flex items-center justify-center gap-1.5 cursor-pointer font-medium"
-                  >
-                    <HugeiconsIcon icon={Add01Icon} size={15} />
-                    <span>{t('student.addParentBtn', '+ Thêm phụ huynh')}</span>
-                  </Button>
+                  {parents.length < 2 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleAddParent}
+                      className="w-full h-9 text-[13px] rounded-none border border-dashed border-border hover:bg-muted text-foreground flex items-center justify-center gap-1.5 cursor-pointer font-medium"
+                    >
+                      <HugeiconsIcon icon={Add01Icon} size={15} />
+                      <span>{t('student.addParentBtn', '+ Thêm phụ huynh')}</span>
+                    </Button>
+                  )}
                 </>
               )}
             </div>
@@ -1124,7 +1345,7 @@ export function StudentDrawer({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setActiveTab(activeTab === 'basic' ? 'parents' : 'health')}
+                onClick={handleNextTab}
                 className="h-8 px-3 text-[13px] rounded-none border-border cursor-pointer"
               >
                 Tiếp theo
@@ -1141,7 +1362,7 @@ export function StudentDrawer({
             >
               {t('common.cancel', 'Hủy')}
             </Button>
-            {!(isTeacher && drawerMode === 'edit') && (
+            {!(isTeacher && drawerMode === 'edit' && activeTab !== 'health') && (
               <Button
                 type="button"
                 disabled={isStudentGraduated}
@@ -1152,9 +1373,11 @@ export function StudentDrawer({
                 )}
                 title={isStudentGraduated ? 'Học sinh đã tốt nghiệp, không thể chỉnh sửa' : undefined}
               >
-                {drawerMode === 'edit'
-                  ? t('common.saveChanges', 'Lưu thay đổi')
-                  : t('student.createSubmit', 'Thêm học sinh')}
+                {isTeacher && activeTab === 'health'
+                  ? 'Lưu chỉ số sức khỏe'
+                  : drawerMode === 'edit'
+                    ? t('common.saveChanges', 'Lưu thay đổi')
+                    : t('student.createSubmit', 'Thêm học sinh')}
               </Button>
             )}
           </div>

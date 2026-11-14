@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
   Search01Icon,
@@ -10,6 +11,9 @@ import {
 } from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ExcelActionsDropdown } from '@/components/ExcelActionsDropdown';
+import { downloadBlob } from '@/shared/utils/download';
+import { classesApi } from './classes.api';
 import { useAuthStore } from '@/features/auth';
 import { useAcademicYearStore } from '@/features/academic-years';
 import { useClassesStore, findTeacherClassForYear } from '@/features/classes';
@@ -79,6 +83,29 @@ export function ClassStudentsPage() {
   useEffect(() => {
     fetchStudents(selectedYearId ? { schoolYearId: selectedYearId } : {});
   }, [fetchStudents, selectedYearId]);
+
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportRoster = async () => {
+    if (!targetClassId) return;
+    try {
+      setIsExporting(true);
+      const cleanClassName = (targetClass?.name || 'Lop').replace(/\s+/g, '_');
+      const fileName = `Danh_sach_lop_${cleanClassName}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      const blob = await classesApi.exportClassRosterExcel(targetClassId);
+      downloadBlob(blob, fileName);
+      toast.success(
+        t('classes.exportSuccess', 'Đã tải xuống danh sách lớp {{name}} thành công!', {
+          name: targetClass?.name || '',
+        })
+      );
+    } catch (err) {
+      console.error('Failed to export class roster:', err);
+      toast.error(t('classes.exportFailed', 'Có lỗi xảy ra trong quá trình xuất danh sách.'));
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   // Always reset pagination and filters on mount or class switch
   useEffect(() => {
@@ -310,6 +337,13 @@ export function ClassStudentsPage() {
               <HugeiconsIcon icon={DashboardSquare02Icon} size={15} />
             </button>
           </div>
+
+          {/* Excel Actions Dropdown */}
+          <ExcelActionsDropdown
+            onExport={handleExportRoster}
+            showImport={false}
+            isExporting={isExporting}
+          />
         </div>
       </div>
 

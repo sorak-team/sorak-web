@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
@@ -26,6 +26,8 @@ import { cn } from '@/shared/lib/utils';
 export function AcademicYearsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isViewAll = searchParams.get('view') === 'all' || searchParams.get('list') === 'true';
 
   const {
     academicYears,
@@ -45,6 +47,19 @@ export function AcademicYearsPage() {
   useEffect(() => {
     fetchAcademicYears();
   }, [fetchAcademicYears]);
+
+  // Mặc định chọn năm học đang hoạt động khi truy cập tab năm học
+  useEffect(() => {
+    if (!isViewAll && !isLoading && academicYears.length > 0) {
+      const activeYear =
+        academicYears.find((y) => y.status === 'ACTIVE' || y.active) ||
+        academicYears[0];
+      if (activeYear?.id) {
+        useAcademicYearStore.getState().setSelectedYearId(String(activeYear.id));
+        navigate(`/school-years/${activeYear.id}`, { replace: true });
+      }
+    }
+  }, [isViewAll, isLoading, academicYears, navigate]);
 
   // Filter and sort
   const filteredYears = useMemo(() => {
@@ -93,6 +108,15 @@ export function AcademicYearsPage() {
 
     return list;
   }, [academicYears, searchQuery, filterStatus, sortBy, hideEnded, onlyActive]);
+
+  if (!isViewAll && (isLoading || academicYears.length === 0)) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-3 text-muted-foreground select-none">
+        <div className="size-7 border-2 border-primary border-t-transparent animate-spin rounded-full" />
+        <span className="text-[13px] font-medium">Đang mở năm học đang hoạt động...</span>
+      </div>
+    );
+  }
 
   return (
     <div

@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -11,9 +11,16 @@ import {
   Menu01Icon,
   DashboardSquare02Icon,
   Calendar03Icon,
+  Download01Icon,
 } from '@hugeicons/core-free-icons';
+import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { downloadBlob } from '@/shared/utils/download';
+import { ExcelActionsDropdown } from '@/components/ExcelActionsDropdown';
+import { classesApi } from './classes.api';
+import { statisticsApi } from '@/features/statistics/statistics.api';
 import { useAuthStore } from '@/features/auth';
 import { useAcademicYearStore } from '@/features/academic-years';
 import { useClassesStore, findTeacherClassForYear } from './classes.store';
@@ -67,6 +74,41 @@ export function ClassroomsPage() {
       fetchClasses();
     }
   }, [selectedYearId, fetchClasses]);
+
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportClasses = async () => {
+    try {
+      setIsExporting(true);
+      const blob = await classesApi.exportClassesExcel({
+        schoolYearId: selectedYearId,
+      });
+      const filename = `Danh_Sach_Lop_Hoc_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      downloadBlob(blob, filename);
+      toast.success('Đã xuất danh sách lớp học ra file Excel thành công.');
+    } catch (err) {
+      toast.error('Không thể xuất file Excel. Vui lòng thử lại sau.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportStatistics = async () => {
+    try {
+      setIsExporting(true);
+      const blob = await statisticsApi.exportSchoolStatisticsExcel({
+        schoolYearId: selectedYearId,
+      });
+      const filename = `Bao_Cao_Thong_Ke_Tong_Ket_Toan_Truong_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      downloadBlob(blob, filename);
+      toast.success('Đã xuất báo cáo thống kê toàn trường ra file Excel thành công.');
+    } catch (err) {
+      console.error('Failed to export statistics:', err);
+      toast.error('Không thể xuất báo cáo thống kê. Vui lòng thử lại sau.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const hasYearClasses =
     !selectedYearId ||
@@ -257,6 +299,13 @@ export function ClassroomsPage() {
               <HugeiconsIcon icon={Menu01Icon} size={15} />
             </button>
           </div>
+
+          {/* Excel Actions Dropdown (Compact icon button, zero text, rounded-none) */}
+          <ExcelActionsDropdown
+            onExport={handleExportClasses}
+            isExporting={isExporting}
+            showImport={false}
+          />
 
           {/* Add Class Button */}
           {!isYearCompleted ? (
