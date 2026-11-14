@@ -13,6 +13,9 @@ import { WeekPickerCalendar } from '@/shared/components/calendar/WeekPickerCalen
 import { AttendanceCheckInPanel } from './components/AttendanceCheckInPanel';
 import { useClassesStore, ClassHeaderNav } from '@/features/classes';
 import { NotFoundPage } from '@/features/error';
+import { ExcelActionsDropdown } from '@/components/ExcelActionsDropdown';
+import { downloadBlob } from '@/shared/utils/download';
+import { toast } from 'sonner';
 
 export function AttendancePage() {
   const { t } = useTranslation();
@@ -28,6 +31,30 @@ export function AttendancePage() {
   const [activeSlot, setActiveSlot] = useState(null);
   const [isCalendarOpen, setIsCalendarOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportExcel = async () => {
+    try {
+      setIsExporting(true);
+      const now = new Date();
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+      const blob = await attendanceApi.exportAttendanceExcel(targetClassId, {
+        month: currentMonth,
+        year: currentYear,
+      });
+      const className = currentClass?.name || `Lop_${targetClassId}`;
+      const safeName = className.replace(/\s+/g, '_');
+      downloadBlob(blob, `So_Diem_Danh_Thang_${currentMonth}_${currentYear}_${safeName}.xlsx`);
+      toast.success('Đã xuất sổ điểm danh chuyên cần thành công');
+    } catch (err) {
+      toast.error('Lỗi khi xuất sổ điểm danh', {
+        description: err.message || 'Vui lòng thử lại sau.',
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   useEffect(() => {
     async function loadData() {
@@ -52,6 +79,20 @@ export function AttendancePage() {
 
   const handleClosePanel = () => {
     setActiveSlot(null);
+  };
+
+  const resolveSlotDate = (s) => {
+    if (!s) return new Date().toISOString().slice(0, 10);
+    if (s.fullDate) return s.fullDate;
+    if (s.date && s.date.includes('-')) return s.date;
+    if (s.date && s.date.includes('/')) {
+      const parts = s.date.split('/');
+      if (parts.length >= 2) {
+        const year = parts[2] || '2026';
+        return `${year}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+      }
+    }
+    return new Date().toISOString().slice(0, 10);
   };
 
   if (id && /^\d+$/.test(String(id))) {
@@ -123,6 +164,13 @@ export function AttendancePage() {
           >
             <HugeiconsIcon icon={SidebarRightIcon} size={15} />
           </button>
+
+          {/* Export Attendance Excel */}
+          <ExcelActionsDropdown
+            onExport={handleExportExcel}
+            isExporting={isExporting}
+            showImport={false}
+          />
         </div>
       </div>
 
@@ -146,7 +194,7 @@ export function AttendancePage() {
           <AttendanceCheckInPanel
             slot={activeSlot}
             classId={targetClassId}
-            date={activeSlot?.date ? `2026-10-${activeSlot.date.slice(0, 2)}` : '2026-10-13'}
+            date={resolveSlotDate(activeSlot)}
             initialStudents={students}
             onClose={handleClosePanel}
             onSaveSuccess={(updated) => {

@@ -426,6 +426,7 @@ export function ParentRequestsPage() {
         onClose={() => setIsDrawerOpen(false)}
         onSuccess={fetchRequests}
         studentName={student.fullName}
+        guardians={studentInfo?.guardians || []}
       />
     </div>
   );

@@ -28,6 +28,9 @@ import { uploadApi } from '@/shared/api/upload.api';
 import { getStudentAvatarUrl } from '@/features/students/students.store';
 import { useAcademicYearStore, getDayAfterDisplayDate } from '@/features/academic-years';
 import { attendanceApi } from '../attendance.api';
+import { PickupCalendarPicker } from '@/shared/components/calendar/PickupCalendarPicker';
+import { TablePagination } from '@/shared/components/TablePagination';
+import { usePaginationStore } from '@/shared/stores/pagination.store';
 
 // Helper to convert any date (YYYY-MM-DD or ISO) to DD/MM/YYYY
 function toDmyString(dateStr) {
@@ -58,15 +61,35 @@ function toIsoDateString(dmy) {
   return clean;
 }
 
+// Helper to convert any URL with localhost/127.0.0.1 to relative path or valid HTTPS
+export function normalizeMediaUrl(url) {
+  if (!url || typeof url !== 'string') return '';
+  const trimmed = url.trim();
+  if (
+    trimmed.includes('localhost:3010') ||
+    trimmed.includes('localhost:3000') ||
+    trimmed.includes('127.0.0.1:3010')
+  ) {
+    try {
+      const parsed = new URL(trimmed);
+      return parsed.pathname;
+    } catch {
+      return trimmed.replace(/^https?:\/\/[^/]+/, '');
+    }
+  }
+  return trimmed;
+}
+
 // Helper for authorized delegate avatar (uses uploaded photo if present, otherwise Dicebear initials based on name)
 function getDelegateAvatarUrl(photoUrl, name) {
+  const cleanUrl = normalizeMediaUrl(photoUrl);
   if (
-    photoUrl &&
-    typeof photoUrl === 'string' &&
-    photoUrl.trim() !== '' &&
-    !photoUrl.includes('default-avatar.webp')
+    cleanUrl &&
+    typeof cleanUrl === 'string' &&
+    cleanUrl.trim() !== '' &&
+    !cleanUrl.includes('default-avatar.webp')
   ) {
-    return photoUrl;
+    return cleanUrl;
   }
   const seed = (name || 'PH').trim();
   return `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(seed)}`;
@@ -102,6 +125,10 @@ export function PickupAuthorizationsModal({
   const [searchQuery, setSearchQuery] = useState('');
   const [processingId, setProcessingId] = useState(null);
 
+  // Pagination matching StudentsPage standard
+  const pageSize = usePaginationStore((state) => state.pageSize) || 10;
+  const [currentPage, setCurrentPage] = useState(1);
+
   // Rejection modal state
   const [authToReject, setAuthToReject] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
@@ -119,6 +146,10 @@ export function PickupAuthorizationsModal({
   const [isStudentDropdownOpen, setIsStudentDropdownOpen] = useState(false);
   const [studentSearchQuery, setStudentSearchQuery] = useState('');
   const studentSelectRef = useRef(null);
+
+  // Quota & disabled dates state for selected student
+  const [quotaInfo, setQuotaInfo] = useState(null);
+  const [calendarValidation, setCalendarValidation] = useState({ hasConflict: false, errorMessage: null });
 
   // Lấy dữ liệu năm học thực tế từ useAcademicYearStore
   const academicYears = useAcademicYearStore((state) => state.academicYears);
@@ -260,16 +291,31 @@ export function PickupAuthorizationsModal({
     return activeStudents.find((s) => String(s.id) === String(createForm.studentId)) || null;
   }, [activeStudents, createForm.studentId]);
 
+  // Load quota info whenever create modal is open and studentId changes
+  useEffect(() => {
+    if (isCreateOpen && createForm.studentId) {
+      attendanceApi
+        .getStudentPickupQuota(createForm.studentId)
+        .then((res) => {
+          setQuotaInfo(res);
+        })
+        .catch((err) => {
+          console.warn('Failed to load student pickup quota:', err);
+        });
+    } else {
+      setQuotaInfo(null);
+    }
+  }, [isCreateOpen, createForm.studentId]);
+
   const handleOpenCreate = () => {
-    const initialDateDmy = toDmyString(targetDate || new Date().toISOString().slice(0, 10));
     setCreateForm({
       studentId: activeStudents[0]?.id ? String(activeStudents[0].id) : '',
       pickupPersonName: '',
       relationship: 'Dì',
       pickupPersonPhone: '',
       pickupCitizenId: '',
-      startDate: initialDateDmy,
-      endDate: initialDateDmy,
+      startDate: '',
+      endDate: '',
       note: '',
       photoUrl: '',
     });
@@ -327,15 +373,29 @@ export function PickupAuthorizationsModal({
       toast.warning(isVi ? 'Vui lòng nhập số điện thoại người được ủy quyền' : 'Please enter delegate phone');
       return;
     }
+    if (createForm.pickupCitizenId.trim() && !/^[0-9]{12}$/.test(createForm.pickupCitizenId.trim())) {
+      toast.warning(isVi ? 'Số CCCD/Định danh cá nhân phải gồm 12 chữ số.' : 'Citizen ID must be 12 digits.');
+      return;
+    }
     const startIso = toIsoDateString(createForm.startDate);
     const endIso = toIsoDateString(createForm.endDate);
 
     if (!createForm.startDate || !createForm.endDate || !startIso || !endIso) {
-      toast.warning(isVi ? 'Vui lòng nhập ngày theo định dạng DD/MM/YYYY' : 'Please enter date in DD/MM/YYYY');
+      toast.warning(isVi ? 'Vui lòng chọn ngày hiệu lực ủy quyền trên lịch' : 'Please select authorization date on the calendar');
       return;
     }
     if (startIso > endIso) {
       toast.warning(isVi ? 'Ngày bắt đầu không được lớn hơn ngày kết thúc' : 'Start date cannot be after end date');
+      return;
+    }
+
+    if (calendarValidation.hasConflict) {
+      toast.warning(
+        calendarValidation.errorMessage ||
+          (isVi
+            ? 'Khoảng ngày đã chọn chứa ngày đã đạt tối đa số người ủy quyền đón. Vui lòng chọn ngày khác.'
+            : 'Selected range contains days that have reached maximum authorization limit.')
+      );
       return;
     }
 
@@ -416,6 +476,15 @@ export function PickupAuthorizationsModal({
 
   // Handle Approve Authorization
   const handleApprove = async (auth) => {
+    if (auth.isParentLocked) {
+      toast.error(
+        isVi
+          ? 'Tài khoản phụ huynh đã bị khóa, không thể phê duyệt yêu cầu ủy quyền đưa đón.'
+          : 'Parent account is locked, cannot approve pickup authorization.'
+      );
+      return;
+    }
+
     const confirmMessage = isVi
       ? `Bạn có chắc chắn muốn duyệt cho ${auth.relationship} (${auth.pickupPersonName}) đón bé ${auth.student.name}?`
       : `Approve ${auth.pickupPersonName} to pick up ${auth.student.name}?`;
@@ -509,6 +578,17 @@ export function PickupAuthorizationsModal({
     return list;
   }, [authorizations, searchQuery]);
 
+  // Reset page whenever filter or search query changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, searchQuery]);
+
+  // Paginated authorizations for table display (matching StudentsPage standard)
+  const paginatedAuthorizations = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredAuthorizations.slice(start, start + pageSize);
+  }, [filteredAuthorizations, currentPage, pageSize]);
+
   if (!isOpen) return null;
 
   return (
@@ -521,7 +601,7 @@ export function PickupAuthorizationsModal({
 
       {/* Main Table Modal Dialog */}
       <div
-        className="relative w-full max-w-[1140px] max-h-[88vh] bg-card border border-border shadow-2xl rounded-none z-10 animate-in zoom-in-95 duration-150 overflow-hidden flex flex-col select-none"
+        className="relative w-full max-w-[1140px] max-h-[92vh] bg-card border border-border shadow-2xl rounded-none z-10 animate-in zoom-in-95 duration-150 overflow-hidden flex flex-col select-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -634,54 +714,54 @@ export function PickupAuthorizationsModal({
           </div>
         </div>
 
-        {/* Table Content Area - Margin left, right, bottom với viền bao quanh */}
-        <div className="flex-1 overflow-y-auto overflow-x-auto select-none bg-card px-4 pb-4 pt-3">
-          <div className="w-full border border-border bg-card rounded-none overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[820px]">
+        {/* Table Content Area */}
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden select-none bg-card px-4 py-2.5 sm:px-6">
+          <div className="w-full border border-border bg-card rounded-none overflow-hidden">
+            <table className="w-full text-left border-collapse table-fixed">
               <thead>
-                <tr className="h-10 border-b border-border bg-muted/30 text-[12.5px] font-medium text-foreground sticky top-0 z-10 bg-muted/40">
-                  <th className="px-4 min-w-[170px] font-medium">
+                <tr className="h-9 border-b border-border bg-muted/30 text-[12px] font-medium text-foreground sticky top-0 z-10 bg-muted/40">
+                  <th className="px-3 py-2 w-[18%] font-medium truncate">
                     {isVi ? 'Học sinh' : 'Student'}
                   </th>
-                  <th className="px-4 min-w-[190px] font-medium">
+                  <th className="px-3 py-2 w-[18%] font-medium truncate">
                     {isVi ? 'Người được ủy quyền' : 'Authorized Delegate'}
                   </th>
-                  <th className="px-3 min-w-[120px] font-medium">
+                  <th className="px-2 py-2 w-[11%] font-medium whitespace-nowrap">
                     {isVi ? 'Số điện thoại' : 'Phone'}
                   </th>
-                  <th className="px-3 min-w-[145px] font-medium">
-                    {isVi ? 'Khoảng thời gian hiệu lực' : 'Validity period'}
+                  <th className="px-2.5 py-2 w-[17%] font-medium whitespace-nowrap">
+                    {isVi ? 'Thời gian hiệu lực' : 'Validity'}
                   </th>
-                  <th className="px-4 min-w-[210px] font-medium">
+                  <th className="px-2.5 py-2 w-[18%] font-medium truncate">
                     {isVi ? 'Dặn dò phụ huynh' : 'Parent Note'}
                   </th>
-                  <th className="px-3 min-w-[95px] font-medium">
+                  <th className="px-2 py-2 w-[10%] font-medium whitespace-nowrap">
                     {isVi ? 'Trạng thái' : 'Status'}
                   </th>
-                  <th className="px-4 min-w-[60px] w-[60px] text-right font-medium whitespace-nowrap">
+                  <th className="px-3 py-2 w-[8%] text-right font-medium whitespace-nowrap">
                     {isVi ? 'Thao tác' : 'Actions'}
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
                 {loading && authorizations.length === 0 ? (
-                  Array.from({ length: 3 }).map((_, idx) => (
-                    <tr key={idx} className="h-[68px] animate-pulse">
-                      <td className="px-4">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-9 h-9 bg-muted/60 rounded-none shrink-0" />
-                          <div className="flex flex-col gap-1.5 min-w-0 flex-1">
-                            <div className="h-3.5 w-24 bg-muted/60" />
-                            <div className="h-2.5 w-16 bg-muted/40" />
+                  Array.from({ length: 4 }).map((_, idx) => (
+                    <tr key={idx} className="h-[44px] animate-pulse">
+                      <td className="px-3 py-2">
+                        <div className="flex items-center gap-2">
+                          <div className="size-8 bg-muted/60 rounded-none shrink-0" />
+                          <div className="flex flex-col gap-1 min-w-0 flex-1">
+                            <div className="h-3 w-20 bg-muted/60" />
+                            <div className="h-2.5 w-14 bg-muted/40" />
                           </div>
                         </div>
                       </td>
-                      <td className="px-4"><div className="h-3.5 w-28 bg-muted/50" /></td>
-                      <td className="px-3"><div className="h-3.5 w-24 bg-muted/50" /></td>
-                      <td className="px-3"><div className="h-3.5 w-24 bg-muted/50" /></td>
-                      <td className="px-4"><div className="h-3.5 w-36 bg-muted/50" /></td>
-                      <td className="px-3"><div className="h-5 w-16 bg-muted/50" /></td>
-                      <td className="px-4 text-right"><div className="size-6 bg-muted/40 ml-auto" /></td>
+                      <td className="px-3 py-2"><div className="h-3 w-24 bg-muted/50" /></td>
+                      <td className="px-2 py-2"><div className="h-3 w-20 bg-muted/50" /></td>
+                      <td className="px-2.5 py-2"><div className="h-3 w-24 bg-muted/50" /></td>
+                      <td className="px-2.5 py-2"><div className="h-3 w-28 bg-muted/50" /></td>
+                      <td className="px-2 py-2"><div className="h-4 w-14 bg-muted/50" /></td>
+                      <td className="px-2 py-2 text-right"><div className="size-6 bg-muted/40 ml-auto" /></td>
                     </tr>
                   ))
                 ) : filteredAuthorizations.length === 0 ? (
@@ -701,7 +781,7 @@ export function PickupAuthorizationsModal({
                     </td>
                   </tr>
                 ) : (
-                  filteredAuthorizations.map((auth) => {
+                  paginatedAuthorizations.map((auth) => {
                     const isPending = auth.status === 'PENDING';
                     const isApproved = auth.status === 'APPROVED';
                     const isRejected = auth.status === 'REJECTED';
@@ -710,31 +790,31 @@ export function PickupAuthorizationsModal({
                     const startDateFormatted = auth.startDate.split('-').reverse().join('/');
                     const endDateFormatted = auth.endDate.split('-').reverse().join('/');
 
-                    // Calculate range duration label to eliminate teacher confusion
+                    // Concise range label (clean, short, no clutter)
                     const getRangeLabel = () => {
                       if (auth.startDate === auth.endDate) {
-                        return isVi ? '1 ngày duy nhất' : 'Single day';
+                        return '';
                       }
                       if (
                         datePresets?.hk1?.start &&
                         startDateFormatted === datePresets.hk1.start &&
                         endDateFormatted === datePresets.hk1.end
                       ) {
-                        return isVi ? 'Suốt Học kỳ 1' : 'Semester 1';
+                        return isVi ? 'Học kỳ 1' : 'Semester 1';
                       }
                       if (
                         datePresets?.hk2?.start &&
                         startDateFormatted === datePresets.hk2.start &&
                         endDateFormatted === datePresets.hk2.end
                       ) {
-                        return isVi ? 'Suốt Học kỳ 2' : 'Semester 2';
+                        return isVi ? 'Học kỳ 2' : 'Semester 2';
                       }
                       if (
                         datePresets?.fullYear?.start &&
                         startDateFormatted === datePresets.fullYear.start &&
                         endDateFormatted === datePresets.fullYear.end
                       ) {
-                        return isVi ? 'Suốt cả năm học' : 'Full school year';
+                        return isVi ? 'Cả năm' : 'Full year';
                       }
                       const [d1, m1, y1] = startDateFormatted.split('/').map(Number);
                       const [d2, m2, y2] = endDateFormatted.split('/').map(Number);
@@ -742,9 +822,9 @@ export function PickupAuthorizationsModal({
                       const endObj = new Date(y2, m2 - 1, d2);
                       const diffDays = Math.round((endObj.getTime() - startObj.getTime()) / 86400000) + 1;
                       if (diffDays > 1) {
-                        return isVi ? `Suốt ${diffDays} ngày` : `${diffDays} days total`;
+                        return isVi ? `${diffDays} ngày` : `${diffDays} days`;
                       }
-                      return isVi ? 'Trong khoảng này' : 'Inclusive';
+                      return '';
                     };
                     const rangeLabel = getRangeLabel();
 
@@ -761,39 +841,46 @@ export function PickupAuthorizationsModal({
                       <tr
                         key={auth.id}
                         className={cn(
-                          'hover:bg-muted/30 transition-colors group cursor-default text-[12.5px]',
+                          'hover:bg-muted/30 transition-colors group cursor-default text-[12px]',
                           isPending && 'bg-blue-50/15 dark:bg-blue-950/10'
                         )}
                       >
                         {/* 1. Học sinh (Đồng nhất Avatar theo Student Store) */}
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2.5">
+                        <td className="px-3 py-1.5">
+                          <div className="flex items-center gap-2 min-w-0">
                             <img
                               src={studentAvatarUrl}
                               alt=""
-                              className="w-9 h-9 min-w-[36px] min-h-[36px] max-w-[36px] max-h-[36px] rounded-none border border-border/80 object-cover shrink-0 bg-muted/30"
+                              className="size-8 min-w-8 min-h-8 max-w-8 max-h-8 rounded-none border border-border/80 object-cover shrink-0 bg-muted/30"
                               onError={(e) => {
                                 e.currentTarget.onerror = null;
                                 e.currentTarget.src = `https://api.dicebear.com/10.x/critters/svg?seed=${encodeURIComponent(auth.student.code || auth.student.name)}&backgroundColor=ff2e63,00c2a8,ffb300,3d5afe,8e24aa,00e676`;
                               }}
                             />
-                            <div className="flex flex-col min-w-0">
-                              <span className="font-semibold text-foreground text-[13px] leading-tight truncate">
+                            <div className="flex flex-col min-w-0 truncate">
+                              <span className="font-semibold text-foreground text-[12.5px] leading-tight truncate">
                                 {auth.student.name}
                               </span>
-                              <span className="text-[11px] font-mono text-muted-foreground mt-0.5">
-                                {auth.student.code}
-                              </span>
+                              <div className="flex items-center gap-1 mt-0.5 truncate">
+                                <span className="text-[10.5px] font-mono text-muted-foreground shrink-0">
+                                  {auth.student.code}
+                                </span>
+                                {auth.isParentLocked && (
+                                  <span className="inline-flex items-center px-1 py-0 text-[9.5px] font-medium bg-destructive/10 text-destructive border border-destructive/20 rounded-none whitespace-nowrap">
+                                    {isVi ? 'TK khóa' : 'Locked'}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </td>
 
                         {/* 2. Người được ủy quyền (Tên ở trên, Quan hệ ở dưới) */}
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2.5">
+                        <td className="px-3 py-1.5">
+                          <div className="flex items-center gap-2 min-w-0">
                             {/* Photo preview with zoom (Đồng nhất với xem chi tiết) */}
                             <div
-                              className="w-9 h-9 min-w-[36px] min-h-[36px] max-w-[36px] max-h-[36px] rounded-none bg-muted border border-border flex items-center justify-center shrink-0 overflow-hidden cursor-zoom-in hover:opacity-85 transition-opacity"
+                              className="size-8 min-w-8 min-h-8 max-w-8 max-h-8 rounded-none bg-muted border border-border flex items-center justify-center shrink-0 overflow-hidden cursor-zoom-in hover:opacity-85 transition-opacity"
                               onClick={() => {
                                 setPreviewPhoto({
                                   url: delegateAvatarUrl,
@@ -813,19 +900,19 @@ export function PickupAuthorizationsModal({
                               />
                             </div>
 
-                            <div className="flex flex-col min-w-0 leading-tight">
-                              <span className="font-semibold text-foreground text-[13px] truncate">
+                            <div className="flex flex-col min-w-0 leading-tight truncate">
+                              <span className="font-semibold text-foreground text-[12.5px] truncate">
                                 {auth.pickupPersonName}
                               </span>
-                              <span className="text-[11.5px] text-muted-foreground mt-0.5 truncate">
-                                {auth.relationship || 'Người đón'}
+                              <span className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                                {auth.relationship || (isVi ? 'Người đón' : 'Delegate')}
                               </span>
                             </div>
                           </div>
                         </td>
 
                         {/* 3. Cột Số điện thoại người được ủy quyền */}
-                        <td className="px-3 py-3 font-mono text-[12.5px] whitespace-nowrap">
+                        <td className="px-2 py-1.5 font-mono text-[12px] whitespace-nowrap">
                           {auth.pickupPersonPhone ? (
                             <a
                               href={`tel:${auth.pickupPersonPhone}`}
@@ -838,53 +925,30 @@ export function PickupAuthorizationsModal({
                           )}
                         </td>
 
-                        {/* 4. Khoảng thời gian hiệu lực: rõ ràng Từ/Đến và huy hiệu số ngày suốt khoảng */}
-                        <td className="px-3 py-3 text-[12.5px] whitespace-nowrap">
+                        {/* 4. Thời gian hiệu lực: Gọn gàng, ngắn gọn, clean */}
+                        <td className="px-2.5 py-1.5 whitespace-nowrap">
                           {auth.startDate === auth.endDate ? (
-                            <div className="flex flex-col leading-tight select-none">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[11px] text-muted-foreground font-normal min-w-[26px]">
-                                  {isVi ? 'Ngày:' : 'Date:'}
-                                </span>
-                                <span className="font-medium text-foreground text-[12.5px]">
-                                  {startDateFormatted}
-                                </span>
-                              </div>
-                              <span className="text-[10.5px] text-muted-foreground mt-0.5">
-                                {isVi ? '(1 ngày duy nhất)' : '(Single day only)'}
-                              </span>
+                            <div className="font-mono text-[12px] font-medium text-foreground">
+                              {startDateFormatted}
                             </div>
                           ) : (
-                            <div className="flex flex-col text-[12px] leading-tight select-none gap-0.5">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[11px] text-muted-foreground font-normal min-w-[26px]">
-                                  {isVi ? 'Từ:' : 'From:'}
+                            <div className="flex flex-col text-[11.5px] leading-tight gap-0.5 select-none">
+                              <span className="font-mono text-[12px] font-medium text-foreground">
+                                {startDateFormatted} – {endDateFormatted}
+                              </span>
+                              {rangeLabel && (
+                                <span className="text-[10.5px] text-muted-foreground font-normal">
+                                  ({rangeLabel})
                                 </span>
-                                <span className="font-medium text-foreground text-[12.5px]">
-                                  {startDateFormatted}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[11px] text-muted-foreground font-normal min-w-[26px]">
-                                  {isVi ? 'Đến:' : 'To:'}
-                                </span>
-                                <span className="font-medium text-foreground text-[12.5px]">
-                                  {endDateFormatted}
-                                </span>
-                              </div>
-                              <div className="mt-0.5">
-                                <span className="inline-flex items-center px-1.5 py-0.5 text-[10.5px] font-medium bg-muted text-foreground/80 border border-border/70 rounded-none">
-                                  {rangeLabel}
-                                </span>
-                              </div>
+                              )}
                             </div>
                           )}
                         </td>
 
-                        {/* 5. Dặn dò phụ huynh (Không hiển thị người gửi) */}
-                        <td className="px-4 py-3">
+                        {/* 5. Dặn dò phụ huynh (Gọn gàng 1 dòng để tránh đội chiều cao hàng) */}
+                        <td className="px-2.5 py-1.5">
                           <span
-                            className="text-[12.5px] text-foreground italic line-clamp-2"
+                            className="text-[12px] text-foreground italic truncate block"
                             title={auth.note || undefined}
                           >
                             {auth.note ? `"${auth.note}"` : '—'}
@@ -892,20 +956,20 @@ export function PickupAuthorizationsModal({
                         </td>
 
                         {/* 6. Trạng thái (Chuẩn ClassTransferRequests) */}
-                        <td className="px-3 py-3 whitespace-nowrap">
+                        <td className="px-2 py-1.5 whitespace-nowrap">
                           {isPending && (
-                            <span className="inline-flex items-center justify-center px-2 py-0.5 text-[11px] font-medium bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 rounded-none">
+                            <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-[10.5px] font-medium bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 rounded-none">
                               {isVi ? 'Chờ duyệt' : 'Pending'}
                             </span>
                           )}
                           {isApproved && (
-                            <span className="inline-flex items-center justify-center px-2 py-0.5 text-[11px] font-medium bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 rounded-none">
+                            <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-[10.5px] font-medium bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 rounded-none">
                               {isVi ? 'Đã duyệt' : 'Approved'}
                             </span>
                           )}
                           {isRejected && (
                             <span
-                              className="inline-flex items-center justify-center px-2 py-0.5 text-[11px] font-medium bg-muted text-muted-foreground rounded-none"
+                              className="inline-flex items-center justify-center px-1.5 py-0.5 text-[10.5px] font-medium bg-muted text-muted-foreground rounded-none"
                               title={auth.rejectedReason ? `${isVi ? 'Lý do: ' : 'Reason: '}${auth.rejectedReason}` : undefined}
                             >
                               {isVi ? 'Đã từ chối' : 'Rejected'}
@@ -913,8 +977,8 @@ export function PickupAuthorizationsModal({
                           )}
                         </td>
 
-                        {/* 7. Thao tác dạng menu 3 chấm (Khi không còn thao tác thì để trống, không hiện --) */}
-                        <td className="px-4 py-3 min-w-[60px] w-[60px] text-right whitespace-nowrap">
+                        {/* 7. Thao tác dạng menu 3 chấm */}
+                        <td className="px-3 py-1.5 text-right whitespace-nowrap">
                           {isPending && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -958,22 +1022,18 @@ export function PickupAuthorizationsModal({
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-3 border-t border-border bg-card flex items-center justify-between shrink-0">
-          <span className="text-[12px] text-muted-foreground">
-            {isVi
-              ? 'Người được ủy quyền sau khi duyệt sẽ tự động có mặt trong danh sách đón trẻ của lớp.'
-              : 'Approved delegates will automatically appear in the dismissal list.'}
-          </span>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            className="h-8 px-4 text-[13px] rounded-none border-border hover:bg-muted/70 shadow-none cursor-pointer"
-          >
-            {t('common.close', 'Đóng')}
-          </Button>
-        </div>
+        {/* Pagination Footer matching StudentsPage standard */}
+        {filteredAuthorizations.length > 0 && (
+          <div className="px-5 py-2.5 border-t border-border bg-card shrink-0">
+            <TablePagination
+              currentPage={currentPage}
+              totalItems={filteredAuthorizations.length}
+              onPageChange={setCurrentPage}
+              itemLabel={isVi ? 'đơn ủy quyền' : 'requests'}
+              className="py-0 pb-0"
+            />
+          </div>
+        )}
       </div>
 
       {/* Clean Rejection Dialog matching ClassTransferRequests standard */}
@@ -1055,9 +1115,13 @@ export function PickupAuthorizationsModal({
             </div>
             <div className="w-full max-h-[70vh] flex items-center justify-center bg-muted/20 overflow-hidden border border-border/50">
               <img
-                src={previewPhoto.url}
+                src={normalizeMediaUrl(previewPhoto.url)}
                 alt={previewPhoto.title || 'Ảnh'}
                 className="max-h-[70vh] max-w-full object-contain select-none"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(previewPhoto.title || 'User')}`;
+                }}
               />
             </div>
           </div>
@@ -1317,11 +1381,13 @@ export function PickupAuthorizationsModal({
                 </div>
               </div>
 
-              {/* 4. Thời gian hiệu lực: Nút chọn nhanh (HK1, HK2, Cả năm) & Ngày định dạng DD/MM/YYYY */}
-              <div className="flex flex-col gap-1.5">
+              {/* 4. Thời gian hiệu lực: Nút chọn nhanh (HK1, HK2, Cả năm) & Lịch trực quan kèm hạn mức */}
+              <div className="flex flex-col gap-2 pt-1 border-t border-border">
                 <div className="flex items-center justify-between">
-                  <label className="text-[12px] font-medium text-foreground">
-                    {isVi ? 'Thời gian hiệu lực' : 'Validity period'} <span className="text-rose-500">*</span>
+                  <label className="text-[12px] font-medium text-foreground flex items-center gap-1.5">
+                    <HugeiconsIcon icon={Calendar03Icon} size={13} className="text-muted-foreground" />
+                    <span>{isVi ? 'Thời gian hiệu lực' : 'Validity period'}</span>{' '}
+                    <span className="text-rose-500">*</span>
                   </label>
 
                   {/* Nút thời gian chọn nhanh: Học kỳ 1, Học kỳ 2, Cả năm (Dữ liệu thật của năm học) */}
@@ -1333,9 +1399,12 @@ export function PickupAuthorizationsModal({
                           key={preset.id}
                           type="button"
                           onClick={() => {
+                            const todayIso = new Date().toISOString().split('T')[0];
+                            const presetStartIso = toIsoDateString(preset.start);
+                            const effectiveStart = presetStartIso < todayIso ? toDmyString(todayIso) : preset.start;
                             setCreateForm((prev) => ({
                               ...prev,
-                              startDate: preset.start,
+                              startDate: effectiveStart,
                               endDate: preset.end,
                             }));
                           }}
@@ -1354,69 +1423,24 @@ export function PickupAuthorizationsModal({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[11px] text-muted-foreground font-medium">
-                      {isVi ? 'Từ ngày' : 'From date'}
-                    </span>
-                    <div className="relative">
-                      <Input
-                        required
-                        type="text"
-                        placeholder="DD/MM/YYYY"
-                        value={createForm.startDate}
-                        onChange={(e) => setCreateForm((prev) => ({ ...prev, startDate: e.target.value }))}
-                        className="h-8 text-[12.5px] rounded-none border-border pr-8 font-mono"
-                      />
-                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center">
-                        <HugeiconsIcon icon={Calendar03Icon} size={15} className="text-muted-foreground pointer-events-none" />
-                        <input
-                          type="date"
-                          tabIndex={-1}
-                          value={toIsoDateString(createForm.startDate)}
-                          onChange={(e) => {
-                            if (e.target.value) {
-                              setCreateForm((prev) => ({ ...prev, startDate: toDmyString(e.target.value) }));
-                            }
-                          }}
-                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                          title={isVi ? 'Chọn ngày từ lịch' : 'Pick date from calendar'}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[11px] text-muted-foreground font-medium">
-                      {isVi ? 'Đến ngày' : 'To date'}
-                    </span>
-                    <div className="relative">
-                      <Input
-                        required
-                        type="text"
-                        placeholder="DD/MM/YYYY"
-                        value={createForm.endDate}
-                        onChange={(e) => setCreateForm((prev) => ({ ...prev, endDate: e.target.value }))}
-                        className="h-8 text-[12.5px] rounded-none border-border pr-8 font-mono"
-                      />
-                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center">
-                        <HugeiconsIcon icon={Calendar03Icon} size={15} className="text-muted-foreground pointer-events-none" />
-                        <input
-                          type="date"
-                          tabIndex={-1}
-                          value={toIsoDateString(createForm.endDate)}
-                          onChange={(e) => {
-                            if (e.target.value) {
-                              setCreateForm((prev) => ({ ...prev, endDate: toDmyString(e.target.value) }));
-                            }
-                          }}
-                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                          title={isVi ? 'Chọn ngày từ lịch' : 'Pick date from calendar'}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <PickupCalendarPicker
+                  startDate={createForm.startDate}
+                  endDate={createForm.endDate}
+                  quotaInfo={quotaInfo}
+                  studentName={selectedStudent?.name || (isVi ? 'bé' : 'student')}
+                  isVi={isVi}
+                  onChangeRange={(rangeData) => {
+                    setCreateForm((prev) => ({
+                      ...prev,
+                      startDate: rangeData.startDate,
+                      endDate: rangeData.endDate,
+                    }));
+                    setCalendarValidation({
+                      hasConflict: rangeData.hasConflict,
+                      errorMessage: rangeData.errorMessage,
+                    });
+                  }}
+                />
               </div>
 
               {/* 5. Ghi chú / Dặn dò */}
@@ -1453,13 +1477,21 @@ export function PickupAuthorizationsModal({
                         className="w-10 h-10 border border-border overflow-hidden bg-background shrink-0 cursor-zoom-in hover:opacity-85 transition-opacity"
                         onClick={() =>
                           setPreviewPhoto({
-                            url: createForm.photoUrl,
+                            url: normalizeMediaUrl(createForm.photoUrl),
                             title: `${isVi ? 'Người được ủy quyền' : 'Authorized Person'}: ${createForm.pickupPersonName || (isVi ? 'Ảnh chân dung' : 'Portrait photo')}`,
                           })
                         }
                         title={isVi ? 'Bấm để phóng to ảnh' : 'Click to zoom photo'}
                       >
-                        <img src={createForm.photoUrl} alt="" className="w-full h-full object-cover" />
+                        <img
+                          src={normalizeMediaUrl(createForm.photoUrl)}
+                          alt=""
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(createForm.pickupPersonName || 'User')}`;
+                          }}
+                        />
                       </div>
                       <span className="text-[12px] font-medium text-foreground truncate">
                         {isVi ? 'Đã tải ảnh lên' : 'Photo uploaded'}
@@ -1503,8 +1535,8 @@ export function PickupAuthorizationsModal({
                 </Button>
                 <Button
                   type="submit"
-                  disabled={isSubmittingCreate || isUploadingPhoto}
-                  className="h-8 px-4 text-[12.5px] font-medium bg-[#1447e6] hover:bg-[#123ec4] text-white rounded-none cursor-pointer shadow-none transition-colors"
+                  disabled={isSubmittingCreate || isUploadingPhoto || calendarValidation.hasConflict}
+                  className="h-8 px-4 text-[12.5px] font-medium bg-[#1447e6] hover:bg-[#123ec4] text-white rounded-none cursor-pointer shadow-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmittingCreate ? (isVi ? 'Đang tạo...' : 'Creating...') : (isVi ? 'Tạo ủy quyền' : 'Create')}
                 </Button>
