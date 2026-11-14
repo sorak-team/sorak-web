@@ -21,6 +21,11 @@ export const parentApi = {
     return res.data?.data || res.data;
   },
 
+  getPickupQuota: async (params = {}) => {
+    const res = await apiClient.get('/parent/pickup-quota', { params });
+    return res.data?.data || res.data;
+  },
+
   createPickupRequest: async (data) => {
     const res = await apiClient.post('/parent/requests/pickup', data);
     return res.data?.data || res.data;
