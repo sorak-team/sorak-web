@@ -104,16 +104,16 @@ export function ClassHeaderNav({ currentClass, activeTab = 'overview' }) {
           icon: CheckListIcon,
         },
         {
-          key: 'planning',
-          label: t('planning.title', 'Kế hoạch giáo dục'),
-          path: `/classes/${classId}/planning?tab=allocation`,
-          icon: Target02Icon,
-        },
-        {
           key: 'settings',
           label: t('classes.tabSettings', 'Quản lý lớp'),
           path: `/classes/${classId}/settings`,
           icon: Settings01Icon,
+        },
+        {
+          key: 'export',
+          label: t('classes.settingsExport', 'Xuất danh sách'),
+          path: `/classes/${classId}/export`,
+          icon: Download01Icon,
         },
       ];
 
