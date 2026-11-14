@@ -17,12 +17,13 @@ import {
   Certificate01Icon,
   ArrowDataTransferHorizontalIcon,
   Target02Icon,
+  News01Icon,
 } from '@hugeicons/core-free-icons';
 
 import { cn } from '@/shared/lib/utils';
-import { LogoutDialog, RequirePasswordChangeModal, useAuthStore } from '@/features/auth';
+import { LogoutDialog, RequirePasswordChangeModal, useAuthStore, authApi } from '@/features/auth';
 import { SettingsDialog } from '@/features/settings';
-import { NotificationsPanel } from '@/features/notifications';
+import { NotificationsPanel, useNotificationStore } from '@/features/notifications';
 import { useAppearanceStore } from '@/shared/stores/appearance.store';
 import { useAcademicYearStore } from '@/features/academic-years';
 import { useClassesStore, findTeacherClassForYear } from '@/features/classes';
@@ -114,7 +115,33 @@ export function DashboardShell() {
   // Fetch academic years on dashboard initialization to synchronize globally across all routes
   useEffect(() => {
     useAcademicYearStore.getState().fetchAcademicYears();
+    useNotificationStore.getState().fetchMyNotifications();
   }, []);
+
+  // Automatic session monitor: check session every 10s or when tab is focused/visible to auto logout if role changed
+  useEffect(() => {
+    if (!user) return;
+
+    const checkSession = () => {
+      authApi.getMe().catch(() => {});
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        checkSession();
+      }
+    };
+
+    window.addEventListener('focus', checkSession);
+    document.addEventListener('visibilitychange', handleVisibility);
+    const interval = setInterval(checkSession, 10000);
+
+    return () => {
+      window.removeEventListener('focus', checkSession);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      clearInterval(interval);
+    };
+  }, [user]);
 
   // Synchronize classes whenever academic year changes
   useEffect(() => {
@@ -127,11 +154,11 @@ export function DashboardShell() {
   const isRestrictedBghRoute =
     location.pathname === '/' ||
     location.pathname === '/classes' ||
-    location.pathname.startsWith('/transfers') ||
     location.pathname.startsWith('/curriculum') ||
     location.pathname.startsWith('/accounts') ||
     location.pathname.startsWith('/teachers') ||
     location.pathname.startsWith('/school-years') ||
+    location.pathname.startsWith('/notifications') ||
     location.pathname === '/students';
 
   // For Teachers: Automatically direct to their class in the selected academic year, prevent BGH routes
@@ -180,6 +207,7 @@ export function DashboardShell() {
         items: [
           { title: t('nav.classes'), path: '/classes', icon: SchoolIcon },
           { title: t('nav.transfers', 'Chuyển lớp'), path: '/transfers', icon: ArrowDataTransferHorizontalIcon },
+          { title: t('nav.planReviews', 'Duyệt kế hoạch'), path: '/planning/reviews', icon: TaskDone01Icon },
           { title: t('curriculum.tabThemes', 'Bộ chủ đề'), path: '/curriculum?tab=themes', icon: Book02Icon },
           { title: t('curriculum.tabGoals', 'Ngân hàng mục tiêu'), path: '/curriculum?tab=goals', icon: Target02Icon },
         ],
@@ -190,6 +218,7 @@ export function DashboardShell() {
           { title: t('nav.accounts'), path: '/accounts', icon: UserGroupIcon },
           { title: t('nav.teachers'), path: '/teachers', icon: TeacherIcon },
           { title: t('nav.students'), path: '/students', icon: StudentIcon },
+          { title: t('nav.notifications', 'Bản tin'), path: '/notifications', icon: News01Icon },
           { title: t('nav.schoolYears'), path: '/school-years', icon: Calendar03Icon },
         ],
       },
@@ -198,6 +227,9 @@ export function DashboardShell() {
   );
 
   const currentTitle = useMemo(() => {
+    if (location.pathname.startsWith('/school-years')) {
+      return t('nav.schoolYears', 'Năm học');
+    }
     if (location.pathname.includes('/students')) {
       return t('nav.students', 'Học sinh');
     }
@@ -226,6 +258,15 @@ export function DashboardShell() {
     if (location.pathname === '/support') return t('nav.support');
     return t('nav.overview');
   }, [location.pathname, location.search, navGroups, t]);
+
+  const isStudioPlanningTab = useMemo(() => {
+    if (!location.pathname.includes('/classes/') || !location.pathname.includes('/planning')) {
+      return false;
+    }
+    const params = new URLSearchParams(location.search);
+    const tab = params.get('tab') || 'allocation';
+    return tab === 'allocation' || tab === 'activities';
+  }, [location.pathname, location.search]);
 
   // Role Guard: Parents are strictly segregated to /parent portal (after all hooks run)
   if (user?.role === 'PARENT_PH') {
@@ -269,13 +310,13 @@ export function DashboardShell() {
           currentTitle={currentTitle}
         />
 
-        {/* Content Area - Full-bleed for planning multi-column workspaces, standardized 32px padding for other pages */}
+        {/* Content Area - Standardized padding matching CurriculumThemeDetailPage */}
         <main
           className={cn(
-            'flex-1 bg-background flex flex-col',
-            location.pathname.includes('/planning')
-              ? 'p-0 overflow-hidden'
-              : 'overflow-y-auto p-6 lg:p-8'
+            'flex-1 bg-background flex flex-col min-h-0',
+            isStudioPlanningTab
+              ? 'overflow-hidden p-6 lg:p-8'
+              : 'overflow-y-auto p-6 lg:p-8 [scrollbar-width:thin]'
           )}
         >
           <Outlet />

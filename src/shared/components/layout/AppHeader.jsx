@@ -46,16 +46,29 @@ const DEFAULT_THEME_NAMES = {
   '9': 'Quê hương đất nước',
 };
 
+const formatGoalCode = (code) => {
+  if (!code) return '';
+  const raw = String(code).trim().toUpperCase();
+  const digitsMatch = raw.match(/\d+/);
+  if (digitsMatch) {
+    const num = parseInt(digitsMatch[0], 10);
+    if (!isNaN(num)) {
+      return `MT ${num < 10 ? '0' + num : num}`;
+    }
+  }
+  return raw;
+};
+
 const PLANNING_GOALS_LOOKUP = {
-  'g1-1': 'MT 1',
-  'g1-2': 'MT 2',
-  'g1-3': 'MT 3',
-  'g1-4': 'MT 4',
-  'g1-5': 'MT 5',
-  'g1-6': 'MT 6',
-  'g1-7': 'MT 7',
-  'g2-1': 'MT 8',
-  'g2-2': 'MT 9',
+  'g1-1': 'MT 01',
+  'g1-2': 'MT 02',
+  'g1-3': 'MT 03',
+  'g1-4': 'MT 04',
+  'g1-5': 'MT 05',
+  'g1-6': 'MT 06',
+  'g1-7': 'MT 07',
+  'g2-1': 'MT 08',
+  'g2-2': 'MT 09',
   'g2-3': 'MT 10',
   'g2-4': 'MT 11',
   'g3-1': 'MT 12',
@@ -64,9 +77,9 @@ const PLANNING_GOALS_LOOKUP = {
   'g4-2': 'MT 15',
   'g5-1': 'MT 16',
   'g5-2': 'MT 17',
-  'g-nhatre-1': 'MT 1',
-  'g-nhatre-2': 'MT 2',
-  'g-nhatre-3': 'MT 3',
+  'g-nhatre-1': 'MT 01',
+  'g-nhatre-2': 'MT 02',
+  'g-nhatre-3': 'MT 03',
 };
 
 export function AppHeader({ sidebarCollapsed, onToggleSidebar, currentTitle }) {
@@ -187,11 +200,8 @@ export function AppHeader({ sidebarCollapsed, onToggleSidebar, currentTitle }) {
 
   const planningGoalDisplayName = useMemo(() => {
     if (!goalIdParam) return '';
-    if (goalCodeParam) return goalCodeParam;
-    if (PLANNING_GOALS_LOOKUP[goalIdParam]) {
-      return PLANNING_GOALS_LOOKUP[goalIdParam];
-    }
-    return 'MT 1';
+    const raw = goalCodeParam || PLANNING_GOALS_LOOKUP[goalIdParam] || 'MT 01';
+    return formatGoalCode(raw);
   }, [goalIdParam, goalCodeParam]);
 
   const isCurriculumThemes = location.pathname.includes('/curriculum/themes/');
@@ -353,11 +363,13 @@ export function AppHeader({ sidebarCollapsed, onToggleSidebar, currentTitle }) {
                   </>
                 ) : (
                   <span className="text-foreground font-normal">
-                    {currentTab === 'timetable'
-                      ? t('planning.tabTimetable', 'Kế hoạch tuần')
-                      : currentTab === 'activities'
-                        ? t('planning.tabActivities', 'Xác định hoạt động')
-                        : t('planning.tabAllocation', 'Phân bổ mục tiêu')}
+                    {currentTab === 'submission'
+                      ? t('planning.tabSubmission', 'Tổng hợp & Nộp duyệt')
+                      : currentTab === 'timetable'
+                        ? t('planning.tabTimetable', 'Kế hoạch tuần')
+                        : currentTab === 'activities'
+                          ? t('planning.tabActivities', 'Xác định hoạt động')
+                          : t('planning.tabAllocation', 'Phân bổ mục tiêu')}
                   </span>
                 )}
               </>
@@ -549,6 +561,27 @@ export function AppHeader({ sidebarCollapsed, onToggleSidebar, currentTitle }) {
               {currentTeacher?.fullName || currentTitle}
             </span>
           </>
+        ) : location.pathname === '/notifications' ? (
+          <span className="text-foreground font-normal">
+            {t('nav.notifications', 'Bản tin')}
+          </span>
+        ) : location.pathname.startsWith('/notifications/') ? (
+          <>
+            <Link
+              to="/notifications"
+              className="text-muted-foreground hover:text-foreground font-normal transition-colors"
+            >
+              {t('nav.notifications', 'Bản tin')}
+            </Link>
+            <HugeiconsIcon
+              icon={ArrowRight01Icon}
+              size={14}
+              className="text-muted-foreground/70"
+            />
+            <span className="text-foreground font-normal">
+              Chi tiết bản tin
+            </span>
+          </>
         ) : isStudents ? (
           <span className="text-foreground font-normal">
             {t('nav.students', 'Học sinh')}
@@ -641,7 +674,7 @@ export function AppHeader({ sidebarCollapsed, onToggleSidebar, currentTitle }) {
         ) : location.pathname.startsWith('/school-years/') ? (
           <>
             <Link
-              to="/school-years"
+              to="/school-years?view=all"
               className="text-muted-foreground hover:text-foreground font-normal transition-colors"
             >
               {t('nav.schoolYears')}
@@ -826,6 +859,23 @@ export function AppHeader({ sidebarCollapsed, onToggleSidebar, currentTitle }) {
             />
             <span className="text-foreground font-normal">
               {t('nav.transfers', 'Chuyển lớp')}
+            </span>
+          </>
+        ) : location.pathname === '/planning/reviews' || location.pathname === '/curriculum/reviews' ? (
+          <>
+            <Link
+              to="/school-years"
+              className="text-muted-foreground hover:text-foreground font-normal transition-colors"
+            >
+              {getYearName(selectedYear)}
+            </Link>
+            <HugeiconsIcon
+              icon={ArrowRight01Icon}
+              size={14}
+              className="text-muted-foreground/70"
+            />
+            <span className="text-foreground font-normal">
+              {t('nav.planReviews', 'Duyệt kế hoạch')}
             </span>
           </>
         ) : location.pathname.startsWith('/transfers/') ? (
