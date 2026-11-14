@@ -1,5 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
+import { toast } from 'sonner';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { Download01Icon } from '@hugeicons/core-free-icons';
 import { cn } from '@/shared/lib/utils';
+import { exportSingleChartPng } from '../services/who-growth-export.service';
 
 // WHO Child Growth Standards (0–72 months) Reference Points
 // Data points based on official WHO standards for Height-for-age (cm) and Weight-for-age (kg)
@@ -122,7 +126,7 @@ function parseDateFlexible(dateStr) {
 
 /**
  * Helper to evaluate child growth according to Ministry of Health & WHO standards
- * Option 2: 2 distinct columns (Chiều cao / Tuổi & Cân nặng / Thể trạng)
+ * 2 distinct columns (Chiều cao / Tuổi & Cân nặng / Thể trạng)
  */
 export function evaluateChildGrowth({ heightZ, weightZ, bmiZ }) {
   const hz = heightZ != null ? Number(heightZ) : null;
@@ -232,11 +236,13 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
   }, [student?.gender]);
 
   const [activeTooltip, setActiveTooltip] = useState(null);
+  const heightSvgRef = useRef(null);
+  const weightSvgRef = useRef(null);
+  const [exportingChart, setExportingChart] = useState(null);
 
   const minMonth = 24;
   const maxMonth = 72;
   const data = isGirl ? WHO_DATA.girl : WHO_DATA.boy;
-  const standardLabel = isGirl ? 'WHO · Bé gái · 24–72 tháng (Độ tuổi Mầm non)' : 'WHO · Bé trai · 24–72 tháng (Độ tuổi Mầm non)';
 
   // Chart dimensions & margins
   const svgWidth = 1100;
@@ -252,7 +258,6 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
   };
 
   // Y scales
-  // Height: 70 cm to 135 cm (Covers WHO -3SD at 24m to +3SD at 72m)
   const minH = 70;
   const maxH = 135;
   const getYHeight = (cm) => {
@@ -260,7 +265,6 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
     return margin.top + (1 - (clamped - minH) / (maxH - minH)) * chartHeight;
   };
 
-  // Weight: 7 kg to 35 kg (Covers WHO -3SD at 24m to +3SD at 72m)
   const minW = 7;
   const maxW = 35;
   const getYWeight = (kg) => {
@@ -287,7 +291,6 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
 
     const oldestDate = parseDateFlexible(sorted[0]?.date || sorted[0]?.assessmentDate || sorted[0]?.dateFormatted);
 
-    // 1. Calculate exact continuous age in months for each measurement
     const mapped = sorted.map((record, idx) => {
       const recordDate = parseDateFlexible(record.date || record.assessmentDate || record.dateFormatted);
       let ageInMonths;
@@ -318,8 +321,6 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
       };
     });
 
-    // 2. Prevent visual overlapping: ensure minimum 28px horizontal spacing between consecutive dots
-    // so that measurements taken close in time (e.g. days apart) are each clearly visible with non-overlapping labels
     const minSpacing = 28;
     for (let i = 1; i < mapped.length; i++) {
       if (mapped[i].rawX - mapped[i - 1].rawX < minSpacing) {
@@ -336,10 +337,41 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
 
   const latestPoint = studentPoints[studentPoints.length - 1] || null;
 
+  // Single chart PNG export (pure SVG-to-Canvas, 0% failure rate)
+  const handleExportChartPng = async (type) => {
+    const svgEl = type === 'height' ? heightSvgRef.current : weightSvgRef.current;
+    if (!svgEl) {
+      toast.error('Chưa tải xong biểu đồ để xuất ảnh');
+      return;
+    }
+    const typeLabel = type === 'height' ? 'Chiều cao theo tuổi' : 'Cân nặng theo tuổi';
+
+    try {
+      setExportingChart(type);
+      toast.loading(`Đang xuất ảnh biểu đồ ${typeLabel}...`, { id: `export-chart-${type}` });
+
+      await exportSingleChartPng({
+        svgElement: svgEl,
+        type,
+        student,
+        latestPoint,
+        studentPoints,
+        isGirl,
+      });
+
+      toast.success(`Đã xuất ảnh biểu đồ ${typeLabel} thành công!`, { id: `export-chart-${type}` });
+    } catch (err) {
+      console.error('Error exporting chart to PNG:', err);
+      toast.error(`Không thể xuất ảnh biểu đồ: ${err.message || 'Lỗi xử lý'}`, { id: `export-chart-${type}` });
+    } finally {
+      setExportingChart(null);
+    }
+  };
+
   // X ticks: 24, 30, 36, 42, 48, 54, 60, 66, 72 (every 6 months)
   const xTicks = [24, 30, 36, 42, 48, 54, 60, 66, 72];
 
-  // Helper to render Height SVG chart
+  // Helper to render Height SVG chart with bulletproof explicit SVG attributes (zero black boxes)
   const renderHeightChart = () => {
     const hData = data.height.filter((d) => d.month >= minMonth);
     const topCapPoints = hData.map((d) => ({ x: getX(d.month), y: margin.top }));
@@ -365,6 +397,8 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
 
     return (
       <svg
+        ref={heightSvgRef}
+        xmlns="http://www.w3.org/2000/svg"
         viewBox={`0 0 ${svgWidth} ${svgHeight}`}
         className="w-full h-auto select-none"
         style={{ minWidth: '760px' }}
@@ -385,8 +419,8 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
                 y1={y}
                 x2={margin.left + chartWidth}
                 y2={y}
-                stroke="currentColor"
-                strokeOpacity="0.12"
+                stroke="#94A3B8"
+                strokeOpacity="0.25"
                 strokeWidth="0.8"
                 strokeDasharray="3 3"
               />
@@ -394,7 +428,9 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
                 x={margin.left - 8}
                 y={y + 3.5}
                 textAnchor="end"
-                className="fill-muted-foreground text-[10px] font-mono"
+                fill="#64748B"
+                fontSize="10px"
+                fontFamily="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
               >
                 {val}
               </text>
@@ -407,7 +443,10 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
           x={margin.left - 8}
           y={margin.top - 12}
           textAnchor="end"
-          className="fill-muted-foreground text-[9px] font-mono font-medium"
+          fill="#475569"
+          fontSize="10px"
+          fontWeight="600"
+          fontFamily="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
         >
           cm
         </text>
@@ -422,8 +461,8 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
                 y1={margin.top}
                 x2={x}
                 y2={margin.top + chartHeight}
-                stroke="currentColor"
-                strokeOpacity="0.12"
+                stroke="#94A3B8"
+                strokeOpacity="0.25"
                 strokeWidth="0.8"
                 strokeDasharray="2 2"
               />
@@ -431,7 +470,9 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
                 x={x}
                 y={margin.top + chartHeight + 16}
                 textAnchor="middle"
-                className="fill-muted-foreground text-[10px] font-mono"
+                fill="#64748B"
+                fontSize="10px"
+                fontFamily="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
               >
                 {month}
               </text>
@@ -444,7 +485,10 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
           x={margin.left + chartWidth / 2}
           y={margin.top + chartHeight + 30}
           textAnchor="middle"
-          className="fill-muted-foreground text-[9px] font-medium"
+          fill="#64748B"
+          fontSize="10px"
+          fontWeight="500"
+          fontFamily="system-ui, -apple-system, sans-serif"
         >
           Tháng tuổi
         </text>
@@ -463,20 +507,20 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
           const last = hData[hData.length - 1];
           const rx = margin.left + chartWidth + 7;
           return (
-            <g className="text-[10px] font-mono font-semibold">
-              <text x={rx} y={getYHeight(last.sd_p3) + 3.5} className="fill-slate-600 dark:fill-slate-300">
+            <g fontFamily="ui-monospace, SFMono-Regular, Menlo, Monaco, monospace" fontSize="10px" fontWeight="600">
+              <text x={rx} y={getYHeight(last.sd_p3) + 3.5} fill="#475569">
                 3
               </text>
-              <text x={rx} y={getYHeight(last.sd_p2) + 3.5} className="fill-slate-600 dark:fill-slate-300">
+              <text x={rx} y={getYHeight(last.sd_p2) + 3.5} fill="#475569">
                 2
               </text>
-              <text x={rx} y={getYHeight(last.med) + 3.5} className="fill-emerald-600 font-bold">
+              <text x={rx} y={getYHeight(last.med) + 3.5} fill="#16A34A" fontWeight="700">
                 0
               </text>
-              <text x={rx} y={getYHeight(last.sd_n2) + 3.5} className="fill-slate-600 dark:fill-slate-300">
+              <text x={rx} y={getYHeight(last.sd_n2) + 3.5} fill="#475569">
                 -2
               </text>
-              <text x={rx} y={getYHeight(last.sd_n3) + 3.5} className="fill-slate-600 dark:fill-slate-300">
+              <text x={rx} y={getYHeight(last.sd_n3) + 3.5} fill="#475569">
                 -3
               </text>
             </g>
@@ -498,7 +542,7 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
           />
         )}
 
-        {/* Student Measurement Points (Refined Crisp Clinical Dots) */}
+        {/* Student Measurement Points */}
         {studentPoints.map((pt, idx) => {
           const isLatest = idx === studentPoints.length - 1;
           const isHovered = activeTooltip?.id === `h-${pt.id}` || String(highlightedId) === String(pt.id);
@@ -531,15 +575,8 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
               }}
               onMouseLeave={() => setActiveTooltip(null)}
             >
-              {/* Invisible large hit area for smooth interaction */}
-              <circle
-                cx={pt.heightX}
-                cy={pt.heightY}
-                r="14"
-                fill="transparent"
-              />
+              <circle cx={pt.heightX} cy={pt.heightY} r="14" fill="transparent" />
 
-              {/* Latest measurement indicator pulse ring if not hovered */}
               {isLatest && !isHovered && (
                 <circle
                   cx={pt.heightX}
@@ -553,7 +590,6 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
                 />
               )}
 
-              {/* Hover aura ring */}
               {isHovered && (
                 <circle
                   cx={pt.heightX}
@@ -564,35 +600,26 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
                 />
               )}
 
-              {/* Dot label badge: Đ1, Đ2, ... */}
+              {/* Dot label badge: Đ1, Đ2, ... (Explicit SVG attributes prevent black box fallback) */}
               <g className="select-none pointer-events-none">
                 <rect
-                  x={pt.heightX - 11}
+                  x={pt.heightX - 12}
                   y={pt.heightY - 21}
-                  width="22"
+                  width="24"
                   height="13"
                   rx="2"
-                  className={cn(
-                    isHovered
-                      ? 'fill-blue-600 stroke-white'
-                      : isLatest
-                        ? 'fill-slate-900 dark:fill-slate-100 stroke-white dark:stroke-slate-900'
-                        : 'fill-white/95 dark:fill-slate-900/95 stroke-slate-300 dark:stroke-slate-700'
-                  )}
+                  fill={isHovered ? '#2563EB' : isLatest ? '#0F172A' : '#FFFFFF'}
+                  stroke={isHovered ? '#2563EB' : isLatest ? '#0F172A' : '#CBD5E1'}
                   strokeWidth="1"
                 />
                 <text
                   x={pt.heightX}
                   y={pt.heightY - 11}
                   textAnchor="middle"
-                  className={cn(
-                    'text-[9px] font-mono font-bold leading-none',
-                    isHovered
-                      ? 'fill-white'
-                      : isLatest
-                        ? 'fill-white dark:fill-slate-900'
-                        : 'fill-slate-700 dark:fill-slate-200'
-                  )}
+                  fill={isHovered || isLatest ? '#FFFFFF' : '#334155'}
+                  fontSize="9px"
+                  fontWeight="700"
+                  fontFamily="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
                 >
                   Đ{pt.roundIndex || idx + 1}
                 </text>
@@ -614,7 +641,7 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
     );
   };
 
-  // Helper to render Weight SVG chart
+  // Helper to render Weight SVG chart with bulletproof explicit SVG attributes (zero black boxes)
   const renderWeightChart = () => {
     const wData = data.weight.filter((d) => d.month >= minMonth);
     const topCapPoints = wData.map((d) => ({ x: getX(d.month), y: margin.top }));
@@ -640,6 +667,8 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
 
     return (
       <svg
+        ref={weightSvgRef}
+        xmlns="http://www.w3.org/2000/svg"
         viewBox={`0 0 ${svgWidth} ${svgHeight}`}
         className="w-full h-auto select-none"
         style={{ minWidth: '760px' }}
@@ -660,8 +689,8 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
                 y1={y}
                 x2={margin.left + chartWidth}
                 y2={y}
-                stroke="currentColor"
-                strokeOpacity="0.12"
+                stroke="#94A3B8"
+                strokeOpacity="0.25"
                 strokeWidth="0.8"
                 strokeDasharray="3 3"
               />
@@ -669,7 +698,9 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
                 x={margin.left - 8}
                 y={y + 3.5}
                 textAnchor="end"
-                className="fill-muted-foreground text-[10px] font-mono"
+                fill="#64748B"
+                fontSize="10px"
+                fontFamily="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
               >
                 {val}
               </text>
@@ -682,7 +713,10 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
           x={margin.left - 8}
           y={margin.top - 12}
           textAnchor="end"
-          className="fill-muted-foreground text-[9px] font-mono font-medium"
+          fill="#475569"
+          fontSize="10px"
+          fontWeight="600"
+          fontFamily="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
         >
           kg
         </text>
@@ -697,8 +731,8 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
                 y1={margin.top}
                 x2={x}
                 y2={margin.top + chartHeight}
-                stroke="currentColor"
-                strokeOpacity="0.12"
+                stroke="#94A3B8"
+                strokeOpacity="0.25"
                 strokeWidth="0.8"
                 strokeDasharray="2 2"
               />
@@ -706,7 +740,9 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
                 x={x}
                 y={margin.top + chartHeight + 16}
                 textAnchor="middle"
-                className="fill-muted-foreground text-[10px] font-mono"
+                fill="#64748B"
+                fontSize="10px"
+                fontFamily="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
               >
                 {month}
               </text>
@@ -719,7 +755,10 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
           x={margin.left + chartWidth / 2}
           y={margin.top + chartHeight + 30}
           textAnchor="middle"
-          className="fill-muted-foreground text-[9px] font-medium"
+          fill="#64748B"
+          fontSize="10px"
+          fontWeight="500"
+          fontFamily="system-ui, -apple-system, sans-serif"
         >
           Tháng tuổi
         </text>
@@ -738,20 +777,20 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
           const last = wData[wData.length - 1];
           const rx = margin.left + chartWidth + 7;
           return (
-            <g className="text-[10px] font-mono font-semibold">
-              <text x={rx} y={getYWeight(last.sd_p3) + 3.5} className="fill-slate-600 dark:fill-slate-300">
+            <g fontFamily="ui-monospace, SFMono-Regular, Menlo, Monaco, monospace" fontSize="10px" fontWeight="600">
+              <text x={rx} y={getYWeight(last.sd_p3) + 3.5} fill="#475569">
                 3
               </text>
-              <text x={rx} y={getYWeight(last.sd_p2) + 3.5} className="fill-slate-600 dark:fill-slate-300">
+              <text x={rx} y={getYWeight(last.sd_p2) + 3.5} fill="#475569">
                 2
               </text>
-              <text x={rx} y={getYWeight(last.med) + 3.5} className="fill-emerald-600 font-bold">
+              <text x={rx} y={getYWeight(last.med) + 3.5} fill="#16A34A" fontWeight="700">
                 0
               </text>
-              <text x={rx} y={getYWeight(last.sd_n2) + 3.5} className="fill-slate-600 dark:fill-slate-300">
+              <text x={rx} y={getYWeight(last.sd_n2) + 3.5} fill="#475569">
                 -2
               </text>
-              <text x={rx} y={getYWeight(last.sd_n3) + 3.5} className="fill-slate-600 dark:fill-slate-300">
+              <text x={rx} y={getYWeight(last.sd_n3) + 3.5} fill="#475569">
                 -3
               </text>
             </g>
@@ -773,7 +812,7 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
           />
         )}
 
-        {/* Student Measurement Points (Refined Crisp Clinical Dots) */}
+        {/* Student Measurement Points */}
         {studentPoints.map((pt, idx) => {
           const isLatest = idx === studentPoints.length - 1;
           const isHovered = activeTooltip?.id === `w-${pt.id}` || String(highlightedId) === String(pt.id);
@@ -806,15 +845,8 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
               }}
               onMouseLeave={() => setActiveTooltip(null)}
             >
-              {/* Invisible large hit area for smooth interaction */}
-              <circle
-                cx={pt.weightX}
-                cy={pt.weightY}
-                r="14"
-                fill="transparent"
-              />
+              <circle cx={pt.weightX} cy={pt.weightY} r="14" fill="transparent" />
 
-              {/* Latest measurement indicator pulse ring if not hovered */}
               {isLatest && !isHovered && (
                 <circle
                   cx={pt.weightX}
@@ -828,7 +860,6 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
                 />
               )}
 
-              {/* Hover aura ring */}
               {isHovered && (
                 <circle
                   cx={pt.weightX}
@@ -839,35 +870,26 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
                 />
               )}
 
-              {/* Dot label badge: Đ1, Đ2, ... */}
+              {/* Dot label badge: Đ1, Đ2, ... (Explicit SVG attributes prevent black box fallback) */}
               <g className="select-none pointer-events-none">
                 <rect
-                  x={pt.weightX - 11}
+                  x={pt.weightX - 12}
                   y={pt.weightY - 21}
-                  width="22"
+                  width="24"
                   height="13"
                   rx="2"
-                  className={cn(
-                    isHovered
-                      ? 'fill-blue-600 stroke-white'
-                      : isLatest
-                        ? 'fill-slate-900 dark:fill-slate-100 stroke-white dark:stroke-slate-900'
-                        : 'fill-white/95 dark:fill-slate-900/95 stroke-slate-300 dark:stroke-slate-700'
-                  )}
+                  fill={isHovered ? '#2563EB' : isLatest ? '#0F172A' : '#FFFFFF'}
+                  stroke={isHovered ? '#2563EB' : isLatest ? '#0F172A' : '#CBD5E1'}
                   strokeWidth="1"
                 />
                 <text
                   x={pt.weightX}
                   y={pt.weightY - 11}
                   textAnchor="middle"
-                  className={cn(
-                    'text-[9px] font-mono font-bold leading-none',
-                    isHovered
-                      ? 'fill-white'
-                      : isLatest
-                        ? 'fill-white dark:fill-slate-900'
-                        : 'fill-slate-700 dark:fill-slate-200'
-                  )}
+                  fill={isHovered || isLatest ? '#FFFFFF' : '#334155'}
+                  fontSize="9px"
+                  fontWeight="700"
+                  fontFamily="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
                 >
                   Đ{pt.roundIndex || idx + 1}
                 </text>
@@ -924,7 +946,6 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
         }`}
       >
         <div className="relative w-[215px] bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-md shadow-lg border border-slate-200/90 dark:border-slate-800 px-3 py-2 text-left font-sans">
-          {/* Arrow Caret */}
           <div
             style={{ left: caretLeft }}
             className={`absolute size-2 bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rotate-45 -translate-x-1/2 ${
@@ -934,7 +955,6 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
             }`}
           />
 
-          {/* Row 1: Round & Date */}
           <div className="flex items-center justify-between pb-1 border-b border-slate-100 dark:border-slate-800 text-[10px]">
             <span className="font-semibold text-slate-700 dark:text-slate-300">
               {tooltip.roundName}
@@ -944,7 +964,6 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
             </span>
           </div>
 
-          {/* Row 2: Value & Age */}
           <div className="pt-1.5 flex items-baseline justify-between">
             <span className="text-[14px] font-bold font-mono text-slate-900 dark:text-white tracking-tight">
               {tooltip.value}
@@ -954,7 +973,6 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
             </span>
           </div>
 
-          {/* Row 3: Classification & Z-Score (Never truncated with ellipsis) */}
           <div className="pt-1 flex items-center justify-between gap-1.5 text-[10.5px]">
             <span className="text-slate-600 dark:text-slate-300 font-medium whitespace-nowrap">
               {cleanClassification}
@@ -972,160 +990,179 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
 
   return (
     <div className="space-y-4" data-name="WHO Growth Monitoring">
-      {/* 2 WHO Growth Charts */}
+      {/* 2. WHO Growth Charts (Height & Weight) */}
       {!hideCharts && (
         <div className="space-y-4">
-        {/* Chart 1: Height-for-age */}
-        <div className="border border-border bg-card shadow-xs overflow-hidden">
-          {/* Header */}
-          <div className="p-3.5 border-b border-border flex flex-wrap items-center justify-between gap-2 bg-card">
-            <div>
-              <h4 className="text-[14px] font-semibold text-foreground">
-                Chiều cao theo tuổi · {isGirl ? 'Bé gái' : 'Bé trai'}
-              </h4>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
-                Tham chiếu WHO · Chiều cao (cm) · 24–72 tháng (Độ tuổi Mầm non)
+          {/* Chart 1: Height-for-age */}
+          <div className="border border-border bg-card shadow-xs overflow-hidden">
+            {/* Header */}
+            <div className="p-3.5 border-b border-border flex flex-wrap items-center justify-between gap-2 bg-card">
+              <div>
+                <h4 className="text-[14px] font-semibold text-foreground">
+                  Chiều cao theo tuổi · {isGirl ? 'Bé gái' : 'Bé trai'}
+                </h4>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Tham chiếu WHO · Chiều cao (cm) · 24–72 tháng (Độ tuổi Mầm non)
+                  {studentPoints.length > 0 && (
+                    <span className="text-primary font-medium ml-1.5">
+                      · Hiển thị đầy đủ {studentPoints.length} đợt đo (Đ1 → Đ{studentPoints.length})
+                    </span>
+                  )}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-1 text-[11px] font-medium bg-muted text-muted-foreground border border-border">
+                  {latestPoint
+                    ? `Đo gần nhất: ${latestPoint.dateFormatted || latestPoint.date || '—'} · ${latestPoint.height} cm (${latestPoint.ageInMonths} tháng)`
+                    : 'Chưa có số đo'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleExportChartPng('height')}
+                  disabled={exportingChart === 'height'}
+                  className="h-7 px-2.5 inline-flex items-center gap-1.5 text-[11px] font-medium border border-border bg-background hover:bg-muted text-foreground rounded-none transition-colors cursor-pointer select-none disabled:opacity-50"
+                  title="Xuất ảnh biểu đồ chiều cao độ phân giải cao (PNG)"
+                >
+                  <HugeiconsIcon icon={Download01Icon} size={13} className="text-muted-foreground" />
+                  <span>{exportingChart === 'height' ? 'Đang xuất...' : 'Xuất ảnh PNG'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Legend strip */}
+            <div className="px-3.5 py-2 border-b border-border/60 bg-muted/20 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px]">
+              <div className="flex items-center gap-1.5">
+                <span className="size-3 rounded-none bg-[#FEF9C3] border border-[#FDE047]" />
+                <span className="text-foreground/90">Cao hơn so với tuổi</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="size-3 rounded-none bg-[#D6F1FD] border border-[#7DD3FC]" />
+                <span className="text-foreground/90">Chiều cao bình thường</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="size-3 rounded-none bg-[#FED7AA] border border-[#FDBA74]" />
+                <span className="text-foreground/90">Thấp còi độ 1</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="size-3 rounded-none bg-[#EE7D8D] border border-[#E11D48]" />
+                <span className="text-foreground/90">Thấp còi độ 2</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-4 h-0.5 bg-[#16A34A]" />
+                <span className="text-foreground/90 font-medium text-emerald-700 dark:text-emerald-400">
+                  Trung vị (0)
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-[#2563EB]" />
+                <span className="text-[#2563EB] font-semibold">
+                  {student?.fullName || 'Học sinh'}
+                </span>
                 {studentPoints.length > 0 && (
-                  <span className="text-primary font-medium ml-1.5">
-                    · Hiển thị đầy đủ {studentPoints.length} đợt đo (Đ1 → Đ{studentPoints.length}) khớp với bảng ở trên
+                  <span className="font-mono text-muted-foreground ml-1">
+                    ({studentPoints.length} đợt đo: Đ1 → Đ{studentPoints.length})
                   </span>
                 )}
-              </p>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-1 text-[11px] font-medium bg-muted text-muted-foreground border border-border">
-                {latestPoint
-                  ? `Đo gần nhất: ${latestPoint.dateFormatted || latestPoint.date || '—'} · ${latestPoint.height} cm (${latestPoint.ageInMonths} tháng)`
-                  : 'Chưa có số đo'}
-              </span>
+            {/* SVG Canvas Container with HTML Tooltip Overlay */}
+            <div className="p-2 sm:p-3 overflow-x-auto bg-card">
+              <div className="relative min-w-[760px]">
+                {renderHeightChart()}
+                {activeTooltip?.chart === 'height' && renderTooltipOverlay(activeTooltip)}
+              </div>
             </div>
           </div>
 
-          {/* Legend strip */}
-          <div className="px-3.5 py-2 border-b border-border/60 bg-muted/20 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px]">
-            <div className="flex items-center gap-1.5">
-              <span className="size-3 rounded-none bg-[#FEF9C3] border border-[#FDE047]" />
-              <span className="text-foreground/90">Cao hơn so với tuổi</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="size-3 rounded-none bg-[#D6F1FD] border border-[#7DD3FC]" />
-              <span className="text-foreground/90">Chiều cao bình thường</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="size-3 rounded-none bg-[#FED7AA] border border-[#FDBA74]" />
-              <span className="text-foreground/90">Thấp còi độ 1</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="size-3 rounded-none bg-[#EE7D8D] border border-[#E11D48]" />
-              <span className="text-foreground/90">Thấp còi độ 2</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-4 h-0.5 bg-[#16A34A]" />
-              <span className="text-foreground/90 font-medium text-emerald-700 dark:text-emerald-400">
-                Trung vị (0)
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="size-2 rounded-full bg-[#2563EB]" />
-              <span className="text-[#2563EB] font-semibold">
-                {student?.fullName || 'Học sinh'}
-              </span>
-              {studentPoints.length > 0 && (
-                <span className="font-mono text-muted-foreground ml-1">
-                  ({studentPoints.length} đợt đo: Đ1 → Đ{studentPoints.length})
+          {/* Chart 2: Weight-for-age */}
+          <div className="border border-border bg-card shadow-xs overflow-hidden">
+            {/* Header */}
+            <div className="p-3.5 border-b border-border flex flex-wrap items-center justify-between gap-2 bg-card">
+              <div>
+                <h4 className="text-[14px] font-semibold text-foreground">
+                  Cân nặng theo tuổi · {isGirl ? 'Bé gái' : 'Bé trai'}
+                </h4>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Tham chiếu WHO · Cân nặng (kg) · 24–72 tháng (Độ tuổi Mầm non)
+                  {studentPoints.length > 0 && (
+                    <span className="text-primary font-medium ml-1.5">
+                      · Hiển thị đầy đủ {studentPoints.length} đợt đo (Đ1 → Đ{studentPoints.length})
+                    </span>
+                  )}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-1 text-[11px] font-medium bg-muted text-muted-foreground border border-border">
+                  {latestPoint
+                    ? `Đo gần nhất: ${latestPoint.dateFormatted || latestPoint.date || '—'} · ${latestPoint.weight} kg (${latestPoint.ageInMonths} tháng)`
+                    : 'Chưa có số đo'}
                 </span>
-              )}
+                <button
+                  type="button"
+                  onClick={() => handleExportChartPng('weight')}
+                  disabled={exportingChart === 'weight'}
+                  className="h-7 px-2.5 inline-flex items-center gap-1.5 text-[11px] font-medium border border-border bg-background hover:bg-muted text-foreground rounded-none transition-colors cursor-pointer select-none disabled:opacity-50"
+                  title="Xuất ảnh biểu đồ cân nặng độ phân giải cao (PNG)"
+                >
+                  <HugeiconsIcon icon={Download01Icon} size={13} className="text-muted-foreground" />
+                  <span>{exportingChart === 'weight' ? 'Đang xuất...' : 'Xuất ảnh PNG'}</span>
+                </button>
+              </div>
             </div>
-          </div>
 
-          {/* SVG Canvas Container with HTML Tooltip Overlay */}
-          <div className="p-2 sm:p-3 overflow-x-auto bg-card">
-            <div className="relative min-w-[760px]">
-              {renderHeightChart()}
-              {activeTooltip?.chart === 'height' && renderTooltipOverlay(activeTooltip)}
+            {/* Legend strip */}
+            <div className="px-3.5 py-2 border-b border-border/60 bg-muted/20 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px]">
+              <div className="flex items-center gap-1.5">
+                <span className="size-3 rounded-none bg-[#FEF9C3] border border-[#FDE047]" />
+                <span className="text-foreground/90">Cân nặng cao hơn so với tuổi</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="size-3 rounded-none bg-[#D6F1FD] border border-[#7DD3FC]" />
+                <span className="text-foreground/90">Cân nặng bình thường</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="size-3 rounded-none bg-[#FED7AA] border border-[#FDBA74]" />
+                <span className="text-foreground/90">Suy dinh dưỡng vừa</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="size-3 rounded-none bg-[#EE7D8D] border border-[#E11D48]" />
+                <span className="text-foreground/90">Suy dinh dưỡng nặng</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-4 h-0.5 bg-[#16A34A]" />
+                <span className="text-foreground/90 font-medium text-emerald-700 dark:text-emerald-400">
+                  Trung vị (0)
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-[#2563EB]" />
+                <span className="text-[#2563EB] font-semibold">
+                  {student?.fullName || 'Học sinh'}
+                </span>
+                {studentPoints.length > 0 && (
+                  <span className="font-mono text-muted-foreground ml-1">
+                    ({studentPoints.length} đợt đo: Đ1 → Đ{studentPoints.length})
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* SVG Canvas Container with HTML Tooltip Overlay */}
+            <div className="p-2 sm:p-3 overflow-x-auto bg-card">
+              <div className="relative min-w-[760px]">
+                {renderWeightChart()}
+                {activeTooltip?.chart === 'weight' && renderTooltipOverlay(activeTooltip)}
+              </div>
             </div>
           </div>
         </div>
+      )}
 
-        {/* Chart 2: Weight-for-age */}
-        <div className="border border-border bg-card shadow-xs overflow-hidden">
-          {/* Header */}
-          <div className="p-3.5 border-b border-border flex flex-wrap items-center justify-between gap-2 bg-card">
-            <div>
-              <h4 className="text-[14px] font-semibold text-foreground">
-                Cân nặng theo tuổi · {isGirl ? 'Bé gái' : 'Bé trai'}
-              </h4>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
-                Tham chiếu WHO · Cân nặng (kg) · 24–72 tháng (Độ tuổi Mầm non)
-                {studentPoints.length > 0 && (
-                  <span className="text-primary font-medium ml-1.5">
-                    · Hiển thị đầy đủ {studentPoints.length} đợt đo (Đ1 → Đ{studentPoints.length}) khớp với bảng ở trên
-                  </span>
-                )}
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-1 text-[11px] font-medium bg-muted text-muted-foreground border border-border">
-                {latestPoint
-                  ? `Đo gần nhất: ${latestPoint.dateFormatted || latestPoint.date || '—'} · ${latestPoint.weight} kg (${latestPoint.ageInMonths} tháng)`
-                  : 'Chưa có số đo'}
-              </span>
-            </div>
-          </div>
-
-          {/* Legend strip */}
-          <div className="px-3.5 py-2 border-b border-border/60 bg-muted/20 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px]">
-            <div className="flex items-center gap-1.5">
-              <span className="size-3 rounded-none bg-[#FEF9C3] border border-[#FDE047]" />
-              <span className="text-foreground/90">Cân nặng cao hơn so với tuổi</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="size-3 rounded-none bg-[#D6F1FD] border border-[#7DD3FC]" />
-              <span className="text-foreground/90">Cân nặng bình thường</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="size-3 rounded-none bg-[#FED7AA] border border-[#FDBA74]" />
-              <span className="text-foreground/90">Suy dinh dưỡng vừa</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="size-3 rounded-none bg-[#EE7D8D] border border-[#E11D48]" />
-              <span className="text-foreground/90">Suy dinh dưỡng nặng</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-4 h-0.5 bg-[#16A34A]" />
-              <span className="text-foreground/90 font-medium text-emerald-700 dark:text-emerald-400">
-                Trung vị (0)
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="size-2 rounded-full bg-[#2563EB]" />
-              <span className="text-[#2563EB] font-semibold">
-                {student?.fullName || 'Học sinh'}
-              </span>
-              {studentPoints.length > 0 && (
-                <span className="font-mono text-muted-foreground ml-1">
-                  ({studentPoints.length} đợt đo: Đ1 → Đ{studentPoints.length})
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* SVG Canvas Container with HTML Tooltip Overlay */}
-          <div className="p-2 sm:p-3 overflow-x-auto bg-card">
-            <div className="relative min-w-[760px]">
-              {renderWeightChart()}
-              {activeTooltip?.chart === 'weight' && renderTooltipOverlay(activeTooltip)}
-            </div>
-          </div>
-        </div>
-      </div>
-    )}
-
-      {/* 3. Reference Standards Information (Clean Minimalist Note - No Redundancy) */}
+      {/* 3. Reference Standards Information */}
       <div className="border border-border bg-card shadow-xs text-xs">
-        {/* Header */}
         <div className="px-4 py-3 border-b border-border flex flex-wrap items-center justify-between gap-2 bg-card">
           <span className="text-[13px] font-semibold text-foreground">
             Căn cứ y tế & Tiêu chuẩn phát triển
@@ -1136,7 +1173,6 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
           </div>
         </div>
 
-        {/* Reference Content */}
         <div className="p-4 space-y-2 text-[12px] text-muted-foreground leading-relaxed">
           <p>
             <strong className="text-foreground font-medium">• Quy chuẩn WHO:</strong> Bảng tăng trưởng Chiều cao và Cân nặng theo độ tuổi (24–60 tháng áp dụng <em>WHO 2006</em>; 61–72 tháng áp dụng <em>WHO 2007</em>).

@@ -13,6 +13,9 @@ import { WeekPickerCalendar } from '@/shared/components/calendar/WeekPickerCalen
 import { HealthMeasurementPanel } from './components/HealthMeasurementPanel';
 import { useClassesStore, ClassHeaderNav } from '@/features/classes';
 import { NotFoundPage } from '@/features/error';
+import { ExcelActionsDropdown } from '@/components/ExcelActionsDropdown';
+import { downloadBlob } from '@/shared/utils/download';
+import { toast } from 'sonner';
 
 export function HealthPage() {
   const { t } = useTranslation();
@@ -28,6 +31,24 @@ export function HealthPage() {
   const [activeSlot, setActiveSlot] = useState(null);
   const [isCalendarOpen, setIsCalendarOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportExcel = async () => {
+    try {
+      setIsExporting(true);
+      const blob = await healthApi.exportHealthExcel(targetClassId);
+      const className = currentClass?.name || `Lop_${targetClassId}`;
+      const safeName = className.replace(/\s+/g, '_');
+      downloadBlob(blob, `So_Theo_Doi_Suc_Khoe_${safeName}.xlsx`);
+      toast.success('Đã xuất sổ theo dõi sức khỏe thành công');
+    } catch (err) {
+      toast.error('Lỗi khi xuất sổ theo dõi sức khỏe', {
+        description: err.message || 'Vui lòng thử lại sau.',
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   useEffect(() => {
     async function loadData() {
@@ -123,6 +144,13 @@ export function HealthPage() {
           >
             <HugeiconsIcon icon={SidebarRightIcon} size={15} />
           </button>
+
+          {/* Export Health Excel */}
+          <ExcelActionsDropdown
+            onExport={handleExportExcel}
+            isExporting={isExporting}
+            showImport={false}
+          />
         </div>
       </div>
 
@@ -144,6 +172,8 @@ export function HealthPage() {
         {/* Right Area: Either HealthMeasurementPanel or WeekPickerCalendar */}
         {activeSlot ? (
           <HealthMeasurementPanel
+            classId={targetClassId}
+            date={activeSlot?.date}
             slot={activeSlot}
             initialStudents={students}
             onClose={handleClosePanel}
