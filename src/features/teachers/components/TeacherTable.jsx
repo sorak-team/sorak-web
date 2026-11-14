@@ -206,6 +206,9 @@ export function TeacherTable({ paginatedTeachers }) {
                     </span>
                     <span className="text-[12px] text-muted-foreground truncate">
                       {teacher.position || teacher.role || t('teacher.roleTeacher', 'Giáo viên')} · <span className="font-mono">{teacher.employeeCode || '—'}</span>
+                      {teacher.account?.isDeleted && (
+                        <span className="ml-1.5 text-[11px] text-amber-600 dark:text-amber-400 font-medium">(Chưa có quyền đăng nhập)</span>
+                      )}
                     </span>
                   </div>
                 </div>
@@ -292,7 +295,7 @@ export function TeacherTable({ paginatedTeachers }) {
                       <HugeiconsIcon icon={PencilEdit02Icon} size={15} />
                       <span>{t('teacher.actionEdit', 'Chỉnh sửa')}</span>
                     </DropdownMenuItem>
-                    {!isTeacherSelf(teacher) && (
+                    {!isTeacherSelf(teacher) && !teacher.isDeleted && (
                       <>
                         <DropdownMenuSeparator className="my-1 border-t border-border" />
                         <DropdownMenuItem

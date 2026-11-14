@@ -78,6 +78,9 @@ export function AcademicYearDrawer() {
       (drawerYearId === '2026-2027' && (String(y.id) === '1' || y.name?.includes('2026'))),
   );
   const isCurrentYearInUse = drawerMode === 'edit' && isAcademicYearInUse(currentYear);
+  const isCurrentYearEnded =
+    drawerMode === 'edit' &&
+    (currentYear?.status === 'COMPLETED' || currentYear?.status === 'ended');
 
   // Calculate next academic year suggestion from existing academic years
   const nextYearSuggestion = useMemo(() => {
@@ -653,6 +656,12 @@ export function AcademicYearDrawer() {
           onSubmit={handleSubmit}
           className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5"
         >
+          {isCurrentYearEnded && (
+            <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-[13px] rounded-none">
+              {t('schoolYear.endedNotice', 'Năm học đã kết thúc. Bạn chỉ có thể xem thông tin.')}
+            </div>
+          )}
+
           {/* Field: Tên năm học */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[12px] font-medium text-foreground">
@@ -703,7 +712,7 @@ export function AcademicYearDrawer() {
                 {t('schoolYear.startDate')} ({t('schoolYear.semester1Start', 'Bắt đầu HK1')})
               </label>
 
-              {isCurrentYearInUse ? (
+              {isCurrentYearInUse || isCurrentYearEnded ? (
                 <div className="h-8 w-full border border-border px-2.5 text-[14px] rounded-none bg-muted/40 text-muted-foreground flex items-center justify-between select-none cursor-not-allowed opacity-75">
                   <span>{startDate}</span>
                   <svg className="size-4 text-muted-foreground/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -763,19 +772,19 @@ export function AcademicYearDrawer() {
               <label
                 className={cn(
                   "text-[12px] font-medium",
-                  isSemester1EndAllowed ? "text-foreground" : "text-muted-foreground"
+                  (isSemester1EndAllowed && !isCurrentYearEnded) ? "text-foreground" : "text-muted-foreground"
                 )}
               >
                 {t('schoolYear.semester1End', 'Ngày kết thúc Học kỳ 1')}
               </label>
 
-              {!isSemester1EndAllowed ? (
+              {!isSemester1EndAllowed || isCurrentYearEnded ? (
                 <div
                   className="h-8 w-full border border-border px-2.5 text-[14px] rounded-none bg-muted/40 text-muted-foreground flex items-center justify-between select-none cursor-not-allowed opacity-75"
-                  title={t('schoolYear.chooseSemester1EndAfterStartEnd', 'Chọn ngày bắt đầu HK1 và kết thúc HK2 trước')}
+                  title={isCurrentYearEnded ? t('schoolYear.endedNotice', 'Năm học đã kết thúc. Bạn chỉ có thể xem thông tin.') : t('schoolYear.chooseSemester1EndAfterStartEnd', 'Chọn ngày bắt đầu HK1 và kết thúc HK2 trước')}
                 >
-                  <span className="text-[13px] text-muted-foreground/80">
-                    {semester1EndDate || t('schoolYear.chooseSemester1EndAfterStartEnd', 'Chọn ngày bắt đầu HK1 và kết thúc HK2 trước')}
+                  <span className="text-[13px] text-muted-foreground">
+                    {semester1EndDate || (isCurrentYearEnded ? '—' : t('schoolYear.chooseSemester1EndAfterStartEnd', 'Chọn ngày bắt đầu HK1 và kết thúc HK2 trước'))}
                   </span>
                   <svg
                     className="size-4 text-muted-foreground/50"
@@ -842,7 +851,7 @@ export function AcademicYearDrawer() {
                 {t('schoolYear.endDate')} ({t('schoolYear.semester2End', 'Kết thúc HK2')})
               </label>
 
-              {isCurrentYearInUse ? (
+              {isCurrentYearInUse || isCurrentYearEnded ? (
                 <div className="h-8 w-full border border-border px-2.5 text-[14px] rounded-none bg-muted/40 text-muted-foreground flex items-center justify-between select-none cursor-not-allowed opacity-75">
                   <span>{endDate}</span>
                   <svg className="size-4 text-muted-foreground/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -916,17 +925,19 @@ export function AcademicYearDrawer() {
             className="h-8 px-3 border border-border bg-background hover:bg-muted text-foreground text-[14px] font-medium rounded-none transition-colors cursor-pointer"
             data-node-id="4152:25227"
           >
-            {t('schoolYear.cancel')}
+            {isCurrentYearEnded ? t('schoolYear.close', 'Đóng') : t('schoolYear.cancel', 'Hủy')}
           </button>
 
-          <button
-            type="button"
-            onClick={handleSubmit}
-            className="h-8 px-4 text-white text-[14px] font-medium rounded-none transition-colors shadow-sm bg-[#1447e6] hover:bg-[#1447e6]/90 cursor-pointer"
-            data-node-id="4152:25233"
-          >
-            {t('schoolYear.save')}
-          </button>
+          {!isCurrentYearEnded && (
+            <button
+              type="button"
+              onClick={handleSubmit}
+              className="h-8 px-4 text-white text-[14px] font-medium rounded-none transition-colors shadow-sm bg-[#1447e6] hover:bg-[#1447e6]/90 cursor-pointer"
+              data-node-id="4152:25233"
+            >
+              {t('schoolYear.save', 'Lưu')}
+            </button>
+          )}
         </div>
       </div>
     </div>

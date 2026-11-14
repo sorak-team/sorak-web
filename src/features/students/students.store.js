@@ -381,7 +381,7 @@ export const useStudentStore = create((set, get) => ({
         yearFromArg !== undefined
           ? yearFromArg
           : useAcademicYearStore.getState().selectedYearId;
-      const params = { limit: 100 };
+      const params = { limit: 250 };
       if (targetYearId && targetYearId !== 'all') {
         params.schoolYearId = targetYearId;
       }

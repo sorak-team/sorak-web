@@ -260,7 +260,7 @@ export function TransferStudentDialog({ onSuccess }) {
               </option>
               {filteredClasses.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name} ({c.gradeLabel || 'Khối Mầm'} • {c.studentCount || 0} học sinh)
+                  {c.name} ({c.gradeLabel || 'Khối Mầm'} • {c.studentCount || 0}/{c.capacity || 40} học sinh)
                 </option>
               ))}
             </select>
