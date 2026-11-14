@@ -18,10 +18,22 @@ export function ProtectedRoute() {
   useEffect(() => {
     let isMounted = true;
 
-    // If already authenticated from localStorage, proceed immediately
+    // Reject bfcache access if restored after logout
+    const handlePageShow = (event) => {
+      if (event.persisted && !useAuthStore.getState().user) {
+        window.location.replace('/login');
+      }
+    };
+    window.addEventListener('pageshow', handlePageShow);
+
+    // If already authenticated from localStorage, validate session with backend immediately
     if (user) {
+      authApi.getMe().catch(() => {});
       setIsChecking(false);
-      return;
+      return () => {
+        isMounted = false;
+        window.removeEventListener('pageshow', handlePageShow);
+      };
     }
 
     // Try silent refresh using the persistent 7-day cookie

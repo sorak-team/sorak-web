@@ -28,16 +28,21 @@ import { TransfersManagementPage, TransferDetailPage } from '@/features/transfer
 import {
   CurriculumFrameworkPage,
   CurriculumThemeDetailPage,
-  CurriculumSingleThemeDetailPage,
   CurriculumGoalDetailPage,
   CurriculumSingleGoalDetailPage,
 } from '@/features/curriculum';
-import { ClassPlanningPage } from '@/features/planning';
+import { ClassPlanningPage, ThemePlanReviewListPage } from '@/features/planning';
 import { DailyRoutinePage } from '@/features/daily';
 import { AttendancePage } from '@/features/attendance';
 import { HealthPage } from '@/features/health';
 import { AssessmentPage } from '@/features/assessment';
 import { GoodBehaviorPage } from '@/features/good-behavior';
+import {
+  NotificationsManagementPage,
+  NotificationOverviewPage,
+  AutomatedNotificationsPage,
+  AutomatedNotificationOverviewPage,
+} from '@/features/notifications-management';
 import {
   ParentPortalShell,
   ParentHomePage,
@@ -67,8 +72,16 @@ function ClassRouteGuard() {
   const upsertClass = useClassesStore((state) => state.upsertClass);
   const selectedYearId = useAcademicYearStore((state) => state.selectedYearId);
   const setSelectedYearId = useAcademicYearStore((state) => state.setSelectedYearId);
+
+  const user = useAuthStore((state) => state.user);
+  const isTeacher =
+    user?.role === 'TEACHER_GV' ||
+    user?.role === 'TEACHER' ||
+    user?.role?.toLowerCase()?.includes('teacher');
+
   const [apiCheckedId, setApiCheckedId] = useState(null);
   const [classNotFound, setClassNotFound] = useState(false);
+  const [accessDenied, setAccessDenied] = useState(false);
   const lastSyncedClassIdRef = useRef(null);
 
   const currentClassInStore = id
@@ -89,6 +102,7 @@ function ClassRouteGuard() {
 
     if (currentClassInStore) {
       setClassNotFound(false);
+      setAccessDenied(false);
       setApiCheckedId(id);
       if (lastSyncedClassIdRef.current !== id) {
         lastSyncedClassIdRef.current = id;
@@ -109,6 +123,7 @@ function ClassRouteGuard() {
         if (!active) return;
         if (res && (res.id || res.publicId)) {
           setClassNotFound(false);
+          setAccessDenied(false);
           upsertClass(res);
           if (lastSyncedClassIdRef.current !== id) {
             lastSyncedClassIdRef.current = id;
@@ -124,7 +139,11 @@ function ClassRouteGuard() {
       .catch((err) => {
         if (!active) return;
         console.error('ClassRouteGuard getById error:', err);
-        setClassNotFound(true);
+        if (err?.response?.status === 403) {
+          setAccessDenied(true);
+        } else {
+          setClassNotFound(true);
+        }
       })
       .finally(() => {
         if (active) {
@@ -137,7 +156,22 @@ function ClassRouteGuard() {
     };
   }, [id, currentClassInStore, setSelectedYearId, fetchClasses, upsertClass]);
 
-  // 1. Pure numeric sequence ID (e.g., /classes/10 or /classes/17) -> Strict 404 immediately
+  // Strict teacher authorization: Teacher cannot view or operate on classes they are not assigned to
+  if (isTeacher && id) {
+    const teacherClass = findTeacherClassForYear(user, classes, selectedYearId);
+    const isAssigned =
+      teacherClass &&
+      (String(teacherClass.id) === String(id) || String(teacherClass.publicId) === String(id));
+
+    if (accessDenied || (classes.length > 0 && !isAssigned)) {
+      if (teacherClass) {
+        return <Navigate to={`/classes/${teacherClass.publicId || teacherClass.id}`} replace />;
+      }
+      return <Navigate to="/classes" replace />;
+    }
+  }
+
+  // Pure numeric sequence ID (e.g., /classes/10 or /classes/17) -> Strict 404 immediately
   if (id && /^\d+$/.test(String(id).trim())) {
     return <NotFoundPage />;
   }
@@ -146,28 +180,8 @@ function ClassRouteGuard() {
     return <NotFoundPage />;
   }
 
-  // Strict teacher authorization: Teacher cannot view or operate on classes they are not assigned to
-  const user = useAuthStore((state) => state.user);
-  const isTeacher =
-    user?.role === 'TEACHER_GV' ||
-    user?.role === 'TEACHER' ||
-    user?.role?.toLowerCase()?.includes('teacher');
-
-  if (isTeacher && id && classes.length > 0) {
-    const teacherClass = findTeacherClassForYear(user, classes, selectedYearId);
-    const isAssigned =
-      teacherClass &&
-      (String(teacherClass.id) === String(id) || String(teacherClass.publicId) === String(id));
-    if (!isAssigned) {
-      if (teacherClass) {
-        return <Navigate to={`/classes/${teacherClass.id || teacherClass.publicId}`} replace />;
-      }
-      return <Navigate to="/classes" replace />;
-    }
-  }
-
   // Prevent flashing child pages or premature 404 while checking/fetching class
-  if (id && (!currentClassInStore && apiCheckedId !== id)) {
+  if (id && (!currentClassInStore && apiCheckedId !== id && !accessDenied)) {
     return (
       <div className="p-12 text-center text-muted-foreground select-none">
         <p className="text-[14px]">Đang tải thông tin lớp học...</p>
@@ -238,6 +252,11 @@ export function AppRouter() {
           <Route path="/good-behavior" element={<GoodBehaviorPage />} />
           <Route path="/reports/good-behavior" element={<GoodBehaviorPage />} />
           <Route path="/reports" element={<ClassOverviewPage />} />
+          <Route path="/notifications" element={<NotificationsManagementPage />} />
+          <Route path="/notifications/automated" element={<AutomatedNotificationsPage />} />
+          <Route path="/notifications/automated/:id" element={<AutomatedNotificationOverviewPage />} />
+          <Route path="/notifications/:id" element={<NotificationOverviewPage />} />
+          <Route path="/test/automated-notifications" element={<AutomatedNotificationsPage />} />
           <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/accounts/:id" element={<AccountOverviewPage />} />
           <Route path="/teachers" element={<TeachersPage />} />
@@ -249,8 +268,10 @@ export function AppRouter() {
           <Route path="/school-years" element={<AcademicYearsPage />} />
           <Route path="/school-years/:id" element={<AcademicYearOverviewPage />} />
           <Route path="/curriculum" element={<CurriculumFrameworkPage />} />
+          <Route path="/curriculum/reviews" element={<ThemePlanReviewListPage />} />
+          <Route path="/planning/reviews" element={<ThemePlanReviewListPage />} />
           <Route path="/curriculum/themes/:yearId/:ageGroup" element={<CurriculumThemeDetailPage />} />
-          <Route path="/curriculum/themes/:yearId/:ageGroup/:themeId" element={<CurriculumSingleThemeDetailPage />} />
+          <Route path="/curriculum/themes/:yearId/:ageGroup/:themeId" element={<CurriculumThemeDetailPage />} />
           <Route path="/curriculum/goals/:yearId/:ageGroup" element={<CurriculumGoalDetailPage />} />
           <Route path="/curriculum/goals/:yearId/:ageGroup/:goalId" element={<CurriculumSingleGoalDetailPage />} />
           <Route

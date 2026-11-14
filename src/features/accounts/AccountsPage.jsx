@@ -39,6 +39,7 @@ export function AccountsPage() {
     searchQuery,
     setSearchQuery,
     statusFilter,
+    roleFilter,
     currentPage,
     setCurrentPage,
     openAddModal,
@@ -75,6 +76,31 @@ export function AccountsPage() {
       list = list.filter((acc) => acc.accountStatus === statusFilter);
     }
 
+    // Role filter (Tài khoản nhà trường: Ban giám hiệu vs Giáo viên)
+    if (activeTab === 'staff' && roleFilter !== 'all') {
+      list = list.filter((acc) => {
+        if (roleFilter === 'leader') {
+          return (
+            acc.role === 'leader' ||
+            acc.role === 'PRINCIPAL_BGH' ||
+            acc.role === 'ADMIN_BGH' ||
+            acc.rawRole === 'PRINCIPAL_BGH' ||
+            acc.rawRole === 'ADMIN_BGH' ||
+            (acc.teacherProfile?.position && acc.teacherProfile.position.toLowerCase().includes('hiệu'))
+          );
+        }
+        if (roleFilter === 'teacher') {
+          return (
+            acc.role === 'teacher' ||
+            acc.role === 'TEACHER_GV' ||
+            acc.rawRole === 'TEACHER_GV' ||
+            (!acc.rawRole?.includes('BGH') && acc.role !== 'leader')
+          );
+        }
+        return acc.role === roleFilter;
+      });
+    }
+
     // Sort accounts
     if (activeTab === 'staff') {
       // Sort staff/teacher accounts by teacher code (teacherCode, employeeCode, or username)
@@ -98,7 +124,7 @@ export function AccountsPage() {
     }
 
     return list;
-  }, [currentList, activeTab, searchQuery, statusFilter]);
+  }, [currentList, activeTab, searchQuery, statusFilter, roleFilter]);
 
   // Pagination
   const totalPages = Math.ceil(filteredAccounts.length / pageSize) || 1;

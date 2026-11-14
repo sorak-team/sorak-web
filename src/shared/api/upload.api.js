@@ -32,6 +32,22 @@ export const uploadApi = {
     });
     return response.data?.data || response.data;
   },
+
+  /**
+   * Upload notification / bulletin image directly to MinIO S3
+   * @param {File} file - Selected image file
+   * @returns {Promise<{ url: string, relativeUrl: string, size: number, filename?: string }>}
+   */
+  async uploadBulletinImage(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post('/upload/bulletin', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data?.data || response.data;
+  },
 };
 
 export default uploadApi;
