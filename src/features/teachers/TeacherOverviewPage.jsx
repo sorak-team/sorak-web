@@ -267,33 +267,35 @@ export function TeacherOverviewPage() {
         </div>
 
         {/* Action buttons (Edit & Delete) - Only ONE place on the page, like school year */}
-        <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={() => openEditDrawer(teacher.id)}
-            className="size-8 rounded-none border border-border bg-background hover:bg-muted text-foreground cursor-pointer"
-            title={t('teacher.actionEdit', 'Chỉnh sửa')}
-            data-node-id="4273:5574"
-            data-name="Edit"
-          >
-            <HugeiconsIcon icon={PencilEdit02Icon} size={15} />
-          </Button>
+        {!teacher.isDeleted && (
+          <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => openEditDrawer(teacher.id)}
+              className="size-8 rounded-none border border-border bg-background hover:bg-muted text-foreground cursor-pointer"
+              title={t('teacher.actionEdit', 'Chỉnh sửa')}
+              data-node-id="4273:5574"
+              data-name="Edit"
+            >
+              <HugeiconsIcon icon={PencilEdit02Icon} size={15} />
+            </Button>
 
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={() => openDeleteDialog(teacher.id)}
-            className="size-8 rounded-none border border-border bg-background hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 text-foreground cursor-pointer transition-colors"
-            title={t('teacher.actionDelete', 'Xóa')}
-            data-node-id="4277:28877"
-            data-name="Delete"
-          >
-            <HugeiconsIcon icon={Delete02Icon} size={15} />
-          </Button>
-        </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => openDeleteDialog(teacher.id)}
+              className="size-8 rounded-none border border-border bg-background hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 text-foreground cursor-pointer transition-colors"
+              title={t('teacher.actionDelete', 'Xóa')}
+              data-node-id="4277:28877"
+              data-name="Delete"
+            >
+              <HugeiconsIcon icon={Delete02Icon} size={15} />
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Account Overview Grid (Figma 4273:5606) */}
@@ -467,6 +469,28 @@ export function TeacherOverviewPage() {
               </span>
               <span className="text-[14px] text-foreground font-normal">
                 {teacher.joinDate || '—'}
+              </span>
+            </div>
+
+            {/* Tài khoản đăng nhập */}
+            <div className="flex items-center justify-between p-4 min-h-[52px]">
+              <span className="text-[14px] text-foreground/80 font-normal">
+                Tài khoản đăng nhập
+              </span>
+              <span className="text-[13px] font-normal text-right">
+                {teacher.account ? (
+                  teacher.account.isDeleted ? (
+                    <span className="text-amber-600 dark:text-amber-400 font-medium">
+                      Đã xóa / Chưa có quyền đăng nhập
+                    </span>
+                  ) : (
+                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                      Đang hoạt động ({teacher.account.username})
+                    </span>
+                  )
+                ) : (
+                  <span className="text-muted-foreground">Chưa liên kết tài khoản</span>
+                )}
               </span>
             </div>
           </div>

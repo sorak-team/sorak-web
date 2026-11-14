@@ -96,7 +96,7 @@ export function ClassSettingsPage() {
     return <NotFoundPage />;
   }
 
-  const handleSaveClass = (e) => {
+  const handleSaveClass = async (e) => {
     e.preventDefault();
     const cleanName = sanitizeClassName(classNameInput);
     if (!cleanName) {
@@ -130,13 +130,19 @@ export function ClassSettingsPage() {
       choi: 'Khối Chồi',
       la: 'Khối Lá',
     };
-    updateClass(currentClass.id, {
-      name: cleanName,
-      grade: gradeInput,
-      gradeLabel: gradeLabels[gradeInput] || currentClass.gradeLabel,
-      room: roomInput.trim(),
-    });
-    toast.success(t('classes.savedSuccess', 'Đã lưu thông tin lớp học thành công!'));
+    try {
+      await updateClass(currentClass.id, {
+        name: cleanName,
+        grade: gradeInput,
+        gradeLabel: gradeLabels[gradeInput] || currentClass.gradeLabel,
+        room: roomInput.trim(),
+        updatedAt: currentClass.updatedAt || currentClass.updated_at,
+      });
+      toast.success(t('classes.savedSuccess', 'Đã lưu thông tin lớp học thành công!'));
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Lưu thất bại';
+      toast.error(msg);
+    }
   };
 
   const settingsSubNav = [

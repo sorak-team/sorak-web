@@ -327,25 +327,38 @@ export const useClassesStore = create((set, get) => ({
     if (sanitizedUpdates.name) {
       sanitizedUpdates.name = sanitizeClassName(sanitizedUpdates.name);
     }
-    try {
-      const payload = {};
-      if (sanitizedUpdates.name) payload.name = sanitizedUpdates.name;
-      if (sanitizedUpdates.room) payload.roomNumber = sanitizedUpdates.room;
-      if (sanitizedUpdates.description !== undefined) payload.description = sanitizedUpdates.description || null;
-      if (sanitizedUpdates.grade) {
-        const ageGroupMap = { nhatre: 'NHA_TRE', mam: 'MAM', choi: 'CHOI', la: 'LA' };
-        payload.ageGroup = ageGroupMap[sanitizedUpdates.grade] || 'MAM';
-      }
+    const currentCls = get().classes.find((c) => c.id === id || c.publicId === id);
+    const existingUpdatedAt =
+      sanitizedUpdates.updatedAt ||
+      sanitizedUpdates.updated_at ||
+      currentCls?.updatedAt ||
+      currentCls?.updated_at;
 
-      await classesApi.update(id, payload);
-    } catch (e) {
-      console.warn('API update class failed:', e.message);
-      throw e;
+    const payload = {};
+    if (sanitizedUpdates.name) payload.name = sanitizedUpdates.name;
+    if (sanitizedUpdates.room) payload.roomNumber = sanitizedUpdates.room;
+    if (sanitizedUpdates.description !== undefined) payload.description = sanitizedUpdates.description || null;
+    if (sanitizedUpdates.grade) {
+      const ageGroupMap = { nhatre: 'NHA_TRE', mam: 'MAM', choi: 'CHOI', la: 'LA' };
+      payload.ageGroup = ageGroupMap[sanitizedUpdates.grade] || 'MAM';
     }
+    if (existingUpdatedAt) {
+      payload.updatedAt = existingUpdatedAt;
+    }
+
+    const res = await classesApi.update(id, payload);
+    const updated = res?.data || res;
 
     set((state) => ({
       classes: state.classes.map((cls) =>
-        cls.id === id ? { ...cls, ...sanitizedUpdates } : cls,
+        cls.id === id || cls.publicId === id
+          ? {
+              ...cls,
+              ...sanitizedUpdates,
+              updatedAt: updated?.updatedAt || updated?.updated_at || new Date().toISOString(),
+              updated_at: updated?.updatedAt || updated?.updated_at || new Date().toISOString(),
+            }
+          : cls,
       ),
     }));
   },

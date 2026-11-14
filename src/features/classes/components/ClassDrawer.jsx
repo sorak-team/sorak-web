@@ -100,6 +100,7 @@ export function ClassDrawer() {
           grade: formData.grade,
           room: formData.room.trim(),
           description: formData.description.trim(),
+          updatedAt: currentClass?.updatedAt || currentClass?.updated_at,
         });
         toast.success(t('classes.updateSuccess', 'Đã cập nhật thông tin lớp học thành công!'));
       } else {
@@ -131,28 +132,35 @@ export function ClassDrawer() {
       {/* Drawer Panel matching Teacher & Account Drawers */}
       <div
         className={cn(
-          'relative w-full max-w-[500px] h-full bg-card border-l border-border shadow-2xl flex flex-col',
+          'relative w-full max-w-[540px] h-full bg-card border-l border-border shadow-2xl flex flex-col',
           'animate-in slide-in-from-right duration-250 ease-out z-10 text-foreground select-none',
         )}
         data-name="Class Drawer"
       >
         {/* Header */}
-        <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-border shrink-0">
+        <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-border shrink-0 bg-card">
           <div className="flex flex-col gap-1">
-            <h2 className="text-[18px] font-semibold text-foreground tracking-tight">
-              {drawerMode === 'edit'
-                ? t('classes.editClassTitle', 'Chỉnh sửa thông tin lớp')
-                : t('classes.addClassTitle', 'Thêm lớp học mới')}
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-[18px] font-semibold text-foreground tracking-tight">
+                {drawerMode === 'edit'
+                  ? t('classes.editClassTitle', 'Chỉnh sửa thông tin lớp')
+                  : t('classes.addClassTitle', 'Thêm lớp học mới')}
+              </h2>
+              {drawerMode === 'edit' && currentClass?.name && (
+                <span className="font-mono text-[11px] font-medium bg-muted text-muted-foreground border border-border px-2 py-0.5 rounded-none">
+                  {currentClass.name}
+                </span>
+              )}
+            </div>
             <p className="text-[12px] text-muted-foreground font-normal">
               {drawerMode === 'edit'
                 ? t(
                     'classes.editClassDesc',
-                    'Cập nhật thông tin phòng học, giáo viên và sức chứa của lớp',
+                    'Cập nhật thông tin phòng học, khối học và ghi chú của lớp',
                   )
                 : t(
                     'classes.addClassDesc',
-                    'Điền thông tin để khởi tạo lớp học mới trong năm học hiện tại',
+                    'Nhập thông tin cơ bản để khởi tạo lớp học trong năm học hiện tại',
                   )}
             </p>
           </div>
@@ -166,12 +174,12 @@ export function ClassDrawer() {
           </button>
         </div>
 
-        {/* Scrollable Form Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
-          {/* Card 1: Thông tin cơ bản */}
-          <div className="border border-border bg-card rounded-none overflow-hidden">
-            <div className="p-4 border-b border-border bg-muted/20">
-              <h3 className="text-[14px] font-semibold text-foreground">
+        {/* Scrollable Clean Form Body */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+          {/* Section 1: Thông tin cơ bản */}
+          <div className="space-y-4">
+            <div className="space-y-0.5">
+              <h3 className="text-[13.5px] font-semibold text-foreground tracking-tight">
                 {t('classes.basicInfo', 'Thông tin cơ bản')}
               </h3>
               <p className="text-[12px] text-muted-foreground font-normal">
@@ -179,127 +187,110 @@ export function ClassDrawer() {
               </p>
             </div>
 
-            <div className="p-4 space-y-4">
-              {/* Tên lớp */}
-              <div className="space-y-1.5">
-                <Label className="text-[12px] font-medium text-foreground">
-                  {t('classes.fieldName', 'Tên lớp')} <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="VD: Nhà trẻ 1, Mầm 1, Chồi 1..."
-                  className="h-9 text-[13px] rounded-none border-border"
-                />
-              </div>
+            {/* Tên lớp */}
+            <div className="space-y-1.5">
+              <Label htmlFor="classNameInput" className="text-[12px] font-medium text-foreground">
+                {t('classes.fieldName', 'Tên lớp')} <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="classNameInput"
+                type="text"
+                required
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="VD: Nhà trẻ 1, Mầm 1, Chồi 1..."
+                className="h-9 text-[13px] rounded-none border-border"
+              />
+            </div>
 
-              {/* Khối lớp */}
-              <div className="space-y-1.5">
-                <Label className="text-[12px] font-medium text-foreground">
-                  {t('classes.fieldGrade', 'Khối lớp')}
-                </Label>
-                <select
-                  disabled={drawerMode === 'edit'}
-                  value={formData.grade}
-                  onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
-                  className={cn(
-                    "w-full h-9 px-3 bg-background border border-border rounded-none text-[13px] text-foreground focus:outline-hidden focus:border-primary",
-                    drawerMode === 'edit' ? "opacity-60 cursor-not-allowed bg-muted/40" : "cursor-pointer"
-                  )}
-                >
-                  <option value="nhatre">Khối Nhà trẻ (12–36 tháng)</option>
-                  <option value="mam">Khối Mầm (3–4 tuổi)</option>
-                  <option value="choi">Khối Chồi (4–5 tuổi)</option>
-                  <option value="la">Khối Lá (5–6 tuổi)</option>
-                </select>
-                {drawerMode === 'edit' && (
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
-                    Không thể thay đổi khối lớp sau khi đã tạo lớp học.
-                  </p>
+            {/* Khối lớp */}
+            <div className="space-y-1.5">
+              <Label htmlFor="classGradeSelect" className="text-[12px] font-medium text-foreground">
+                {t('classes.fieldGrade', 'Khối lớp')}
+              </Label>
+              <select
+                id="classGradeSelect"
+                disabled={drawerMode === 'edit'}
+                value={formData.grade}
+                onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
+                className={cn(
+                  'w-full h-9 px-3 bg-background border border-border rounded-none text-[13px] text-foreground focus:outline-hidden focus:border-primary',
+                  drawerMode === 'edit' ? 'opacity-60 cursor-not-allowed bg-muted/40' : 'cursor-pointer',
                 )}
-              </div>
+              >
+                <option value="nhatre">Khối Nhà trẻ (12–36 tháng)</option>
+                <option value="mam">Khối Mầm (3–4 tuổi)</option>
+                <option value="choi">Khối Chồi (4–5 tuổi)</option>
+                <option value="la">Khối Lá (5–6 tuổi)</option>
+              </select>
+              {drawerMode === 'edit' && (
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Không thể thay đổi khối lớp sau khi đã tạo lớp học.
+                </p>
+              )}
             </div>
           </div>
 
-          {/* Card 2: Phòng học & Nhân sự */}
-          <div className="border border-border bg-card rounded-none overflow-hidden">
-            <div className="p-4 border-b border-border bg-muted/20">
-              <h3 className="text-[14px] font-semibold text-foreground">
-                {t('classes.facilityAndStaff', 'Cơ sở vật chất & Phân công')}
+          {/* Clean Subtle Divider */}
+          <div className="border-t border-border" />
+
+          {/* Section 2: Cơ sở vật chất */}
+          <div className="space-y-4">
+            <div className="space-y-0.5">
+              <h3 className="text-[13.5px] font-semibold text-foreground tracking-tight">
+                {t('classes.facilityAndStaff', 'Cơ sở vật chất')}
               </h3>
               <p className="text-[12px] text-muted-foreground font-normal">
-                {t('classes.facilityDesc', 'Vị trí phòng học và phân công giáo viên')}
+                {t('classes.facilityDesc', 'Vị trí phòng học và mô tả lớp học')}
               </p>
             </div>
 
-            <div className="p-4 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Phòng học (Khớp room_number trong DB schema) */}
-                <div className="space-y-1.5">
-                  <Label className="text-[12px] font-medium text-foreground">
-                    {t('classes.fieldRoom', 'Phòng học')}
-                  </Label>
-                  <Input
-                    type="text"
-                    value={formData.room}
-                    onChange={(e) => setFormData({ ...formData, room: e.target.value })}
-                    placeholder="VD: Phòng 101, Phòng 201..."
-                    className="h-9 text-[13px] rounded-none border-border"
-                  />
-                </div>
+            {/* Phòng học */}
+            <div className="space-y-1.5">
+              <Label htmlFor="classRoomInput" className="text-[12px] font-medium text-foreground">
+                {t('classes.fieldRoom', 'Phòng học')}
+              </Label>
+              <Input
+                id="classRoomInput"
+                type="text"
+                value={formData.room}
+                onChange={(e) => setFormData({ ...formData, room: e.target.value })}
+                placeholder="VD: Phòng 101, Phòng 201..."
+                className="h-9 text-[13px] rounded-none border-border"
+              />
+            </div>
 
-                {/* Giáo viên phụ trách (Chỉ phân công qua tính năng Phân công giáo viên) */}
-                <div className="space-y-1.5">
-                  <Label className="text-[12px] font-medium text-foreground">
-                    {t('classes.fieldTeacher', 'Giáo viên phụ trách')}
-                  </Label>
-                  <Input
-                    type="text"
-                    value={formData.teacher || 'Chưa phân công'}
-                    disabled
-                    readOnly
-                    placeholder="Chưa phân công giáo viên"
-                    className="h-9 text-[13px] rounded-none border-border bg-muted/50 cursor-not-allowed text-muted-foreground opacity-90 select-none pointer-events-none"
-                  />
-                  <p className="text-[11px] text-muted-foreground mt-1">
-                    Trường Giáo viên phụ trách chỉ hiển thị thông tin hiện tại, không cho nhập hoặc sửa trực tiếp. Để thay đổi giáo viên phụ trách, thì sử dụng chức năng Phân công giáo viên.
-                  </p>
-                </div>
-              </div>
-
-              {/* Mô tả / Ghi chú (Khớp cột description trong DB schema) */}
-              <div className="space-y-1.5">
-                <Label className="text-[12px] font-medium text-foreground">
-                  {t('classes.fieldDescription', 'Mô tả / Ghi chú')}
-                </Label>
-                <Input
-                  type="text"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="VD: Lớp học ưu tiên đón sớm, trang bị đàn piano..."
-                  className="h-9 text-[13px] rounded-none border-border"
-                />
-              </div>
+            {/* Mô tả / Ghi chú */}
+            <div className="space-y-1.5">
+              <Label htmlFor="classDescTextarea" className="text-[12px] font-medium text-foreground">
+                {t('classes.fieldDescription', 'Mô tả / Ghi chú')}
+              </Label>
+              <textarea
+                id="classDescTextarea"
+                rows={3}
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="VD: Lớp học ưu tiên đón sớm, trang bị đàn piano..."
+                className="w-full p-2.5 text-[13px] bg-background border border-border rounded-none outline-none focus:border-primary resize-none text-foreground placeholder:text-muted-foreground/60"
+              />
             </div>
           </div>
         </form>
 
         {/* Sticky Footer */}
-        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-border shrink-0 bg-background">
+        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-border shrink-0 bg-card">
           <Button
             type="button"
             variant="outline"
             onClick={closeDrawer}
-            className="h-8 px-4 text-[13px] rounded-none border-border cursor-pointer"
+            className="h-8 px-4 text-[13px] rounded-none border-border cursor-pointer shadow-none"
           >
             {t('classes.cancel', 'Hủy')}
           </Button>
           <Button
             type="button"
             onClick={handleSubmit}
-            className="h-8 px-4 text-[13px] rounded-none bg-[#1447e6] hover:bg-[#1447e6]/90 text-white cursor-pointer font-medium"
+            className="h-8 px-4 text-[13px] rounded-none bg-[#1447e6] hover:bg-[#1447e6]/90 text-white cursor-pointer font-medium shadow-none"
           >
             {drawerMode === 'edit'
               ? t('classes.save', 'Lưu thay đổi')
@@ -313,3 +304,4 @@ export function ClassDrawer() {
 
 // Re-export as AddClassModal for backward compatibility
 export const AddClassModal = ClassDrawer;
+

@@ -304,10 +304,11 @@ export function SettingsDialog({
         currentPassword: passwordData.current,
         newPassword: passwordData.next,
       });
-      toast.success(
-        res?.message || t('settings.toastPasswordSuccess', 'Đã đổi mật khẩu thành công!'),
-      );
+      const msg = res?.message || 'Đổi mật khẩu thành công. Vui lòng đăng nhập lại bằng mật khẩu mới.';
+      sessionStorage.setItem('sorak_auth_notice', msg);
       setPasswordData({ current: '', next: '', confirm: '' });
+      useAuthStore.getState().logout();
+      window.location.href = '/login?reason=password_changed';
     } catch (err) {
       const errorMessage =
         err?.response?.data?.message ||
@@ -325,8 +326,19 @@ export function SettingsDialog({
   );
   const [is2FAStep, setIs2FAStep] = useState(null);
   const [twoFactorOtpInput, setTwoFactorOtpInput] = useState('');
+  const [twoFactorCooldown, setTwoFactorCooldown] = useState(0);
   const [disablePasswordInput, setDisablePasswordInput] = useState('');
   const [is2FALoading, setIs2FALoading] = useState(false);
+
+  useEffect(() => {
+    let timer;
+    if (twoFactorCooldown > 0) {
+      timer = setInterval(() => {
+        setTwoFactorCooldown((prev) => (prev > 1 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [twoFactorCooldown]);
 
   useEffect(() => {
     setIs2FAEnabled(Boolean(user?.is_2fa_enabled));
@@ -340,8 +352,27 @@ export function SettingsDialog({
         description: res.message || 'Vui lòng kiểm tra email của bạn.',
       });
       setIs2FAStep('enabling');
+      setTwoFactorCooldown(60);
     } catch (err) {
       toast.error('Không thể gửi mã 2FA', {
+        description: err.response?.data?.message || err.message,
+      });
+    } finally {
+      setIs2FALoading(false);
+    }
+  };
+
+  const handleResendEnable2FA = async () => {
+    if (twoFactorCooldown > 0 || is2FALoading) return;
+    setIs2FALoading(true);
+    try {
+      const res = await authApi.requestEnable2FA();
+      toast.info('Đã gửi lại mã OTP', {
+        description: res.message || 'Vui lòng kiểm tra email của bạn.',
+      });
+      setTwoFactorCooldown(60);
+    } catch (err) {
+      toast.error('Không thể gửi lại mã', {
         description: err.response?.data?.message || err.message,
       });
     } finally {
@@ -459,11 +490,14 @@ export function SettingsDialog({
       if (saved) return JSON.parse(saved);
     } catch { }
     return {
-      emailAcademic: true,
-      emailTransfers: true,
+      emailTransfersAndPickup: true,
+      emailTeachingPlan: true,
+      emailAssessment: true,
+      emailBroadcastAndCalendar: true,
       emailSecurity: true,
       browserPush: true,
       notificationSound: false,
+      badgeIndicator: true,
     };
   });
 
@@ -525,7 +559,7 @@ export function SettingsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         hideCloseButton
-        className="w-[1080px] max-w-[95vw] h-[720px] max-h-[90vh] p-0 gap-0 bg-background border border-border rounded-none shadow-2xl overflow-hidden flex flex-col z-50 select-none"
+        className="w-[1080px] max-w-[95vw] h-[720px] max-h-[90vh] p-0 gap-0 bg-background border border-border rounded-none shadow-2xl overflow-hidden flex flex-col z-[100] select-none"
         data-node-id="4097:24170"
         data-name="Settings · Dialog"
       >
@@ -1052,7 +1086,7 @@ export function SettingsDialog({
                           className="h-9 max-w-[240px] text-[13px] font-mono tracking-widest bg-background border-border rounded-none"
                         />
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Button
                           type="button"
                           disabled={is2FALoading || twoFactorOtpInput.length !== 6}
@@ -1065,10 +1099,22 @@ export function SettingsDialog({
                         </Button>
                         <Button
                           type="button"
+                          variant="outline"
+                          disabled={is2FALoading || twoFactorCooldown > 0}
+                          onClick={handleResendEnable2FA}
+                          className="h-8 px-3 text-[12px] text-foreground rounded-none cursor-pointer"
+                        >
+                          {twoFactorCooldown > 0
+                            ? `Gửi lại mã sau (${twoFactorCooldown}s)`
+                            : t('settings.resendOtp', 'Gửi lại mã OTP')}
+                        </Button>
+                        <Button
+                          type="button"
                           variant="ghost"
                           onClick={() => {
                             setIs2FAStep(null);
                             setTwoFactorOtpInput('');
+                            setTwoFactorCooldown(0);
                           }}
                           className="h-8 px-3 text-[12px] text-muted-foreground hover:text-foreground rounded-none cursor-pointer"
                         >
@@ -1320,59 +1366,108 @@ export function SettingsDialog({
                   </div>
 
                   <div className="space-y-3">
+                    {/* Item 1: Transfers & Pickup */}
                     <label className="flex items-start justify-between gap-4 cursor-pointer">
                       <div className="flex flex-col">
                         <span className="text-[13px] font-medium text-foreground">
-                          {t('settings.notifAcademic', 'Hoạt động lớp học & Điểm danh')}
+                          {t('settings.notifTransfersAndPickup', 'Ủy quyền đón hộ & Yêu cầu chuyển lớp')}
                         </span>
                         <span className="text-[12px] text-muted-foreground">
                           {t(
-                            'settings.notifAcademicDesc',
-                            'Nhận email khi có lớp chưa hoàn tất điểm danh hoặc cập nhật sổ liên lạc',
+                            'settings.notifTransfersAndPickupDesc',
+                            'Nhận email khi có đơn đón hộ mới hoặc yêu cầu chuyển lớp cần xử lý và phê duyệt',
                           )}
                         </span>
                       </div>
                       <input
                         type="checkbox"
-                        checked={notificationPrefs.emailAcademic}
-                        onChange={() => toggleNotificationPref('emailAcademic')}
+                        checked={notificationPrefs.emailTransfersAndPickup}
+                        onChange={() => toggleNotificationPref('emailTransfersAndPickup')}
                         className="mt-1 size-4 rounded-none text-primary cursor-pointer accent-[#1447e6]"
                       />
                     </label>
 
                     <div className="h-px bg-border/60" />
 
+                    {/* Item 2: Teaching Plan & Curriculum */}
                     <label className="flex items-start justify-between gap-4 cursor-pointer">
                       <div className="flex flex-col">
                         <span className="text-[13px] font-medium text-foreground">
-                          {t('settings.notifTransfers', 'Đơn xin nghỉ & Yêu cầu chuyển lớp')}
+                          {t('settings.notifTeachingPlan', 'Kế hoạch giáo dục & Phê duyệt chủ đề')}
                         </span>
                         <span className="text-[12px] text-muted-foreground">
                           {t(
-                            'settings.notifTransfersDesc',
-                            'Nhận email thông báo ngay khi phụ huynh nộp đơn mới cần phê duyệt',
+                            'settings.notifTeachingPlanDesc',
+                            'Nhận email khi giáo viên nộp kế hoạch, BGH phê duyệt hoặc yêu cầu chỉnh sửa chủ đề',
                           )}
                         </span>
                       </div>
                       <input
                         type="checkbox"
-                        checked={notificationPrefs.emailTransfers}
-                        onChange={() => toggleNotificationPref('emailTransfers')}
+                        checked={notificationPrefs.emailTeachingPlan}
+                        onChange={() => toggleNotificationPref('emailTeachingPlan')}
                         className="mt-1 size-4 rounded-none text-primary cursor-pointer accent-[#1447e6]"
                       />
                     </label>
 
                     <div className="h-px bg-border/60" />
 
+                    {/* Item 3: Assessments & Monthly Reports */}
                     <label className="flex items-start justify-between gap-4 cursor-pointer">
                       <div className="flex flex-col">
                         <span className="text-[13px] font-medium text-foreground">
-                          {t('settings.notifSecurity', 'Cảnh báo bảo mật tài khoản')}
+                          {t('settings.notifAssessment', 'Sổ theo dõi & Nhận xét định kỳ')}
+                        </span>
+                        <span className="text-[12px] text-muted-foreground">
+                          {t(
+                            'settings.notifAssessmentDesc',
+                            'Nhận email khi phụ huynh phản hồi sổ theo dõi hoặc công bố nhận xét tháng của trẻ',
+                          )}
+                        </span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={notificationPrefs.emailAssessment}
+                        onChange={() => toggleNotificationPref('emailAssessment')}
+                        className="mt-1 size-4 rounded-none text-primary cursor-pointer accent-[#1447e6]"
+                      />
+                    </label>
+
+                    <div className="h-px bg-border/60" />
+
+                    {/* Item 4: Bulletins & School Calendar */}
+                    <label className="flex items-start justify-between gap-4 cursor-pointer">
+                      <div className="flex flex-col">
+                        <span className="text-[13px] font-medium text-foreground">
+                          {t('settings.notifBroadcastAndCalendar', 'Bản tin nhà trường & Lịch năm học')}
+                        </span>
+                        <span className="text-[12px] text-muted-foreground">
+                          {t(
+                            'settings.notifBroadcastAndCalendarDesc',
+                            'Nhận email khi BGH phát hành bản tin toàn trường, cập nhật lịch nghỉ lễ và học bù',
+                          )}
+                        </span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={notificationPrefs.emailBroadcastAndCalendar}
+                        onChange={() => toggleNotificationPref('emailBroadcastAndCalendar')}
+                        className="mt-1 size-4 rounded-none text-primary cursor-pointer accent-[#1447e6]"
+                      />
+                    </label>
+
+                    <div className="h-px bg-border/60" />
+
+                    {/* Item 5: Security & Accounts */}
+                    <label className="flex items-start justify-between gap-4 cursor-pointer">
+                      <div className="flex flex-col">
+                        <span className="text-[13px] font-medium text-foreground">
+                          {t('settings.notifSecurity', 'Tài khoản & Cảnh báo bảo mật')}
                         </span>
                         <span className="text-[12px] text-muted-foreground">
                           {t(
                             'settings.notifSecurityDesc',
-                            'Nhận email khi có đăng nhập từ thiết bị lạ hoặc thay đổi mật khẩu',
+                            'Nhận email khi có thay đổi trạng thái tài khoản, phân công lớp hoặc cảnh báo bảo mật',
                           )}
                         </span>
                       </div>
@@ -1396,6 +1491,7 @@ export function SettingsDialog({
                   </div>
 
                   <div className="space-y-3">
+                    {/* Browser Push */}
                     <label className="flex items-start justify-between gap-4 cursor-pointer">
                       <div className="flex flex-col">
                         <span className="text-[13px] font-medium text-foreground">
@@ -1404,7 +1500,7 @@ export function SettingsDialog({
                         <span className="text-[12px] text-muted-foreground">
                           {t(
                             'settings.notifBrowserPushDesc',
-                            'Hiển thị pop-up thông báo nhanh ở góc màn hình máy tính',
+                            'Hiển thị pop-up thông báo nhanh ở góc màn hình khi có sự kiện nghiệp vụ mới',
                           )}
                         </span>
                       </div>
@@ -1418,6 +1514,7 @@ export function SettingsDialog({
 
                     <div className="h-px bg-border/60" />
 
+                    {/* Sound */}
                     <label className="flex items-start justify-between gap-4 cursor-pointer">
                       <div className="flex flex-col">
                         <span className="text-[13px] font-medium text-foreground">
@@ -1426,7 +1523,7 @@ export function SettingsDialog({
                         <span className="text-[12px] text-muted-foreground">
                           {t(
                             'settings.notifSoundDesc',
-                            'Phát âm thanh nhẹ khi có thông báo mới gửi đến',
+                            'Phát âm thanh nhẹ khi có thông báo mới gửi đến trong ứng dụng',
                           )}
                         </span>
                       </div>
@@ -1434,6 +1531,29 @@ export function SettingsDialog({
                         type="checkbox"
                         checked={notificationPrefs.notificationSound}
                         onChange={() => toggleNotificationPref('notificationSound')}
+                        className="mt-1 size-4 rounded-none text-primary cursor-pointer accent-[#1447e6]"
+                      />
+                    </label>
+
+                    <div className="h-px bg-border/60" />
+
+                    {/* Badge Indicator */}
+                    <label className="flex items-start justify-between gap-4 cursor-pointer">
+                      <div className="flex flex-col">
+                        <span className="text-[13px] font-medium text-foreground">
+                          {t('settings.notifBadge', 'Huy hiệu thông báo nổi')}
+                        </span>
+                        <span className="text-[12px] text-muted-foreground">
+                          {t(
+                            'settings.notifBadgeDesc',
+                            'Hiển thị số đếm chưa đọc màu đỏ trên biểu tượng quả chuông và ảnh đại diện',
+                          )}
+                        </span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={notificationPrefs.badgeIndicator}
+                        onChange={() => toggleNotificationPref('badgeIndicator')}
                         className="mt-1 size-4 rounded-none text-primary cursor-pointer accent-[#1447e6]"
                       />
                     </label>

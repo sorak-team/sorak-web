@@ -232,11 +232,19 @@ export function AccountSettingsDrawer() {
                 type="button"
                 variant="outline"
                 size="sm"
+                disabled={isSelf}
                 onClick={() => {
+                  if (isSelf) {
+                    toast.error('Bạn không thể đặt lại mật khẩu cho chính mình tại chức năng quản lý tài khoản. Vui lòng sử dụng chức năng Đổi mật khẩu.');
+                    return;
+                  }
                   closeSettingsDrawer();
                   openResetPasswordConfirm(account);
                 }}
-                className="h-8 px-3 text-[13px] rounded-none border-border hover:bg-muted cursor-pointer flex items-center gap-1.5"
+                className={cn(
+                  "h-8 px-3 text-[13px] rounded-none border-border flex items-center gap-1.5",
+                  isSelf ? "opacity-50 cursor-not-allowed" : "hover:bg-muted cursor-pointer"
+                )}
                 data-node-id="4221:5657"
               >
                 <HugeiconsIcon icon={Key01Icon} size={14} />

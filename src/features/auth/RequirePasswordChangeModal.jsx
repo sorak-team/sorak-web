@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import {
-  ShieldCheck,
   Eye,
   EyeOff,
   AlertCircle,
@@ -53,6 +52,13 @@ export function RequirePasswordChangeModal() {
 
     const userId = user.id || user.publicId || user.account_id;
     if (!userId) return;
+
+    // Gợi ý đổi mật khẩu chỉ hiển thị trong trường hợp đăng nhập tài khoản lần đầu theo quy định
+    const isFirstLogin = Boolean(user.isFirstLogin || user.is_first_login);
+    if (!isFirstLogin) {
+      setIsOpen(false);
+      return;
+    }
 
     // Check if account is still using default password
     const isDefault = Boolean(
@@ -140,8 +146,12 @@ export function RequirePasswordChangeModal() {
         });
       }
 
-      toast.success('Đổi mật khẩu thành công! Tài khoản của bạn đã được bảo vệ an toàn.');
-      setIsOpen(false);
+      sessionStorage.setItem(
+        'sorak_auth_notice',
+        'Đổi mật khẩu thành công. Vui lòng đăng nhập lại bằng mật khẩu mới vừa đặt.',
+      );
+      useAuthStore.getState().logout();
+      window.location.href = '/login?reason=password_changed';
     } catch (err) {
       const msg =
         err.response?.data?.message ||
@@ -157,31 +167,19 @@ export function RequirePasswordChangeModal() {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-[440px] p-6 bg-card border border-border shadow-2xl rounded-none select-none">
+      <DialogContent className="max-w-[420px] p-6 bg-card border border-border shadow-2xl rounded-none select-none">
         {mode === 'prompt' ? (
           <div className="flex flex-col gap-5">
-            <DialogHeader className="space-y-1.5 text-left">
-              <DialogTitle className="text-[17px] font-semibold text-foreground tracking-tight">
+            <DialogHeader className="space-y-2 text-left">
+              <DialogTitle className="text-[16px] font-semibold text-foreground tracking-tight">
                 Gợi ý đổi mật khẩu
               </DialogTitle>
               <DialogDescription className="text-[13px] text-muted-foreground leading-relaxed">
-                Bạn đang sử dụng mật khẩu mặc định do nhà trường cung cấp. Bạn có muốn đổi mật khẩu để tăng cường bảo mật cho tài khoản không?
+                Bạn đang sử dụng mật khẩu mặc định do nhà trường cấp. Hãy đổi mật khẩu mới để tăng cường bảo mật cho tài khoản.
               </DialogDescription>
             </DialogHeader>
 
-            <div className="p-3 bg-muted/40 border border-border/70 text-[12px] text-muted-foreground space-y-1">
-              <div className="flex items-start gap-2">
-                <ShieldCheck className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-                <span className="text-foreground/90 font-medium">
-                  Đổi mật khẩu giúp bảo vệ dữ liệu giảng dạy, thông tin học sinh và ngăn chặn truy cập trái phép.
-                </span>
-              </div>
-              <p className="text-[11.5px] text-muted-foreground/80 pl-6 leading-relaxed">
-                Gợi ý này không bắt buộc và không chặn thao tác của bạn. Bạn có thể đổi mật khẩu bất kỳ lúc nào tại Cài đặt tài khoản.
-              </p>
-            </div>
-
-            <DialogFooter className="flex flex-row items-center justify-end gap-2.5 pt-1">
+            <DialogFooter className="flex flex-row items-center justify-end gap-2.5 pt-2">
               <Button
                 type="button"
                 variant="outline"

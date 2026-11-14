@@ -29,6 +29,8 @@ import { TablePagination } from '@/shared/components/TablePagination';
 import { academicYearsApi } from '../academic-years.api';
 import { HolidayEditDrawer } from './HolidayEditDrawer';
 import { HolidayImportDrawer } from './HolidayImportDrawer';
+import { ExcelActionsDropdown } from '@/components/ExcelActionsDropdown';
+import { downloadBlob } from '@/shared/utils/download';
 import { cn } from '@/shared/lib/utils';
 
 // Helper to parse date strings (YYYY-MM-DD or DD/MM/YYYY)
@@ -78,6 +80,24 @@ export function AcademicCalendarView({
 }) {
   const [holidaysData, setHolidaysData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportExcel = async () => {
+    if (!schoolYearId) return;
+    try {
+      setIsExporting(true);
+      const blob = await academicYearsApi.exportCalendarExcel(schoolYearId);
+      const safeName = (schoolYearName || 'Nam_Hoc').replace(/\s+/g, '_');
+      downloadBlob(blob, `Lich_Nam_Hoc_${safeName}.xlsx`);
+      toast.success('Đã xuất lịch năm học thành công');
+    } catch (err) {
+      toast.error('Lỗi khi xuất tệp lịch năm học', {
+        description: err.message || 'Vui lòng thử lại sau.',
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   // 1. Calculate school year boundaries
   const schoolYearBounds = useMemo(() => {
@@ -485,23 +505,15 @@ export function AcademicCalendarView({
             </button>
           </div>
 
-          {/* Import */}
-          <Button
-            type="button"
-            variant="outline"
-            disabled={isReadOnly}
-            onClick={() => !isReadOnly && setIsImportDrawerOpen(true)}
-            title={isReadOnly ? 'Năm học cũ / đã kết thúc không hỗ trợ import' : undefined}
-            className={cn(
-              'h-8 px-3 inline-flex items-center gap-1.5 text-[13px] font-medium border-border rounded-none shadow-none',
-              isReadOnly
-                ? 'opacity-40 cursor-not-allowed select-none text-muted-foreground'
-                : 'hover:bg-muted cursor-pointer',
-            )}
-          >
-            <HugeiconsIcon icon={File02Icon} size={14} />
-            <span>Import</span>
-          </Button>
+          {/* Excel Actions (Export & Import) */}
+          <ExcelActionsDropdown
+            onExport={handleExportExcel}
+            onImport={!isReadOnly ? () => setIsImportDrawerOpen(true) : null}
+            isExporting={isExporting}
+            showImport={!isReadOnly}
+            exportLabel="Xuất tệp Excel"
+            importLabel="Nhập tệp Excel"
+          />
 
           {/* Add Holiday Button */}
           <Button

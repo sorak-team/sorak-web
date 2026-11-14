@@ -48,9 +48,35 @@ export function TeacherDrawer() {
   const [status, setStatus] = useState('active');
   const [joinDate, setJoinDate] = useState('');
   const [address, setAddress] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
+
+  const isValidCalendarDate = (dateStr) => {
+    if (!dateStr || typeof dateStr !== 'string') return false;
+    let d, m, y;
+    if (dateStr.includes('/')) {
+      const parts = dateStr.trim().split('/');
+      if (parts.length !== 3) return false;
+      d = parseInt(parts[0], 10);
+      m = parseInt(parts[1], 10);
+      y = parseInt(parts[2], 10);
+    } else if (dateStr.includes('-')) {
+      const parts = dateStr.trim().split('-');
+      if (parts.length !== 3) return false;
+      y = parseInt(parts[0], 10);
+      m = parseInt(parts[1], 10);
+      d = parseInt(parts[2], 10);
+    } else {
+      return false;
+    }
+    if (isNaN(d) || isNaN(m) || isNaN(y)) return false;
+    if (m < 1 || m > 12 || y < 1900 || y > 2100) return false;
+    const daysInMonth = new Date(y, m, 0).getDate();
+    return d >= 1 && d <= daysInMonth;
+  };
 
   // Sync state when drawer opens or teacher changes
   useEffect(() => {
+    setFieldErrors({});
     if (drawerMode === 'edit' && currentTeacher) {
       setEmployeeCode(currentTeacher.employeeCode || '');
       setFullName(currentTeacher.fullName || '');
@@ -92,12 +118,65 @@ export function TeacherDrawer() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const errors = {};
     if (!fullName.trim()) {
-      toast.error('Vui lòng nhập họ tên giáo viên');
-      return;
+      errors.fullName = 'Vui lòng nhập họ và tên.';
     }
 
-    if (joinDate && joinDate.trim()) {
+    const trimmedCccd = citizenId.trim();
+    if (!trimmedCccd) {
+      errors.citizenId = 'Vui lòng nhập số CCCD/CMND.';
+    } else if (!/^([0-9]{9}|[0-9]{12})$/.test(trimmedCccd)) {
+      errors.citizenId = 'Số CCCD/CMND không đúng định dạng. Vui lòng kiểm tra lại.';
+    } else {
+      const dupCccd = teachers.find(
+        (t) =>
+          (drawerMode !== 'edit' || (t.id !== editingTeacherId && t.publicId !== editingTeacherId)) &&
+          t.citizenId &&
+          t.citizenId.trim() === trimmedCccd,
+      );
+      if (dupCccd) {
+        errors.citizenId = `Số CCCD/CMND '${trimmedCccd}' đã được đăng ký bởi cán bộ khác (${dupCccd.fullName}).`;
+      }
+    }
+
+    if (!email.trim()) {
+      errors.email = 'Vui lòng nhập email.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      errors.email = 'Email không đúng định dạng.';
+    } else {
+      const dupEmail = teachers.find(
+        (t) =>
+          (drawerMode !== 'edit' || (t.id !== editingTeacherId && t.publicId !== editingTeacherId)) &&
+          t.email &&
+          t.email.trim().toLowerCase() === email.trim().toLowerCase(),
+      );
+      if (dupEmail) {
+        errors.email = `Email '${email.trim()}' đã được đăng ký bởi cán bộ khác (${dupEmail.fullName}).`;
+      }
+    }
+
+    if (phone.trim()) {
+      if (!/^[0-9]{9,15}$/.test(phone.trim())) {
+        errors.phone = 'Số điện thoại không đúng định dạng (từ 9 đến 15 chữ số).';
+      } else {
+        const dupPhone = teachers.find(
+          (t) =>
+            (drawerMode !== 'edit' || (t.id !== editingTeacherId && t.publicId !== editingTeacherId)) &&
+            t.phone &&
+            t.phone.trim() === phone.trim(),
+        );
+        if (dupPhone) {
+          errors.phone = `Số điện thoại '${phone.trim()}' đã được đăng ký bởi cán bộ khác (${dupPhone.fullName}).`;
+        }
+      }
+    }
+
+    if (!joinDate.trim()) {
+      errors.joinDate = 'Vui lòng chọn ngày vào làm.';
+    } else if (!isValidCalendarDate(joinDate)) {
+      errors.joinDate = 'Ngày vào làm không tồn tại. Vui lòng nhập ngày hợp lệ.';
+    } else {
       let yr;
       if (joinDate.includes('/')) {
         const parts = joinDate.split('/');
@@ -106,39 +185,23 @@ export function TeacherDrawer() {
         yr = new Date(joinDate).getFullYear();
       }
       if (yr && !isNaN(yr) && yr < 2000) {
-        toast.error('Năm bắt đầu công tác tối thiểu phải từ năm 2000');
-        return;
+        errors.joinDate = 'Năm bắt đầu công tác tối thiểu phải từ năm 2000';
       }
     }
 
-    if (phone.trim()) {
-      const dupPhone = teachers.find(
-        (t) =>
-          (drawerMode !== 'edit' || (t.id !== editingTeacherId && t.publicId !== editingTeacherId)) &&
-          t.phone &&
-          t.phone.trim() === phone.trim(),
-      );
-      if (dupPhone) {
-        toast.error(`Số điện thoại '${phone.trim()}' đã được đăng ký bởi giáo viên khác (${dupPhone.fullName})!`);
-        return;
-      }
+    if (dob.trim() && !isValidCalendarDate(dob)) {
+      errors.dob = 'Ngày sinh không tồn tại. Vui lòng nhập ngày hợp lệ.';
     }
 
-    if (email.trim()) {
-      const dupEmail = teachers.find(
-        (t) =>
-          (drawerMode !== 'edit' || (t.id !== editingTeacherId && t.publicId !== editingTeacherId)) &&
-          t.email &&
-          t.email.trim().toLowerCase() === email.trim().toLowerCase(),
-      );
-      if (dupEmail) {
-        toast.error(`Email '${email.trim()}' đã được đăng ký bởi giáo viên khác (${dupEmail.fullName})!`);
-        return;
-      }
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      const firstError = Object.values(errors)[0];
+      toast.error(firstError);
+      return;
     }
 
     const payload = {
-      employeeCode: employeeCode.trim() || undefined,
+      employeeCode: drawerMode === 'edit' ? (employeeCode.trim() || undefined) : undefined,
       fullName: fullName.trim(),
       citizenId: citizenId.trim() || undefined,
       email: email.trim(),
@@ -150,6 +213,7 @@ export function TeacherDrawer() {
       status,
       joinDate: joinDate.trim(),
       address: address.trim(),
+      updatedAt: drawerMode === 'edit' ? (currentTeacher?.updatedAt || undefined) : undefined,
     };
 
     try {
@@ -163,7 +227,37 @@ export function TeacherDrawer() {
     } catch (err) {
       console.error('Teacher save failed:', err);
       const msg = err.response?.data?.message || err.message || 'Thao tác không thành công';
-      toast.error(msg);
+      if (err.response?.status === 409) {
+        toast.error(msg || 'Dữ liệu đã được phiên khác cập nhật. Thay đổi của bạn chưa được lưu. Vui lòng tải lại dữ liệu mới nhất và thực hiện lại.', {
+          duration: 6000,
+        });
+        useTeacherStore.getState().fetchTeachers();
+      } else {
+        toast.error(msg);
+      }
+
+      const serverErrors = {};
+      if (Array.isArray(err.response?.data?.details)) {
+        err.response.data.details.forEach((d) => {
+          if (d.path) serverErrors[d.path] = d.message;
+        });
+      }
+      const lower = msg.toLowerCase();
+      if (lower.includes('cccd') || lower.includes('citizen_id') || lower.includes('citizenid')) {
+        serverErrors.citizenId = msg;
+      }
+      if (lower.includes('email')) {
+        serverErrors.email = msg;
+      }
+      if (lower.includes('điện thoại') || lower.includes('phone') || lower.includes('sđt')) {
+        serverErrors.phone = msg;
+      }
+      if (lower.includes('họ và tên') || lower.includes('fullname')) {
+        serverErrors.fullName = msg;
+      }
+      if (Object.keys(serverErrors).length > 0) {
+        setFieldErrors((prev) => ({ ...prev, ...serverErrors }));
+      }
     }
   };
 
@@ -254,23 +348,41 @@ export function TeacherDrawer() {
                   <Input
                     type="text"
                     value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
+                    onChange={(e) => {
+                      setFullName(e.target.value);
+                      if (fieldErrors.fullName) setFieldErrors((prev) => ({ ...prev, fullName: '' }));
+                    }}
                     placeholder="Nguyễn Đình Vinh"
-                    required
-                    className="h-9 text-[13px] rounded-none border-border"
+                    className={cn(
+                      "h-9 text-[13px] rounded-none border-border",
+                      fieldErrors.fullName && "border-destructive focus-visible:ring-destructive"
+                    )}
                   />
+                  {fieldErrors.fullName && (
+                    <p className="text-[11.5px] text-destructive mt-1">{fieldErrors.fullName}</p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[12px] font-medium text-foreground">
-                    {t('teacher.citizenId', 'Số CCCD/CMND')}
+                    {t('teacher.citizenId', 'Số CCCD/CMND')} <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     type="text"
                     value={citizenId}
-                    onChange={(e) => setCitizenId(e.target.value)}
+                    onChange={(e) => {
+                      setCitizenId(e.target.value);
+                      if (fieldErrors.citizenId) setFieldErrors((prev) => ({ ...prev, citizenId: '' }));
+                    }}
                     placeholder="VD: 079201001234"
-                    className="h-9 text-[13px] rounded-none border-border"
+                    maxLength={12}
+                    className={cn(
+                      "h-9 text-[13px] rounded-none border-border font-mono",
+                      fieldErrors.citizenId && "border-destructive focus-visible:ring-destructive"
+                    )}
                   />
+                  {fieldErrors.citizenId && (
+                    <p className="text-[11.5px] text-destructive mt-1">{fieldErrors.citizenId}</p>
+                  )}
                 </div>
               </div>
 
@@ -278,15 +390,24 @@ export function TeacherDrawer() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label className="text-[12px] font-medium text-foreground">
-                    {t('teacher.email', 'Email')}
+                    {t('teacher.email', 'Email')} <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (fieldErrors.email) setFieldErrors((prev) => ({ ...prev, email: '' }));
+                    }}
                     placeholder="vinhnd@sorak.vn"
-                    className="h-9 text-[13px] rounded-none border-border"
+                    className={cn(
+                      "h-9 text-[13px] rounded-none border-border",
+                      fieldErrors.email && "border-destructive focus-visible:ring-destructive"
+                    )}
                   />
+                  {fieldErrors.email && (
+                    <p className="text-[11.5px] text-destructive mt-1">{fieldErrors.email}</p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[12px] font-medium text-foreground">
@@ -295,10 +416,19 @@ export function TeacherDrawer() {
                   <Input
                     type="tel"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onChange={(e) => {
+                      setPhone(e.target.value);
+                      if (fieldErrors.phone) setFieldErrors((prev) => ({ ...prev, phone: '' }));
+                    }}
                     placeholder="0788876568"
-                    className="h-9 text-[13px] rounded-none border-border"
+                    className={cn(
+                      "h-9 text-[13px] rounded-none border-border font-mono",
+                      fieldErrors.phone && "border-destructive focus-visible:ring-destructive"
+                    )}
                   />
+                  {fieldErrors.phone && (
+                    <p className="text-[11.5px] text-destructive mt-1">{fieldErrors.phone}</p>
+                  )}
                 </div>
               </div>
 
@@ -324,10 +454,19 @@ export function TeacherDrawer() {
                   <Input
                     type="text"
                     value={dob}
-                    onChange={(e) => setDob(e.target.value)}
+                    onChange={(e) => {
+                      setDob(e.target.value);
+                      if (fieldErrors.dob) setFieldErrors((prev) => ({ ...prev, dob: '' }));
+                    }}
                     placeholder="DD/MM/YYYY"
-                    className="h-9 text-[13px] rounded-none border-border"
+                    className={cn(
+                      "h-9 text-[13px] rounded-none border-border",
+                      fieldErrors.dob && "border-destructive focus-visible:ring-destructive"
+                    )}
                   />
+                  {fieldErrors.dob && (
+                    <p className="text-[11.5px] text-destructive mt-1">{fieldErrors.dob}</p>
+                  )}
                 </div>
               </div>
 
@@ -410,19 +549,28 @@ export function TeacherDrawer() {
                 )}
               </div>
 
-              {/* Row 2: Ngày vào làm & Trình độ */}
+              {/* Row 2: Ngày vào làm */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5 col-span-2">
                   <Label className="text-[12px] font-medium text-foreground">
-                    {t('teacher.joinDate', 'Ngày vào làm')}
+                    {t('teacher.joinDate', 'Ngày vào làm')} <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     type="text"
                     value={joinDate}
-                    onChange={(e) => setJoinDate(e.target.value)}
+                    onChange={(e) => {
+                      setJoinDate(e.target.value);
+                      if (fieldErrors.joinDate) setFieldErrors((prev) => ({ ...prev, joinDate: '' }));
+                    }}
                     placeholder="DD/MM/YYYY"
-                    className="h-9 text-[13px] rounded-none border-border"
+                    className={cn(
+                      "h-9 text-[13px] rounded-none border-border",
+                      fieldErrors.joinDate && "border-destructive focus-visible:ring-destructive"
+                    )}
                   />
+                  {fieldErrors.joinDate && (
+                    <p className="text-[11.5px] text-destructive mt-1">{fieldErrors.joinDate}</p>
+                  )}
                 </div>
               </div>
             </div>

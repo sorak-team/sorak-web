@@ -17,7 +17,7 @@ export function AppProviders({ children }) {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         {children}
-        <Toaster position="bottom-right" richColors theme="light" closeButton />
+        <Toaster position="top-right" richColors theme="light" closeButton />
       </BrowserRouter>
     </QueryClientProvider>
   );

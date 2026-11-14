@@ -3,14 +3,15 @@ import { apiClient } from '@/shared/api/client';
 export const authApi = {
   /**
    * Log in user
-   * @param {{ identifier: string, password: string, role: string, captchaToken?: string }} data
+   * @param {{ identifier: string, password: string, role: string, captchaToken?: string, isLinkingChild?: boolean }} data
    */
-  login: async ({ identifier, password, role, captchaToken }) => {
+  login: async ({ identifier, password, role, captchaToken, isLinkingChild }) => {
     const response = await apiClient.post('/auth/login', {
       identifier,
       password,
       role,
       captchaToken,
+      isLinkingChild,
     });
     return response.data;
   },
