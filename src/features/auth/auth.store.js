@@ -54,14 +54,8 @@ export const useAuthStore = create(
         const token = isDifferentUser ? accessToken : (accessToken ?? get().accessToken);
         let accounts = get().linkedAccounts || [];
 
-        // If PARENT_PH, maintain linkedAccounts list
+        // If PARENT_PH, maintain linkedAccounts list without wiping on adding 3rd or subsequent children
         if (user && user.role === 'PARENT_PH') {
-          const existingPhone = accounts[0]?.user?.phone;
-          const newPhone = user.phone;
-          if (existingPhone && newPhone && existingPhone !== newPhone) {
-            accounts = [];
-          }
-
           const exists = accounts.some(
             (a) => a.user?.id === user.id || a.user?.identifier === user.identifier,
           );
@@ -71,10 +65,12 @@ export const useAuthStore = create(
             // Update the stored entry
             accounts = accounts.map((a) =>
               a.user?.id === user.id || a.user?.identifier === user.identifier
-                ? { user, accessToken: token }
+                ? { user: { ...a.user, ...user }, accessToken: token || a.accessToken }
                 : a,
             );
           }
+        } else {
+          accounts = [];
         }
 
         set({

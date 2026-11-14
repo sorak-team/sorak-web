@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { toast } from 'sonner';
 import { useAuthStore } from '@/features/auth/auth.store';
 
 const baseURL = import.meta.env.VITE_API_URL || '/api';
@@ -73,6 +74,75 @@ apiClient.interceptors.response.use(
     }
     const originalRequest = error.config;
 
+    if (
+      error.response?.data?.code === 'ROLE_CHANGED' ||
+      error.response?.data?.message?.includes('Vai trò tài khoản của bạn đã thay đổi')
+    ) {
+      const msg =
+        error.response?.data?.message ||
+        'Vai trò tài khoản của bạn đã thay đổi. Vui lòng đăng nhập lại.';
+      sessionStorage.setItem('sorak_auth_notice', msg);
+      useAuthStore.getState().logout();
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login?reason=role_changed';
+      } else {
+        toast.warning(msg, { id: 'role-changed-toast', duration: 6000 });
+      }
+      return Promise.reject(error);
+    }
+
+    if (
+      error.response?.data?.code === 'ACCOUNT_LOCKED' ||
+      error.response?.data?.message?.includes('tạm khóa')
+    ) {
+      const msg =
+        error.response?.data?.message ||
+        'Tài khoản của bạn đã bị tạm khóa. Vui lòng liên hệ ban quản trị.';
+      sessionStorage.setItem('sorak_auth_notice', msg);
+      useAuthStore.getState().logout();
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login?reason=account_locked';
+      } else {
+        toast.error(msg, { id: 'account-locked-toast', duration: 6000 });
+      }
+      return Promise.reject(error);
+    }
+
+    if (
+      error.response?.data?.code === 'PASSWORD_CHANGED' ||
+      error.response?.data?.message?.includes('Mật khẩu của bạn đã được thay đổi') ||
+      error.response?.data?.message?.includes('Mật khẩu đã được thay đổi')
+    ) {
+      const msg =
+        error.response?.data?.message ||
+        'Mật khẩu của bạn đã được thay đổi. Vui lòng đăng nhập lại bằng mật khẩu mới.';
+      sessionStorage.setItem('sorak_auth_notice', msg);
+      useAuthStore.getState().logout();
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login?reason=password_changed';
+      } else {
+        toast.warning(msg, { id: 'password-changed-toast', duration: 6000 });
+      }
+      return Promise.reject(error);
+    }
+
+    if (
+      error.response?.data?.code === 'SESSION_REVOKED' ||
+      error.response?.data?.message?.includes('Phiên đăng nhập đã bị vô hiệu')
+    ) {
+      const msg =
+        error.response?.data?.message ||
+        'Phiên đăng nhập đã bị vô hiệu hóa hoặc đăng xuất từ thiết bị khác. Vui lòng đăng nhập lại.';
+      sessionStorage.setItem('sorak_auth_notice', msg);
+      useAuthStore.getState().logout();
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login?reason=session_revoked';
+      } else {
+        toast.warning(msg, { id: 'session-revoked-toast', duration: 6000 });
+      }
+      return Promise.reject(error);
+    }
+
     // Do not attempt refresh on auth endpoints (login, refresh, forgot-password, etc.)
     if (
       error.response?.status === 401 &&
@@ -114,6 +184,9 @@ apiClient.interceptors.response.use(
         delete apiClient.defaults.headers.common.Authorization;
         processQueue(refreshError, null);
         useAuthStore.getState().logout();
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
