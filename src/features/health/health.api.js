@@ -24,4 +24,16 @@ export const healthApi = {
     const response = await apiClient.delete(`/student-health/classes/${classId}/records`, { params });
     return response.data?.data || response.data;
   },
+
+  /**
+   * Xuất danh sách theo dõi sức khỏe & thể lực ra Excel
+   */
+  async exportHealthExcel(classId, params = {}) {
+    const url = classId ? `/student-health/classes/${classId}/export/excel` : '/student-health/export/excel';
+    const response = await apiClient.get(url, {
+      params,
+      responseType: 'blob',
+    });
+    return response.data;
+  },
 };

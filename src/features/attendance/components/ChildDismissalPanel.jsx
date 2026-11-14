@@ -152,10 +152,10 @@ export function ChildDismissalPanel({
         const existing = raw ? JSON.parse(raw) : {};
         const isCustom = Boolean(
           personData.isCustom ||
-            (!personData.id &&
-              personData.relationship !== 'Bố' &&
-              personData.relationship !== 'Mẹ' &&
-              !personData.isAuth)
+          (!personData.id &&
+            personData.relationship !== 'Bố' &&
+            personData.relationship !== 'Mẹ' &&
+            !personData.isAuth)
         );
         const updated = {
           ...existing,
@@ -360,6 +360,7 @@ export function ChildDismissalPanel({
     () => students.filter((s) => s.isPresent && !s.isDismissed).length,
     [students]
   );
+  const isAllDismissed = presentCount > 0 && undismissedPresentCount === 0;
   const formattedDate = useMemo(() => {
     if (!date) return new Date().toLocaleDateString('vi-VN');
     const parts = date.split('-');
@@ -1294,15 +1295,15 @@ export function ChildDismissalPanel({
                                         ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/70 dark:text-amber-200 font-semibold hover:bg-amber-200/90 hover:text-amber-950'
                                         : 'bg-amber-50/70 text-amber-800 dark:bg-amber-950/30 dark:text-amber-300 hover:bg-amber-100 hover:text-amber-900'
                                       : isSelected
-                                      ? 'bg-primary/10 text-primary font-semibold hover:bg-primary hover:text-white'
-                                      : 'text-foreground hover:bg-muted/70'
+                                        ? 'bg-primary/10 text-primary font-semibold hover:bg-primary hover:text-white'
+                                        : 'text-foreground hover:bg-muted/70'
                                   )}
                                   title={
                                     isAuthorizedPerson
                                       ? `Ủy quyền (${p.relationship}): ${p.name || ''} (Bấm để chọn đón)`
                                       : p.name
-                                      ? `${p.relationship}: ${p.name} (Bấm để chọn đón)`
-                                      : `${p.relationship} (Bấm để chọn đón)`
+                                        ? `${p.relationship}: ${p.name} (Bấm để chọn đón)`
+                                        : `${p.relationship} (Bấm để chọn đón)`
                                   }
                                 >
                                   <span>{getShortRelationshipLabel(p.relationship)}</span>
@@ -1372,8 +1373,8 @@ export function ChildDismissalPanel({
               <span>
                 {isVi
                   ? (dismissedCount === presentCount && presentCount > 0
-                      ? `Đã đón hết (${dismissedCount}/${presentCount})`
-                      : `Đã đón trẻ (${dismissedCount}/${presentCount || students.length})`)
+                    ? `Đã đón hết (${dismissedCount}/${presentCount})`
+                    : `Đã đón trẻ (${dismissedCount}/${presentCount || students.length})`)
                   : `Dismissed (${dismissedCount}/${presentCount || students.length})`}
               </span>
             </span>
@@ -1392,9 +1393,6 @@ export function ChildDismissalPanel({
         <div className="flex items-center gap-2">
           {readOnly ? (
             <>
-              <span className="px-2.5 py-1 text-[11.5px] font-medium bg-muted text-muted-foreground border border-border select-none">
-                Chế độ xem (BGH)
-              </span>
               {onClose && (
                 <Button
                   type="button"
@@ -1418,26 +1416,28 @@ export function ChildDismissalPanel({
                   {t('common.cancel', 'Huỷ')}
                 </Button>
               )}
-              <Button
-                type="button"
-                onClick={() => {
-                  if (presentCount === 0) {
-                    toast.warning(isVi ? 'Không có học sinh nào có mặt hôm nay.' : 'No students present today.');
-                    return;
-                  }
-                  setShowSaveConfirmDialog(true);
-                }}
-                disabled={presentCount === 0 || isSaving || isCleaning}
-                className={cn(
-                  'rounded-none h-9 text-[13px] px-5 font-medium transition-colors shadow-none',
-                  presentCount > 0 && !isSaving && !isCleaning
-                    ? 'bg-[#1447e6] hover:bg-[#123ec4] text-white cursor-pointer'
-                    : 'bg-muted/80 text-muted-foreground border border-border/80 cursor-not-allowed opacity-60'
-                )}
-                title={presentCount === 0 ? (isVi ? 'Không có học sinh có mặt để lưu' : 'No students present') : undefined}
-              >
-                {isSaving ? t('common.saving', 'Đang lưu...') : t('dismissal.saveDismissal', 'Lưu đón trẻ')}
-              </Button>
+              {(!isAllDismissed || isDirty) && (
+                <Button
+                  type="button"
+                  onClick={() => {
+                    if (presentCount === 0) {
+                      toast.warning(isVi ? 'Không có học sinh nào có mặt hôm nay.' : 'No students present today.');
+                      return;
+                    }
+                    setShowSaveConfirmDialog(true);
+                  }}
+                  disabled={presentCount === 0 || isSaving || isCleaning}
+                  className={cn(
+                    'rounded-none h-9 text-[13px] px-5 font-medium transition-colors shadow-none',
+                    presentCount > 0 && !isSaving && !isCleaning
+                      ? 'bg-[#1447e6] hover:bg-[#123ec4] text-white cursor-pointer'
+                      : 'bg-muted/80 text-muted-foreground border border-border/80 cursor-not-allowed opacity-60'
+                  )}
+                  title={presentCount === 0 ? (isVi ? 'Không có học sinh có mặt để lưu' : 'No students present') : undefined}
+                >
+                  {isSaving ? t('common.saving', 'Đang lưu...') : t('dismissal.saveDismissal', 'Lưu đón trẻ')}
+                </Button>
+              )}
             </>
           )}
         </div>
@@ -1518,10 +1518,6 @@ export function ChildDismissalPanel({
                         {a.relationship || (isVi ? 'Ủy quyền' : 'Delegate')}: {a.name} ({isVi ? 'Ủy quyền' : 'Authorized'})
                       </option>
                     ))}
-
-                    <option value="CUSTOM">
-                      {isVi ? '+ Người đón khác' : '+ Other person'}
-                    </option>
                   </select>
                   <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
                     <HugeiconsIcon icon={ArrowDown01Icon} size={15} />
@@ -1546,8 +1542,8 @@ export function ChildDismissalPanel({
                   selectedAuthObj ||
                   (modalForm.pickupRelationship &&
                     (modalForm.pickupRelationship.toLowerCase().includes('ủy quyền') ||
-                     modalForm.pickupRelationship.toLowerCase().includes('uy quyen') ||
-                     modalForm.pickupRelationship.toLowerCase().includes('auth')))
+                      modalForm.pickupRelationship.toLowerCase().includes('uy quyen') ||
+                      modalForm.pickupRelationship.toLowerCase().includes('auth')))
                 );
                 const personObj = isAuthPerson
                   ? (selectedAuthObj || selectedParentObj)
@@ -1555,9 +1551,9 @@ export function ChildDismissalPanel({
                 const personAvatar = personObj?.photoUrl
                   ? personObj.photoUrl
                   : getParentAvatarUrl(
-                      personObj?.avatarUrl,
-                      personObj?.name || modalForm.pickupName || (isAuthPerson ? 'UQ' : 'PH')
-                    );
+                    personObj?.avatarUrl,
+                    personObj?.name || modalForm.pickupName || (isAuthPerson ? 'UQ' : 'PH')
+                  );
 
                 return (
                   <div
@@ -1946,7 +1942,7 @@ export function ChildDismissalPanel({
           try {
             const raw = localStorage.getItem(`sorak_pickup_defaults_${classId}`);
             setDefaultsMap(raw ? JSON.parse(raw) : {});
-          } catch {}
+          } catch { }
           fetchDismissalData();
         }}
       />
