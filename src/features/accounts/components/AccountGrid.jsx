@@ -234,8 +234,18 @@ export function AccountGrid({ paginatedAccounts }) {
                   <span>{t('account.actionSettings', 'Cài đặt')}</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => openResetPasswordConfirm(account)}
-                  className="flex items-center gap-2 h-8 px-2 text-[13px] cursor-pointer rounded-none hover:bg-muted/60"
+                  disabled={isAccountSelf(account)}
+                  onClick={() => {
+                    if (isAccountSelf(account)) {
+                      toast.error('Bạn không thể đặt lại mật khẩu cho chính mình tại chức năng quản lý tài khoản. Vui lòng sử dụng chức năng Đổi mật khẩu.');
+                      return;
+                    }
+                    openResetPasswordConfirm(account);
+                  }}
+                  className={cn(
+                    "flex items-center gap-2 h-8 px-2 text-[13px] rounded-none",
+                    isAccountSelf(account) ? "opacity-50 cursor-not-allowed text-muted-foreground" : "cursor-pointer hover:bg-muted/60"
+                  )}
                 >
                   <HugeiconsIcon icon={Key01Icon} size={15} />
                   <span>{t('account.actionResetPassword', 'Đặt lại mật khẩu')}</span>

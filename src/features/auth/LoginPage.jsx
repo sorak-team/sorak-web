@@ -70,6 +70,12 @@ export default function LoginPage() {
   useEffect(() => {
     document.documentElement.classList.remove('dark');
 
+    const notice = sessionStorage.getItem('sorak_auth_notice');
+    if (notice) {
+      toast.warning(notice, { id: 'role-changed-toast', duration: 7000 });
+      sessionStorage.removeItem('sorak_auth_notice');
+    }
+
     if (isTurnstileDisabled) {
       setCaptchaToken('test-token-playwright');
       return;
@@ -273,9 +279,20 @@ export default function LoginPage() {
         error.message ||
         t('auth.invalidCredentials', 'Tài khoản hoặc mật khẩu không chính xác.');
 
-      toast.error(t('auth.loginFailed', 'Đăng nhập thất bại'), {
-        description: errorMsg,
-      });
+      const isLocked =
+        error.response?.status === 403 ||
+        error.response?.status === 423 ||
+        (typeof errorMsg === 'string' && errorMsg.toLowerCase().includes('bị khóa'));
+
+      toast.error(
+        isLocked
+          ? t('auth.accountLocked', 'Tài khoản đã bị khóa')
+          : t('auth.loginFailed', 'Đăng nhập thất bại'),
+        {
+          description: errorMsg,
+          duration: isLocked ? 7000 : 4000,
+        }
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -406,9 +423,20 @@ export default function LoginPage() {
           error.message ||
           t('auth.otpInvalidOrExpired', 'Mã OTP không chính xác hoặc đã hết hạn.');
 
-        toast.error(t('auth.otpFailed', 'Xác thực thất bại'), {
-          description: errorMsg,
-        });
+        const isLocked =
+          error.response?.status === 403 ||
+          error.response?.status === 423 ||
+          (typeof errorMsg === 'string' && errorMsg.toLowerCase().includes('bị khóa'));
+
+        toast.error(
+          isLocked
+            ? t('auth.accountLocked', 'Tài khoản đã bị khóa')
+            : t('auth.otpFailed', 'Xác thực thất bại'),
+          {
+            description: errorMsg,
+            duration: isLocked ? 7000 : 4000,
+          }
+        );
 
         // Reset from start on incorrect OTP
         setTwoFactorOtp('');
