@@ -102,7 +102,7 @@ export function AcademicYearSwitcher({ sidebarCollapsed }) {
 
   const handleGoToManagement = () => {
     setPopoverOpen(false);
-    navigate('/school-years');
+    navigate('/school-years?view=all');
   };
 
   return (
