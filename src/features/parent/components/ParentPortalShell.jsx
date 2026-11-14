@@ -18,7 +18,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import { useAuthStore } from '@/features/auth/auth.store';
-import { RequirePasswordChangeModal } from '@/features/auth';
+import { RequirePasswordChangeModal, LogoutDialog } from '@/features/auth';
 import { getStudentAvatarUrl } from '@/features/students/students.store';
 import { parentApi } from '../api/parent.api';
 import { ParentChildHero } from './ParentChildHero';
@@ -32,18 +32,21 @@ export function ParentPortalShell() {
   const location = useLocation();
   const user = useAuthStore((state) => state.user);
 
-  // Role Guard: Non-parents are redirected to faculty dashboard /classes
-  if (user && user.role !== 'PARENT_PH') {
+  // Authentication & Role Guard: Reject unauthenticated or non-parent access
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  if (user.role !== 'PARENT_PH') {
     return <Navigate to="/classes" replace />;
   }
 
-  const logout = useAuthStore((state) => state.logout);
   const linkedAccounts = useAuthStore((state) => state.linkedAccounts) || [];
   const switchAccount = useAuthStore((state) => state.switchAccount);
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isActivitySheetOpen, setIsActivitySheetOpen] = useState(false);
   const [isLinkChildModalOpen, setIsLinkChildModalOpen] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [homeData, setHomeData] = useState(null);
   const [selectedClassId, setSelectedClassId] = useState(() => {
     return new URLSearchParams(window.location.search).get('classId') || null;
@@ -144,9 +147,8 @@ export function ParentPortalShell() {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login', { replace: true });
+  const handleOpenLogout = () => {
+    setIsLogoutModalOpen(true);
   };
 
   const avatarUrl = getStudentAvatarUrl(
@@ -258,7 +260,10 @@ export function ParentPortalShell() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={handleLogout}
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  handleOpenLogout();
+                }}
                 className="w-full h-9 rounded-none text-[12.5px] flex items-center justify-center gap-2 text-destructive hover:bg-destructive/10"
               >
                 <LogOut className="size-4" />
@@ -285,27 +290,44 @@ export function ParentPortalShell() {
           onOpenLinkChildModal={() => setIsLinkChildModalOpen(true)}
           onOpenActivitySheet={() => setIsActivitySheetOpen(true)}
           linkedAccounts={
-            homeData?.siblings && homeData.siblings.length > 0
-              ? homeData.siblings.map((s) => ({
+            linkedAccounts && linkedAccounts.length > 0
+              ? linkedAccounts.map((acc) => ({
                   user: {
-                    id: s.id,
-                    identifier: s.studentCode || s.username,
-                    name: s.fullName,
-                    fullName: s.fullName,
-                    student: {
-                      id: s.id,
-                      fullName: s.fullName,
-                      studentCode: s.studentCode,
-                      className: s.className,
-                      avatarUrl: s.avatarUrl,
+                    id: acc.user?.id || acc.user?.studentId,
+                    identifier: acc.user?.identifier || acc.user?.studentCode || acc.user?.username,
+                    name: acc.user?.name || acc.user?.fullName,
+                    fullName: acc.user?.fullName || acc.user?.name,
+                    student: acc.user?.student || {
+                      id: acc.user?.studentId || acc.user?.id,
+                      fullName: acc.user?.fullName || acc.user?.name,
+                      studentCode: acc.user?.studentCode,
+                      className: acc.user?.className,
+                      avatarUrl: acc.user?.avatarUrl,
                     },
-                    avatarUrl: s.avatarUrl,
+                    avatarUrl: acc.user?.avatarUrl,
                   },
                 }))
-              : linkedAccounts
+              : [
+                  {
+                    user: {
+                      id: heroStudent?.id || user?.id,
+                      identifier: heroStudent?.studentCode || user?.studentCode || user?.username,
+                      name: heroStudent?.fullName || user?.fullName || user?.name,
+                      fullName: heroStudent?.fullName || user?.fullName || user?.name,
+                      student: {
+                        id: heroStudent?.id || user?.id,
+                        fullName: heroStudent?.fullName || user?.fullName || user?.name,
+                        studentCode: heroStudent?.studentCode || user?.studentCode,
+                        className: homeroomClass?.name || '',
+                        avatarUrl: heroStudent?.avatarUrl || user?.avatarUrl,
+                      },
+                      avatarUrl: heroStudent?.avatarUrl || user?.avatarUrl,
+                    },
+                  },
+                ]
           }
           onSwitchAccount={handleSwitchChild}
-          onLogout={handleLogout}
+          onLogout={handleOpenLogout}
           // Class Switcher props
           enrollments={homeData?.enrollments || []}
           selectedClassId={selectedClassId || homeroomClass?.id}
@@ -340,11 +362,18 @@ export function ParentPortalShell() {
       <ParentActivitySheet
         isOpen={isActivitySheetOpen}
         onClose={() => setIsActivitySheetOpen(false)}
-        studentName={activeStudent.fullName}
+        studentName={heroStudent?.fullName || activeStudent.fullName}
+        timeline={homeData?.routineSlots || []}
       />
 
       {/* 6. Gợi ý đổi mật khẩu mặc định lần đầu trên thiết bị */}
       <RequirePasswordChangeModal />
+
+      {/* 7. Hộp thoại xác nhận đăng xuất đồng nhất với BGH/Giáo viên */}
+      <LogoutDialog
+        open={isLogoutModalOpen}
+        onOpenChange={setIsLogoutModalOpen}
+      />
     </div>
   );
 }
