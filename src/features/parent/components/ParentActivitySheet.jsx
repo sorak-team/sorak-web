@@ -1,5 +1,17 @@
 import React from 'react';
-import { X, Sun, BookOpen, Gamepad2, Trees, Moon, Coffee, HeartHandshake, CheckCircle2, Clock } from 'lucide-react';
+import { X, Sun, BookOpen, Gamepad2, Trees, Moon, Coffee, HeartHandshake, CheckCircle2, Clock, Activity, MessageSquare } from 'lucide-react';
+
+const ICON_MAP = {
+  Sun,
+  BookOpen,
+  Gamepad2,
+  Trees,
+  Moon,
+  Coffee,
+  HeartHandshake,
+  Activity,
+  Clock,
+};
 
 export function ParentActivitySheet({ isOpen, onClose, studentName = 'Bé', timeline = [] }) {
   if (!isOpen) return null;
@@ -108,7 +120,8 @@ export function ParentActivitySheet({ isOpen, onClose, studentName = 'Bé', time
         {/* Content list */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
           {items.map((slot, idx) => {
-            const Icon = slot.icon && typeof slot.icon === 'function' ? slot.icon : Sun;
+            const Icon = typeof slot.icon === 'function' ? slot.icon : (ICON_MAP[slot.icon] || Sun);
+            const isDone = slot.isDone ?? (slot.status === 'completed' || slot.badge === 'Hoàn thành' || slot.badge === 'Đạt mục tiêu' || slot.badge === 'Xuất sắc' || slot.badge === 'Ăn hết suất');
             return (
               <div
                 key={slot.id || idx}
@@ -117,7 +130,7 @@ export function ParentActivitySheet({ isOpen, onClose, studentName = 'Bé', time
                 {/* Node Icon on line */}
                 <div
                   className={`absolute -left-[15px] top-0.5 w-7 h-7 rounded-full border-2 flex items-center justify-center bg-card shadow-sm ${
-                    slot.isDone
+                    isDone
                       ? 'border-emerald-500 text-emerald-600'
                       : slot.badge === 'Đang diễn ra'
                         ? 'border-primary text-primary animate-pulse'
@@ -137,7 +150,7 @@ export function ParentActivitySheet({ isOpen, onClose, studentName = 'Bé', time
                     {slot.badge && (
                       <span
                         className={`text-[11px] font-medium px-2 py-0.5 rounded-md ${
-                          slot.badge === 'Hoàn thành' || slot.badge === 'Đạt mục tiêu' || slot.badge === 'Ăn hết suất'
+                          slot.badge === 'Hoàn thành' || slot.badge === 'Đạt mục tiêu' || slot.badge === 'Ăn hết suất' || slot.badge === 'Xuất sắc'
                             ? 'bg-emerald-500/10 text-emerald-600'
                             : slot.badge === 'Đang diễn ra'
                               ? 'bg-primary/10 text-primary font-semibold'
@@ -162,6 +175,15 @@ export function ParentActivitySheet({ isOpen, onClose, studentName = 'Bé', time
                       <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
                       <span>
                         <strong className="font-medium text-foreground">Mục tiêu bài học:</strong> {slot.objective}
+                      </span>
+                    </div>
+                  )}
+
+                  {slot.notes && (
+                    <div className="mt-2.5 p-2 rounded-lg bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/70 dark:border-blue-900/50 text-[11px] text-blue-900 dark:text-blue-300 flex items-start gap-1.5">
+                      <MessageSquare className="w-3.5 h-3.5 text-[#1447e6] dark:text-blue-400 shrink-0 mt-0.5" />
+                      <span>
+                        <strong className="font-semibold text-blue-900 dark:text-blue-300">Nhận xét của cô:</strong> {slot.notes}
                       </span>
                     </div>
                   )}
