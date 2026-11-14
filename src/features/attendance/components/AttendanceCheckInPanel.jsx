@@ -25,6 +25,7 @@ export function AttendanceCheckInPanel({
   onSaveSuccess,
   onCleanSuccess,
   onTabChange,
+  onStudentsChange,
   className,
   hideHeader = false,
 }) {
@@ -63,14 +64,78 @@ export function AttendanceCheckInPanel({
     );
   }, [students, searchQuery]);
 
+  const resolveSlotDate = (s, explicitDate) => {
+    if (s?.fullDate) return s.fullDate;
+    if (s?.date && s.date.includes('-')) return s.date;
+    if (s?.date && s.date.includes('/')) {
+      const parts = s.date.split('/');
+      if (parts.length >= 2) {
+        const year = parts[2] || '2026';
+        return `${year}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+      }
+    }
+    if (explicitDate && explicitDate.includes('-')) return explicitDate;
+    return explicitDate || new Date().toISOString().slice(0, 10);
+  };
+
+  const effectiveDate = useMemo(() => resolveSlotDate(slot, date), [slot, date]);
+
   useEffect(() => {
     setHasRecordedLocally(false);
-  }, [date, slot?.id, isRecorded]);
+  }, [effectiveDate, slot?.id, isRecorded]);
+
+  // Load real recorded attendance for the exact date of this slot
+  useEffect(() => {
+    let isCancelled = false;
+    async function loadSlotAttendance() {
+      if (!classId || !effectiveDate) return;
+      try {
+        const res = await attendanceApi.getTimetableOverview(classId, { date: effectiveDate });
+        if (!isCancelled && res?.students && res.students.length > 0) {
+          const mapped = res.students.map((s) => {
+            let st = s.status || s.rawStatus || 'PRESENT';
+            if (st === 'ABSENT' || st === 'ABSENT_EXCUSED' || st === 'EXCUSED_ABSENCE') {
+              st = 'EXCUSED_ABSENCE';
+            } else if (st === 'ABSENT_UNEXCUSED' || st === 'UNEXCUSED_ABSENCE') {
+              st = 'UNEXCUSED_ABSENCE';
+            } else {
+              st = 'PRESENT';
+            }
+            const isAbsent = st === 'EXCUSED_ABSENCE' || st === 'UNEXCUSED_ABSENCE';
+            const attNote = s.attendanceNote !== undefined ? s.attendanceNote : (s.note || s.notes || s.reason || '');
+            return {
+              ...s,
+              status: st,
+              rawStatus: st,
+              isAbsent,
+              note: attNote,
+              attendanceNote: attNote,
+              healthNote: s.healthNote !== undefined ? s.healthNote : '',
+            };
+          });
+          setStudents(mapped);
+          setInitialSnapshot(JSON.stringify(mapped.map((s) => ({ id: s.id, status: s.status, note: s.attendanceNote || s.note || '' }))));
+          if (res.isRecorded !== undefined) {
+            setHasRecordedLocally(Boolean(res.isRecorded));
+          }
+          if (onStudentsChange) {
+            onStudentsChange(mapped);
+          }
+        }
+      } catch (err) {
+        console.warn('Could not reload slot attendance:', err);
+      }
+    }
+    loadSlotAttendance();
+    return () => {
+      isCancelled = true;
+    };
+  }, [classId, effectiveDate]);
 
   useEffect(() => {
     if (initialStudents && initialStudents.length > 0) {
       const mapped = initialStudents.map((s) => {
-        let st = s.rawStatus || s.status || 'PRESENT';
+        let st = s.status || s.rawStatus || 'PRESENT';
         if (st === 'ABSENT' || st === 'ABSENT_EXCUSED' || st === 'EXCUSED_ABSENCE') {
           st = 'EXCUSED_ABSENCE';
         } else if (st === 'ABSENT_UNEXCUSED' || st === 'UNEXCUSED_ABSENCE') {
@@ -78,10 +143,13 @@ export function AttendanceCheckInPanel({
         } else {
           st = 'PRESENT';
         }
+        const isAbsent = st === 'EXCUSED_ABSENCE' || st === 'UNEXCUSED_ABSENCE';
         const attNote = s.attendanceNote !== undefined ? s.attendanceNote : (s.note || s.notes || s.reason || '');
         return {
           ...s,
           status: st,
+          rawStatus: st,
+          isAbsent,
           note: attNote,
           attendanceNote: attNote,
           healthNote: s.healthNote !== undefined ? s.healthNote : '',
@@ -112,16 +180,21 @@ export function AttendanceCheckInPanel({
 
   const handleToggleStatus = (id, newStatus) => {
     if (readOnly) return;
-    setStudents((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, status: newStatus } : s))
-    );
+    setStudents((prev) => {
+      const isAbsent = newStatus === 'EXCUSED_ABSENCE' || newStatus === 'UNEXCUSED_ABSENCE' || newStatus === 'ABSENT';
+      const updated = prev.map((s) => (s.id === id ? { ...s, status: newStatus, rawStatus: newStatus, isAbsent } : s));
+      if (onStudentsChange) onStudentsChange(updated);
+      return updated;
+    });
   };
 
   const handleNoteChange = (id, newNote) => {
     if (readOnly) return;
-    setStudents((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, note: newNote, attendanceNote: newNote } : s))
-    );
+    setStudents((prev) => {
+      const updated = prev.map((s) => (s.id === id ? { ...s, note: newNote, attendanceNote: newNote } : s));
+      if (onStudentsChange) onStudentsChange(updated);
+      return updated;
+    });
   };
 
   const presentCount = students.filter((s) => s.status === 'PRESENT').length;
@@ -133,7 +206,7 @@ export function AttendanceCheckInPanel({
     setIsSaving(true);
     try {
       const targetClassId = classId || '5';
-      const targetDate = date || (slot?.date ? `2026-10-${slot.date.slice(0, 2)}` : '2026-10-13');
+      const targetDate = effectiveDate;
       await attendanceApi.updateAttendance(targetClassId, {
         slotId: slot?.id,
         date: targetDate,
@@ -146,8 +219,14 @@ export function AttendanceCheckInPanel({
       });
       toast.success(t('attendance.saveSuccess', 'Lưu điểm danh thành công!'));
       setHasRecordedLocally(true);
-      setInitialSnapshot(JSON.stringify(students.map((s) => ({ id: s.id, status: s.status, note: s.note || '' }))));
-      if (onSaveSuccess) onSaveSuccess(students);
+      const updatedStudents = students.map((s) => ({
+        ...s,
+        status: s.status,
+        rawStatus: s.status,
+      }));
+      setStudents(updatedStudents);
+      setInitialSnapshot(JSON.stringify(updatedStudents.map((s) => ({ id: s.id, status: s.status, note: s.note || '' }))));
+      if (onSaveSuccess) onSaveSuccess(updatedStudents);
     } catch {
       toast.error(t('attendance.saveError', 'Không thể lưu điểm danh. Vui lòng thử lại.'));
     } finally {
@@ -355,114 +434,114 @@ export function AttendanceCheckInPanel({
               </tr>
             ) : (
               filteredStudents.map((st) => {
-              const isP = st.status === 'PRESENT';
-              const isExcused = st.status === 'EXCUSED_ABSENCE';
-              const isUnexcused = st.status === 'UNEXCUSED_ABSENCE';
+                const isP = st.status === 'PRESENT';
+                const isExcused = st.status === 'EXCUSED_ABSENCE';
+                const isUnexcused = st.status === 'UNEXCUSED_ABSENCE';
 
-              return (
-                <tr key={st.id} className="h-12 hover:bg-muted/30 transition-colors">
-                  {/* Student profile */}
-                  <td className="py-1.5 pr-2 w-[170px] min-w-[160px]">
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={`https://api.dicebear.com/10.x/critters/svg?seed=${encodeURIComponent(st.code)}&backgroundColor=ff2e63,00c2a8,ffb300,3d5afe,8e24aa,00e676`}
-                        alt={st.name}
-                        className="size-7 rounded-none border border-border/80 object-cover shrink-0"
-                      />
-                      <div className="flex flex-col min-w-0">
-                        <span className="font-medium text-foreground text-[12px] truncate max-w-[140px]">
-                          {st.name}
-                        </span>
-                        <span className="text-[10.5px] text-muted-foreground font-mono">
-                          {st.code}
-                        </span>
+                return (
+                  <tr key={st.id} className="h-12 hover:bg-muted/30 transition-colors">
+                    {/* Student profile */}
+                    <td className="py-1.5 pr-2 w-[170px] min-w-[160px]">
+                      <div className="flex items-center gap-2">
+                        <img
+                          src={`https://api.dicebear.com/10.x/critters/svg?seed=${encodeURIComponent(st.code)}&backgroundColor=ff2e63,00c2a8,ffb300,3d5afe,8e24aa,00e676`}
+                          alt={st.name}
+                          className="size-7 rounded-none border border-border/80 object-cover shrink-0"
+                        />
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-medium text-foreground text-[12px] truncate max-w-[140px]">
+                            {st.name}
+                          </span>
+                          <span className="text-[10.5px] text-muted-foreground font-mono">
+                            {st.code}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </td>
+                    </td>
 
-                  {/* 3-segment Toggle: [ Có ] [ CP ] [ KP ] - Rộng rãi, không bị co ép */}
-                  <td className="w-[140px] min-w-[140px] text-center py-1.5 px-2 whitespace-nowrap">
-                    {st.isTransferred ? (
-                      <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium bg-muted text-muted-foreground border border-border">
-                        Đã chuyển lớp
-                      </span>
-                    ) : (
-                      <div className="inline-flex items-center border border-border bg-background rounded-none p-0.5 shadow-2xs shrink-0">
-                        {/* Có mặt / Present */}
-                        <button
-                          type="button"
-                          disabled={readOnly || st.isTransferred}
-                          onClick={() => handleToggleStatus(st.id, 'PRESENT')}
-                          title={titlePresent}
-                          className={cn(
-                            'w-9 h-7 shrink-0 text-[11.5px] font-medium transition-colors rounded-none whitespace-nowrap flex items-center justify-center',
-                            readOnly || st.isTransferred ? 'cursor-default' : 'cursor-pointer',
-                            isP
-                              ? 'bg-[#1447e6] text-white shadow-2xs font-semibold'
-                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                          )}
-                        >
-                          {labelPresent}
-                        </button>
+                    {/* 3-segment Toggle: [ Có ] [ CP ] [ KP ] - Rộng rãi, không bị co ép */}
+                    <td className="w-[140px] min-w-[140px] text-center py-1.5 px-2 whitespace-nowrap">
+                      {st.isTransferred ? (
+                        <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium bg-muted text-muted-foreground border border-border">
+                          Đã chuyển lớp
+                        </span>
+                      ) : (
+                        <div className="inline-flex items-center border border-border bg-background rounded-none p-0.5 shadow-2xs shrink-0">
+                          {/* Có mặt / Present */}
+                          <button
+                            type="button"
+                            disabled={readOnly || st.isTransferred}
+                            onClick={() => handleToggleStatus(st.id, 'PRESENT')}
+                            title={titlePresent}
+                            className={cn(
+                              'w-9 h-7 shrink-0 text-[11.5px] font-medium transition-colors rounded-none whitespace-nowrap flex items-center justify-center',
+                              readOnly || st.isTransferred ? 'cursor-default' : 'cursor-pointer',
+                              isP
+                                ? 'bg-[#1447e6] text-white shadow-2xs font-semibold'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                            )}
+                          >
+                            {labelPresent}
+                          </button>
 
-                        {/* Có phép / Excused */}
-                        <button
-                          type="button"
-                          disabled={readOnly || st.isTransferred}
-                          onClick={() => handleToggleStatus(st.id, 'EXCUSED_ABSENCE')}
-                          title={titleExcused}
-                          className={cn(
-                            'w-9 h-7 shrink-0 text-[11.5px] font-medium transition-colors rounded-none border-x border-border/60 whitespace-nowrap flex items-center justify-center',
-                            readOnly || st.isTransferred ? 'cursor-default' : 'cursor-pointer',
-                            isExcused
-                              ? 'bg-amber-500 text-white shadow-2xs font-semibold'
-                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                          )}
-                        >
-                          {labelExcused}
-                        </button>
+                          {/* Có phép / Excused */}
+                          <button
+                            type="button"
+                            disabled={readOnly || st.isTransferred}
+                            onClick={() => handleToggleStatus(st.id, 'EXCUSED_ABSENCE')}
+                            title={titleExcused}
+                            className={cn(
+                              'w-9 h-7 shrink-0 text-[11.5px] font-medium transition-colors rounded-none border-x border-border/60 whitespace-nowrap flex items-center justify-center',
+                              readOnly || st.isTransferred ? 'cursor-default' : 'cursor-pointer',
+                              isExcused
+                                ? 'bg-amber-500 text-white shadow-2xs font-semibold'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                            )}
+                          >
+                            {labelExcused}
+                          </button>
 
-                        {/* Không phép / Unexcused */}
-                        <button
-                          type="button"
-                          disabled={readOnly || st.isTransferred}
-                          onClick={() => handleToggleStatus(st.id, 'UNEXCUSED_ABSENCE')}
-                          title={titleUnexcused}
-                          className={cn(
-                            'w-9 h-7 shrink-0 text-[11.5px] font-medium transition-colors rounded-none whitespace-nowrap flex items-center justify-center',
-                            readOnly || st.isTransferred ? 'cursor-default' : 'cursor-pointer',
-                            isUnexcused
-                              ? 'bg-rose-600 text-white shadow-2xs font-semibold'
-                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                          )}
-                        >
-                          {labelUnexcused}
-                        </button>
-                      </div>
-                    )}
-                  </td>
-
-                  {/* Ghi chú: đồng bộ chuẩn design của Sức khoẻ và Đánh giá */}
-                  <td className="py-1 pl-3 min-w-[140px]">
-                    <input
-                      type="text"
-                      disabled={readOnly || st.isTransferred}
-                      value={st.isTransferred ? 'Đã chuyển sang lớp khác (chỉ xem)' : (st.note || '')}
-                      onChange={(e) => handleNoteChange(st.id, e.target.value)}
-                      placeholder={
-                        isExcused || isUnexcused
-                          ? (isVi ? 'Lý do vắng...' : 'Absence reason...')
-                          : (isVi ? 'Ghi chú điểm danh...' : 'Attendance note...')
-                      }
-                      className={cn(
-                        "w-full h-7 px-2.5 text-[11.5px] border border-border bg-background text-foreground rounded-none focus:outline-hidden focus:border-[#1447e6]",
-                        (readOnly || st.isTransferred) && "opacity-70 cursor-default bg-muted/30 italic text-muted-foreground"
+                          {/* Không phép / Unexcused */}
+                          <button
+                            type="button"
+                            disabled={readOnly || st.isTransferred}
+                            onClick={() => handleToggleStatus(st.id, 'UNEXCUSED_ABSENCE')}
+                            title={titleUnexcused}
+                            className={cn(
+                              'w-9 h-7 shrink-0 text-[11.5px] font-medium transition-colors rounded-none whitespace-nowrap flex items-center justify-center',
+                              readOnly || st.isTransferred ? 'cursor-default' : 'cursor-pointer',
+                              isUnexcused
+                                ? 'bg-rose-600 text-white shadow-2xs font-semibold'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                            )}
+                          >
+                            {labelUnexcused}
+                          </button>
+                        </div>
                       )}
-                    />
-                  </td>
-                </tr>
-              );
-            }))}
+                    </td>
+
+                    {/* Ghi chú: đồng bộ chuẩn design của Sức khoẻ và Đánh giá */}
+                    <td className="py-1 pl-3 min-w-[140px]">
+                      <input
+                        type="text"
+                        disabled={readOnly || st.isTransferred}
+                        value={st.isTransferred ? 'Đã chuyển sang lớp khác (chỉ xem)' : (st.note || '')}
+                        onChange={(e) => handleNoteChange(st.id, e.target.value)}
+                        placeholder={
+                          isExcused || isUnexcused
+                            ? (isVi ? 'Lý do vắng...' : 'Absence reason...')
+                            : (isVi ? 'Ghi chú điểm danh...' : 'Attendance note...')
+                        }
+                        className={cn(
+                          "w-full h-7 px-2.5 text-[11.5px] border border-border bg-background text-foreground rounded-none focus:outline-hidden focus:border-[#1447e6]",
+                          (readOnly || st.isTransferred) && "opacity-70 cursor-default bg-muted/30 italic text-muted-foreground"
+                        )}
+                      />
+                    </td>
+                  </tr>
+                );
+              }))}
           </tbody>
         </table>
       </div>
@@ -486,9 +565,6 @@ export function AttendanceCheckInPanel({
         <div className="flex items-center gap-2">
           {readOnly ? (
             <>
-              <span className="px-2.5 py-1 text-[11.5px] font-medium bg-muted text-muted-foreground border border-border select-none">
-                Chế độ xem (BGH)
-              </span>
               <Button
                 type="button"
                 variant="outline"
