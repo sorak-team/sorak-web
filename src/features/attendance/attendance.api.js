@@ -65,6 +65,14 @@ export const attendanceApi = {
   },
 
   /**
+   * Get pickup quota information & blocked dates for a student
+   */
+  async getStudentPickupQuota(studentId, params = {}) {
+    const response = await apiClient.get(`/attendance/students/${studentId}/pickup-quota`, { params });
+    return response.data?.data || response.data;
+  },
+
+  /**
    * Create a pickup authorization
    */
   async createPickupAuthorization(classId = '1', payload = {}) {
@@ -86,5 +94,17 @@ export const attendanceApi = {
   async rejectPickupAuthorization(classId = '1', authId, payload = {}) {
     const response = await apiClient.patch(`/attendance/classes/${classId}/authorizations/${authId}/reject`, payload);
     return response.data?.data || response.data;
+  },
+
+  /**
+   * Xuất ma trận sổ điểm danh & chuyên cần tháng ra Excel
+   */
+  async exportAttendanceExcel(classId, params = {}) {
+    const url = classId ? `/attendance/classes/${classId}/export/excel` : '/attendance/export/excel';
+    const response = await apiClient.get(url, {
+      params,
+      responseType: 'blob',
+    });
+    return response.data;
   },
 };

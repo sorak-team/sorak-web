@@ -250,7 +250,11 @@ export function ParentSchedulePage() {
       { key: 'CN', shortName: 'CN', name: 'CN', dow: 'SUNDAY', isWeekend: true },
     ];
 
-    const daysToRender = showWeekend ? baseDays : baseDays.filter((d) => !d.isWeekend);
+    // Tự động mở rộng hiển thị Thứ 7, CN nếu tuần này có hoạt động giáo dục xếp vào cuối tuần
+    const hasWeekendActivities = (timetable.weeklyActivities || []).some(
+      (a) => a.dayOfWeek === 'SATURDAY' || a.dayOfWeek === 'SUNDAY'
+    );
+    const daysToRender = (showWeekend || hasWeekendActivities) ? baseDays : baseDays.filter((d) => !d.isWeekend);
 
     return daysToRender.map((d) => {
       const dayIdx = DAY_INDEX_MAP[d.key];
@@ -663,8 +667,6 @@ export function ParentSchedulePage() {
   // Lấy đánh giá học sinh cho từng slot hoạt động: 3 mức độ Đạt / Chưa đạt / Vượt trội
   const getSlotEvaluation = useCallback(
     (slotKey, dayKey) => {
-      if (dayKey === 'T7' || dayKey === 'CN') return null;
-
       const dayObj = currentDays.find((d) => d.key === dayKey);
       if (!dayObj) return null;
 
@@ -692,6 +694,8 @@ export function ParentSchedulePage() {
         }
       }
 
+      if (dayKey === 'T7' || dayKey === 'CN') return null;
+
       // 2. Nếu ngày trong tương lai (sau ngày hôm nay)
       if (dayObj.fullIsoDate && todayIsoStr && dayObj.fullIsoDate > todayIsoStr) {
         return {
@@ -710,8 +714,10 @@ export function ParentSchedulePage() {
 
   // Xử lý bấm vào một ô slot trên thời khóa biểu
   const handleCellClick = (slotDef, day) => {
-    if (day.isWeekend) return;
     const act = getActivityData(slotDef.key, day.key);
+    // Nếu là cuối tuần mà không có hoạt động nào được xếp thì không mở modal
+    if (day.isWeekend && act.isEmpty) return;
+
     const dayLog = getDayAttendance(day.key);
     const evaluation = getSlotEvaluation(slotDef.key, day.key);
     setModalTab('content');
@@ -942,17 +948,17 @@ export function ParentSchedulePage() {
                           onClick={() => handleCellClick(slotDef, day)}
                           className={cn(
                             'p-1.5 border-r last:border-r-0 border-border align-middle min-w-[145px] h-[88px] transition-colors select-none',
-                            isWeekendDay
+                            isWeekendDay && act.isEmpty
                               ? 'bg-muted/10 text-center'
                               : 'bg-card hover:bg-muted/30 cursor-pointer'
                           )}
-                          title={!isWeekendDay ? `${act.title || slotDef.name} · Nhấp để xem chi tiết` : undefined}
+                          title={!(isWeekendDay && act.isEmpty) ? `${act.title || slotDef.name} · Nhấp để xem chi tiết` : undefined}
                         >
                           {/* Inner card cách viền ô bên ngoài một khoảng nhỏ giống hình mẫu */}
                           <div
                             className={cn(
                               'h-full w-full p-2 flex items-center justify-center text-center transition-all',
-                              isWeekendDay
+                              isWeekendDay && act.isEmpty
                                 ? 'flex items-center justify-center'
                                 : evaluation?.status === 'OUTSTANDING' || evaluation?.status === 'EXCELLENT'
                                   ? 'border border-border/75 border-l-2 border-l-purple-500 bg-purple-500/[0.06] dark:bg-purple-400/[0.10] hover:bg-purple-500/[0.10] hover:border-purple-300 dark:hover:border-purple-700'
@@ -965,7 +971,7 @@ export function ParentSchedulePage() {
                                         : 'border border-border/75 bg-card hover:bg-muted/30'
                             )}
                           >
-                            {isWeekendDay ? (
+                            {isWeekendDay && act.isEmpty ? (
                               <span className="text-muted-foreground/30 font-light text-[13px] select-none">—</span>
                             ) : act.isEmpty ? (
                               <span className="text-muted-foreground/40 font-normal text-[11.5px] italic select-none">

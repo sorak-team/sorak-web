@@ -1,61 +1,91 @@
 import { create } from 'zustand';
-
-export const initialNotifications = [
-  {
-    id: '1',
-    titleKey: 'notifications.item1Title',
-    descKey: 'notifications.item1Desc',
-    timeKey: 'notifications.item1Time',
-    iconType: 'task',
-    read: false,
-  },
-  {
-    id: '2',
-    titleKey: 'notifications.item2Title',
-    descKey: 'notifications.item2Desc',
-    timeKey: 'notifications.item2Time',
-    iconType: 'notification',
-    read: false,
-  },
-  {
-    id: '3',
-    titleKey: 'notifications.item3Title',
-    descKey: 'notifications.item3Desc',
-    timeKey: 'notifications.item3Time',
-    iconType: 'medical',
-    read: true,
-  },
-  {
-    id: '4',
-    titleKey: 'notifications.item4Title',
-    descKey: 'notifications.item4Desc',
-    timeKey: 'notifications.item4Time',
-    iconType: 'chart',
-    read: true,
-  },
-];
+import { notificationsApi } from './notifications.api';
 
 export const useNotificationStore = create((set, get) => ({
-  notifications: initialNotifications,
+  notifications: [],
+  unreadCount: 0,
+  isLoading: false,
+  error: null,
 
-  unreadCount: initialNotifications.filter((n) => !n.read).length,
+  fetchMyNotifications: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const data = await notificationsApi.getMyNotifications({ limit: 50 });
+      const items = data?.items || [];
+      const unreadCount = typeof data?.unreadCount === 'number'
+        ? data.unreadCount
+        : items.filter((n) => !n.isRead).length;
 
-  markAsRead: (id) => {
-    set((state) => {
-      const updated = state.notifications.map((n) =>
-        n.id === id ? { ...n, read: true } : n,
-      );
-      return {
-        notifications: updated,
-        unreadCount: updated.filter((n) => !n.read).length,
-      };
-    });
+      set({
+        notifications: items,
+        unreadCount,
+        isLoading: false,
+      });
+    } catch (err) {
+      console.error('Failed to fetch notifications:', err);
+      set({
+        isLoading: false,
+        error: err.response?.data?.message || 'Không thể tải thông báo',
+      });
+    }
   },
 
-  markAllAsRead: () => {
-    set((state) => ({
-      notifications: state.notifications.map((n) => ({ ...n, read: true })),
-      unreadCount: 0,
+  markAsRead: async (id) => {
+    if (!id) return;
+
+    // Optimistic update
+    const prevNotifications = get().notifications;
+    const targetItem = prevNotifications.find((n) => n.id === id);
+    if (!targetItem || targetItem.isRead) return;
+
+    const updated = prevNotifications.map((n) =>
+      n.id === id ? { ...n, isRead: true, readAt: new Date().toISOString() } : n
+    );
+    const newUnreadCount = Math.max(0, get().unreadCount - 1);
+
+    set({
+      notifications: updated,
+      unreadCount: newUnreadCount,
+    });
+
+    try {
+      await notificationsApi.markAsRead(id);
+    } catch (err) {
+      console.error('Failed to mark notification as read:', err);
+      // Revert if API fails
+      set({
+        notifications: prevNotifications,
+        unreadCount: get().unreadCount + 1,
+      });
+    }
+  },
+
+  markAllAsRead: async () => {
+    const prevNotifications = get().notifications;
+    const prevUnreadCount = get().unreadCount;
+
+    if (prevUnreadCount === 0) return;
+
+    // Optimistic update
+    const updated = prevNotifications.map((n) => ({
+      ...n,
+      isRead: true,
+      readAt: n.readAt || new Date().toISOString(),
     }));
+
+    set({
+      notifications: updated,
+      unreadCount: 0,
+    });
+
+    try {
+      await notificationsApi.markAllAsRead();
+    } catch (err) {
+      console.error('Failed to mark all as read:', err);
+      set({
+        notifications: prevNotifications,
+        unreadCount: prevUnreadCount,
+      });
+    }
   },
 }));

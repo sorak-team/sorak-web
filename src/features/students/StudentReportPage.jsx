@@ -87,10 +87,6 @@ export function StudentReportPage() {
   const routeClassId = params.studentId ? params.id : null;
   const effectiveStudentId = routeStudentId || params.id;
 
-  if (effectiveStudentId && /^\d+$/.test(String(effectiveStudentId).trim())) {
-    return <NotFoundPage />;
-  }
-
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { t } = useTranslation();
@@ -172,6 +168,35 @@ export function StudentReportPage() {
     reloadDetail();
   }, [fetchStudents, reloadDetail]);
 
+  // If effectiveStudentId is a numeric sequence ID, gracefully redirect to publicId/studentCode
+  useEffect(() => {
+    if (effectiveStudentId && /^\d+$/.test(String(effectiveStudentId).trim())) {
+      const match =
+        students.find(
+          (s) =>
+            String(s.id) === String(effectiveStudentId) ||
+            String(s.studentId) === String(effectiveStudentId)
+        ) ||
+        classStudents.find(
+          (s) =>
+            String(s.id) === String(effectiveStudentId) ||
+            String(s.studentId) === String(effectiveStudentId)
+        );
+      if (match && (match.publicId || match.studentCode)) {
+        const target = match.publicId || match.studentCode;
+        const activeClassId = routeClassId || classIdFromUrl;
+        const queryParams = new URLSearchParams(searchParams);
+        const qs = queryParams.toString();
+        const searchStr = qs ? `?${qs}` : '';
+        if (activeClassId) {
+          navigate(`/classes/${activeClassId}/students/${target}${searchStr}`, { replace: true });
+        } else {
+          navigate(`/students/${target}${searchStr}`, { replace: true });
+        }
+      }
+    }
+  }, [effectiveStudentId, students, classStudents, routeClassId, classIdFromUrl, searchParams, navigate]);
+
   const rawStudent = students.find(
     (item) => String(item.id) === String(effectiveStudentId) || item.studentCode === effectiveStudentId
   );
@@ -226,13 +251,15 @@ export function StudentReportPage() {
 
   const handlePrevStudent = () => {
     if (hasPrev) {
-      navigateToStudent(classStudents[currentStudentIndex - 1].id);
+      const prev = classStudents[currentStudentIndex - 1];
+      navigateToStudent(prev.publicId || prev.studentCode || prev.id);
     }
   };
 
   const handleNextStudent = () => {
     if (hasNext) {
-      navigateToStudent(classStudents[currentStudentIndex + 1].id);
+      const next = classStudents[currentStudentIndex + 1];
+      navigateToStudent(next.publicId || next.studentCode || next.id);
     }
   };
 
@@ -673,7 +700,7 @@ export function StudentReportPage() {
                                 onClick={() => {
                                   setIsStudentMenuOpen(false);
                                   setStudentSearch('');
-                                  navigateToStudent(st.id);
+                                  navigateToStudent(st.publicId || st.studentCode || st.id);
                                 }}
                                 className={cn(
                                   'w-full flex items-center gap-2.5 px-2 py-1.5 text-left rounded-none transition-colors cursor-pointer text-[12px]',
