@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -23,6 +23,25 @@ const calculateBmi = (heightCm, weightKg) => {
   return (w / (hMeters * hMeters)).toFixed(1);
 };
 
+export const isStudentAbsent = (student) => {
+  if (!student) return false;
+  if (student.isAbsent === true) return true;
+  const status = String(student.status || '').toUpperCase();
+  const rawStatus = String(student.rawStatus || '').toUpperCase();
+  return (
+    status === 'ABSENT' ||
+    status === 'EXCUSED_ABSENCE' ||
+    status === 'UNEXCUSED_ABSENCE' ||
+    status === 'ABSENT_EXCUSED' ||
+    status === 'ABSENT_UNEXCUSED' ||
+    rawStatus === 'EXCUSED_ABSENCE' ||
+    rawStatus === 'UNEXCUSED_ABSENCE' ||
+    rawStatus === 'ABSENT_EXCUSED' ||
+    rawStatus === 'ABSENT_UNEXCUSED' ||
+    rawStatus === 'ABSENT'
+  );
+};
+
 export function HealthMeasurementPanel({
   classId,
   date,
@@ -34,6 +53,7 @@ export function HealthMeasurementPanel({
   onSaveSuccess,
   onCleanSuccess,
   onTabChange,
+  onStudentsChange,
   className,
   hideHeader = false,
 }) {
@@ -55,29 +75,42 @@ export function HealthMeasurementPanel({
     );
   }, [students, searchQuery]);
 
+  const lastSyncKey = useRef('');
+
   useEffect(() => {
     if (initialStudents && initialStudents.length > 0) {
-      const mapped = initialStudents.map((s) => ({
-        ...s,
-        height: s.height || '',
-        weight: s.weight || '',
-        bmi: s.bmi || calculateBmi(s.height, s.weight),
-        healthNote: s.healthNote !== undefined ? s.healthNote : (s.health_note || ''),
-        note: s.healthNote !== undefined ? s.healthNote : (s.health_note || ''),
-      }));
+      // Build a stable sync signature: only reset internal state if classId, date, or student roster IDs change
+      const currentSignature = `${classId || ''}-${date || ''}-${initialStudents.map((s) => `${s.id}:${s.height || ''}:${s.weight || ''}:${s.note || s.healthNote || ''}`).join('|')}`;
+      if (lastSyncKey.current === currentSignature) {
+        return;
+      }
+      lastSyncKey.current = currentSignature;
+
+      const mapped = initialStudents.map((s) => {
+        const absent = isStudentAbsent(s);
+        return {
+          ...s,
+          isAbsent: absent,
+          height: absent ? '' : (s.height !== undefined && s.height !== null ? String(s.height) : ''),
+          weight: absent ? '' : (s.weight !== undefined && s.weight !== null ? String(s.weight) : ''),
+          bmi: absent ? '' : (s.bmi || calculateBmi(s.height, s.weight)),
+          healthNote: s.healthNote !== undefined ? s.healthNote : (s.health_note || s.note || ''),
+          note: s.healthNote !== undefined ? s.healthNote : (s.health_note || s.note || ''),
+        };
+      });
       setStudents(mapped);
       setInitialSnapshot(
         JSON.stringify(
           mapped.map((s) => ({
             id: s.id,
-            height: s.height || '',
-            weight: s.weight || '',
-            note: s.healthNote || '',
+            height: isStudentAbsent(s) ? '' : (s.height || ''),
+            weight: isStudentAbsent(s) ? '' : (s.weight || ''),
+            note: isStudentAbsent(s) ? '' : (s.healthNote || ''),
           }))
         )
       );
     }
-  }, [initialStudents]);
+  }, [initialStudents, classId, date]);
 
   // Kiểm tra xem giáo viên có chỉnh sửa số đo sức khỏe hay không
   const isDirty = useMemo(() => {
@@ -85,9 +118,9 @@ export function HealthMeasurementPanel({
     const current = JSON.stringify(
       students.map((s) => ({
         id: s.id,
-        height: s.height || '',
-        weight: s.weight || '',
-        note: s.healthNote || '',
+        height: isStudentAbsent(s) ? '' : (s.height || ''),
+        weight: isStudentAbsent(s) ? '' : (s.weight || ''),
+        note: isStudentAbsent(s) ? '' : (s.healthNote || ''),
       }))
     );
     return current !== initialSnapshot;
@@ -97,16 +130,19 @@ export function HealthMeasurementPanel({
   const measuredCount = useMemo(() => {
     return students.filter(
       (s) =>
-        (s.height !== '' && s.height !== null && s.height !== undefined && parseFloat(s.height) > 0) ||
-        (s.weight !== '' && s.weight !== null && s.weight !== undefined && parseFloat(s.weight) > 0)
+        !isStudentAbsent(s) &&
+        !s.isTransferred &&
+        ((s.height !== '' && s.height !== null && s.height !== undefined && parseFloat(s.height) > 0) ||
+          (s.weight !== '' && s.weight !== null && s.weight !== undefined && parseFloat(s.weight) > 0))
     ).length;
   }, [students]);
 
   const handleFieldChange = (id, field, value) => {
     if (readOnly) return;
-    setStudents((prev) =>
-      prev.map((s) => {
+    setStudents((prev) => {
+      const next = prev.map((s) => {
         if (s.id !== id) return s;
+        if (isStudentAbsent(s) || s.isTransferred) return s;
         const updated = { ...s, [field]: value };
         if (field === 'note') {
           updated.healthNote = value;
@@ -118,12 +154,14 @@ export function HealthMeasurementPanel({
           );
         }
         return updated;
-      })
-    );
+      });
+      if (onStudentsChange) onStudentsChange(next);
+      return next;
+    });
   };
 
   const handleSave = async () => {
-    if (readOnly || !isDirty) return;
+    if (readOnly) return;
 
     // Reject future dates
     const todayStr = new Date().toISOString().slice(0, 10);
@@ -132,8 +170,9 @@ export function HealthMeasurementPanel({
       return;
     }
 
-    // Validate height and weight limits
+    // Validate height and weight limits ONLY for examined students
     for (const s of students) {
+      if (isStudentAbsent(s) || s.isTransferred) continue;
       const hStr = String(s.height || '').trim();
       const wStr = String(s.weight || '').trim();
       if (hStr) {
@@ -154,28 +193,42 @@ export function HealthMeasurementPanel({
 
     setIsSaving(true);
     try {
-      const targetClassId = classId || '5';
+      const targetClassId = classId || '1';
+      const recordsPayload = students
+        .filter((s) => !s.isTransferred)
+        .map((s) => {
+          const absent = isStudentAbsent(s);
+          const hasHeight = s.height !== '' && s.height !== null && s.height !== undefined && parseFloat(s.height) > 0;
+          const hasWeight = s.weight !== '' && s.weight !== null && s.weight !== undefined && parseFloat(s.weight) > 0;
+          const isMeasured = !absent && hasHeight && hasWeight;
+
+          return {
+            studentId: s.id,
+            height: isMeasured ? parseFloat(s.height) : null,
+            weight: isMeasured ? parseFloat(s.weight) : null,
+            bmi: isMeasured ? (parseFloat(s.bmi) || calculateBmi(s.height, s.weight) || null) : null,
+            note: absent
+              ? (s.note || s.healthNote || (isVi ? 'Vắng mặt' : 'Absent'))
+              : (s.healthNote !== undefined ? s.healthNote : (s.note || '')),
+            isAbsent: Boolean(absent),
+            isMeasured: Boolean(isMeasured),
+          };
+        });
+
       await healthApi.saveHealthRecords(targetClassId, {
         date,
         slotId: slot?.id,
-        records: students
-          .filter((s) => !s.isTransferred)
-          .map((s) => ({
-            studentId: s.id,
-            height: parseFloat(s.height) || 0,
-            weight: parseFloat(s.weight) || 0,
-            bmi: parseFloat(s.bmi) || 0,
-            note: s.healthNote !== undefined ? s.healthNote : (s.note || ''),
-          })),
+        records: recordsPayload,
       });
-      toast.success(t('health.saveSuccess', 'Lưu số đo sức khoẻ thành công!'));
+
+      toast.success(t('health.saveSuccess', 'Lưu chỉ số sức khỏe thành công!'));
       setInitialSnapshot(
         JSON.stringify(
           students.map((s) => ({
             id: s.id,
-            height: s.height || '',
-            weight: s.weight || '',
-            note: s.healthNote || '',
+            height: isStudentAbsent(s) ? '' : (s.height || ''),
+            weight: isStudentAbsent(s) ? '' : (s.weight || ''),
+            note: isStudentAbsent(s) ? '' : (s.healthNote || ''),
           }))
         )
       );
@@ -188,8 +241,9 @@ export function HealthMeasurementPanel({
           }))
         );
       }
-    } catch {
-      toast.error(t('health.saveError', 'Không thể lưu số đo sức khoẻ.'));
+    } catch (err) {
+      console.error('Error saving health records:', err);
+      toast.error(err?.response?.data?.message || t('health.saveError', 'Không thể lưu số đo sức khoẻ.'));
     } finally {
       setIsSaving(false);
     }
@@ -364,79 +418,93 @@ export function HealthMeasurementPanel({
                 </td>
               </tr>
             ) : (
-              filteredStudents.map((st) => (
-                <tr key={st.id} className="h-12 hover:bg-muted/30 transition-colors">
-                  {/* Student Info */}
-                  <td className="py-1.5 pr-2 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={`https://api.dicebear.com/10.x/critters/svg?seed=${encodeURIComponent(st.code)}&backgroundColor=ff2e63,00c2a8,ffb300,3d5afe,8e24aa,00e676`}
-                        alt={st.name}
-                        className="size-7 rounded-none border border-border/80 object-cover shrink-0"
-                      />
-                      <div className="flex flex-col min-w-0">
-                        <span className="font-medium text-foreground text-[12px] truncate max-w-[150px]">
-                          {st.name}
-                        </span>
-                        <span className="text-[10.5px] text-muted-foreground font-mono">
-                          {st.code}
-                        </span>
+              filteredStudents.map((st) => {
+                const isAbsent = isStudentAbsent(st);
+                const isFieldDisabled = readOnly || st.isTransferred || isAbsent;
+
+                return (
+                  <tr key={st.id} className="h-12 hover:bg-muted/30 transition-colors">
+                    {/* Student Info */}
+                    <td className="py-1.5 pr-2 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <img
+                          src={`https://api.dicebear.com/10.x/critters/svg?seed=${encodeURIComponent(st.code)}&backgroundColor=ff2e63,00c2a8,ffb300,3d5afe,8e24aa,00e676`}
+                          alt={st.name}
+                          className="size-7 rounded-none border border-border/80 object-cover shrink-0"
+                        />
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-medium text-foreground text-[12px] truncate max-w-[150px]">
+                            {st.name}
+                          </span>
+                          <span className="text-[10.5px] text-muted-foreground font-mono">
+                            {st.code}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </td>
+                    </td>
 
-                  {/* Cao (cm) */}
-                  <td className="w-[115px] text-center py-1 px-1 whitespace-nowrap">
-                    <input
-                      type="number"
-                      disabled={readOnly || st.isTransferred}
-                      value={st.height}
-                      onChange={(e) => handleFieldChange(st.id, 'height', e.target.value)}
-                      placeholder={st.isTransferred ? "—" : "cm"}
-                      className={cn(
-                        "w-16 h-7 px-1 text-center text-[12px] border border-border bg-background text-foreground rounded-none focus:outline-hidden focus:border-[#1447e6]",
-                        (readOnly || st.isTransferred) && "opacity-70 cursor-default bg-muted/40"
-                      )}
-                    />
-                  </td>
+                    {/* Cao (cm) */}
+                    <td className="w-[115px] text-center py-1 px-1 whitespace-nowrap">
+                      <input
+                        type="number"
+                        disabled={isFieldDisabled}
+                        value={isAbsent ? '' : st.height}
+                        onChange={(e) => handleFieldChange(st.id, 'height', e.target.value)}
+                        placeholder={isAbsent ? (isVi ? 'Vắng' : 'Absent') : st.isTransferred ? "—" : "cm"}
+                        className={cn(
+                          "w-16 h-7 px-1 text-center text-[12px] border border-border bg-background text-foreground rounded-none focus:outline-hidden focus:border-[#1447e6]",
+                          isFieldDisabled && "opacity-70 cursor-not-allowed bg-muted/40"
+                        )}
+                        title={isAbsent ? (isVi ? 'Học sinh vắng mặt' : 'Student is absent') : undefined}
+                      />
+                    </td>
 
-                  {/* Nặng (kg) */}
-                  <td className="w-[115px] text-center py-1 px-1 whitespace-nowrap">
-                    <input
-                      type="number"
-                      step="0.1"
-                      disabled={readOnly || st.isTransferred}
-                      value={st.weight}
-                      onChange={(e) => handleFieldChange(st.id, 'weight', e.target.value)}
-                      placeholder={st.isTransferred ? "—" : "kg"}
-                      className={cn(
-                        "w-16 h-7 px-1 text-center text-[12px] border border-border bg-background text-foreground rounded-none focus:outline-hidden focus:border-[#1447e6]",
-                        (readOnly || st.isTransferred) && "opacity-70 cursor-default bg-muted/40"
-                      )}
-                    />
-                  </td>
+                    {/* Nặng (kg) */}
+                    <td className="w-[115px] text-center py-1 px-1 whitespace-nowrap">
+                      <input
+                        type="number"
+                        step="0.1"
+                        disabled={isFieldDisabled}
+                        value={isAbsent ? '' : st.weight}
+                        onChange={(e) => handleFieldChange(st.id, 'weight', e.target.value)}
+                        placeholder={isAbsent ? (isVi ? 'Vắng' : 'Absent') : st.isTransferred ? "—" : "kg"}
+                        className={cn(
+                          "w-16 h-7 px-1 text-center text-[12px] border border-border bg-background text-foreground rounded-none focus:outline-hidden focus:border-[#1447e6]",
+                          isFieldDisabled && "opacity-70 cursor-not-allowed bg-muted/40"
+                        )}
+                        title={isAbsent ? (isVi ? 'Học sinh vắng mặt' : 'Student is absent') : undefined}
+                      />
+                    </td>
 
-                  {/* Auto Calculated BMI */}
-                  <td className="w-[70px] text-center py-1 px-1 font-mono text-[12px] text-muted-foreground whitespace-nowrap">
-                    {st.isTransferred ? '—' : (st.bmi || '—')}
-                  </td>
+                    {/* Auto Calculated BMI */}
+                    <td className="w-[70px] text-center py-1 px-1 font-mono text-[12px] text-muted-foreground whitespace-nowrap">
+                      {isAbsent ? '—' : st.isTransferred ? '—' : (st.bmi || '—')}
+                    </td>
 
-                  {/* Ghi chú */}
-                  <td className="min-w-[120px] py-1 pl-2">
-                    <input
-                      type="text"
-                      disabled={readOnly || st.isTransferred}
-                      value={st.isTransferred ? 'Đã chuyển lớp (chỉ xem)' : st.note}
-                      onChange={(e) => handleFieldChange(st.id, 'note', e.target.value)}
-                      placeholder={t('health.notes', 'Ghi chú y tế')}
-                      className={cn(
-                        "w-full h-7 px-2 text-[11.5px] border border-border bg-background text-foreground rounded-none focus:outline-hidden focus:border-[#1447e6]",
-                        (readOnly || st.isTransferred) && "opacity-70 cursor-default bg-muted/40 italic text-muted-foreground"
-                      )}
-                    />
-                  </td>
-                </tr>
-              ))
+                    {/* Ghi chú */}
+                    <td className="min-w-[120px] py-1 pl-2">
+                      <input
+                        type="text"
+                        disabled={isFieldDisabled}
+                        value={
+                          isAbsent
+                            ? (st.note || (isVi ? 'Vắng mặt' : 'Absent'))
+                            : st.isTransferred
+                              ? 'Đã chuyển lớp (chỉ xem)'
+                              : st.note
+                        }
+                        onChange={(e) => handleFieldChange(st.id, 'note', e.target.value)}
+                        placeholder={isAbsent ? (isVi ? 'Vắng mặt' : 'Absent') : t('health.notes', 'Ghi chú y tế')}
+                        className={cn(
+                          "w-full h-7 px-2 text-[11.5px] border border-border bg-background text-foreground rounded-none focus:outline-hidden focus:border-[#1447e6]",
+                          isFieldDisabled && "opacity-70 cursor-not-allowed bg-muted/40 italic text-muted-foreground"
+                        )}
+                        title={isAbsent ? (isVi ? 'Học sinh vắng mặt' : 'Student is absent') : undefined}
+                      />
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
@@ -470,7 +538,7 @@ export function HealthMeasurementPanel({
           {readOnly ? (
             <>
               <span className="px-2.5 py-1 text-[11.5px] font-medium bg-muted text-muted-foreground border border-border select-none">
-                Chế độ xem (BGH)
+                {isVi ? 'Chế độ xem (BGH)' : 'View Mode (Principal)'}
               </span>
               <Button
                 type="button"
@@ -494,16 +562,10 @@ export function HealthMeasurementPanel({
               <Button
                 type="button"
                 onClick={handleSave}
-                disabled={!isDirty || isSaving || isCleaning}
-                className={cn(
-                  'rounded-none h-9 text-[13px] px-5 font-medium transition-colors shadow-none',
-                  isDirty && !isSaving && !isCleaning
-                    ? 'bg-[#1447e6] hover:bg-[#123ec4] text-white cursor-pointer'
-                    : 'bg-muted/80 text-muted-foreground border border-border/80 cursor-not-allowed opacity-60'
-                )}
-                title={!isDirty ? 'Chưa có thay đổi nào để lưu' : undefined}
+                disabled={isSaving || isCleaning}
+                className="rounded-none h-9 text-[13px] px-5 font-medium transition-colors shadow-none bg-[#1447e6] hover:bg-[#123ec4] text-white cursor-pointer disabled:opacity-50"
               >
-                {isSaving ? t('common.saving', 'Đang lưu...') : t('health.saveHealth', 'Lưu sức khoẻ')}
+                {isSaving ? (isVi ? 'Đang lưu...' : 'Saving...') : (isVi ? 'Lưu chỉ số sức khỏe' : 'Save Health')}
               </Button>
             </>
           )}
