@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Cancel01Icon } from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/shared/lib/utils';
+import { getMonthWeekRanges, resolveStudentHealthEvaluations, formatExamDateDescription, formatMeasurement } from '../assessment.utils';
 
 // Helper to format feedback timestamp nicely
 const formatFeedbackDate = (rawDate) => {
@@ -45,55 +46,80 @@ export function MonthlyAssessmentDrawer({
   const w2 = Boolean(student.week2Rose);
   const w3 = Boolean(student.week3Rose);
   const w4 = Boolean(student.week4Rose);
-  const w5 = Boolean(student.week5Rose);
 
   const currentRosesCount =
-    (w1 ? 1 : 0) + (w2 ? 1 : 0) + (w3 ? 1 : 0) + (w4 ? 1 : 0) + (w5 ? 1 : 0);
+    (w1 ? 1 : 0) + (w2 ? 1 : 0) + (w3 ? 1 : 0) + (w4 ? 1 : 0);
   const isLotus = currentRosesCount >= 4;
 
   const getHealthStatusLabel = (status) => {
-    if (!status) return t('health.statusNormal', 'Bình thường');
-    if (status === 'Bình thường') return t('health.statusNormal', 'Bình thường');
-    if (status === 'Theo dõi nhẹ cân') return t('health.statusUnderweight', 'Theo dõi nhẹ cân');
-    if (status === 'Theo dõi thừa cân/béo phì') return t('health.statusOverweight', 'Theo dõi thừa cân/béo phì');
-    if (status === 'Theo dõi thấp còi') return t('health.statusStunted', 'Theo dõi thấp còi');
-    if (status === 'Theo dõi suy dinh dưỡng') return t('health.statusMalnutrition', 'Theo dõi suy dinh dưỡng');
-    if (status === 'Nguy cơ thừa cân') return t('health.statusOverweightRisk', 'Nguy cơ thừa cân');
-    return status;
+    if (!status || status === 'Chưa đánh giá') return t('health.notEvaluated', 'Chưa đánh giá');
+    const clean = String(status)
+      .replace(/\s*\(Đạt chuẩn WHO\)/gi, '')
+      .replace(/\s*Đạt chuẩn WHO/gi, '')
+      .trim();
+    if (clean === 'Bình thường' || clean.toLowerCase() === 'bình thường') return t('health.statusNormal', 'Bình thường');
+    if (clean === 'Theo dõi nhẹ cân') return t('health.statusUnderweight', 'Theo dõi nhẹ cân');
+    if (clean === 'Theo dõi thừa cân/béo phì') return t('health.statusOverweight', 'Theo dõi thừa cân/béo phì');
+    if (clean === 'Theo dõi thấp còi') return t('health.statusStunted', 'Theo dõi thấp còi');
+    if (clean === 'Theo dõi suy dinh dưỡng') return t('health.statusMalnutrition', 'Theo dõi suy dinh dưỡng');
+    if (clean === 'Nguy cơ thừa cân') return t('health.statusOverweightRisk', 'Nguy cơ thừa cân');
+    return clean;
   };
 
-  const weekList = [
-    {
-      key: 1,
-      label: t('assessment.weekX', { week: 1, defaultValue: 'Tuần 1' }),
-      val: w1,
-      stats: student.weeklyStats?.week1,
-    },
-    {
-      key: 2,
-      label: t('assessment.weekX', { week: 2, defaultValue: 'Tuần 2' }),
-      val: w2,
-      stats: student.weeklyStats?.week2,
-    },
-    {
-      key: 3,
-      label: t('assessment.weekX', { week: 3, defaultValue: 'Tuần 3' }),
-      val: w3,
-      stats: student.weeklyStats?.week3,
-    },
-    {
-      key: 4,
-      label: t('assessment.weekX', { week: 4, defaultValue: 'Tuần 4' }),
-      val: w4,
-      stats: student.weeklyStats?.week4,
-    },
-    {
-      key: 5,
-      label: t('assessment.weekX', { week: 5, defaultValue: 'Tuần 5' }),
-      val: w5,
-      stats: student.weeklyStats?.week5,
-    },
-  ];
+  const getHealthBadgeClass = (status) => {
+    const raw = String(status || '').trim();
+    const clean = raw
+      .replace(/\s*\(Đạt chuẩn WHO\)/gi, '')
+      .replace(/\s*Đạt chuẩn WHO/gi, '')
+      .trim();
+
+    if (!clean || clean === 'Chưa đánh giá') {
+      return 'bg-muted/70 text-muted-foreground border border-border/60';
+    }
+
+    if (
+      clean === 'Bình thường' ||
+      clean === 'Tốt' ||
+      clean.toLowerCase() === 'bình thường' ||
+      clean.includes('Bình thường')
+    ) {
+      return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60';
+    }
+
+    if (
+      clean.includes('độ 2') ||
+      clean.includes('nặng') ||
+      clean.includes('Béo phì') ||
+      clean.includes('Thừa cân')
+    ) {
+      return 'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200/80 dark:border-rose-800/60';
+    }
+
+    return 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60';
+  };
+
+  const monthWeekRanges = useMemo(() => {
+    return getMonthWeekRanges(month, year);
+  }, [month, year]);
+
+  const weekList = useMemo(() => {
+    if (monthWeekRanges.length > 0) {
+      return monthWeekRanges.map((r) => ({
+        key: r.week,
+        label: t('assessment.weekX', { week: r.week, defaultValue: `Tuần ${r.week}` }),
+        val: Boolean(student[`week${r.week}Rose`]),
+        stats: student.weeklyStats?.[`week${r.week}`],
+        range: r,
+      }));
+    }
+    return [1, 2, 3, 4].map((k) => ({
+      key: k,
+      label: t('assessment.weekX', { week: k, defaultValue: `Tuần ${k}` }),
+      val: Boolean(student[`week${k}Rose`]),
+      stats: student.weeklyStats?.[`week${k}`],
+      range: null,
+    }));
+  }, [monthWeekRanges, student, t]);
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -162,7 +188,7 @@ export function MonthlyAssessmentDrawer({
             <div className="flex items-center gap-2 shrink-0">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[12px] font-semibold bg-background border border-border">
                 <img src="/rose.webp" alt="Hoa hồng" className="size-4 object-contain" />
-                <span>{currentRosesCount}/5 {t('assessment.rosesUnit', 'hoa')}</span>
+                <span>{currentRosesCount}/{weekList.length || 4} {t('assessment.rosesUnit', 'hoa')}</span>
               </div>
 
               {isLotus ? (
@@ -184,11 +210,11 @@ export function MonthlyAssessmentDrawer({
 
         {/* 2. Scrollable Body */}
         <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-6">
-          {/* Section A: Đánh giá rèn luyện 5 tuần trong tháng (View Only) */}
+          {/* Section A: Đánh giá rèn luyện các tuần trong tháng (View Only) */}
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <label className="text-[13.5px] font-semibold text-foreground tracking-tight">
-                {t('assessment.weeklyReviewDetail', 'Chi tiết đánh giá 5 tuần trong tháng')}
+                {t('assessment.weeklyReviewDetail', 'Chi tiết đánh giá các tuần trong tháng')}
               </label>
             </div>
 
@@ -199,7 +225,8 @@ export function MonthlyAssessmentDrawer({
                     <th className="px-3">{t('assessment.week', 'Tuần')}</th>
                     <th className="px-3 text-center">{t('assessment.attendance', 'Chuyên cần')}</th>
                     <th className="px-3 text-center">{t('assessment.goals', 'Mục tiêu')}</th>
-                    <th className="px-3 text-center">{t('assessment.latestHealth', 'Sức khỏe gần nhất')}</th>
+                    <th className="px-3 text-center">{t('health.heightColumn', 'Chiều cao')}</th>
+                    <th className="px-3 text-center">{t('health.weightColumn', 'Cân nặng')}</th>
                     <th className="px-3 text-center">{t('assessment.roseFlower', 'Hoa hồng')}</th>
                     <th className="px-3">{t('assessment.teacherNotes', 'Ghi chú của giáo viên')}</th>
                   </tr>
@@ -207,11 +234,26 @@ export function MonthlyAssessmentDrawer({
                 <tbody className="divide-y divide-border/60 text-[12.5px]">
                   {weekList.map((wk) => {
                     const stats = wk.stats || {};
+                    const { heightEvaluation, weightEvaluation } = resolveStudentHealthEvaluations(stats);
+                    const examDate = stats.healthExamDate || stats.examDate;
+                    const dateDesc = formatExamDateDescription(examDate);
                     return (
                       <tr key={wk.key} className="h-12 hover:bg-muted/20 transition-colors">
-                        {/* Tuần (chỉ hiển thị Tuần mấy, không có ngày) */}
+                        {/* Tuần & Khoảng thời gian & Chủ đề nhánh */}
                         <td className="px-3 font-medium whitespace-nowrap">
-                          <span className="text-[13px] text-foreground font-medium">{wk.label}</span>
+                          <div className="flex flex-col">
+                            <span className="text-[13px] text-foreground font-medium">{wk.label}</span>
+                            {wk.range && (
+                              <span className="text-[11px] text-muted-foreground font-mono">
+                                Từ {wk.range.startDateStr} đến {wk.range.endDateStr}
+                              </span>
+                            )}
+                            {wk.range?.subThemeName && (
+                              <span className="text-[11px] text-primary font-normal truncate max-w-[200px]" title={`${wk.range.themeName || ''} - ${wk.range.subThemeName}`}>
+                                {wk.range.subThemeName}
+                              </span>
+                            )}
+                          </div>
                         </td>
 
                         {/* Chuyên cần */}
@@ -238,11 +280,66 @@ export function MonthlyAssessmentDrawer({
                           </div>
                         </td>
 
-                        {/* Sức khỏe gần nhất */}
+                        {/* Chiều cao */}
                         <td className="px-3 text-center whitespace-nowrap">
-                          <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">
-                            {getHealthStatusLabel(stats.healthStatus)}
-                          </span>
+                          {(() => {
+                            const heightFormatted = formatMeasurement(stats.height, 'cm');
+                            return (
+                              <div className="flex flex-col items-center justify-center leading-tight py-0.5">
+                                {heightFormatted ? (
+                                  <span className="text-[12px] font-semibold text-foreground tracking-tight">
+                                    {heightFormatted}
+                                  </span>
+                                ) : (
+                                  <span className="text-[12px] text-muted-foreground/40 font-medium">—</span>
+                                )}
+                                <div
+                                  className="flex flex-wrap items-center justify-center gap-x-1 text-[11px] leading-tight cursor-help mt-0.5"
+                                  title={heightFormatted ? `Chiều cao: ${heightFormatted} · ${heightEvaluation.label}` : heightEvaluation.label}
+                                >
+                                  <span className={cn('font-medium whitespace-nowrap shrink-0', heightEvaluation.textColor)}>
+                                    {heightEvaluation.label}
+                                  </span>
+                                  {dateDesc !== '—' && (
+                                    <span className="text-muted-foreground/75 text-[10px] whitespace-nowrap shrink-0">
+                                      ({dateDesc})
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </td>
+
+                        {/* Cân nặng */}
+                        <td className="px-3 text-center whitespace-nowrap">
+                          {(() => {
+                            const weightFormatted = formatMeasurement(stats.weight, 'kg');
+                            return (
+                              <div className="flex flex-col items-center justify-center leading-tight py-0.5">
+                                {weightFormatted ? (
+                                  <span className="text-[12px] font-semibold text-foreground tracking-tight">
+                                    {weightFormatted}
+                                  </span>
+                                ) : (
+                                  <span className="text-[12px] text-muted-foreground/40 font-medium">—</span>
+                                )}
+                                <div
+                                  className="flex flex-wrap items-center justify-center gap-x-1 text-[11px] leading-tight cursor-help mt-0.5"
+                                  title={weightFormatted ? `Cân nặng: ${weightFormatted} · ${weightEvaluation.label}` : weightEvaluation.label}
+                                >
+                                  <span className={cn('font-medium whitespace-nowrap shrink-0', weightEvaluation.textColor)}>
+                                    {weightEvaluation.label}
+                                  </span>
+                                  {dateDesc !== '—' && (
+                                    <span className="text-muted-foreground/75 text-[10px] whitespace-nowrap shrink-0">
+                                      ({dateDesc})
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })()}
                         </td>
 
                         {/* Hoa hồng (Chỉ xem) */}
