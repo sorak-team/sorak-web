@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { useAccountStore, getAccountAvatarUrl } from '../accounts.store';
+import { getStudentAvatarUrl } from '@/features/students/students.store';
 import { useAuthStore } from '@/features/auth';
 import { cn } from '@/shared/lib/utils';
 
@@ -115,7 +116,7 @@ export function AccountGrid({ paginatedAccounts }) {
   if (!paginatedAccounts || paginatedAccounts.length === 0) {
     return (
       <div className="w-full border border-border bg-card p-12 text-center text-muted-foreground rounded-none">
-        <p className="text-[14px]">Không tìm thấy tài khoản nào phù hợp.</p>
+        <p className="text-[14px]">{t('account.noAccountsFound', 'Không tìm thấy tài khoản nào phù hợp.')}</p>
       </div>
     );
   }
@@ -137,17 +138,21 @@ export function AccountGrid({ paginatedAccounts }) {
             onClick={() => navigate(`/accounts/${account.id}`)}
             className="flex items-center gap-3.5 cursor-pointer"
           >
-            <div className="size-12 rounded-none overflow-hidden border border-border/80 bg-primary/10 shrink-0">
+            <div className="size-12 rounded-none overflow-hidden border border-border/80 bg-muted/40 shrink-0">
               <img
                 src={
                   account.avatar ||
-                  getAccountAvatarUrl(null, account.fullName, account.role || account.rawRole)
+                  (isParentTab || account.role === 'student' || account.role === 'parent'
+                    ? getStudentAvatarUrl(null, account.studentCode || account.username || account.fullName)
+                    : getAccountAvatarUrl(null, account.fullName, account.role || account.rawRole))
                 }
                 alt={account.fullName}
                 className="size-full object-cover"
                 onError={(e) => {
                   e.target.onerror = null;
-                  e.target.src = getAccountAvatarUrl(null, account.fullName, account.role || account.rawRole);
+                  e.target.src = isParentTab || account.role === 'student' || account.role === 'parent'
+                    ? getStudentAvatarUrl(null, account.studentCode || account.username || account.fullName)
+                    : getAccountAvatarUrl(null, account.fullName, account.role || account.rawRole);
                 }}
               />
             </div>
@@ -237,7 +242,7 @@ export function AccountGrid({ paginatedAccounts }) {
                   disabled={isAccountSelf(account)}
                   onClick={() => {
                     if (isAccountSelf(account)) {
-                      toast.error('Bạn không thể đặt lại mật khẩu cho chính mình tại chức năng quản lý tài khoản. Vui lòng sử dụng chức năng Đổi mật khẩu.');
+                      toast.error(t('account.resetSelfError', 'Bạn không thể đặt lại mật khẩu cho chính mình tại chức năng quản lý tài khoản. Vui lòng sử dụng chức năng Đổi mật khẩu.'));
                       return;
                     }
                     openResetPasswordConfirm(account);
@@ -254,15 +259,15 @@ export function AccountGrid({ paginatedAccounts }) {
                 <DropdownMenuItem
                   onClick={() => {
                     if (isAccountSelf(account)) {
-                      toast.error('Không thể tự khóa tài khoản của chính mình');
+                      toast.error(t('account.cannotLockSelf', 'Không thể tự khóa tài khoản của chính mình'));
                       return;
                     }
                     if (account.accountStatus === 'active') {
                       openLockConfirm(account);
                     } else {
                       toggleAccountStatus(account.id)
-                        .then(() => toast.success('Đã mở khóa tài khoản thành công'))
-                        .catch((err) => toast.error(err.message || 'Mở khóa tài khoản thất bại'));
+                        .then(() => toast.success(t('account.unlockSuccess', 'Đã mở khóa tài khoản thành công')))
+                        .catch((err) => toast.error(err.message || t('account.unlockFailed', 'Mở khóa tài khoản thất bại')));
                     }
                   }}
                   disabled={isAccountSelf(account)}

@@ -36,7 +36,7 @@ export function LockAccountConfirmModal() {
       );
       closeLockConfirm();
     } catch (err) {
-      toast.error(err.message || 'Khóa tài khoản thất bại');
+      toast.error(err.message || t('account.lockFailed', 'Khóa tài khoản thất bại'));
     } finally {
       setIsSubmitting(false);
     }
@@ -60,16 +60,15 @@ export function LockAccountConfirmModal() {
             </DialogTitle>
           </div>
           <DialogDescription className="text-[13px] text-muted-foreground pt-1 leading-relaxed">
-            Bạn có chắc chắn muốn khóa tài khoản của{' '}
-            <strong className="text-foreground font-semibold">
-              {accountToLock.fullName}
-            </strong>
-            {accountIdentifier ? ` (${accountIdentifier})` : ''} không?
+            {t('account.lockConfirmDesc', 'Bạn có chắc chắn muốn khóa tài khoản của {{name}}{{id}} không?', {
+              name: accountToLock.fullName,
+              id: accountIdentifier ? ` (${accountIdentifier})` : '',
+            })}
           </DialogDescription>
         </DialogHeader>
 
         <div className="my-2 p-3 border border-destructive/20 bg-destructive/5 text-destructive text-[12px] rounded-none leading-relaxed">
-          <strong>Lưu ý:</strong> Người dùng sẽ ngay lập tức bị vô hiệu hóa quyền truy cập và không thể đăng nhập vào hệ thống trường học cho đến khi được Ban Giám Hiệu mở khóa lại.
+          <strong>{t('account.lockNoticePrefix', 'Lưu ý:')}</strong> {t('account.lockNoticeBody', 'Người dùng sẽ ngay lập tức bị vô hiệu hóa quyền truy cập và không thể đăng nhập vào hệ thống trường học cho đến khi được Ban Giám Hiệu mở khóa lại.')}
         </div>
 
         <DialogFooter className="mt-4 flex items-center justify-end gap-2">
