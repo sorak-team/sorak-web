@@ -4,11 +4,12 @@ import { CircleCheck, Info, LoaderCircle, OctagonX, TriangleAlert } from 'lucide
 import { useTheme } from 'next-themes';
 import { Toaster as Sonner } from 'sonner';
 
-const Toaster = ({ ...props }) => {
+const Toaster = ({ position = 'bottom-right', ...props }) => {
   const { theme = 'system' } = useTheme();
   return (
     <Sonner
       theme={theme}
+      position={position}
       className="toaster group"
       icons={{
         success: <CircleCheck className="h-4 w-4" />,
