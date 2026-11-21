@@ -14,6 +14,7 @@ import {
 } from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { confirmDialog } from '@/components/ui/confirm-dialog';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -29,7 +30,7 @@ import { cn } from '@/shared/lib/utils';
 import { useAuthStore } from '@/features/auth';
 
 export function ClassStudentAllocation({ currentClass, isTeacher: propIsTeacher }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const fetchGlobalClasses = useClassesStore((state) => state.fetchClasses);
   const user = useAuthStore((state) => state.user);
@@ -83,16 +84,34 @@ export function ClassStudentAllocation({ currentClass, isTeacher: propIsTeacher 
   }, [classRoster, rosterSearch]);
 
   const handleRemoveStudentFromClass = async (student) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn gỡ học sinh ${student.fullName} khỏi lớp ${currentClass?.name}?`)) {
+    const isConfirmed = await confirmDialog({
+      title: t('classes.confirmRemoveStudentTitle', 'Xác nhận gỡ học sinh khỏi lớp'),
+      description: t(
+        'classes.confirmRemoveStudent',
+        'Bạn có chắc chắn muốn gỡ học sinh {{name}} khỏi lớp {{className}}? Thao tác này sẽ chuyển học sinh về trạng thái chưa phân lớp.',
+        { name: student.fullName, className: currentClass?.name },
+      ),
+      confirmText: t('common.remove', 'Gỡ khỏi lớp'),
+      cancelText: t('common.cancel', 'Hủy'),
+      variant: 'destructive',
+    });
+    if (!isConfirmed) {
       return;
     }
     try {
       await classesApi.unassignStudent(currentClass.id, student.id);
-      toast.success(`Đã gỡ học sinh ${student.fullName} khỏi lớp thành công.`);
+      toast.success(
+        t('classes.removeStudentSuccess', 'Đã gỡ học sinh {{name}} khỏi lớp thành công.', {
+          name: student.fullName,
+        }),
+      );
       fetchClassRoster();
       fetchGlobalClasses();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Không thể gỡ học sinh khỏi lớp.');
+      toast.error(
+        err.response?.data?.message ||
+          t('classes.removeStudentError', 'Không thể gỡ học sinh khỏi lớp.'),
+      );
     }
   };
 
@@ -125,7 +144,7 @@ export function ClassStudentAllocation({ currentClass, isTeacher: propIsTeacher 
                     {t('classes.rosterCardHeading', 'Danh sách học sinh')}
                   </h2>
                   <span className="text-[12px] font-medium px-2 py-0.5 bg-muted text-foreground border border-border/60">
-                    Sĩ số: {classRoster.length} học sinh
+                    {t('classes.classSizeCount', 'Sĩ số: {{count}} học sinh', { count: classRoster.length })}
                   </span>
                 </div>
                 <p className="text-[13px] text-muted-foreground">
@@ -169,7 +188,7 @@ export function ClassStudentAllocation({ currentClass, isTeacher: propIsTeacher 
               <table className="w-full text-left border-collapse min-w-[650px]">
                 <thead>
                   <tr className="h-10 border-b border-border bg-muted/30 text-[13px] font-medium text-foreground">
-                    <th className="px-3 w-[50px] text-center font-medium">STT</th>
+                    <th className="px-3 w-[50px] text-center font-medium">{t('classes.colIndex', 'STT')}</th>
                     <th className="px-3 min-w-[220px] font-medium">{t('student.colStudent', 'Học sinh')}</th>
                     <th className="px-3 min-w-[130px] font-medium">{t('teacher.colDob', 'Ngày sinh')}</th>
                     <th className="px-3 min-w-[90px] font-medium">{t('student.colGender', 'Giới tính')}</th>
@@ -257,13 +276,13 @@ export function ClassStudentAllocation({ currentClass, isTeacher: propIsTeacher 
                         {/* Date of birth (Không / tuổi) */}
                         <td className="px-3 text-[14px] text-foreground font-normal whitespace-nowrap">
                           {student.dateOfBirth
-                            ? new Date(student.dateOfBirth).toLocaleDateString('vi-VN')
+                            ? new Date(student.dateOfBirth).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'vi-VN')
                             : '—'}
                         </td>
 
                         {/* Gender */}
                         <td className="px-3 text-[14px] text-foreground font-normal whitespace-nowrap">
-                          {student.gender === 'FEMALE' ? 'Nữ' : 'Nam'}
+                          {student.gender === 'FEMALE' ? t('common.female', 'Nữ') : t('common.male', 'Nam')}
                         </td>
 
                         {/* Thao tác (Cho cả BGH và Giáo viên) */}
@@ -304,7 +323,7 @@ export function ClassStudentAllocation({ currentClass, isTeacher: propIsTeacher 
                                     size={14}
                                     className="text-destructive"
                                   />
-                                  <span>Gỡ khỏi lớp</span>
+                                  <span>{t('classes.removeFromClass', 'Gỡ khỏi lớp')}</span>
                                 </DropdownMenuItem>
                               )}
 
@@ -332,9 +351,11 @@ export function ClassStudentAllocation({ currentClass, isTeacher: propIsTeacher 
             {/* Note & Summary */}
             <div className="flex items-center justify-between text-[12px] text-muted-foreground pt-1">
               <span>
-                Bấm vào nút <strong>...</strong> ở từng dòng để yêu cầu chuyển lớp hoặc xem hồ sơ chi tiết.
+                {t('classes.studentAllocationRowHint', 'Bấm vào nút ... ở từng dòng để yêu cầu chuyển lớp hoặc xem hồ sơ chi tiết.')}
               </span>
-              <span>Tổng: {filteredRoster.length} học sinh</span>
+              <span>
+                {t('classes.totalStudentsCount', 'Tổng: {{count}} học sinh', { count: filteredRoster.length })}
+              </span>
             </div>
           </div>
         </div>
