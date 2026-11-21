@@ -11,6 +11,7 @@ import {
 } from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
 import { useAccountStore, getAccountAvatarUrl } from './accounts.store';
+import { getStudentAvatarUrl } from '@/features/students/students.store';
 import { useAuthStore } from '@/features/auth';
 import { AccountSettingsDrawer } from './components/AccountSettingsDrawer';
 import { ResetPasswordConfirmModal } from './components/ResetPasswordConfirmModal';
@@ -128,7 +129,7 @@ export function AccountOverviewPage() {
 
   const handleDeactivateRetiredAccount = () => {
     if (isSelf) {
-      toast.error('Không thể tự khóa tài khoản của chính mình');
+      toast.error(t('account.cannotLockSelf', 'Không thể tự khóa tài khoản của chính mình'));
       return;
     }
     openLockConfirm(account);
@@ -150,17 +151,21 @@ export function AccountOverviewPage() {
         data-name="Card · Staff Hero"
       >
         <div className="flex items-center gap-4 sm:gap-5 min-w-0">
-          <div className="size-14 rounded-none overflow-hidden border border-border/80 bg-primary/10 shrink-0">
+          <div className="size-14 rounded-none overflow-hidden border border-border/80 bg-muted/40 shrink-0">
             <img
               src={
                 account.avatar ||
-                getAccountAvatarUrl(null, account.role === 'student' ? (account.studentCode || account.fullName) : account.fullName, account.role || account.rawRole)
+                (!isStaff || account.role === 'student' || account.role === 'parent' || account.rawRole === 'PARENT_PH'
+                  ? getStudentAvatarUrl(null, account.studentCode || account.username || account.fullName)
+                  : getAccountAvatarUrl(null, account.fullName, account.role || account.rawRole))
               }
               alt={account.fullName}
               className="size-full object-cover"
               onError={(e) => {
                 e.target.onerror = null;
-                e.target.src = getAccountAvatarUrl(null, account.role === 'student' ? (account.studentCode || account.fullName) : account.fullName, account.role || account.rawRole);
+                e.target.src = (!isStaff || account.role === 'student' || account.role === 'parent' || account.rawRole === 'PARENT_PH')
+                  ? getStudentAvatarUrl(null, account.studentCode || account.username || account.fullName)
+                  : getAccountAvatarUrl(null, account.fullName, account.role || account.rawRole);
               }}
             />
           </div>
