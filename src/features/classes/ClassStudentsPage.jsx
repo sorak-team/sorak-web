@@ -27,6 +27,7 @@ import { DeleteStudentDialog } from '../students/components/DeleteStudentDialog'
 import { TransferStudentDialog } from '../students/components/TransferStudentDialog';
 import { TablePagination } from '@/shared/components/TablePagination';
 import { usePaginationStore } from '@/shared/stores/pagination.store';
+import { ClassAttendanceRibbon } from '@/features/attendance/components/ClassAttendanceRibbon';
 import { NotFoundPage } from '@/features/error';
 import { cn } from '@/shared/lib/utils';
 
@@ -346,6 +347,11 @@ export function ClassStudentsPage() {
           />
         </div>
       </div>
+
+      {/* UC 66: Class Attendance Statistics Metric Ribbon */}
+      {targetClassId && (
+        <ClassAttendanceRibbon classId={targetClassId} />
+      )}
 
       {/* List Heading (Matching TeachersPage) */}
       <div className="flex items-center justify-between pt-1">
