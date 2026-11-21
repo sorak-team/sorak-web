@@ -322,19 +322,19 @@ export function AcademicYearDrawer() {
   const handleSubmit = (e) => {
     e?.preventDefault();
     if (!name.trim()) {
-      toast.error('Vui lòng nhập tên năm học');
+      toast.error(t('schoolYear.validationName', 'Vui lòng nhập tên năm học'));
       return;
     }
     if (!startDate) {
-      toast.error('Vui lòng chọn ngày bắt đầu Học kỳ 1');
+      toast.error(t('schoolYear.validationSemester1Start', 'Vui lòng chọn ngày bắt đầu Học kỳ 1'));
       return;
     }
     if (!endDate) {
-      toast.error('Vui lòng chọn ngày kết thúc Học kỳ 2');
+      toast.error(t('schoolYear.validationSemester2End', 'Vui lòng chọn ngày kết thúc Học kỳ 2'));
       return;
     }
     if (!semester1EndDate) {
-      toast.error('Vui lòng chọn ngày kết thúc Học kỳ 1');
+      toast.error(t('schoolYear.validationSemester1End', 'Vui lòng chọn ngày kết thúc Học kỳ 1'));
       return;
     }
 
@@ -378,12 +378,12 @@ export function AcademicYearDrawer() {
     }
 
     if (end <= start) {
-      toast.error('Ngày kết thúc năm học phải nằm sau ngày bắt đầu năm học');
+      toast.error(t('schoolYear.validationEndAfterStart', 'Ngày kết thúc năm học phải nằm sau ngày bắt đầu năm học'));
       return;
     }
 
     if (!sem1End || sem1End <= start || sem1End >= end) {
-      toast.error('Ngày kết thúc Học kỳ 1 phải nằm sau ngày bắt đầu HK1 và trước ngày kết thúc HK2');
+      toast.error(t('schoolYear.validationSemester1Range', 'Ngày kết thúc Học kỳ 1 phải nằm sau ngày bắt đầu HK1 và trước ngày kết thúc HK2'));
       return;
     }
 
@@ -574,7 +574,7 @@ export function AcademicYearDrawer() {
                   type="button"
                   disabled
                   className="size-7 text-[12px] flex items-center justify-center rounded-none text-muted-foreground/30 cursor-not-allowed select-none"
-                  title="Ngày không khả dụng trong năm học này"
+                  title={t('schoolYear.dateUnavailableInYear', 'Ngày không khả dụng trong năm học này')}
                 >
                   {dayNumber}
                 </button>
@@ -672,7 +672,7 @@ export function AcademicYearDrawer() {
               value={name}
               readOnly
               tabIndex={-1}
-              placeholder="Năm học 2027–2028"
+              placeholder={t('schoolYear.defaultTargetName', 'Năm học 2027–2028')}
               className="h-8 w-full border border-border px-2.5 text-[14px] rounded-none transition-colors bg-muted/50 text-muted-foreground cursor-not-allowed select-none focus:outline-none"
               required
             />

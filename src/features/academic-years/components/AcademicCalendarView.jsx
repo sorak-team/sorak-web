@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
   ArrowLeft01Icon,
@@ -16,6 +17,7 @@ import {
 } from '@hugeicons/core-free-icons';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { confirmDialog } from '@/components/ui/confirm-dialog';
 import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
@@ -78,6 +80,8 @@ export function AcademicCalendarView({
   onCountersUpdate,
   isReadOnly = false,
 }) {
+  const { t, i18n } = useTranslation();
+  const isVi = (i18n?.language || 'vi').startsWith('vi');
   const [holidaysData, setHolidaysData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
@@ -89,10 +93,10 @@ export function AcademicCalendarView({
       const blob = await academicYearsApi.exportCalendarExcel(schoolYearId);
       const safeName = (schoolYearName || 'Nam_Hoc').replace(/\s+/g, '_');
       downloadBlob(blob, `Lich_Nam_Hoc_${safeName}.xlsx`);
-      toast.success('Đã xuất lịch năm học thành công');
+      toast.success(t('academicCalendar.exportSuccess', 'Đã xuất lịch năm học thành công'));
     } catch (err) {
-      toast.error('Lỗi khi xuất tệp lịch năm học', {
-        description: err.message || 'Vui lòng thử lại sau.',
+      toast.error(t('academicCalendar.exportError', 'Lỗi khi xuất tệp lịch năm học'), {
+        description: err.message || t('common.tryAgainLater', 'Vui lòng thử lại sau.'),
       });
     } finally {
       setIsExporting(false);
@@ -184,7 +188,7 @@ export function AcademicCalendarView({
       }
     } catch (err) {
       console.error('Failed to load holidays:', err);
-      toast.error('Không thể tải lịch năm học');
+      toast.error(t('academicCalendar.loadError', 'Không thể tải lịch năm học'));
     } finally {
       setLoading(false);
     }
@@ -270,13 +274,26 @@ export function AcademicCalendarView({
 
   const handleDeleteQuick = async (holiday) => {
     if (isReadOnly) return;
-    if (window.confirm(`Xóa "${holiday.name}" khỏi lịch năm học?`)) {
+    const isConfirmed = await confirmDialog({
+      title: t('academicCalendar.confirmDeleteTitle', 'Xác nhận xóa sự kiện'),
+      description: t('academicCalendar.confirmDeleteHoliday', 'Xóa "{{name}}" khỏi lịch năm học?', {
+        name: holiday.name,
+      }),
+      confirmText: t('common.delete', 'Xóa'),
+      cancelText: t('common.cancel', 'Hủy'),
+      variant: 'destructive',
+    });
+    if (isConfirmed) {
       try {
         await academicYearsApi.deleteHoliday(schoolYearId, holiday.id);
-        toast.success(`Đã xóa "${holiday.name}"!`);
+        toast.success(
+          t('academicCalendar.deleteHolidaySuccess', 'Đã xóa "{{name}}"!', {
+            name: holiday.name,
+          })
+        );
         fetchHolidays();
       } catch (err) {
-        toast.error('Xóa thất bại', {
+        toast.error(t('academicCalendar.deleteHolidayFailed', 'Xóa thất bại'), {
           description: err.response?.data?.message || err.message,
         });
       }
@@ -390,7 +407,7 @@ export function AcademicCalendarView({
           {viewMode === 'GRID' ? (
             <div className="flex items-center gap-2.5">
               <h2 className="text-[17px] font-semibold text-foreground tracking-tight min-w-[125px]">
-                Tháng {currentMonth + 1}/{currentYear}
+                {isVi ? `Tháng ${currentMonth + 1}/${currentYear}` : `${currentMonth + 1}/${currentYear}`}
               </h2>
 
               {/* Prev / Next buttons bounded to school year */}
@@ -399,7 +416,7 @@ export function AcademicCalendarView({
                   type="button"
                   disabled={!canPrevMonth}
                   onClick={handlePrevMonth}
-                  title="Tháng trước"
+                  title={t('academicCalendar.prevMonth', 'Tháng trước')}
                   className="size-8 inline-flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition-colors"
                 >
                   <HugeiconsIcon icon={ArrowLeft01Icon} size={14} />
@@ -408,7 +425,7 @@ export function AcademicCalendarView({
                   type="button"
                   disabled={!canNextMonth}
                   onClick={handleNextMonth}
-                  title="Tháng sau"
+                  title={t('academicCalendar.nextMonth', 'Tháng sau')}
                   className="size-8 inline-flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition-colors border-l border-border"
                 >
                   <HugeiconsIcon icon={ArrowRight01Icon} size={14} />
@@ -418,7 +435,7 @@ export function AcademicCalendarView({
           ) : (
             <div>
               <h2 className="text-[16px] font-semibold text-foreground tracking-tight">
-                Danh sách ngày nghỉ & sự kiện năm học
+                {t('academicCalendar.calendarAndEventsList', 'Danh sách ngày nghỉ & sự kiện năm học')}
               </h2>
             </div>
           )}
@@ -441,7 +458,7 @@ export function AcademicCalendarView({
                   : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
               )}
             >
-              Tất cả
+              {t('common.all', 'Tất cả')}
             </button>
             <button
               type="button"
@@ -456,7 +473,7 @@ export function AcademicCalendarView({
                   : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
               )}
             >
-              Ngày nghỉ
+              {t('academicCalendar.holidays', 'Ngày nghỉ')}
             </button>
             <button
               type="button"
@@ -471,7 +488,7 @@ export function AcademicCalendarView({
                   : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
               )}
             >
-              Sự kiện
+              {t('academicCalendar.events', 'Sự kiện')}
             </button>
           </div>
 
@@ -480,7 +497,7 @@ export function AcademicCalendarView({
             <button
               type="button"
               onClick={() => setViewMode('GRID')}
-              title="Xem theo Lịch tháng"
+              title={t('academicCalendar.monthView', 'Xem theo Lịch tháng')}
               className={cn(
                 'size-8 flex items-center justify-center transition-colors cursor-pointer border-r border-border',
                 viewMode === 'GRID'
@@ -493,7 +510,7 @@ export function AcademicCalendarView({
             <button
               type="button"
               onClick={() => setViewMode('LIST')}
-              title="Xem theo Danh sách bảng"
+              title={t('academicCalendar.listView', 'Xem theo Danh sách bảng')}
               className={cn(
                 'size-8 flex items-center justify-center transition-colors cursor-pointer',
                 viewMode === 'LIST'
@@ -505,14 +522,13 @@ export function AcademicCalendarView({
             </button>
           </div>
 
-          {/* Excel Actions (Export & Import) */}
+          {/* Excel Actions (Import only - Lịch năm học không có chức năng export excel) */}
           <ExcelActionsDropdown
-            onExport={handleExportExcel}
+            onExport={null}
             onImport={!isReadOnly ? () => setIsImportDrawerOpen(true) : null}
-            isExporting={isExporting}
+            isExporting={false}
             showImport={!isReadOnly}
-            exportLabel="Xuất tệp Excel"
-            importLabel="Nhập tệp Excel"
+            importLabel={t('academicCalendar.importExcel', 'Nhập tệp Excel')}
           />
 
           {/* Add Holiday Button */}
@@ -520,7 +536,7 @@ export function AcademicCalendarView({
             type="button"
             disabled={isReadOnly}
             onClick={() => !isReadOnly && handleOpenAdd()}
-            title={isReadOnly ? 'Năm học cũ / đã kết thúc không hỗ trợ thêm mới' : undefined}
+            title={isReadOnly ? t('academicCalendar.cantAddEndedYear', 'Năm học cũ / đã kết thúc không hỗ trợ thêm mới') : undefined}
             className={cn(
               'h-8 px-3.5 inline-flex items-center gap-1.5 text-[13px] font-medium rounded-none shadow-none',
               isReadOnly
@@ -529,7 +545,7 @@ export function AcademicCalendarView({
             )}
           >
             <HugeiconsIcon icon={PlusSignIcon} size={14} />
-            <span>Thêm lịch</span>
+            <span>{t('academicCalendar.addSchedule', 'Thêm lịch')}</span>
           </Button>
         </div>
       </div>
@@ -540,13 +556,13 @@ export function AcademicCalendarView({
           <div className="min-w-[700px]">
             {/* Days of week header (T2 -> CN) */}
             <div className="grid grid-cols-7 border-b border-border bg-muted/20 text-center text-[11.5px] font-medium text-muted-foreground py-2 select-none tracking-wider">
-              <span>Thứ 2</span>
-              <span>Thứ 3</span>
-              <span>Thứ 4</span>
-              <span>Thứ 5</span>
-              <span>Thứ 6</span>
-              <span>Thứ 7</span>
-              <span>Chủ nhật</span>
+              <span>{t('days.T2.short', 'Thứ 2')}</span>
+              <span>{t('days.T3.short', 'Thứ 3')}</span>
+              <span>{t('days.T4.short', 'Thứ 4')}</span>
+              <span>{t('days.T5.short', 'Thứ 5')}</span>
+              <span>{t('days.T6.short', 'Thứ 6')}</span>
+              <span>{t('days.T7.short', 'Thứ 7')}</span>
+              <span>{t('days.CN.short', 'Chủ nhật')}</span>
             </div>
 
             {/* 7-column Calendar Cells */}
@@ -614,7 +630,7 @@ export function AcademicCalendarView({
                           handleOpenAdd(cell.dateString);
                         }}
                         className="opacity-0 group-hover:opacity-100 size-4.5 inline-flex items-center justify-center text-muted-foreground hover:text-[#1447e6] transition-opacity cursor-pointer"
-                        title="Thêm lịch vào ngày này"
+                        title={t('academicCalendar.addScheduleOnDate', 'Thêm lịch vào ngày này')}
                       >
                         <HugeiconsIcon icon={PlusSignIcon} size={11} />
                       </button>
@@ -641,11 +657,11 @@ export function AcademicCalendarView({
                               ? 'bg-blue-50/90 text-[#1447e6] border-l-[#1447e6] border-y border-r border-blue-200/60 dark:bg-blue-950/40 dark:text-blue-300'
                               : 'bg-muted/60 text-foreground border-l-slate-400 border-y border-r border-border hover:bg-muted',
                           )}
-                          title={`${evt.name} (${evt.typeLabel || (isHoliday ? 'Ngày nghỉ' : 'Sự kiện')}${isTeachingLocked ? ' · Khóa lịch dạy' : ''})`}
+                          title={`${evt.name} (${evt.typeLabel || (isHoliday ? t('academicCalendar.holidays', 'Ngày nghỉ') : t('academicCalendar.events', 'Sự kiện'))}${isTeachingLocked ? ` · ${t('academicCalendar.lockedTeachingSchedule', 'Khóa lịch dạy')}` : ''})`}
                         >
                           <div className="flex items-start gap-1">
                             {isTeachingLocked && (
-                              <span className="text-[10px] text-destructive/90 shrink-0 select-none" title="Khóa xếp lịch dạy giáo viên">🔒</span>
+                              <span className="text-[10px] text-destructive/90 shrink-0 select-none" title={t('academicCalendar.lockTeachingSlotsTooltip', 'Khóa xếp lịch dạy giáo viên')}>🔒</span>
                             )}
                             <span className="break-words leading-tight flex-1">
                               {evt.name}
@@ -665,16 +681,16 @@ export function AcademicCalendarView({
             {/* Left: Clean, realistic event tag legends */}
             <div className="flex items-center gap-3">
               <span className="inline-flex items-center px-2.5 py-0.5 text-[11.5px] font-medium border-l-2 border-l-[#1447e6] border-y border-r border-blue-200/60 bg-blue-50/90 text-[#1447e6] dark:bg-blue-950/40 dark:text-blue-300 rounded-none shadow-2xs">
-                Ngày nghỉ
+                {t('academicCalendar.holidays', 'Ngày nghỉ')}
               </span>
               <span className="inline-flex items-center px-2.5 py-0.5 text-[11.5px] font-medium border-l-2 border-l-slate-400 border-y border-r border-border bg-muted/60 text-foreground rounded-none shadow-2xs">
-                Sự kiện
+                {t('academicCalendar.events', 'Sự kiện')}
               </span>
             </div>
 
             {/* Right: Keyboard navigation hint (matching user design) */}
             <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
-              <span>Chuyển tháng: phím</span>
+              <span>{t('academicCalendar.monthChangeHint', 'Chuyển tháng: phím')}</span>
               <kbd className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 text-[11px] font-mono bg-muted/70 border border-border rounded-none text-foreground shadow-2xs font-semibold">
                 ←
               </kbd>
@@ -693,7 +709,7 @@ export function AcademicCalendarView({
             {/* Table Search & Filter Toolbar: Count on left, Search & Filter on right */}
             <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-border bg-card flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
               <span className="text-[13px] text-muted-foreground font-normal">
-                {filteredItems.length} mục trong năm học
+                {t('academicCalendar.itemsInYear', '{{count}} mục trong năm học', { count: filteredItems.length })}
               </span>
 
               <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap justify-end">
@@ -706,7 +722,7 @@ export function AcademicCalendarView({
                   />
                   <Input
                     type="text"
-                    placeholder="Tìm ngày nghỉ, sự kiện..."
+                    placeholder={t('academicCalendar.searchPlaceholder', 'Tìm ngày nghỉ, sự kiện...')}
                     value={searchQuery}
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
@@ -725,7 +741,7 @@ export function AcademicCalendarView({
                         'size-8 bg-background border border-border text-foreground hover:bg-muted/50 rounded-none flex items-center justify-center transition-colors cursor-pointer select-none',
                         scopeFilter !== 'ALL' && 'border-primary text-primary bg-primary/5',
                       )}
-                      title="Lọc theo khối"
+                      title={t('academicCalendar.scopeFilterTooltip', 'Lọc theo khối')}
                     >
                       <HugeiconsIcon icon={FilterHorizontalIcon} size={16} />
                     </button>
@@ -735,15 +751,15 @@ export function AcademicCalendarView({
                     className="w-56 p-1.5 rounded-none border border-border bg-card shadow-xl z-50 text-foreground"
                   >
                     <DropdownMenuLabel className="px-2 py-1 text-[12px] font-medium text-muted-foreground">
-                      Lọc theo phạm vi áp dụng
+                      {t('academicCalendar.scopeFilterHeading', 'Lọc theo phạm vi áp dụng')}
                     </DropdownMenuLabel>
                     {[
-                      { key: 'ALL', label: 'Tất cả phạm vi' },
-                      { key: 'TOAN_TRUONG', label: 'Toàn trường' },
-                      { key: 'NHA_TRE', label: 'Khối Nhà trẻ' },
-                      { key: 'MAM', label: 'Khối Mầm' },
-                      { key: 'CHOI', label: 'Khối Chồi' },
-                      { key: 'LA', label: 'Khối Lá' },
+                      { key: 'ALL', label: t('academicCalendar.allScopes', 'Tất cả phạm vi') },
+                      { key: 'TOAN_TRUONG', label: t('academicCalendar.allSchoolScope', 'Toàn trường') },
+                      { key: 'NHA_TRE', label: t('classes.grades.nhatre', 'Khối Nhà trẻ') },
+                      { key: 'MAM', label: t('classes.grades.mam', 'Khối Mầm') },
+                      { key: 'CHOI', label: t('classes.grades.choi', 'Khối Chồi') },
+                      { key: 'LA', label: t('classes.grades.la', 'Khối Lá') },
                     ].map((item) => (
                       <DropdownMenuItem
                         key={item.key}
@@ -777,7 +793,7 @@ export function AcademicCalendarView({
                     }}
                     className="h-8 px-2 text-[12px] text-muted-foreground hover:text-foreground underline cursor-pointer"
                   >
-                    Xóa bộ lọc
+                    {t('academicCalendar.clearFilter', 'Xóa bộ lọc')}
                   </button>
                 )}
               </div>
@@ -788,19 +804,19 @@ export function AcademicCalendarView({
               <table className="w-full text-left border-collapse min-w-[700px]">
                 <thead>
                   <tr className="h-11 border-b border-border bg-muted/20 text-[13px] font-medium text-foreground">
-                    <th className="px-4 py-3 font-medium w-[25%]">Tên ngày nghỉ / Sự kiện</th>
-                    <th className="px-3 py-3 font-medium w-[24%]">Thời gian</th>
-                    <th className="px-3 py-3 font-medium w-[12%]">Phân loại</th>
-                    <th className="px-3 py-3 font-medium w-[15%]">Thời khóa biểu</th>
-                    <th className="px-3 py-3 font-medium w-[12%]">Phạm vi áp dụng</th>
-                    <th className="px-3 py-3 font-medium w-[12%]">Ghi chú</th>
+                    <th className="px-4 py-3 font-medium w-[25%]">{t('academicCalendar.colName', 'Tên ngày nghỉ / Sự kiện')}</th>
+                    <th className="px-3 py-3 font-medium w-[24%]">{t('academicCalendar.colTime', 'Thời gian')}</th>
+                    <th className="px-3 py-3 font-medium w-[12%]">{t('academicCalendar.colType', 'Phân loại')}</th>
+                    <th className="px-3 py-3 font-medium w-[15%]">{t('academicCalendar.colTimetable', 'Thời khóa biểu')}</th>
+                    <th className="px-3 py-3 font-medium w-[12%]">{t('academicCalendar.colScope', 'Phạm vi áp dụng')}</th>
+                    <th className="px-3 py-3 font-medium w-[12%]">{t('academicCalendar.colNotes', 'Ghi chú')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/60">
                   {paginatedItems.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="py-16 text-center text-muted-foreground text-[13.5px]">
-                        Không tìm thấy ngày nghỉ hoặc sự kiện nào phù hợp.
+                        {t('academicCalendar.noItems', 'Không tìm thấy ngày nghỉ hoặc sự kiện nào phù hợp.')}
                       </td>
                     </tr>
                   ) : (
@@ -835,39 +851,46 @@ export function AcademicCalendarView({
                                   : `${formatDisplayDate(item.startDate)} – ${formatDisplayDate(item.endDate)}`}
                               </span>
                               <span className="text-[12px] text-muted-foreground">
-                                {days} ngày
+                                {t('academicCalendar.daysUnit', '{{count}} ngày', { count: days })}
                               </span>
                             </div>
                           </td>
                           <td className="px-3 py-3.5">
                             {item.type === 'HOLIDAY' ? (
                               <span className="inline-flex items-center justify-center px-2 py-0.5 text-[12px] font-medium bg-blue-100 text-[#1447e6] dark:bg-blue-950/60 dark:text-blue-300 rounded-none whitespace-nowrap">
-                                Ngày nghỉ
+                                {t('academicCalendar.holidays', 'Ngày nghỉ')}
                               </span>
                             ) : (
                               <span className="inline-flex items-center justify-center px-2 py-0.5 text-[12px] font-medium bg-secondary text-secondary-foreground rounded-none whitespace-nowrap">
-                                Sự kiện
+                                {t('academicCalendar.events', 'Sự kiện')}
                               </span>
                             )}
                           </td>
                           <td className="px-3 py-3.5">
                             {!item.isTeachingAllowed ? (
-                              <span className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-destructive whitespace-nowrap">
-                                <span>🔒</span>
-                                <span>Khóa lịch dạy</span>
-                              </span>
+                              <div className="flex flex-col gap-0.5">
+                                <span className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-destructive whitespace-nowrap">
+                                  <span>🔒</span>
+                                  <span>{t('academicCalendar.lockedTeachingSchedule', 'Khóa lịch dạy')}</span>
+                                </span>
+                                {item.makeupDate && (
+                                  <span className="text-[11px] font-medium text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                                    {t('academicCalendar.makeupNotice', 'Bù: {{date}}', { date: item.makeupDate.split('-').reverse().join('/') })}
+                                  </span>
+                                )}
+                              </div>
                             ) : (
                               <span className="text-[12.5px] text-muted-foreground font-normal whitespace-nowrap">
-                                Dạy bình thường
+                                {t('academicCalendar.normalTeachingSchedule', 'Dạy bình thường')}
                               </span>
                             )}
                           </td>
                           <td className="px-3 py-3.5">
                             <span
                               className="text-[13px] text-foreground font-normal truncate block"
-                              title={item.scope || 'Toàn trường'}
+                              title={item.scope || t('academicCalendar.allSchoolScope', 'Toàn trường')}
                             >
-                              {item.scope || 'Toàn trường'}
+                              {item.scope || t('academicCalendar.allSchoolScope', 'Toàn trường')}
                             </span>
                           </td>
                           <td className="px-3 py-3.5">
@@ -892,7 +915,7 @@ export function AcademicCalendarView({
             currentPage={currentPage}
             totalItems={filteredItems.length}
             onPageChange={setCurrentPage}
-            itemLabel="ngày nghỉ & sự kiện"
+            itemLabel={t('academicCalendar.calendarAndEventsItemLabel', 'ngày nghỉ & sự kiện')}
           />
         </div>
       )}
