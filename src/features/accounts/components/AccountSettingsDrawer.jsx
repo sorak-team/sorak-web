@@ -64,7 +64,7 @@ export function AccountSettingsDrawer() {
   const handleSave = async () => {
     if (isStaff && role !== account.role) {
       if (isSelf) {
-        toast.error('Không được tự đổi role cho chính tài khoản của mình');
+        toast.error(t('account.cannotChangeOwnRole', 'Không được tự đổi vai trò cho chính tài khoản của mình'));
         return;
       }
       try {
@@ -76,7 +76,7 @@ export function AccountSettingsDrawer() {
         );
         closeSettingsDrawer();
       } catch (err) {
-        toast.error(err.message || 'Cập nhật vai trò thất bại');
+        toast.error(err.message || t('account.updateRoleFailed', 'Cập nhật vai trò thất bại'));
       }
     } else {
       closeSettingsDrawer();
@@ -85,7 +85,7 @@ export function AccountSettingsDrawer() {
 
   const handleToggleStatus = async () => {
     if (isSelf) {
-      toast.error('Không thể tự khóa tài khoản của chính mình');
+      toast.error(t('account.cannotLockSelf', 'Không thể tự khóa tài khoản của chính mình'));
       return;
     }
     if (account.accountStatus === 'active') {
@@ -93,9 +93,9 @@ export function AccountSettingsDrawer() {
     } else {
       try {
         await toggleAccountStatus(account.id);
-        toast.success('Đã mở khóa tài khoản thành công');
+        toast.success(t('account.unlockSuccess', 'Đã mở khóa tài khoản thành công'));
       } catch (err) {
-        toast.error(err.message || 'Thao tác thất bại');
+        toast.error(err.message || t('common.actionFailed', 'Thao tác thất bại'));
       }
     }
   };
@@ -193,7 +193,7 @@ export function AccountSettingsDrawer() {
                 </select>
                 {isSelf && (
                   <p className="text-[11px] text-destructive font-medium">
-                    * Không được tự đổi vai trò cho chính tài khoản của mình.
+                    {t('account.cannotChangeOwnRoleNotice', '* Không được tự đổi vai trò cho chính tài khoản của mình.')}
                   </p>
                 )}
               </div>
@@ -235,7 +235,7 @@ export function AccountSettingsDrawer() {
                 disabled={isSelf}
                 onClick={() => {
                   if (isSelf) {
-                    toast.error('Bạn không thể đặt lại mật khẩu cho chính mình tại chức năng quản lý tài khoản. Vui lòng sử dụng chức năng Đổi mật khẩu.');
+                    toast.error(t('account.resetSelfError', 'Bạn không thể đặt lại mật khẩu cho chính mình tại chức năng quản lý tài khoản. Vui lòng sử dụng chức năng Đổi mật khẩu.'));
                     return;
                   }
                   closeSettingsDrawer();
@@ -292,7 +292,7 @@ export function AccountSettingsDrawer() {
 
               {isSelf && (
                 <p className="text-[11px] text-destructive font-medium">
-                  * Không thể tự khóa tài khoản của chính mình.
+                  {t('account.cannotLockSelfNotice', '* Không thể tự khóa tài khoản của chính mình.')}
                 </p>
               )}
 

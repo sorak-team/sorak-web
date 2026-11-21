@@ -105,10 +105,11 @@ export function AppSidebar({
     if (!currentClass) return '';
     const rawRoom = currentClass.room || currentClass.roomNumber || currentClass.room_number || '';
     if (!rawRoom) return '';
-    return rawRoom.toLowerCase().startsWith('phòng')
-      ? rawRoom
-      : `Phòng ${rawRoom}`;
-  }, [currentClass]);
+    const prefix = t('classes.roomPrefix', 'Phòng');
+    return /^(phòng|room)\s*/i.test(rawRoom)
+      ? rawRoom.replace(/^(phòng|room)\s*/i, `${prefix} `)
+      : `${prefix} ${rawRoom}`;
+  }, [currentClass, t]);
 
   const classSubtitle = useMemo(() => {
     if (!currentClass) return '';
@@ -476,9 +477,9 @@ export function AppSidebar({
                         </span>
                         <span
                           className="text-[11px] text-muted-foreground truncate"
-                          title={classSubtitle || currentClass.academicYear || 'Lớp của tôi'}
+                          title={classSubtitle || currentClass.academicYear || t('classes.myClass', 'Lớp của tôi')}
                         >
-                          {classSubtitle || currentClass.academicYear || 'Lớp của tôi'}
+                          {classSubtitle || currentClass.academicYear || t('classes.myClass', 'Lớp của tôi')}
                         </span>
                       </div>
                     )}

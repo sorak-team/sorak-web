@@ -210,13 +210,13 @@ export function AcademicYearOverviewPage() {
                     : 'text-muted-foreground bg-muted border-border',
                 )}
               >
-                {year.active ? 'Đang hoạt động' : 'Đã kết thúc'}
+                {year.active ? t('schoolYear.active', 'Đang hoạt động') : t('schoolYear.ended', 'Đã kết thúc')}
               </span>
             </div>
 
             <p className="text-[12.5px] text-muted-foreground font-normal truncate">
               {currentYear.startDate} – {currentYear.endDate} · {totalClassesCount}{' '}
-              {t('schoolYear.classesSuffix')} · {totalStudentsCount} học sinh
+              {t('schoolYear.classesSuffix', 'lớp')} · {totalStudentsCount} {t('schoolYear.studentsSuffix', 'học sinh')}
             </p>
           </div>
         </div>
@@ -225,11 +225,11 @@ export function AcademicYearOverviewPage() {
         <div className="flex items-center gap-1.5 self-start sm:self-center shrink-0">
           <Link
             to="/school-years?view=all"
-            title="Danh sách tất cả các năm học"
+            title={t('schoolYear.allYearsTooltip', 'Danh sách tất cả các năm học')}
             className="h-8 px-2.5 rounded-none border border-border bg-background hover:bg-muted text-foreground text-[12px] font-normal cursor-pointer flex items-center gap-1.5 transition-colors"
           >
             <HugeiconsIcon icon={Menu01Icon} size={14} className="text-muted-foreground" />
-            <span className="hidden sm:inline">Tất cả năm học</span>
+            <span className="hidden sm:inline">{t('schoolYear.allYears', 'Tất cả năm học')}</span>
           </Link>
 
           <QuickColorPopover year={year} triggerClassName="size-8" />
@@ -237,8 +237,8 @@ export function AcademicYearOverviewPage() {
           <button
             type="button"
             onClick={() => openEditDrawer(year.id)}
-            title="Chỉnh sửa năm học"
-            aria-label="Chỉnh sửa năm học"
+            title={t('schoolYear.editYear', 'Chỉnh sửa năm học')}
+            aria-label={t('schoolYear.editYear', 'Chỉnh sửa năm học')}
             className="size-8 rounded-none border border-border bg-background hover:bg-muted text-foreground cursor-pointer flex items-center justify-center transition-colors"
             data-node-id="5229:24088"
           >
@@ -259,7 +259,7 @@ export function AcademicYearOverviewPage() {
             {/* Heading */}
             <div className="px-2 pt-1">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 font-mono">
-                KHÔNG GIAN NĂM HỌC
+                {t('schoolYear.workspaceHeading', 'KHÔNG GIAN NĂM HỌC')}
               </span>
             </div>
 
@@ -276,7 +276,7 @@ export function AcademicYearOverviewPage() {
                 )}
                 data-node-id="5229:23402"
               >
-                <span className="truncate">Tổng quan</span>
+                <span className="truncate">{t('schoolYear.tabOverview', 'Tổng quan')}</span>
               </button>
 
               <button
@@ -290,7 +290,7 @@ export function AcademicYearOverviewPage() {
                 )}
                 data-node-id="5229:23404"
               >
-                <span className="truncate">Thống kê trường</span>
+                <span className="truncate">{t('schoolYear.tabStatistics', 'Thống kê trường')}</span>
               </button>
 
               <button
@@ -304,14 +304,14 @@ export function AcademicYearOverviewPage() {
                 )}
                 data-node-id="5229:23406"
               >
-                <span className="truncate">Lịch năm học</span>
+                <span className="truncate">{t('schoolYear.tabCalendar', 'Lịch năm học')}</span>
               </button>
 
               <button
                 type="button"
                 disabled={isTransitionDisabled}
                 onClick={() => !isTransitionDisabled && setActiveTab('TRANSITION')}
-                title={isTransitionDisabled ? 'Năm học cũ / đã kết thúc không hỗ trợ chuyển giao' : ''}
+                title={isTransitionDisabled ? t('schoolYear.transitionDisabledTooltip', 'Năm học cũ / đã kết thúc không hỗ trợ chuyển giao') : ''}
                 className={cn(
                   'w-full h-8.5 sm:h-9 px-2 sm:px-3 flex items-center justify-center lg:justify-start text-[12px] sm:text-[13px] font-medium text-center lg:text-left transition-colors rounded-none',
                   isTransitionDisabled
@@ -321,7 +321,7 @@ export function AcademicYearOverviewPage() {
                       : 'text-foreground hover:bg-muted/60 cursor-pointer',
                 )}
               >
-                <span className="truncate">Chuyển giao năm học</span>
+                <span className="truncate">{t('schoolYear.tabTransition', 'Chuyển giao năm học')}</span>
               </button>
             </nav>
 
@@ -330,23 +330,23 @@ export function AcademicYearOverviewPage() {
                 <div className="h-px bg-border my-1" />
                 <div className="flex flex-col gap-2">
                   <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 px-1 lg:px-2 font-mono">
-                    THỐNG KÊ LỊCH NĂM HỌC
+                    {t('schoolYear.calendarStatsHeading', 'THỐNG KÊ LỊCH NĂM HỌC')}
                   </span>
                   <div className="grid grid-cols-3 lg:flex lg:flex-col gap-1.5 lg:gap-1">
                     <div className="flex flex-col lg:flex-row items-center lg:justify-between p-2 lg:px-3 lg:py-1.5 bg-background lg:bg-transparent border border-border lg:border-0 text-[12px] sm:text-[13px] text-muted-foreground text-center lg:text-left">
-                      <span className="text-[11px] lg:text-[13px]">Tổng số mục</span>
+                      <span className="text-[11px] lg:text-[13px]">{t('schoolYear.totalItems', 'Tổng số mục')}</span>
                       <span className="font-mono text-foreground font-semibold mt-0.5 lg:mt-0">
                         {String(calendarCounters.totalEvents).padStart(2, '0')}
                       </span>
                     </div>
                     <div className="flex flex-col lg:flex-row items-center lg:justify-between p-2 lg:px-3 lg:py-1.5 bg-background lg:bg-transparent border border-border lg:border-0 text-[12px] sm:text-[13px] text-muted-foreground text-center lg:text-left">
-                      <span className="text-[11px] lg:text-[13px]">Ngày nghỉ</span>
+                      <span className="text-[11px] lg:text-[13px]">{t('schoolYear.holidaysCount', 'Ngày nghỉ')}</span>
                       <span className="font-mono text-foreground font-semibold mt-0.5 lg:mt-0">
                         {String(calendarCounters.holidaysCount).padStart(2, '0')}
                       </span>
                     </div>
                     <div className="flex flex-col lg:flex-row items-center lg:justify-between p-2 lg:px-3 lg:py-1.5 bg-background lg:bg-transparent border border-border lg:border-0 text-[12px] sm:text-[13px] text-muted-foreground text-center lg:text-left">
-                      <span className="text-[11px] lg:text-[13px]">Sự kiện</span>
+                      <span className="text-[11px] lg:text-[13px]">{t('schoolYear.eventsCount', 'Sự kiện')}</span>
                       <span className="font-mono text-foreground font-semibold mt-0.5 lg:mt-0">
                         {String(calendarCounters.generalActivitiesCount).padStart(2, '0')}
                       </span>
@@ -367,10 +367,10 @@ export function AcademicYearOverviewPage() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1">
                 <div>
                   <h2 className="text-[17px] font-semibold text-foreground tracking-tight">
-                    Tổng quan & Chỉ số hoạt động
+                    {t('schoolYear.overviewHeading', 'Tổng quan & Chỉ số hoạt động')}
                   </h2>
                   <p className="text-[12px] text-muted-foreground mt-0.5">
-                    Tổng hợp quy mô đào tạo, nhân sự và kế hoạch hoạt động năm học
+                    {t('schoolYear.overviewSubheading', 'Tổng hợp quy mô đào tạo, nhân sự và kế hoạch hoạt động năm học')}
                   </p>
                 </div>
 
@@ -380,9 +380,9 @@ export function AcademicYearOverviewPage() {
                   size="sm"
                   onClick={() => setActiveTab('STATISTICS')}
                   className="h-8 px-3 rounded-none border-border bg-background hover:bg-muted/60 text-foreground text-[12px] font-normal cursor-pointer shadow-none flex items-center gap-1.5 shrink-0 self-start sm:self-center"
-                  title="Xem thống kê trường"
+                  title={t('schoolYear.viewSchoolStats', 'Xem thống kê trường')}
                 >
-                  <span>Xem thống kê trường</span>
+                  <span>{t('schoolYear.viewSchoolStats', 'Xem thống kê trường')}</span>
                   <HugeiconsIcon icon={ArrowRight01Icon} size={14} className="text-muted-foreground" />
                 </Button>
               </div>
@@ -391,40 +391,40 @@ export function AcademicYearOverviewPage() {
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {/* Lớp học */}
                 <div className="border border-border bg-card p-3.5 rounded-none flex flex-col justify-between h-[88px] shadow-2xs">
-                  <span className="text-[12px] text-muted-foreground font-medium">Quy mô lớp</span>
+                  <span className="text-[12px] text-muted-foreground font-medium">{t('schoolYear.classScale', 'Quy mô lớp')}</span>
                   <span className="text-[22px] font-semibold text-foreground tracking-tight leading-none font-mono">
                     {totalClassesCount}
                   </span>
-                  <span className="text-[11.5px] text-muted-foreground">4 khối đào tạo</span>
+                  <span className="text-[11.5px] text-muted-foreground">{t('schoolYear.fourGrades', '4 khối đào tạo')}</span>
                 </div>
 
                 {/* Học sinh */}
                 <div className="border border-border bg-card p-3.5 rounded-none flex flex-col justify-between h-[88px] shadow-2xs">
-                  <span className="text-[12px] text-muted-foreground font-medium">Tổng học sinh</span>
+                  <span className="text-[12px] text-muted-foreground font-medium">{t('schoolYear.totalStudents', 'Tổng học sinh')}</span>
                   <span className="text-[22px] font-semibold text-foreground tracking-tight leading-none font-mono">
                     {totalStudentsCount}
                   </span>
-                  <span className="text-[11.5px] text-muted-foreground">Đã nhập học</span>
+                  <span className="text-[11.5px] text-muted-foreground">{t('schoolYear.enrolledStudents', 'Đã nhập học')}</span>
                 </div>
 
                 {/* Giáo viên */}
                 <div className="border border-border bg-card p-3.5 rounded-none flex flex-col justify-between h-[88px] shadow-2xs">
-                  <span className="text-[12px] text-muted-foreground font-medium">Đội ngũ giáo viên</span>
+                  <span className="text-[12px] text-muted-foreground font-medium">{t('schoolYear.teachingStaff', 'Đội ngũ giáo viên')}</span>
                   <span className="text-[22px] font-semibold text-foreground tracking-tight leading-none font-mono">
                     {totalTeachersCount}
                   </span>
-                  <span className="text-[11.5px] text-muted-foreground">Đang công tác</span>
+                  <span className="text-[11.5px] text-muted-foreground">{t('schoolYear.workingStaff', 'Đang công tác')}</span>
                 </div>
 
                 {/* Lớp đã có GV */}
                 <div className="border border-border bg-card p-3.5 rounded-none flex flex-col justify-between h-[88px] shadow-2xs">
-                  <span className="text-[12px] text-muted-foreground font-medium">Lớp đã có GV</span>
+                  <span className="text-[12px] text-muted-foreground font-medium">{t('schoolYear.classesWithTeacher', 'Lớp đã có GV')}</span>
                   <span className="text-[22px] font-semibold text-foreground tracking-tight leading-none font-mono">
                     {classesWithTeacher}{' '}
                     <span className="text-[13px] text-muted-foreground font-normal">/ {totalClassesCount}</span>
                   </span>
                   <span className="text-[11.5px] text-muted-foreground">
-                    {classesWithoutTeacher > 0 ? `${classesWithoutTeacher} lớp cần phân công` : 'Đã đủ giáo viên'}
+                    {classesWithoutTeacher > 0 ? t('schoolYear.classesNeedTeacher', '{{count}} lớp cần phân công', { count: classesWithoutTeacher }) : t('schoolYear.enoughTeachers', 'Đã đủ giáo viên')}
                   </span>
                 </div>
               </div>
@@ -436,16 +436,16 @@ export function AcademicYearOverviewPage() {
                   <div className="flex items-center justify-between pb-1 border-b border-border/60">
                     <div>
                       <h3 className="text-[14.5px] font-semibold text-foreground tracking-tight">
-                        Tiến độ phân lớp & Nhân sự
+                        {t('schoolYear.assignmentProgressTitle', 'Tiến độ phân lớp & Nhân sự')}
                       </h3>
                       <p className="text-[12px] text-muted-foreground mt-0.5">
-                        Tình trạng xếp lớp học sinh và phân công giảng dạy
+                        {t('schoolYear.assignmentProgressSubtitle', 'Tình trạng xếp lớp học sinh và phân công giảng dạy')}
                       </p>
                     </div>
                     <Link
                       to="/classes"
-                      title="Quản lý lớp"
-                      aria-label="Quản lý lớp"
+                      title={t('schoolYear.manageClasses', 'Quản lý lớp')}
+                      aria-label={t('schoolYear.manageClasses', 'Quản lý lớp')}
                       className="h-7 w-7 flex items-center justify-center border border-border/70 bg-muted/20 hover:bg-muted text-muted-foreground hover:text-foreground transition-all rounded-none shrink-0 group"
                     >
                       <HugeiconsIcon
@@ -461,9 +461,9 @@ export function AcademicYearOverviewPage() {
                     {/* Row 1: Học sinh */}
                     <div className="py-2.5 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
                       <div className="flex items-center justify-between sm:justify-start gap-2 min-w-[90px]">
-                        <span className="text-[13px] font-medium text-foreground">Học sinh</span>
+                        <span className="text-[13px] font-medium text-foreground">{t('schoolYear.students', 'Học sinh')}</span>
                         <span className="text-[11.5px] text-muted-foreground font-mono">
-                          {studentsAssigned}/{totalStudentsCount} em
+                          {studentsAssigned}/{totalStudentsCount} {t('schoolYear.studentUnit', 'em')}
                         </span>
                       </div>
 
@@ -481,7 +481,7 @@ export function AcademicYearOverviewPage() {
 
                       <div className="text-left sm:text-right shrink-0">
                         <span className="text-[12px] text-muted-foreground">
-                          {studentsUnassigned > 0 ? `${studentsUnassigned} chưa xếp lớp` : 'Đã phân lớp 100%'}
+                          {studentsUnassigned > 0 ? t('schoolYear.studentsUnassignedCount', '{{count}} chưa xếp lớp', { count: studentsUnassigned }) : t('schoolYear.studentsAssignedFull', 'Đã phân lớp 100%')}
                         </span>
                       </div>
                     </div>
@@ -489,9 +489,9 @@ export function AcademicYearOverviewPage() {
                     {/* Row 2: Giáo viên */}
                     <div className="py-2.5 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
                       <div className="flex items-center justify-between sm:justify-start gap-2 min-w-[90px]">
-                        <span className="text-[13px] font-medium text-foreground">Giáo viên</span>
+                        <span className="text-[13px] font-medium text-foreground">{t('schoolYear.teachers', 'Giáo viên')}</span>
                         <span className="text-[11.5px] text-muted-foreground font-mono">
-                          {teachersAssigned}/{totalTeachersCount} GV
+                          {teachersAssigned}/{totalTeachersCount} {t('schoolYear.teacherUnit', 'GV')}
                         </span>
                       </div>
 
@@ -510,10 +510,10 @@ export function AcademicYearOverviewPage() {
                       <div className="text-left sm:text-right shrink-0">
                         <span className="text-[12px] text-muted-foreground">
                           {totalTeachersCount === 0
-                            ? 'Chưa có dữ liệu giáo viên'
+                            ? t('schoolYear.noTeacherData', 'Chưa có dữ liệu giáo viên')
                             : teachersUnassigned > 0
-                            ? `${teachersUnassigned} GV chưa nhận lớp`
-                            : 'Đã nhận lớp 100%'}
+                            ? t('schoolYear.teachersUnassignedCount', '{{count}} GV chưa nhận lớp', { count: teachersUnassigned })
+                            : t('schoolYear.teachersAssignedFull', 'Đã nhận lớp 100%')}
                         </span>
                       </div>
                     </div>
@@ -521,9 +521,9 @@ export function AcademicYearOverviewPage() {
                     {/* Row 3: Lớp học */}
                     <div className="py-2.5 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
                       <div className="flex items-center justify-between sm:justify-start gap-2 min-w-[90px]">
-                        <span className="text-[13px] font-medium text-foreground">Lớp học</span>
+                        <span className="text-[13px] font-medium text-foreground">{t('schoolYear.classes', 'Lớp học')}</span>
                         <span className="text-[11.5px] text-muted-foreground font-mono">
-                          {classesWithTeacher}/{totalClassesCount} lớp
+                          {classesWithTeacher}/{totalClassesCount} {t('schoolYear.classUnit', 'lớp')}
                         </span>
                       </div>
 
@@ -541,7 +541,7 @@ export function AcademicYearOverviewPage() {
 
                       <div className="text-left sm:text-right shrink-0">
                         <span className="text-[12px] text-muted-foreground">
-                          {classesWithoutTeacher > 0 ? `${classesWithoutTeacher} lớp chưa có GV` : 'Đủ giáo viên'}
+                          {classesWithoutTeacher > 0 ? t('schoolYear.classesWithoutTeacherCount', '{{count}} lớp chưa có GV', { count: classesWithoutTeacher }) : t('schoolYear.classesEnoughTeacher', 'Đủ giáo viên')}
                         </span>
                       </div>
                     </div>
@@ -553,17 +553,17 @@ export function AcademicYearOverviewPage() {
                   <div className="flex items-center justify-between pb-1 border-b border-border/60">
                     <div>
                       <h3 className="text-[14.5px] font-semibold text-foreground tracking-tight">
-                        Lịch & Sự kiện sắp tới
+                        {t('schoolYear.upcomingEventsTitle', 'Lịch & Sự kiện sắp tới')}
                       </h3>
                       <p className="text-[12px] text-muted-foreground mt-0.5">
-                        Các mốc thời gian kế tiếp trong năm học
+                        {t('schoolYear.upcomingEventsSubtitle', 'Các mốc thời gian kế tiếp trong năm học')}
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={() => setActiveTab('CALENDAR')}
-                      title="Xem lịch năm học"
-                      aria-label="Xem lịch năm học"
+                      title={t('schoolYear.viewCalendar', 'Xem lịch năm học')}
+                      aria-label={t('schoolYear.viewCalendar', 'Xem lịch năm học')}
                       className="h-7 w-7 flex items-center justify-center border border-border/70 bg-muted/20 hover:bg-muted text-muted-foreground hover:text-foreground transition-all rounded-none shrink-0 group cursor-pointer"
                     >
                       <HugeiconsIcon
@@ -584,7 +584,7 @@ export function AcademicYearOverviewPage() {
                       if (listToRender.length === 0) {
                         return (
                           <div className="py-6 text-center text-[12.5px] text-muted-foreground">
-                            Chưa có lịch nghỉ hoặc sự kiện nào.
+                            {t('schoolYear.noUpcomingEvents', 'Chưa có lịch nghỉ hoặc sự kiện nào.')}
                           </div>
                         );
                       }
@@ -602,7 +602,7 @@ export function AcademicYearOverviewPage() {
                                   {dayNumber}
                                 </span>
                                 <span className="text-[9.5px] font-medium text-muted-foreground leading-none mt-1">
-                                  Th{monthNumber}
+                                  {t('schoolYear.monthShort', 'Th{{month}}', { month: monthNumber })}
                                 </span>
                               </div>
                               <div className="flex flex-col min-w-0">
@@ -610,12 +610,12 @@ export function AcademicYearOverviewPage() {
                                   {item.name}
                                 </span>
                                 <span className="text-[11.5px] text-muted-foreground truncate">
-                                  {item.description || (isHoliday ? 'Nghỉ toàn trường' : 'Sự kiện toàn trường')}
+                                  {item.description || (isHoliday ? t('schoolYear.schoolWideHoliday', 'Nghỉ toàn trường') : t('schoolYear.schoolWideEvent', 'Sự kiện toàn trường'))}
                                 </span>
                               </div>
                             </div>
                             <span className="shrink-0 text-[11.5px] text-muted-foreground font-normal">
-                              {isHoliday ? 'Nghỉ học' : 'Sự kiện'}
+                              {isHoliday ? t('schoolYear.holidayBadge', 'Nghỉ học') : t('schoolYear.eventBadge', 'Sự kiện')}
                             </span>
                           </div>
                         );
@@ -631,32 +631,32 @@ export function AcademicYearOverviewPage() {
                 <div className="border border-border bg-card p-4 sm:p-5 rounded-none shadow-2xs flex flex-col justify-between gap-3">
                   <div className="pb-1 border-b border-border/60">
                     <h3 className="text-[14px] font-semibold text-foreground tracking-tight">
-                      Khung thời gian đào tạo
+                      {t('schoolYear.trainingTimeframeTitle', 'Khung thời gian đào tạo')}
                     </h3>
                     <p className="text-[11.5px] text-muted-foreground mt-0.5">
-                      Thời gian thực hiện chương trình 2 học kỳ chính thức
+                      {t('schoolYear.trainingTimeframeSubtitle', 'Thời gian thực hiện chương trình 2 học kỳ chính thức')}
                     </p>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-0.5">
                     <div className="border border-border/70 bg-muted/20 p-2.5 rounded-none flex flex-col gap-1">
                       <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider font-mono">
-                        Học kỳ 1
+                        {t('schoolYear.semester1Label', 'Học kỳ 1')}
                       </span>
                       <span className="font-mono text-[12.5px] font-semibold text-foreground">
                         {year.startDate} – {year.semester1EndDate || '15/01/2027'}
                       </span>
-                      <span className="text-[11px] text-muted-foreground">19 tuần học</span>
+                      <span className="text-[11px] text-muted-foreground">{t('schoolYear.semester1Weeks', '19 tuần học')}</span>
                     </div>
 
                     <div className="border border-border/70 bg-muted/20 p-2.5 rounded-none flex flex-col gap-1">
                       <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider font-mono">
-                        Học kỳ 2
+                        {t('schoolYear.semester2Label', 'Học kỳ 2')}
                       </span>
                       <span className="font-mono text-[12.5px] font-semibold text-foreground">
                         {getDayAfterDisplayDate(year.semester1EndDate) || '16/01/2027'} – {year.endDate}
                       </span>
-                      <span className="text-[11px] text-muted-foreground">16 tuần học</span>
+                      <span className="text-[11px] text-muted-foreground">{t('schoolYear.semester2Weeks', '16 tuần học')}</span>
                     </div>
                   </div>
                 </div>
@@ -666,23 +666,23 @@ export function AcademicYearOverviewPage() {
                   <div className="flex items-center justify-between pb-1 border-b border-border/60">
                     <div>
                       <h3 className="text-[14px] font-semibold text-foreground tracking-tight">
-                        Cơ cấu các khối đào tạo
+                        {t('schoolYear.gradeStructureTitle', 'Cơ cấu các khối đào tạo')}
                       </h3>
                       <p className="text-[11.5px] text-muted-foreground mt-0.5">
-                        Quy mô lớp học phân bổ theo 4 lứa tuổi mầm non
+                        {t('schoolYear.gradeStructureSubtitle', 'Quy mô lớp học phân bổ theo 4 lứa tuổi mầm non')}
                       </p>
                     </div>
                     <span className="text-[11px] font-mono text-muted-foreground">
-                      {totalClassesCount} lớp tổng
+                      {t('schoolYear.classesTotal', '{{count}} lớp tổng', { count: totalClassesCount })}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-0.5">
                     {[
-                      { name: 'Nhà trẻ', count: `${currentYear.ageGroupsBreakdown?.NHA_TRE ?? (currentYear.classes?.filter(c => c.ageGroup === 'NHA_TRE' || (c.name || '').toLowerCase().includes('nhà trẻ') || (c.name || '').toLowerCase().includes('nha tre')).length || 0)} lớp`, age: '18–36 th' },
-                      { name: 'Mầm', count: `${currentYear.ageGroupsBreakdown?.MAM ?? (currentYear.classes?.filter(c => c.ageGroup === 'MAM' || (c.name || '').toLowerCase().includes('mầm') || (c.name || '').toLowerCase().includes('mam')).length || 0)} lớp`, age: '3–4 tuổi' },
-                      { name: 'Chồi', count: `${currentYear.ageGroupsBreakdown?.CHOI ?? (currentYear.classes?.filter(c => c.ageGroup === 'CHOI' || (c.name || '').toLowerCase().includes('chồi') || (c.name || '').toLowerCase().includes('choi')).length || 0)} lớp`, age: '4–5 tuổi' },
-                      { name: 'Lá', count: `${currentYear.ageGroupsBreakdown?.LA ?? (currentYear.classes?.filter(c => c.ageGroup === 'LA' || (c.name || '').toLowerCase().includes('lá') || (c.name || '').toLowerCase().includes('la')).length || 0)} lớp`, age: '5–6 tuổi' },
+                      { name: t('classes.grades.nhaTre', 'Nhà trẻ'), count: t('schoolYear.classCount', '{{count}} lớp', { count: currentYear.ageGroupsBreakdown?.NHA_TRE ?? (currentYear.classes?.filter(c => c.ageGroup === 'NHA_TRE' || (c.name || '').toLowerCase().includes('nhà trẻ') || (c.name || '').toLowerCase().includes('nha tre')).length || 0) }), age: t('schoolYear.ageToddler', '18–36 th') },
+                      { name: t('classes.grades.mam', 'Mầm'), count: t('schoolYear.classCount', '{{count}} lớp', { count: currentYear.ageGroupsBreakdown?.MAM ?? (currentYear.classes?.filter(c => c.ageGroup === 'MAM' || (c.name || '').toLowerCase().includes('mầm') || (c.name || '').toLowerCase().includes('mam')).length || 0) }), age: t('schoolYear.age34', '3–4 tuổi') },
+                      { name: t('classes.grades.choi', 'Chồi'), count: t('schoolYear.classCount', '{{count}} lớp', { count: currentYear.ageGroupsBreakdown?.CHOI ?? (currentYear.classes?.filter(c => c.ageGroup === 'CHOI' || (c.name || '').toLowerCase().includes('chồi') || (c.name || '').toLowerCase().includes('choi')).length || 0) }), age: t('schoolYear.age45', '4–5 tuổi') },
+                      { name: t('classes.grades.la', 'Lá'), count: t('schoolYear.classCount', '{{count}} lớp', { count: currentYear.ageGroupsBreakdown?.LA ?? (currentYear.classes?.filter(c => c.ageGroup === 'LA' || (c.name || '').toLowerCase().includes('lá') || (c.name || '').toLowerCase().includes('la')).length || 0) }), age: t('schoolYear.age56', '5–6 tuổi') },
                     ].map((g) => (
                       <div
                         key={g.name}

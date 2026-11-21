@@ -217,7 +217,7 @@ export default function OtpVerifyPage() {
                 </h1>
                 <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                   {t('auth.otpVerifySubtitle', 'Nhập mã gồm 6 chữ số đã được gửi tới địa chỉ email: {{email}}', {
-                    email: maskedDisplayEmail || 'liên kết với tài khoản',
+                    email: maskedDisplayEmail || t('auth.linkedEmailFallback', 'liên kết với tài khoản'),
                   })}
                 </p>
               </div>
@@ -338,7 +338,7 @@ export default function OtpVerifyPage() {
                     />
                     <button
                       type="button"
-                      aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                      aria-label={showPassword ? t('auth.hidePassword', 'Ẩn mật khẩu') : t('auth.showPassword', 'Hiện mật khẩu')}
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded-none transition-colors cursor-pointer"
                     >
@@ -377,7 +377,7 @@ export default function OtpVerifyPage() {
                     />
                     <button
                       type="button"
-                      aria-label={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                      aria-label={showConfirmPassword ? t('auth.hidePassword', 'Ẩn mật khẩu') : t('auth.showPassword', 'Hiện mật khẩu')}
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded-none transition-colors cursor-pointer"
                     >

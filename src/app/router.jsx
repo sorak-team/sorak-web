@@ -63,6 +63,7 @@ function RootRedirect() {
 }
 
 function ClassRouteGuard() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const classes = useClassesStore((state) => state.classes) || [];
   const isLoading = useClassesStore((state) => state.isLoading);
@@ -184,7 +185,7 @@ function ClassRouteGuard() {
   if (id && (!currentClassInStore && apiCheckedId !== id && !accessDenied)) {
     return (
       <div className="p-12 text-center text-muted-foreground select-none">
-        <p className="text-[14px]">Đang tải thông tin lớp học...</p>
+        <p className="text-[14px]">{t('classes.loadingClassInfo', 'Đang tải thông tin lớp học...')}</p>
       </div>
     );
   }

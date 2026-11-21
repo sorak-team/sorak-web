@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -23,14 +24,18 @@ import { downloadBlob } from '@/shared/utils/download';
 export function ExcelImportModal({
   isOpen,
   onClose,
-  title = 'Nhập dữ liệu từ Excel',
-  description = 'Tải file mẫu, điền dữ liệu và tải lên để nhập hàng loạt vào hệ thống.',
+  title,
+  description,
   templateFileName = 'Mau_Nhap_Du_Lieu.xlsx',
   onDownloadTemplate,
   onPreview,
   onImport,
   onSuccess,
 }) {
+  const { t } = useTranslation();
+  const effectiveTitle = title || t('excel.defaultImportTitle', 'Nhập dữ liệu từ Excel');
+  const effectiveDescription = description || t('excel.defaultImportDesc', 'Tải file mẫu, điền dữ liệu và tải lên để nhập hàng loạt vào hệ thống.');
+
   const [file, setFile] = useState(null);
   const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
@@ -56,9 +61,9 @@ export function ExcelImportModal({
       setIsDownloadingTemplate(true);
       const blob = await onDownloadTemplate();
       downloadBlob(blob, templateFileName);
-      toast.success('Đã tải xuống file mẫu thành công.');
+      toast.success(t('excel.downloadTemplateSuccess', 'Đã tải xuống file mẫu thành công.'));
     } catch (err) {
-      toast.error('Không thể tải file mẫu. Vui lòng thử lại sau.');
+      toast.error(t('excel.downloadTemplateError', 'Không thể tải file mẫu. Vui lòng thử lại sau.'));
     } finally {
       setIsDownloadingTemplate(false);
     }
@@ -69,7 +74,7 @@ export function ExcelImportModal({
     if (!selectedFile) return;
 
     if (!selectedFile.name.endsWith('.xlsx') && !selectedFile.name.endsWith('.xls')) {
-      toast.error('Vui lòng chọn file định dạng Excel (.xlsx hoặc .xls).');
+      toast.error(t('excel.invalidFormat', 'Vui lòng chọn file định dạng Excel (.xlsx hoặc .xls).'));
       return;
     }
 
@@ -80,13 +85,20 @@ export function ExcelImportModal({
       setPreviewResult(res);
       if (res.summary?.invalidCount > 0) {
         toast.warning(
-          `Tìm thấy ${res.summary.validCount} dòng hợp lệ và ${res.summary.invalidCount} dòng lỗi.`,
+          t('excel.validationWarning', 'Tìm thấy {{validCount}} dòng hợp lệ và {{invalidCount}} dòng lỗi.', {
+            validCount: res.summary.validCount,
+            invalidCount: res.summary.invalidCount,
+          }),
         );
       } else {
-        toast.success(`Toàn bộ ${res.summary?.totalRows} dòng dữ liệu đều hợp lệ!`);
+        toast.success(
+          t('excel.validationSuccess', 'Toàn bộ {{totalRows}} dòng dữ liệu đều hợp lệ!', {
+            totalRows: res.summary?.totalRows,
+          }),
+        );
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || err.message || 'Lỗi đọc tệp Excel.');
+      toast.error(err.response?.data?.message || err.message || t('excel.readError', 'Lỗi đọc tệp Excel.'));
       setFile(null);
       setPreviewResult(null);
     } finally {
@@ -98,7 +110,7 @@ export function ExcelImportModal({
     if (!previewResult || !previewResult.previewData) return;
     const validRows = previewResult.previewData.filter((r) => r.isValid);
     if (validRows.length === 0) {
-      toast.error('Không có dòng dữ liệu hợp lệ nào để nhập.');
+      toast.error(t('excel.noValidRows', 'Không có dòng dữ liệu hợp lệ nào để nhập.'));
       return;
     }
 
@@ -106,12 +118,15 @@ export function ExcelImportModal({
       setIsImporting(true);
       const result = await onImport(validRows);
       toast.success(
-        result.message || `Nhập thành công ${result.successCount || validRows.length} bản ghi!`,
+        result.message ||
+          t('excel.importSuccess', 'Nhập thành công {{count}} bản ghi!', {
+            count: result.successCount || validRows.length,
+          }),
       );
       if (onSuccess) onSuccess();
       handleClose();
     } catch (err) {
-      toast.error(err.response?.data?.message || err.message || 'Lỗi khi nhập dữ liệu.');
+      toast.error(err.response?.data?.message || err.message || t('excel.importError', 'Lỗi khi nhập dữ liệu.'));
     } finally {
       setIsImporting(false);
     }
@@ -123,10 +138,10 @@ export function ExcelImportModal({
         {/* Header strictly without icon on title, sharp typography */}
         <DialogHeader className="space-y-1">
           <DialogTitle className="text-[17px] font-semibold text-foreground tracking-tight">
-            {title}
+            {effectiveTitle}
           </DialogTitle>
           <DialogDescription className="text-[12px] text-muted-foreground">
-            {description}
+            {effectiveDescription}
           </DialogDescription>
         </DialogHeader>
 
@@ -137,10 +152,10 @@ export function ExcelImportModal({
               <FileCheck className="w-4 h-4 text-primary shrink-0" />
               <div>
                 <p className="text-[13px] font-semibold text-foreground">
-                  Chưa có file mẫu chuẩn?
+                  {t('excel.noTemplateQuestion', 'Chưa có file mẫu chuẩn?')}
                 </p>
                 <p className="text-[11.5px] text-muted-foreground">
-                  Tải file mẫu có sẵn cấu trúc cột và sheet hướng dẫn nhập liệu
+                  {t('excel.noTemplateDesc', 'Tải file mẫu có sẵn cấu trúc cột và sheet hướng dẫn nhập liệu')}
                 </p>
               </div>
             </div>
@@ -157,7 +172,7 @@ export function ExcelImportModal({
               ) : (
                 <Download className="w-3.5 h-3.5" />
               )}
-              Tải file mẫu
+              {t('excel.downloadTemplateBtn', 'Tải file mẫu')}
             </Button>
           </div>
 
@@ -184,11 +199,11 @@ export function ExcelImportModal({
               <div className="text-center">
                 <p className="text-[13.5px] font-medium text-foreground">
                   {isPreviewing
-                    ? 'Đang phân tích tệp dữ liệu...'
-                    : 'Bấm để chọn hoặc kéo thả file Excel vào đây'}
+                    ? t('excel.analyzingFile', 'Đang phân tích tệp dữ liệu...')
+                    : t('excel.dropzonePrompt', 'Bấm để chọn hoặc kéo thả file Excel vào đây')}
                 </p>
                 <p className="text-[11.5px] text-muted-foreground mt-0.5">
-                  Định dạng hỗ trợ: .xlsx, .xls (Tối đa 10MB)
+                  {t('excel.supportedFormats', 'Định dạng hỗ trợ: .xlsx, .xls (Tối đa 10MB)')}
                 </p>
               </div>
             </div>
@@ -198,21 +213,25 @@ export function ExcelImportModal({
               {/* Summary Cards */}
               <div className="grid grid-cols-3 gap-2.5">
                 <div className="p-2.5 bg-muted/20 border border-border rounded-none text-center">
-                  <p className="text-[11px] text-muted-foreground font-medium">Tổng số dòng</p>
+                  <p className="text-[11px] text-muted-foreground font-medium">
+                    {t('excel.totalRows', 'Tổng số dòng')}
+                  </p>
                   <p className="text-[16px] font-bold text-foreground">
                     {previewResult.summary?.totalRows || 0}
                   </p>
                 </div>
                 <div className="p-2.5 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 rounded-none text-center">
                   <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">
-                    Hợp lệ
+                    {t('excel.validRows', 'Hợp lệ')}
                   </p>
                   <p className="text-[16px] font-bold text-emerald-700 dark:text-emerald-300">
                     {previewResult.summary?.validCount || 0}
                   </p>
                 </div>
                 <div className="p-2.5 bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800/40 rounded-none text-center">
-                  <p className="text-[11px] text-rose-700 dark:text-rose-400 font-medium">Có lỗi</p>
+                  <p className="text-[11px] text-rose-700 dark:text-rose-400 font-medium">
+                    {t('excel.invalidRows', 'Có lỗi')}
+                  </p>
                   <p className="text-[16px] font-bold text-rose-700 dark:text-rose-300">
                     {previewResult.summary?.invalidCount || 0}
                   </p>
@@ -230,7 +249,7 @@ export function ExcelImportModal({
                   onClick={resetState}
                   className="text-primary hover:underline font-medium shrink-0 ml-2 cursor-pointer"
                 >
-                  Chọn file khác
+                  {t('excel.chooseOtherFile', 'Chọn file khác')}
                 </button>
               </div>
 
@@ -240,11 +259,17 @@ export function ExcelImportModal({
                   <thead className="bg-muted/80 sticky top-0 border-b border-border">
                     <tr>
                       <th className="py-2 px-3 font-semibold w-12 text-center text-muted-foreground">
-                        Dòng
+                        {t('excel.colRowNumber', 'Dòng')}
                       </th>
-                      <th className="py-2 px-3 font-semibold text-muted-foreground">Tên</th>
-                      <th className="py-2 px-3 font-semibold text-muted-foreground">Trạng thái</th>
-                      <th className="py-2 px-3 font-semibold text-muted-foreground">Chi tiết</th>
+                      <th className="py-2 px-3 font-semibold text-muted-foreground">
+                        {t('excel.colName', 'Tên')}
+                      </th>
+                      <th className="py-2 px-3 font-semibold text-muted-foreground">
+                        {t('excel.colStatus', 'Trạng thái')}
+                      </th>
+                      <th className="py-2 px-3 font-semibold text-muted-foreground">
+                        {t('excel.colDetails', 'Chi tiết')}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -276,18 +301,18 @@ export function ExcelImportModal({
                         <td className="py-2 px-3">
                           {row.isValid ? (
                             <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-100/70 dark:bg-emerald-950/60 px-2 py-0.5 rounded-none border border-emerald-300 dark:border-emerald-800">
-                              <CheckCircle2 className="w-3 h-3" /> Hợp lệ
+                              <CheckCircle2 className="w-3 h-3" /> {t('excel.statusValid', 'Hợp lệ')}
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-700 dark:text-rose-400 bg-rose-100/70 dark:bg-rose-950/60 px-2 py-0.5 rounded-none border border-rose-300 dark:border-rose-800">
-                              <AlertCircle className="w-3 h-3" /> Lỗi
+                              <AlertCircle className="w-3 h-3" /> {t('excel.statusError', 'Lỗi')}
                             </span>
                           )}
                         </td>
                         <td className="py-2 px-3 text-muted-foreground">
                           {row.isValid ? (
                             <span className="text-emerald-600 dark:text-emerald-400 text-[11px]">
-                              Sẵn sàng nhập
+                              {t('excel.readyToImport', 'Sẵn sàng nhập')}
                             </span>
                           ) : (
                             <span className="text-rose-600 dark:text-rose-400 text-[11px]">
@@ -312,7 +337,7 @@ export function ExcelImportModal({
             disabled={isImporting}
             className="rounded-none text-xs"
           >
-            Hủy
+            {t('common.cancel', 'Hủy')}
           </Button>
           {previewResult && (
             <Button
@@ -324,12 +349,14 @@ export function ExcelImportModal({
               {isImporting ? (
                 <>
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  Đang xử lý nhập...
+                  {t('excel.importing', 'Đang xử lý nhập...')}
                 </>
               ) : (
                 <>
                   <Upload className="w-3.5 h-3.5" />
-                  Xác nhận nhập ({previewResult.summary?.validCount || 0} dòng hợp lệ)
+                  {t('excel.confirmImportBtn', 'Xác nhận nhập ({{count}} dòng hợp lệ)', {
+                    count: previewResult.summary?.validCount || 0,
+                  })}
                 </>
               )}
             </Button>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from './auth.store';
 import { authApi } from './auth.api';
 
@@ -10,6 +11,7 @@ import { authApi } from './auth.api';
  * - If unauthenticated, redirects to /login with state.from set to the attempted location.
  */
 export function ProtectedRoute() {
+  const { t } = useTranslation();
   const location = useLocation();
   const user = useAuthStore((state) => state.user);
   const setAuth = useAuthStore((state) => state.setAuth);
@@ -71,7 +73,7 @@ export function ProtectedRoute() {
       <div className="min-h-screen w-full flex items-center justify-center bg-background text-foreground">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          <span className="text-xs text-muted-foreground">Đang xác thực phiên đăng nhập...</span>
+          <span className="text-xs text-muted-foreground">{t('auth.authenticatingSession', 'Đang xác thực phiên đăng nhập...')}</span>
         </div>
       </div>
     );

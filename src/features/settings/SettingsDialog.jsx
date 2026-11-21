@@ -21,6 +21,7 @@ import {
   Logout01Icon,
 } from '@hugeicons/core-free-icons';
 import { toast } from 'sonner';
+import { confirmDialog } from '@/components/ui/confirm-dialog';
 
 import { useAuthStore, passwordComplexityRegex, passwordComplexityMessage } from '@/features/auth';
 import { authApi } from '@/features/auth/auth.api';
@@ -393,8 +394,9 @@ export function SettingsDialog({
       setIs2FAStep(null);
       setTwoFactorOtpInput('');
     } catch (err) {
-      toast.error('Kích hoạt thất bại', {
-        description: err.response?.data?.message || err.message,
+      const errorMsg = err.response?.data?.message || err.message || 'Kích hoạt thất bại';
+      toast.error(errorMsg, {
+        duration: 6000,
       });
       setTwoFactorOtpInput('');
     } finally {
@@ -449,14 +451,17 @@ export function SettingsDialog({
   }, [open, activeTab]);
 
   const handleRevokeAllSessions = async () => {
-    if (
-      !window.confirm(
-        t(
-          'settings.logoutAllConfirm',
-          'Bạn có chắc chắn muốn đăng xuất khỏi tất cả thiết bị? Bạn sẽ cần đăng nhập lại trên thiết bị này.',
-        ),
-      )
-    ) {
+    const isConfirmed = await confirmDialog({
+      title: t('settings.logoutAllConfirmTitle', 'Xác nhận đăng xuất tất cả thiết bị'),
+      description: t(
+        'settings.logoutAllConfirm',
+        'Bạn có chắc chắn muốn đăng xuất khỏi tất cả thiết bị? Bạn sẽ cần đăng nhập lại trên thiết bị này.',
+      ),
+      confirmText: t('settings.logoutAll', 'Đăng xuất tất cả'),
+      cancelText: t('common.cancel', 'Hủy'),
+      variant: 'destructive',
+    });
+    if (!isConfirmed) {
       return;
     }
     try {

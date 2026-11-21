@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import {
   Popover,
@@ -12,6 +13,7 @@ import {
 import { cn } from '@/shared/lib/utils';
 
 export function QuickColorPopover({ year, triggerClassName }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const { setAcademicYearGlassColor } = useAcademicYearStore();
 
@@ -25,7 +27,7 @@ export function QuickColorPopover({ year, triggerClassName }) {
   const handleSelectPreset = (preset, e) => {
     e?.stopPropagation();
     setAcademicYearGlassColor(year.id, preset.id);
-    toast.success(`Đã đổi màu sang ${preset.label}`);
+    toast.success(t('schoolYear.toastColorChanged', 'Đã đổi màu sang {{color}}', { color: preset.label }));
     setOpen(false);
   };
 
@@ -37,7 +39,7 @@ export function QuickColorPopover({ year, triggerClassName }) {
         <button
           type="button"
           onClick={(e) => e.stopPropagation()}
-          title={`Đổi màu nhận diện (${currentPreset.label})`}
+          title={t('schoolYear.changeThemeColorWithLabel', 'Đổi màu nhận diện ({{color}})', { color: currentPreset.label })}
           className={cn(
             'size-8 rounded-none border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer shrink-0',
             triggerClassName,

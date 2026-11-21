@@ -31,7 +31,7 @@ export function AccountFilterDropdown() {
   ];
 
   const roles = [
-    { key: 'all', label: 'Tất cả vai trò' },
+    { key: 'all', label: t('account.allRoles', 'Tất cả vai trò') },
     { key: 'leader', label: t('account.roleLeader', 'Ban giám hiệu') },
     { key: 'teacher', label: t('account.roleTeacher', 'Giáo viên') },
   ];

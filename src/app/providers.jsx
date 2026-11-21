@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import { Toaster } from '@/components/ui/sonner';
+import { ConfirmDialogContainer } from '@/components/ui/confirm-dialog';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -17,7 +18,8 @@ export function AppProviders({ children }) {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         {children}
-        <Toaster position="top-right" richColors theme="light" closeButton />
+        <Toaster position="bottom-right" richColors theme="light" closeButton />
+        <ConfirmDialogContainer />
       </BrowserRouter>
     </QueryClientProvider>
   );
