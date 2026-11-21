@@ -85,9 +85,9 @@ export function ClassroomsPage() {
       });
       const filename = `Danh_Sach_Lop_Hoc_${new Date().toISOString().slice(0, 10)}.xlsx`;
       downloadBlob(blob, filename);
-      toast.success('Đã xuất danh sách lớp học ra file Excel thành công.');
+      toast.success(t('classes.exportSuccess', 'Đã xuất danh sách lớp học ra file Excel thành công.'));
     } catch (err) {
-      toast.error('Không thể xuất file Excel. Vui lòng thử lại sau.');
+      toast.error(t('classes.exportError', 'Không thể xuất file Excel. Vui lòng thử lại sau.'));
     } finally {
       setIsExporting(false);
     }
@@ -101,10 +101,10 @@ export function ClassroomsPage() {
       });
       const filename = `Bao_Cao_Thong_Ke_Tong_Ket_Toan_Truong_${new Date().toISOString().slice(0, 10)}.xlsx`;
       downloadBlob(blob, filename);
-      toast.success('Đã xuất báo cáo thống kê toàn trường ra file Excel thành công.');
+      toast.success(t('classes.exportStatsSuccess', 'Đã xuất báo cáo thống kê toàn trường ra file Excel thành công.'));
     } catch (err) {
       console.error('Failed to export statistics:', err);
-      toast.error('Không thể xuất báo cáo thống kê. Vui lòng thử lại sau.');
+      toast.error(t('classes.exportStatsError', 'Không thể xuất báo cáo thống kê. Vui lòng thử lại sau.'));
     } finally {
       setIsExporting(false);
     }
@@ -162,9 +162,9 @@ export function ClassroomsPage() {
 
           {/* Simple Description */}
           <p className="text-[13px] text-muted-foreground leading-relaxed mb-5">
-            Không có lớp phụ trách trong{' '}
+            {t('classes.noClassAssignedDesc', 'Không có lớp phụ trách trong')}{' '}
             <span className="text-foreground font-medium">
-              {currentYearObj?.name || 'năm học này'}
+              {currentYearObj?.name || t('classes.thisAcademicYear', 'năm học này')}
             </span>
             .
           </p>
@@ -321,7 +321,7 @@ export function ClassroomsPage() {
             </Button>
           ) : (
             <div className="h-8 px-2.5 text-[12px] font-medium bg-muted text-muted-foreground border border-border flex items-center gap-1.5">
-              <span>Năm học đã kết thúc (Chỉ xem)</span>
+              <span>{t('classes.yearCompletedReadOnly', 'Năm học đã kết thúc (Chỉ xem)')}</span>
             </div>
           )}
         </div>

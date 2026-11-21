@@ -153,38 +153,47 @@ export const normalizeGradeKey = (str) => {
 };
 
 export const checkIsAgeEligible = (student, targetClass) => {
-  if (student?.isAgeEligible !== undefined) {
-    return student.isAgeEligible;
+  if (!student?.dateOfBirth) {
+    if (student?.isAgeEligible !== undefined) return student.isAgeEligible;
+    return false;
   }
-  if (!student?.dateOfBirth) return false;
   const birth = new Date(student.dateOfBirth);
-  if (isNaN(birth.getTime())) return false;
+  if (isNaN(birth.getTime())) {
+    if (student?.isAgeEligible !== undefined) return student.isAgeEligible;
+    return false;
+  }
 
-  const ref = targetClass?.schoolYear?.startDate
-    ? new Date(targetClass.schoolYear.startDate)
-    : new Date('2026-09-01');
+  let refYear = 2026;
+  if (targetClass?.schoolYear?.startDate) {
+    refYear = new Date(targetClass.schoolYear.startDate).getFullYear();
+  } else if (targetClass?.schoolYearStartDate) {
+    refYear = new Date(targetClass.schoolYearStartDate).getFullYear();
+  } else if (targetClass?.academicYear) {
+    const m = targetClass.academicYear.match(/\d{4}/);
+    if (m) refYear = parseInt(m[0], 10);
+  }
 
-  let months = (ref.getFullYear() - birth.getFullYear()) * 12 + (ref.getMonth() - birth.getMonth());
-  if (ref.getDate() < birth.getDate()) months--;
+  const birthYear = birth.getFullYear();
+  const ageInYears = refYear - birthYear;
 
   const group = normalizeGradeKey(targetClass?.ageGroup || targetClass?.grade || targetClass?.name || '');
   if (group === 'NHATRE') {
-    return months >= 24 && months < 36;
+    return ageInYears >= 1 && ageInYears <= 3;
   }
   if (group === 'MAM') {
-    return months >= 36 && months < 48;
+    return ageInYears >= 3 && ageInYears <= 4;
   }
   if (group === 'CHOI') {
-    return months >= 48 && months < 60;
+    return ageInYears >= 4 && ageInYears <= 5;
   }
   if (group === 'LA') {
-    return months >= 60 && months < 72;
+    return ageInYears >= 5 && ageInYears <= 6;
   }
   return false;
 };
 
 export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const fetchGlobalClasses = useClassesStore((state) => state.fetchClasses);
 
   const [students, setStudents] = useState([]);
@@ -312,15 +321,9 @@ export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }
 
   // Selection handlers
   const handleToggleSelect = (st) => {
-    if (!st || st.hasAccount === false) {
-      toast.warning(
-        `Hồ sơ học sinh "${st?.fullName || 'này'}" chưa được liên kết tài khoản. Vui lòng liên kết tài khoản cho học sinh trước khi phân lớp.`
-      );
-      return;
-    }
     const isAgeEligible = checkIsAgeEligible(st, currentClass);
     if (!isAgeEligible) {
-      toast.warning('Độ tuổi học sinh không phù hợp với khối lớp được chọn.');
+      toast.warning(t('classes.studentAgeIneligibleWarning', 'Độ tuổi học sinh không phù hợp với khối lớp được chọn.'));
       return;
     }
     const id = st.id;
@@ -337,7 +340,7 @@ export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }
 
   const eligibleOnCurrentPage = useMemo(() => {
     return pagedStudents.filter(
-      (s) => s.hasAccount !== false && checkIsAgeEligible(s, currentClass)
+      (s) => checkIsAgeEligible(s, currentClass)
     );
   }, [pagedStudents, currentClass]);
 
@@ -365,16 +368,10 @@ export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }
   const handleAllocate = async () => {
     if (selectedIds.size === 0) return;
 
-    // Double-check no unlinked student is selected
-    const unlinkedSelected = Array.from(selectedIds)
-      .map((id) => students.find((s) => s.id === id))
-      .filter((s) => s && s.hasAccount === false);
-
-    if (unlinkedSelected.length > 0) {
-      const names = unlinkedSelected.map((s) => s.fullName).join(', ');
-      toast.error(
-        `Hồ sơ học sinh (${names}) chưa được liên kết tài khoản. Vui lòng liên kết tài khoản cho học sinh trước khi phân lớp.`
-      );
+    // Check max capacity 40 students per class (BR-36 / MSG100)
+    const currentCount = currentClass?.studentCount ?? currentClass?.studentsCount ?? 0;
+    if (currentCount + selectedIds.size > 40) {
+      toast.error('Việc phân lớp này sẽ làm số học sinh vượt quá giới hạn 40 học sinh của lớp.');
       return;
     }
 
@@ -384,7 +381,7 @@ export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }
       .filter((s) => s && !checkIsAgeEligible(s, currentClass));
 
     if (ineligibleSelected.length > 0) {
-      toast.error('Độ tuổi học sinh không phù hợp với khối lớp được chọn.');
+      toast.error(t('classes.studentAgeIneligibleWarning', 'Độ tuổi học sinh không phù hợp với khối lớp được chọn.'));
       return;
     }
 
@@ -393,7 +390,10 @@ export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }
       const ids = Array.from(selectedIds);
       await classesApi.allocateStudents(currentClass.id, ids);
       toast.success(
-        t('classes.allocateSuccess', `Đã tiếp nhận ${ids.length} học sinh vào lớp ${currentClass.name}`),
+        t('classes.allocateSuccess', 'Đã tiếp nhận {{count}} học sinh vào lớp {{className}}', {
+          count: ids.length,
+          className: currentClass.name,
+        }),
       );
       setSelectedIds(new Set());
       if (onSuccess) onSuccess();
@@ -401,7 +401,7 @@ export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }
       onClose();
     } catch (err) {
       console.error('Allocation failed:', err);
-      toast.error(err.response?.data?.message || 'Lỗi khi tiếp nhận học sinh vào lớp');
+      toast.error(err.response?.data?.message || t('classes.allocateError', 'Lỗi khi tiếp nhận học sinh vào lớp'));
     } finally {
       setIsAllocating(false);
     }
@@ -464,18 +464,18 @@ export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }
                   value={previousClassFilter}
                   onChange={(e) => setPreviousClassFilter(e.target.value)}
                   className="h-8 px-2.5 text-[12.5px] bg-background border border-border rounded-none text-foreground outline-none focus:border-primary cursor-pointer"
-                  title="Lọc theo lớp cũ"
+                  title={t('classes.filterPreviousClassTooltip', 'Lọc theo lớp cũ')}
                 >
-                  <option value="ALL">Tất cả lớp cũ</option>
-                  <option value="NONE">Mới nhập học</option>
-                  <option value="NHA_TRE">Lớp cũ: Nhà trẻ</option>
-                  <option value="MAM">Lớp cũ: Mầm</option>
-                  <option value="CHOI">Lớp cũ: Chồi</option>
+                  <option value="ALL">{t('classes.filterOldClassesAll', 'Tất cả')}</option>
+                  <option value="NONE">{t('classes.filterOldClassesNone', 'Mới nhập học')}</option>
+                  <option value="NHA_TRE">{t('classes.filterOldClassesNhaTre', 'Lớp cũ: Nhà trẻ')}</option>
+                  <option value="MAM">{t('classes.filterOldClassesMam', 'Lớp cũ: Mầm')}</option>
+                  <option value="CHOI">{t('classes.filterOldClassesChoi', 'Lớp cũ: Chồi')}</option>
                 </select>
               </div>
 
               <span className="text-[12.5px] text-muted-foreground font-mono">
-                {filteredStudents.length} học sinh khả dụng
+                {t('classes.availableStudentsCount', '{{count}} học sinh khả dụng', { count: filteredStudents.length })}
               </span>
             </div>
 
@@ -491,7 +491,7 @@ export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }
                         checked={isAllCurrentPageSelected}
                         onChange={handleSelectAll}
                         className="size-4 rounded-none accent-[#1447e6] cursor-pointer align-middle"
-                        title="Chọn tất cả trang này"
+                        title={t('classes.selectAllOnPage', 'Chọn tất cả trang này')}
                       />
                     </th>
 
@@ -554,7 +554,7 @@ export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }
                       const isSelected = selectedIds.has(st.id);
                       const isUnlinked = st.hasAccount === false;
                       const isAgeEligible = checkIsAgeEligible(st, currentClass);
-                      const isSelectable = !isUnlinked && isAgeEligible;
+                      const isSelectable = isAgeEligible;
                       const hasOldClass = Boolean(
                         st.previousClass &&
                         st.previousClass.trim() !== '' &&
@@ -568,7 +568,7 @@ export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }
                           className={cn(
                             'h-[60px] transition-colors group',
                             !isSelectable
-                              ? 'opacity-70 bg-muted/10 cursor-not-allowed hover:bg-amber-50/20'
+                              ? 'opacity-70 bg-muted/10 cursor-not-allowed hover:bg-rose-50/20'
                               : 'hover:bg-muted/40 cursor-pointer',
                             isSelected && 'bg-primary/5',
                           )}
@@ -582,12 +582,10 @@ export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }
                               onChange={() => handleToggleSelect(st)}
                               title={
                                 !isAgeEligible
-                                  ? 'Độ tuổi học sinh không phù hợp với khối lớp được chọn'
-                                  : isUnlinked
-                                    ? 'Vui lòng liên kết tài khoản cho học sinh trước khi phân lớp'
-                                    : isSelected
-                                      ? 'Bỏ chọn'
-                                      : 'Chọn học sinh'
+                                  ? t('classes.tooltipAgeIneligible', 'Độ tuổi học sinh không phù hợp với khối lớp được chọn')
+                                  : isSelected
+                                    ? t('classes.tooltipDeselect', 'Bỏ chọn')
+                                    : t('classes.tooltipSelect', 'Chọn học sinh')
                               }
                               className={cn(
                                 'size-4 rounded-none accent-[#1447e6] align-middle',
@@ -617,18 +615,14 @@ export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }
                                   {!isAgeEligible && (
                                     <span
                                       className="inline-flex items-center px-1.5 py-0.2 text-[10.5px] font-medium bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border border-rose-200/80 rounded-none shrink-0"
-                                      title="Độ tuổi học sinh không phù hợp với khối lớp được chọn"
+                                      title={t('classes.tooltipAgeIneligible', 'Độ tuổi học sinh không phù hợp với khối lớp được chọn')}
                                     >
-                                      Sai độ tuổi khối
+                                      {t('classes.badgeWrongAge', 'Sai độ tuổi khối')}
                                     </span>
                                   )}
-                                  {isUnlinked ? (
+                                  {isUnlinked && (
                                     <span className="inline-flex items-center px-1.5 py-0.2 text-[10.5px] font-medium bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200/80 rounded-none shrink-0">
-                                      Chưa liên kết tài khoản
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center px-1.5 py-0.2 text-[10.5px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200/80 rounded-none shrink-0">
-                                      Đã liên kết
+                                      {t('classes.badgeUnlinkedAccount', 'Chưa liên kết tài khoản')}
                                     </span>
                                   )}
                                 </div>
@@ -642,7 +636,7 @@ export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }
                           {/* 3. Cột Ngày sinh */}
                           <td className="px-3 text-[13.5px] text-foreground font-normal whitespace-nowrap">
                             {st.dateOfBirth
-                              ? new Date(st.dateOfBirth).toLocaleDateString('vi-VN')
+                              ? new Date(st.dateOfBirth).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'vi-VN')
                               : '—'}
                           </td>
 
@@ -662,7 +656,11 @@ export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }
             {filteredStudents.length > 0 && (
               <div className="flex items-center justify-between pt-1 text-[12.5px] text-muted-foreground select-none shrink-0">
                 <span>
-                  {startItem}–{endItem} / {filteredStudents.length} học sinh
+                  {t('classes.studentsPagination', '{{start}}–{{end}} / {{total}} học sinh', {
+                    start: startItem,
+                    end: endItem,
+                    total: filteredStudents.length,
+                  })}
                 </span>
                 <div className="flex items-center border border-border bg-card rounded-none overflow-hidden shrink-0">
                   <button
@@ -694,7 +692,7 @@ export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }
           {/* 3. Drawer Sticky Footer (Sorak Design System) */}
           <div className="border-t border-border px-5 py-3.5 bg-muted/20 flex items-center justify-between gap-3 shrink-0">
             <span className="text-[12.5px] text-muted-foreground font-medium">
-              {selectedIds.size} học sinh đã chọn
+              {t('classes.selectedStudentsCount', '{{count}} học sinh đã chọn', { count: selectedIds.size })}
             </span>
             <div className="flex items-center gap-2">
               <Button
@@ -712,8 +710,10 @@ export function StudentIntakeDrawer({ isOpen, onClose, currentClass, onSuccess }
                 className="h-8 px-4 rounded-none bg-[#1447e6] hover:bg-[#1447e6]/90 text-white text-[13px] font-medium cursor-pointer shadow-none disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {isAllocating
-                  ? 'Đang tiếp nhận...'
-                  : `Tiếp nhận ${selectedIds.size > 0 ? selectedIds.size : ''} học sinh`}
+                  ? t('classes.allocatingBtn', 'Đang tiếp nhận...')
+                  : t('classes.allocateActionBtn', 'Tiếp nhận {{count}} học sinh', {
+                      count: selectedIds.size > 0 ? selectedIds.size : '',
+                    })}
               </Button>
             </div>
           </div>

@@ -88,7 +88,7 @@ export function ClassDrawer() {
       });
 
       if (isRoomDuplicate) {
-        toast.error(`Phòng '${formData.room.trim()}' đã được xếp cho lớp khác trong năm học này!`);
+        toast.error(t('classes.roomDuplicate', "Phòng '{{room}}' đã được xếp cho lớp khác trong năm học này!", { room: formData.room.trim() }));
         return;
       }
     }
@@ -218,14 +218,14 @@ export function ClassDrawer() {
                   drawerMode === 'edit' ? 'opacity-60 cursor-not-allowed bg-muted/40' : 'cursor-pointer',
                 )}
               >
-                <option value="nhatre">Khối Nhà trẻ (12–36 tháng)</option>
-                <option value="mam">Khối Mầm (3–4 tuổi)</option>
-                <option value="choi">Khối Chồi (4–5 tuổi)</option>
-                <option value="la">Khối Lá (5–6 tuổi)</option>
+                <option value="nhatre">{t('classes.nursery', 'Khối Nhà trẻ (12–36 tháng)')}</option>
+                <option value="mam">{t('classes.kindergarten3', 'Khối Mầm (3–4 tuổi)')}</option>
+                <option value="choi">{t('classes.kindergarten4', 'Khối Chồi (4–5 tuổi)')}</option>
+                <option value="la">{t('classes.kindergarten5', 'Khối Lá (5–6 tuổi)')}</option>
               </select>
               {drawerMode === 'edit' && (
                 <p className="text-[11px] text-muted-foreground mt-0.5">
-                  Không thể thay đổi khối lớp sau khi đã tạo lớp học.
+                  {t('classes.cannotChangeGradeAfterCreation', 'Không thể thay đổi khối lớp sau khi đã tạo lớp học.')}
                 </p>
               )}
             </div>

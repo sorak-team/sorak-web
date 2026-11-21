@@ -58,11 +58,11 @@ export function CreateTransferDrawer({
   }, [isOpen, currentGrade]);
 
   const GRADE_OPTIONS = [
-    { value: 'ALL', label: 'Tất cả các khối' },
-    { value: 'nhatre', label: 'Khối Nhà trẻ' },
-    { value: 'mam', label: 'Khối Mầm (3–4 tuổi)' },
-    { value: 'choi', label: 'Khối Chồi (4–5 tuổi)' },
-    { value: 'la', label: 'Khối Lá (5–6 tuổi)' },
+    { value: 'ALL', label: t('classes.gradeFilterAll', 'Tất cả các khối') },
+    { value: 'nhatre', label: t('classes.gradeNhaTre', 'Khối Nhà trẻ') },
+    { value: 'mam', label: t('classes.gradeMam', 'Khối Mầm (3–4 tuổi)') },
+    { value: 'choi', label: t('classes.gradeChoi', 'Khối Chồi (4–5 tuổi)') },
+    { value: 'la', label: t('classes.gradeLa', 'Khối Lá (5–6 tuổi)') },
   ];
 
   // Sync initial student id
@@ -131,7 +131,7 @@ export function CreateTransferDrawer({
     }
     const todayStr = new Date().toISOString().split('T')[0];
     if (transferDate < todayStr) {
-      toast.error('Ngày dự kiến chuyển phải từ hôm nay trở đi (nằm ở hiện tại hoặc tương lai)');
+      toast.error(t('classes.transferDateFutureError', 'Ngày dự kiến chuyển phải từ hôm nay trở đi (nằm ở hiện tại hoặc tương lai)'));
       return;
     }
 
@@ -235,7 +235,7 @@ export function CreateTransferDrawer({
                 </option>
                 {students.map((st) => (
                   <option key={st.id || st.studentId} value={st.id || st.studentId}>
-                    {st.studentCode} - {st.fullName} ({st.gender === 'FEMALE' ? 'Nữ' : 'Nam'})
+                    {st.studentCode} - {st.fullName} ({st.gender === 'FEMALE' ? t('common.female', 'Nữ') : t('common.male', 'Nam')})
                   </option>
                 ))}
               </select>
@@ -261,7 +261,10 @@ export function CreateTransferDrawer({
                       {selectedStudent.fullName}
                     </span>
                     <span className="text-muted-foreground">
-                      Mã HS: {selectedStudent.studentCode} · Ngày sinh: {selectedStudent.dateOfBirth || '—'}
+                      {t('classes.studentCodeAndDob', 'Mã HS: {{code}} · Ngày sinh: {{dob}}', {
+                        code: selectedStudent.studentCode,
+                        dob: selectedStudent.dateOfBirth || '—',
+                      })}
                     </span>
                   </div>
                 </div>
@@ -271,7 +274,7 @@ export function CreateTransferDrawer({
             {/* Filter by Grade */}
             <div className="space-y-1.5">
               <Label className="text-[12px] font-medium text-foreground">
-                Lọc theo khối lớp
+                {t('classes.filterByGrade', 'Lọc theo khối lớp')}
               </Label>
               <select
                 value={selectedGrade}
@@ -301,12 +304,12 @@ export function CreateTransferDrawer({
               >
                 <option value="">
                   {availableTargetClasses.length === 0
-                    ? '-- Không có lớp trong khối này --'
+                    ? t('classes.noTargetClassInGrade', '-- Không có lớp trong khối này --')
                     : t('classes.chooseTargetClassPlaceholder', '-- Chọn lớp tiếp nhận --')}
                 </option>
                 {availableTargetClasses.map((cls) => (
                   <option key={cls.id} value={cls.id}>
-                    {cls.name} - {cls.gradeLabel} {cls.room ? (cls.room.startsWith('Phòng') ? `(${cls.room})` : `(Phòng ${cls.room})`) : ''} · {cls.studentCount || 0}/{cls.capacity || 40} học sinh
+                    {cls.name} - {cls.gradeLabel} {cls.room ? (cls.room.startsWith('Phòng') || cls.room.startsWith('Room') ? `(${cls.room})` : `(${t('classes.roomPrefix', 'Phòng')} ${cls.room})`) : ''} · {cls.studentCount || 0}/{cls.capacity || 40} {t('classes.studentsUnit', 'học sinh')}
                   </option>
                 ))}
               </select>

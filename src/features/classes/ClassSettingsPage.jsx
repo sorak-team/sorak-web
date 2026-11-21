@@ -120,7 +120,7 @@ export function ClassSettingsPage() {
         return cRoom.toLowerCase() === roomInput.trim().toLowerCase();
       });
       if (isRoomDuplicate) {
-        toast.error(`Phòng '${roomInput.trim()}' đã được xếp cho lớp khác trong năm học này!`);
+        toast.error(t('classes.roomDuplicate', "Phòng '{{room}}' đã được xếp cho lớp khác trong năm học này!", { room: roomInput.trim() }));
         return;
       }
     }
@@ -240,13 +240,13 @@ export function ClassSettingsPage() {
                         onChange={(e) => setGradeInput(e.target.value)}
                         className="w-full h-9 px-3 bg-muted/40 border border-border/70 rounded-none text-[13px] text-muted-foreground outline-none cursor-not-allowed select-none"
                       >
-                        <option value="nhatre">Khối Nhà trẻ (12–36 tháng)</option>
-                        <option value="mam">Khối Mầm (3–4 tuổi)</option>
-                        <option value="choi">Khối Chồi (4–5 tuổi)</option>
-                        <option value="la">Khối Lá (5–6 tuổi)</option>
+                        <option value="nhatre">{t('classes.nursery', 'Khối Nhà trẻ (12–36 tháng)')}</option>
+                        <option value="mam">{t('classes.kindergarten3', 'Khối Mầm (3–4 tuổi)')}</option>
+                        <option value="choi">{t('classes.kindergarten4', 'Khối Chồi (4–5 tuổi)')}</option>
+                        <option value="la">{t('classes.kindergarten5', 'Khối Lá (5–6 tuổi)')}</option>
                       </select>
                       <p className="text-[11.5px] text-muted-foreground italic">
-                        * Khối lớp được cố định khi tạo lớp, không thể thay đổi
+                        {t('classes.gradeFixedNote', '* Khối lớp được cố định khi tạo lớp, không thể thay đổi')}
                       </p>
                     </div>
 
