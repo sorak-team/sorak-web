@@ -19,19 +19,22 @@ export function ThemeCard({ card, group, tab = 'themes' }) {
 
   const effectiveStatus = card.status || 'DRAFT';
   const isActive = effectiveStatus === 'ACTIVE' || effectiveStatus === 'PUBLISHED';
-  const groupLabel = group?.label || card?.ageGroupLabel || 'Khối học';
+  const groupLabel = group?.label || card?.ageGroupLabel || t('curriculum.gradeLevel', 'Khối học');
   const rawAge =
     group?.ageRange ||
     (card?.ageGroup === 'nhatre'
-      ? '12–36 tháng'
+      ? `12–36 ${t('common.months', 'tháng')}`
       : card?.ageGroup === 'mam'
-      ? '3–4 tuổi'
+      ? `3–4 ${t('common.yearsOld', 'tuổi')}`
       : card?.ageGroup === 'choi'
-      ? '4–5 tuổi'
-      : '5–6 tuổi');
-  const ageDescription = rawAge.includes('tuổi') ? rawAge : `${rawAge} tuổi`;
+      ? `4–5 ${t('common.yearsOld', 'tuổi')}`
+      : `5–6 ${t('common.yearsOld', 'tuổi')}`);
+  const ageDescription =
+    rawAge.includes('tuổi') || rawAge.includes('years') || rawAge.includes('tháng') || rawAge.includes('months')
+      ? rawAge
+      : `${rawAge} ${t('common.yearsOld', 'tuổi')}`;
   const count = tab === 'themes' ? (card.themeCount ?? 0) : (card.goalCount ?? 0);
-  const countUnit = tab === 'themes' ? 'chủ đề' : 'mục tiêu';
+  const countUnit = tab === 'themes' ? t('curriculum.themesCountUnit', 'chủ đề') : t('curriculum.goalsCountUnit', 'mục tiêu');
 
   return (
     <div
@@ -70,7 +73,7 @@ export function ThemeCard({ card, group, tab = 'themes' }) {
             </span>
           </div>
           <span className="text-[12px] text-muted-foreground font-normal">
-            · {card.updatedAt ? (card.updatedAt.startsWith('Cập nhật') ? card.updatedAt : `Cập nhật ${card.updatedAt}`) : 'Cập nhật hôm nay'}
+            · {card.updatedAt ? (card.updatedAt.startsWith('Cập nhật') ? card.updatedAt.replace('Cập nhật', t('common.updated', 'Cập nhật')) : `${t('common.updated', 'Cập nhật')} ${card.updatedAt}`) : t('common.updatedToday', 'Cập nhật hôm nay')}
           </span>
         </div>
 

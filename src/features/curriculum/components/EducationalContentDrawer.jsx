@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
   Cancel01Icon,
@@ -11,15 +12,6 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/shared/lib/utils';
 import { toast } from 'sonner';
 
-const ROUTINE_SLOT_OPTIONS = [
-  { value: 'DIRECTED_STUDY', label: 'Hoạt động học' },
-  { value: 'CORNER_PLAY', label: 'Hoạt động góc' },
-  { value: 'OUTDOOR_PLAY', label: 'Chơi ngoài trời' },
-  { value: 'AFTERNOON_ACTIVITY', label: 'Hoạt động chiều' },
-  { value: 'MORNING_EXERCISE', label: 'Thể dục sáng' },
-  { value: 'ARRIVAL_PLAY', label: 'Đón trẻ / tự chọn' },
-];
-
 export function EducationalContentDrawer({
   isOpen,
   onClose,
@@ -27,6 +19,20 @@ export function EducationalContentDrawer({
   goal = {},
   onSave,
 }) {
+  const { t } = useTranslation();
+
+  const routineSlotOptions = useMemo(
+    () => [
+      { value: 'DIRECTED_STUDY', label: t('planning.routineSlots.directedStudy', 'Hoạt động học') },
+      { value: 'CORNER_PLAY', label: t('planning.routineSlots.cornerPlay', 'Hoạt động góc') },
+      { value: 'OUTDOOR_PLAY', label: t('planning.routineSlots.outdoorPlay', 'Chơi ngoài trời') },
+      { value: 'AFTERNOON_ACTIVITY', label: t('planning.routineSlots.afternoonActivity', 'Hoạt động chiều') },
+      { value: 'MORNING_EXERCISE', label: t('planning.routineSlots.morningExercise', 'Thể dục sáng') },
+      { value: 'ARRIVAL_PLAY', label: t('planning.routineSlots.arrivalPlay', 'Đón trẻ / tự chọn') },
+    ],
+    [t],
+  );
+
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
   const [routineSlots, setRoutineSlots] = useState([]);
@@ -82,7 +88,7 @@ export function EducationalContentDrawer({
     e.preventDefault();
     const trimmedTitle = title.trim();
     if (!trimmedTitle) {
-      toast.error('Vui lòng nhập tên nội dung giáo dục');
+      toast.error(t('curriculum.pleaseEnterContentTitle', 'Vui lòng nhập tên nội dung giáo dục'));
       return;
     }
 
@@ -92,7 +98,7 @@ export function EducationalContentDrawer({
       notes: notes.trim(),
       routineSlots,
       routineSlotsLabels: routineSlots.map(
-        (s) => ROUTINE_SLOT_OPTIONS.find((opt) => opt.value === s)?.label || s,
+        (s) => routineSlotOptions.find((opt) => opt.value === s)?.label || s,
       ),
       activities,
     };
@@ -115,17 +121,17 @@ export function EducationalContentDrawer({
         <div className="p-4 border-b border-border flex items-center justify-between shrink-0 bg-muted/20">
           <div className="min-w-0 pr-3">
             <h3 className="text-[15px] font-semibold text-foreground">
-              {isEditing ? 'Chỉnh sửa nội dung giáo dục' : 'Thêm nội dung giáo dục'}
+              {isEditing ? t('curriculum.editEducationalContent', 'Chỉnh sửa nội dung giáo dục') : t('curriculum.addEducationalContent', 'Thêm nội dung giáo dục')}
             </h3>
             <p className="text-[12px] text-muted-foreground truncate mt-0.5">
-              Mục tiêu {goal?.code}: {goal?.title}
+              {t('curriculum.goalPrefix', 'Mục tiêu')} {goal?.code}: {goal?.title}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="size-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors rounded-none cursor-pointer"
-            aria-label="Đóng"
+            aria-label={t('common.close', 'Đóng')}
           >
             <HugeiconsIcon icon={Cancel01Icon} size={16} />
           </button>
@@ -136,7 +142,7 @@ export function EducationalContentDrawer({
           {/* Linked Goal Info Card */}
           <div className="p-3 bg-muted/30 border border-border/80 text-[12.5px] space-y-1">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-foreground">Mục tiêu: {goal?.code}</span>
+              <span className="font-semibold text-foreground">{t('curriculum.goalLabel', 'Mục tiêu:')} {goal?.code}</span>
               {goal?.indicatorCode && (
                 <span className="text-[11px] px-1.5 py-0.2 bg-muted text-muted-foreground border border-border/60">
                   {goal?.indicatorCode}
@@ -154,14 +160,14 @@ export function EducationalContentDrawer({
           {/* Tên nội dung giáo dục */}
           <div className="space-y-1.5">
             <label className="text-[13px] font-medium text-foreground flex items-center justify-between">
-              <span>Tên nội dung giáo dục <span className="text-destructive">*</span></span>
-              <span className="text-[11.5px] text-muted-foreground font-normal">Thông tư 51/BGDĐT</span>
+              <span>{t('curriculum.contentTitle', 'Tên nội dung giáo dục')} <span className="text-destructive">*</span></span>
+              <span className="text-[11.5px] text-muted-foreground font-normal">{t('curriculum.circular51', 'Thông tư 51/BGDĐT')}</span>
             </label>
             <textarea
               rows={3}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="VD: Dạy hát các bài hát trong chủ đề; Vận động gõ đệm theo nhịp bài hát..."
+              placeholder={t('curriculum.contentTitlePlaceholder', 'VD: Dạy hát các bài hát trong chủ đề; Vận động gõ đệm theo nhịp bài hát...')}
               className="w-full p-2.5 bg-background border border-border text-[13px] text-foreground rounded-none outline-none focus:border-primary transition-colors resize-none leading-normal"
               required
             />
@@ -170,10 +176,10 @@ export function EducationalContentDrawer({
           {/* Thời điểm tổ chức gợi ý (Routine Slot) */}
           <div className="space-y-2">
             <label className="text-[13px] font-medium text-foreground block">
-              Thời điểm tổ chức trong ngày (Gợi ý)
+              {t('curriculum.routineSlotSuggestions', 'Thời điểm tổ chức trong ngày (Gợi ý)')}
             </label>
             <div className="grid grid-cols-2 gap-2">
-              {ROUTINE_SLOT_OPTIONS.map((slot) => {
+              {routineSlotOptions.map((slot) => {
                 const isSelected = routineSlots.includes(slot.value);
                 return (
                   <button
@@ -200,13 +206,13 @@ export function EducationalContentDrawer({
           {/* Ghi chú / Hướng dẫn thực hiện */}
           <div className="space-y-1.5">
             <label className="text-[13px] font-medium text-foreground">
-              Ghi chú & Lưu ý sư phạm (nếu có)
+              {t('curriculum.pedagogicalNotes', 'Ghi chú & Lưu ý sư phạm (nếu có)')}
             </label>
             <textarea
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="VD: Rèn luyện kỹ năng nghe giai điệu, sử dụng phách tre và trống lắc..."
+              placeholder={t('curriculum.pedagogicalNotesPlaceholder', 'VD: Rèn luyện kỹ năng nghe giai điệu, sử dụng phách tre và trống lắc...')}
               className="w-full p-2.5 bg-background border border-border text-[13px] text-foreground rounded-none outline-none focus:border-primary transition-colors resize-none leading-normal"
             />
           </div>
@@ -214,8 +220,8 @@ export function EducationalContentDrawer({
           {/* Danh sách hoạt động cụ thể gợi ý */}
           <div className="space-y-2 pt-2 border-t border-border/70">
             <label className="text-[13px] font-medium text-foreground flex items-center justify-between">
-              <span>Hoạt động giáo dục cụ thể (Gợi ý)</span>
-              <span className="text-[11.5px] text-muted-foreground font-normal">{activities.length} hoạt động</span>
+              <span>{t('curriculum.specificActivitiesSuggestions', 'Hoạt động giáo dục cụ thể (Gợi ý)')}</span>
+              <span className="text-[11.5px] text-muted-foreground font-normal">{t('curriculum.activitiesCountUnit', '{{count}} hoạt động', { count: activities.length })}</span>
             </label>
 
             {/* Input thêm nhanh hoạt động */}
@@ -230,7 +236,7 @@ export function EducationalContentDrawer({
                     handleAddActivity();
                   }
                 }}
-                placeholder="VD: Hát kết hợp biểu cảm cảm xúc..."
+                placeholder={t('curriculum.addActivityPlaceholder', 'VD: Hát kết hợp biểu cảm cảm xúc...')}
                 className="flex-1 h-8 px-2.5 bg-background border border-border text-[12.5px] rounded-none outline-none focus:border-primary"
               />
               <Button
@@ -239,7 +245,7 @@ export function EducationalContentDrawer({
                 className="h-8 px-3 rounded-none bg-muted hover:bg-muted/80 text-foreground border border-border text-[12.5px] shadow-none cursor-pointer flex items-center gap-1"
               >
                 <HugeiconsIcon icon={PlusSignIcon} size={13} />
-                <span>Thêm</span>
+                <span>{t('common.add', 'Thêm')}</span>
               </Button>
             </div>
 
@@ -261,7 +267,7 @@ export function EducationalContentDrawer({
                       type="button"
                       onClick={() => handleRemoveActivity(act.id)}
                       className="size-6 flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors shrink-0 cursor-pointer"
-                      title="Xoá hoạt động"
+                      title={t('curriculum.deleteActivity', 'Xoá hoạt động')}
                     >
                       <HugeiconsIcon icon={Delete02Icon} size={13} />
                     </button>
@@ -280,14 +286,14 @@ export function EducationalContentDrawer({
             onClick={onClose}
             className="h-8 px-4 rounded-none border border-border text-[13px] shadow-none cursor-pointer"
           >
-            Huỷ
+            {t('common.cancel', 'Huỷ')}
           </Button>
           <Button
             type="button"
             onClick={handleSubmit}
             className="h-8 px-4 rounded-none bg-[#1447e6] hover:bg-[#1447e6]/90 text-white text-[13px] font-medium shadow-none cursor-pointer"
           >
-            {isEditing ? 'Lưu thay đổi' : 'Thêm nội dung'}
+            {isEditing ? t('common.saveChanges', 'Lưu thay đổi') : t('curriculum.addContent', 'Thêm nội dung')}
           </Button>
         </div>
       </div>

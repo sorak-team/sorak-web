@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Cancel01Icon } from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,7 @@ export function GoalItemDrawer({
   currentAgeGroupLabel = 'Khối Nhà trẻ (12–36 tháng)',
   nextCodeSuggestion = '',
 }) {
+  const { t } = useTranslation();
   const isMam =
     ageGroup === 'MAM' ||
     currentAgeGroupLabel?.toLowerCase()?.includes('mầm') ||
@@ -44,19 +46,19 @@ export function GoalItemDrawer({
       setDomain(initialData.domain || 'PHYSICAL');
       setIndicatorCode(initialData.indicatorCode || initialData.indicator || '');
     } else {
-      setCode(nextCodeSuggestion ? formatGoalCode(nextCodeSuggestion) : 'Tự động theo thứ tự');
+      setCode(nextCodeSuggestion ? formatGoalCode(nextCodeSuggestion) : t('curriculum.autoSequence', 'Tự động theo thứ tự'));
       setTitle('');
       setDomain('PHYSICAL');
       setIndicatorCode('');
     }
-  }, [initialData, isOpen, nextCodeSuggestion]);
+  }, [initialData, isOpen, nextCodeSuggestion, t]);
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title.trim()) {
-      toast.error('Vui lòng nhập tên mục tiêu');
+      toast.error(t('curriculum.pleaseEnterGoalTitle', 'Vui lòng nhập tên mục tiêu'));
       return;
     }
 
@@ -99,17 +101,17 @@ export function GoalItemDrawer({
         <div className="p-4 border-b border-border flex items-start justify-between shrink-0 bg-card">
           <div className="flex flex-col gap-0.5">
             <h2 className="text-[16.5px] font-semibold text-foreground tracking-tight">
-              {initialData ? 'Chỉnh sửa mục tiêu giáo dục' : 'Thêm mục tiêu giáo dục'}
+              {initialData ? t('curriculum.editGoal', 'Chỉnh sửa mục tiêu giáo dục') : t('curriculum.addGoal', 'Thêm mục tiêu giáo dục')}
             </h2>
             <p className="text-[12.5px] text-muted-foreground font-normal">
-              Thiết lập nội dung và chỉ số đánh giá cho mục tiêu giáo dục.
+              {t('curriculum.goalDrawerSubtitle', 'Thiết lập nội dung và chỉ số đánh giá cho mục tiêu giáo dục.')}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer rounded-none"
-            title="Đóng"
+            title={t('common.close', 'Đóng')}
           >
             <HugeiconsIcon icon={Cancel01Icon} size={18} />
           </button>
@@ -121,10 +123,10 @@ export function GoalItemDrawer({
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label className="text-[13px] font-medium text-foreground">
-                Mã mục tiêu
+                {t('curriculum.goalCode', 'Mã mục tiêu')}
               </label>
               <span className="text-[11.5px] text-muted-foreground font-normal">
-                Tự động theo thứ tự
+                {t('curriculum.autoSequence', 'Tự động theo thứ tự')}
               </span>
             </div>
             <input
@@ -138,32 +140,32 @@ export function GoalItemDrawer({
 
           <div className="space-y-1.5">
             <label className="text-[13px] font-medium text-foreground">
-              Tên mục tiêu <span className="text-destructive">*</span>
+              {t('curriculum.goalTitle', 'Tên mục tiêu')} <span className="text-destructive">*</span>
             </label>
             <textarea
               rows={3}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="w-full p-2.5 bg-background border border-border text-[13px] rounded-none outline-none focus:border-primary resize-none"
-              placeholder="Nhập nội dung mục tiêu giáo dục..."
+              placeholder={t('curriculum.goalTitlePlaceholder', 'Nhập nội dung mục tiêu giáo dục...')}
               required
             />
           </div>
 
           <div className="space-y-1.5">
             <label className="text-[13px] font-medium text-foreground">
-              Lĩnh vực phát triển
+              {t('curriculum.developmentDomain', 'Lĩnh vực phát triển')}
             </label>
             <select
               value={domain}
               onChange={(e) => setDomain(e.target.value)}
               className="w-full h-8 px-2.5 bg-background border border-border text-[13px] rounded-none outline-none focus:border-primary cursor-pointer"
             >
-              <option value="PHYSICAL">Phát triển thể chất</option>
-              <option value="COGNITIVE">Phát triển nhận thức</option>
-              <option value="LANGUAGE">Phát triển ngôn ngữ</option>
-              <option value="SOCIO_EMOTIONAL">Phát triển tình cảm - kỹ năng xã hội</option>
-              <option value="AESTHETIC">Phát triển thẩm mỹ</option>
+              <option value="PHYSICAL">{t('domains.physicalFull', 'Phát triển thể chất')}</option>
+              <option value="COGNITIVE">{t('domains.cognitiveFull', 'Phát triển nhận thức')}</option>
+              <option value="LANGUAGE">{t('domains.languageFull', 'Phát triển ngôn ngữ')}</option>
+              <option value="SOCIO_EMOTIONAL">{t('domains.socioEmotionalFull', 'Phát triển tình cảm - kỹ năng xã hội')}</option>
+              <option value="AESTHETIC">{t('domains.aestheticFull', 'Phát triển thẩm mỹ')}</option>
             </select>
           </div>
 
@@ -171,9 +173,9 @@ export function GoalItemDrawer({
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label className="text-[13px] font-medium text-foreground">
-                Nhóm tuổi áp dụng
+                {t('curriculum.applicableAgeGroup', 'Nhóm tuổi áp dụng')}
               </label>
-              <span className="text-[11.5px] text-muted-foreground font-normal">Chỉ xem</span>
+              <span className="text-[11.5px] text-muted-foreground font-normal">{t('common.viewOnly', 'Chỉ xem')}</span>
             </div>
             <input
               type="text"
@@ -188,14 +190,14 @@ export function GoalItemDrawer({
           {!isMam && (
             <div className="space-y-1.5">
               <label className="text-[13px] font-medium text-foreground">
-                Chỉ số Bộ Giáo dục (nếu có)
+                {t('curriculum.moetIndicatorOptional', 'Chỉ số Bộ Giáo dục (nếu có)')}
               </label>
               <input
                 type="text"
                 value={indicatorCode}
                 onChange={(e) => setIndicatorCode(e.target.value)}
                 className="w-full h-8 px-2.5 bg-background border border-border text-[13px] rounded-none outline-none focus:border-primary"
-                placeholder="VD: CS 12 (Thông tư 51)"
+                placeholder={t('curriculum.moetIndicatorPlaceholder', 'VD: CS 12 (Thông tư 51)')}
               />
             </div>
           )}
@@ -209,7 +211,7 @@ export function GoalItemDrawer({
             onClick={onClose}
             className="h-8 px-4 rounded-none border border-border text-[13px] shadow-none cursor-pointer"
           >
-            Huỷ
+            {t('common.cancel', 'Huỷ')}
           </Button>
           <Button
             type="submit"
@@ -217,7 +219,7 @@ export function GoalItemDrawer({
             disabled={isSubmitting}
             className="h-8 px-4 rounded-none bg-[#1447e6] hover:bg-[#1447e6]/90 text-white text-[13px] font-medium shadow-none cursor-pointer disabled:opacity-50"
           >
-            {isSubmitting ? 'Đang lưu...' : 'Lưu mục tiêu'}
+            {isSubmitting ? t('common.saving', 'Đang lưu...') : t('curriculum.saveGoal', 'Lưu mục tiêu')}
           </Button>
         </div>
       </div>

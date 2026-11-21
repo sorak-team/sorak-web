@@ -18,6 +18,7 @@ import {
 } from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { confirmDialog } from '@/components/ui/confirm-dialog';
 import { Info } from 'lucide-react';
 import { useClassesStore } from '@/features/classes';
 import { attendanceApi } from '@/features/attendance/attendance.api';
@@ -121,6 +122,10 @@ export function DailyRoutinePage() {
       null
     );
   }, [academicYears, selectedYearId]);
+
+  const isSchoolYearEnded = useMemo(() => {
+    return currentAcademicYear?.status === 'COMPLETED' || currentAcademicYear?.status === 'ENDED';
+  }, [currentAcademicYear]);
 
   const { academicStartCutoff, academicEndCutoff, academicStartDate } = useMemo(() => {
     let startDate = new Date(2026, 8, 7); // Default: Thứ 2, 07/09/2026
@@ -232,16 +237,6 @@ export function DailyRoutinePage() {
     }
   });
 
-  // Tự động mở T7/CN nếu tuần có slot hoặc tuần khai giảng dính cuối tuần;
-  // nếu không thì theo lựa chọn ghi nhớ của người dùng (mặc định ẩn nếu người dùng không chọn hiện)
-  useEffect(() => {
-    if (hasWeekendSlots || isStartWeekWithWeekend) {
-      setShowWeekend(true);
-    } else {
-      setShowWeekend(userPrefShowWeekend);
-    }
-  }, [hasWeekendSlots, isStartWeekWithWeekend, selectedWeekId, userPrefShowWeekend]);
-
   const handleToggleWeekend = (val) => {
     const nextVal = typeof val === 'boolean' ? val : !showWeekend;
     setShowWeekend(nextVal);
@@ -313,7 +308,33 @@ export function DailyRoutinePage() {
   }, [targetClassId, selectedWeekId]);
 
   const handleSelectSlot = (slot, day) => {
-    if (day?.isLocked) return;
+    if (day?.isLocked) {
+      const makeupDate = day?.holiday?.makeupDate || day?.makeupDate;
+      if (makeupDate) {
+        const parts = makeupDate.split('-');
+        toast.info(
+          t(
+            'daily.makeupClassRescheduledByBGH',
+            'Lịch dạy này đã được Ban Giám Hiệu dời sang Thứ Bảy ({{date}}).',
+            { date: `${parts[2]}/${parts[1]}` }
+          )
+        );
+      } else {
+        toast.info(
+          t(
+            'daily.holidayScheduledByBGH',
+            'Ngày này đã được Ban Giám Hiệu xếp lịch nghỉ ({{reason}}).',
+            {
+              reason:
+                day?.holiday?.name ||
+                day?.lockReason ||
+                t('daily.schoolPolicy', 'Trường quy định'),
+            }
+          )
+        );
+      }
+      return;
+    }
     const resolvedFullDate = slot.fullDate || day?.fullDate;
 
     setActiveSlot({
@@ -473,9 +494,9 @@ export function DailyRoutinePage() {
         if (dayTab === 'dismissal') {
           setDayTab('attendance');
         }
-        toast.success(`Đã xóa điểm danh ngày ${dayLabel}`);
+        toast.success(t('daily.deletedAttendanceDay', 'Đã xóa điểm danh ngày {{date}}', { date: dayLabel }));
       } catch {
-        toast.error('Không thể xóa điểm danh.');
+        toast.error(t('daily.cannotDeleteAttendance', 'Không thể xóa điểm danh.'));
       } finally {
         setIsCleaningDay(false);
       }
@@ -492,9 +513,9 @@ export function DailyRoutinePage() {
             return next;
           });
         }
-        toast.success(`Đã xóa dữ liệu sức khỏe ngày ${dayLabel}`);
+        toast.success(t('daily.deletedHealthDay', 'Đã xóa dữ liệu sức khỏe ngày {{date}}', { date: dayLabel }));
       } catch {
-        toast.error('Không thể xóa dữ liệu sức khỏe.');
+        toast.error(t('daily.cannotDeleteHealth', 'Không thể xóa dữ liệu sức khỏe.'));
       } finally {
         setIsCleaningDay(false);
       }
@@ -522,9 +543,9 @@ export function DailyRoutinePage() {
           setActiveDay((prev) => (prev ? { ...prev, isDismissalRecorded: false } : null));
         }
         setDismissalRefreshKey((prev) => prev + 1);
-        toast.success(`Đã xóa thông tin đón trẻ ngày ${dayLabel}`);
+        toast.success(t('daily.deletedDismissalDay', 'Đã xóa thông tin đón trẻ ngày {{date}}', { date: dayLabel }));
       } catch {
-        toast.error('Không thể xóa đón trẻ.');
+        toast.error(t('daily.cannotDeleteDismissal', 'Không thể xóa đón trẻ.'));
       } finally {
         setIsCleaningDay(false);
       }
@@ -534,12 +555,20 @@ export function DailyRoutinePage() {
   const handleCleanSlotAssessment = async () => {
     if (!activeSlot) return;
     if (!isSlotAssessed) {
-      toast.warning('Tiết này chưa được đánh giá.');
+      toast.warning(t('daily.slotNotEvaluatedYet', 'Tiết này chưa được đánh giá.'));
       return;
     }
-    const confirmed = window.confirm(
-      `Bạn có chắc chắn muốn xóa toàn bộ đánh giá của tiết "${activeSlot.title || activeSlot.shortTitle}" không? Thao tác này không thể hoàn tác.`
-    );
+    const confirmed = await confirmDialog({
+      title: t('daily.confirmDeleteSlotEvalTitle', 'Xác nhận xóa đánh giá tiết học'),
+      description: t(
+        'daily.confirmDeleteSlotEvalDesc',
+        'Bạn có chắc chắn muốn xóa toàn bộ đánh giá của tiết "{{title}}" không? Thao tác này không thể hoàn tác.',
+        { title: activeSlot.title || activeSlot.shortTitle }
+      ),
+      confirmText: t('common.delete', 'Xóa'),
+      cancelText: t('common.cancel', 'Hủy'),
+      variant: 'destructive',
+    });
     if (!confirmed) return;
     setIsCleaningSlot(true);
     try {
@@ -554,9 +583,13 @@ export function DailyRoutinePage() {
         prev.map((s) => (s.id === activeSlot.id ? { ...s, status: 'SCHEDULED', isEvaluated: false } : s))
       );
       setActiveSlot((prev) => (prev ? { ...prev, status: 'SCHEDULED', isEvaluated: false } : null));
-      toast.success(`Đã xóa đánh giá của tiết "${activeSlot.title || activeSlot.shortTitle}"`);
+      toast.success(
+        t('daily.deletedSlotEvalSuccess', 'Đã xóa đánh giá của tiết "{{title}}"', {
+          title: activeSlot.title || activeSlot.shortTitle,
+        })
+      );
     } catch {
-      toast.error('Không thể xóa đánh giá.');
+      toast.error(t('daily.cannotDeleteSlotEval', 'Không thể xóa đánh giá.'));
     } finally {
       setIsCleaningSlot(false);
     }
@@ -589,11 +622,22 @@ export function DailyRoutinePage() {
 
     const weekDayKey = `${activeWeekObj.id}-${day.key}`;
     const isWeekend = day.key === 'T7' || day.key === 'CN';
-    const isWeekendLocked = isWeekend && !hasWeekendSlots;
 
     // Kiểm tra khóa bởi ngày nghỉ / sự kiện (SchoolHoliday)
     const holidays = data?.holidays || [];
     const classAgeGroup = currentClass?.ageGroup || data?.classInfo?.ageGroup || 'NHA_TRE';
+
+    // Kiểm tra Thứ 7 dạy bù
+    const isSaturday = day.key === 'T7';
+    const makeupHoliday = isSaturday && holidays.find((h) => {
+      const appliesToGrade = !h.targetGrades?.length || h.targetGrades.includes(classAgeGroup);
+      if (!appliesToGrade) return false;
+      if (h.makeupDate && fullIsoDate === h.makeupDate) return true;
+      return h.isTeachingAllowed && fullIsoDate >= h.startDate && fullIsoDate <= h.endDate;
+    });
+    const isSaturdayMakeup = Boolean(makeupHoliday);
+    const isWeekendLocked = isWeekend && !hasWeekendSlots && !isSaturdayMakeup;
+
     let isHolidayLocked = false;
     let holidayLockReason = '';
     let activeHoliday = null;
@@ -616,19 +660,19 @@ export function DailyRoutinePage() {
 
     const isDayLocked = isOutsideAcademicYear || isWeekendLocked || isHolidayLocked;
     const finalLockReason = isOutsideAcademicYear
-      ? 'Nằm ngoài năm học đang chọn'
+      ? t('daily.outsideAcademicYear', 'Nằm ngoài năm học đang chọn')
       : isHolidayLocked
         ? holidayLockReason
         : isWeekendLocked
-          ? 'Ngày nghỉ cuối tuần'
-          : 'Khóa';
+          ? t('daily.weekendHoliday', 'Ngày nghỉ cuối tuần')
+          : t('common.locked', 'Khóa');
     const finalLockLabel = isOutsideAcademicYear
-      ? 'Ngoại khóa'
+      ? t('daily.extracurricular', 'Ngoại khóa')
       : isHolidayLocked
-        ? 'Ngày nghỉ'
+        ? t('daily.holiday', 'Ngày nghỉ')
         : isWeekendLocked
-          ? 'Ngày nghỉ'
-          : 'Khóa';
+          ? t('daily.holiday', 'Ngày nghỉ')
+          : t('common.locked', 'Khóa');
 
     const isToday = Boolean(fullIsoDate ? fullIsoDate === todayIsoStr : (activeWeekObj?.isCurrentWeek && day.key === 'T4'));
     const isFuture = Boolean(fullIsoDate ? fullIsoDate > todayIsoStr : (selectedWeekIdx > currentWeekIdx));
@@ -636,13 +680,13 @@ export function DailyRoutinePage() {
     // Trạng thái điểm danh thật từ DB:
     // 1. Kiểm tra override nếu người dùng vừa bấm lưu trong phiên này
     // 2. Nếu lớp không có học sinh (ví dụ Nhà trẻ 2) -> luôn là false, không điểm danh
-    // 3. Nếu ngày trong tương lai (isFuture) hoặc bị khóa (isDayLocked) -> luôn là false, không thể có điểm danh trước
-    // 4. Nếu lớp có học sinh -> kiểm tra xem ngày đó có bản ghi điểm danh thật trong database hay không (data.attendanceDays)
+    // 3. Nếu ngày bị khóa (isDayLocked) -> luôn là false
+    // 4. Kiểm tra xem ngày đó có bản ghi thật trong database hay không
     const hasStudents = (data?.classInfo?.studentCount ?? students.length) > 0;
     let isAttendanceRecorded = false;
     if (attendanceOverrides[weekDayKey] !== undefined) {
       isAttendanceRecorded = attendanceOverrides[weekDayKey];
-    } else if (!hasStudents || isFuture || isDayLocked) {
+    } else if (!hasStudents || isDayLocked) {
       isAttendanceRecorded = false;
     } else if (data?.attendanceDays && fullIsoDate) {
       isAttendanceRecorded = Boolean(data.attendanceDays[fullIsoDate]);
@@ -651,7 +695,7 @@ export function DailyRoutinePage() {
     let isHealthRecorded = false;
     if (healthOverrides[weekDayKey] !== undefined) {
       isHealthRecorded = healthOverrides[weekDayKey];
-    } else if (!hasStudents || isFuture || isDayLocked) {
+    } else if (!hasStudents || isDayLocked) {
       isHealthRecorded = false;
     } else if (data?.healthDays && fullIsoDate) {
       isHealthRecorded = Boolean(data.healthDays[fullIsoDate]);
@@ -660,7 +704,7 @@ export function DailyRoutinePage() {
     let isDismissalRecorded = false;
     if (fullIsoDate && dismissalOverrides[fullIsoDate] !== undefined) {
       isDismissalRecorded = dismissalOverrides[fullIsoDate];
-    } else if (!hasStudents || isFuture || isDayLocked) {
+    } else if (!hasStudents || isDayLocked) {
       isDismissalRecorded = false;
     } else if (data?.dismissalDays && fullIsoDate) {
       isDismissalRecorded = Boolean(data.dismissalDays[fullIsoDate]);
@@ -682,11 +726,28 @@ export function DailyRoutinePage() {
       isDismissalRecorded,
       isLocked: isDayLocked,
       isHolidayLocked,
+      isSaturdayMakeup,
+      makeupHoliday: makeupHoliday || null,
       lockReason: finalLockReason,
       lockLabel: finalLockLabel,
       holiday: activeHoliday,
     };
   });
+
+  // Check if Saturday has makeup teaching configured
+  const hasSaturdayMakeup = useMemo(() => {
+    return (currentDays || []).some((d) => d.key === 'T7' && d.isSaturdayMakeup);
+  }, [currentDays]);
+
+  // Tự động mở T7/CN nếu tuần có slot, có lịch học bù thứ 7, hoặc tuần khai giảng dính cuối tuần;
+  // nếu không thì theo lựa chọn ghi nhớ của người dùng (mặc định ẩn nếu người dùng không chọn hiện)
+  useEffect(() => {
+    if (hasWeekendSlots || isStartWeekWithWeekend || hasSaturdayMakeup) {
+      setShowWeekend(true);
+    } else {
+      setShowWeekend(userPrefShowWeekend);
+    }
+  }, [hasWeekendSlots, isStartWeekWithWeekend, hasSaturdayMakeup, selectedWeekId, userPrefShowWeekend]);
 
   // Tìm thông tin ngày hôm nay (trong tuần hiện tại hoặc fallback ngày thực tế)
   const todayDay = useMemo(() => {
@@ -735,8 +796,16 @@ export function DailyRoutinePage() {
       isHealthRecorded: Boolean(data?.healthDays?.[fullDate]),
       isDismissalRecorded: Boolean(data?.dismissalDays?.[fullDate]),
       isLocked,
-      lockReason: isTodayHolidayLocked ? todayHolidayReason : isOutsideAcademicYear ? 'Nằm ngoài năm học' : 'Ngày nghỉ',
-      lockLabel: isTodayHolidayLocked ? 'Ngày nghỉ' : isOutsideAcademicYear ? 'Ngoại khóa' : 'Ngày nghỉ',
+      lockReason: isTodayHolidayLocked
+        ? todayHolidayReason
+        : isOutsideAcademicYear
+          ? t('daily.outsideAcademicYear', 'Nằm ngoài năm học')
+          : t('daily.holiday', 'Ngày nghỉ'),
+      lockLabel: isTodayHolidayLocked
+        ? t('daily.holiday', 'Ngày nghỉ')
+        : isOutsideAcademicYear
+          ? t('daily.extracurricular', 'Ngoại khóa')
+          : t('daily.holiday', 'Ngày nghỉ'),
     };
   }, [currentDays, data, todayIsoStr, now, academicStartCutoff, academicEndCutoff, hasWeekendSlots, t, currentClass]);
 
@@ -811,6 +880,38 @@ export function DailyRoutinePage() {
   };
 
   // Danh sách các hoạt động trong cùng ngày của slot đang mở, sắp xếp theo trình tự thời gian và thứ tự thực hiện
+  const effectiveSlots = useMemo(() => {
+    const hasT7Slots = (slots || []).some((s) => (s.dayKey || s.day) === 'T7');
+    if (hasT7Slots) return slots;
+
+    const satDay = (currentDays || []).find((d) => d.key === 'T7' && d.isSaturdayMakeup && d.makeupHoliday);
+    if (!satDay || !satDay.makeupHoliday?.startDate) return slots;
+
+    const origHolidayDate = satDay.makeupHoliday.startDate;
+    const origDayObj = (currentDays || []).find((d) => d.fullDate === origHolidayDate);
+    const origDayKey = origDayObj?.key;
+
+    const origSlots = (slots || []).filter((s) => {
+      if (s.fullDate && s.fullDate === origHolidayDate) return true;
+      if (origDayKey && (s.dayKey || s.day) === origDayKey) return true;
+      return false;
+    });
+
+    if (origSlots.length === 0) return slots;
+
+    const mirroredT7Slots = origSlots.map((s, idx) => ({
+      ...s,
+      id: `makeup-t7-${s.id || idx}`,
+      day: 'T7',
+      dayKey: 'T7',
+      date: satDay.date,
+      fullDate: satDay.fullDate,
+      notes: s.notes ? `[Bù cho ${origDayObj?.name || 'ngày nghỉ'}] ${s.notes}` : `[Bù cho ${origDayObj?.name || 'ngày nghỉ'}]`,
+    }));
+
+    return [...slots, ...mirroredT7Slots];
+  }, [slots, currentDays]);
+
   const activeDaySlots = useMemo(() => {
     if (!activeSlot) return [];
     const dayKey = activeSlot.dayKey || activeSlot.day;
@@ -826,7 +927,7 @@ export function DailyRoutinePage() {
       RETURN_CHILD: 6,
     };
 
-    return slots
+    return effectiveSlots
       .filter((s) => {
         const sDayKey = s.dayKey || s.day;
         return sDayKey === dayKey;
@@ -840,7 +941,7 @@ export function DailyRoutinePage() {
         if (subOrderA !== subOrderB) return subOrderA - subOrderB;
         return (a.startTime || '').localeCompare(b.startTime || '');
       });
-  }, [slots, activeSlot]);
+  }, [effectiveSlots, activeSlot]);
 
   const currentSlotIndex = useMemo(() => {
     if (!activeSlot || activeDaySlots.length === 0) return -1;
@@ -981,7 +1082,7 @@ export function DailyRoutinePage() {
             </button>
 
             <div className="w-[195px] h-8 flex items-center justify-center font-medium select-none text-[12.5px] text-foreground tabular-nums shrink-0">
-              <span>Tuần {activeWeekObj?.label}</span>
+              <span>{t('common.week', 'Tuần')} {activeWeekObj?.label}</span>
             </div>
 
             <button
@@ -1020,10 +1121,10 @@ export function DailyRoutinePage() {
                 ? 'bg-primary/10 text-primary border-primary/40 font-semibold'
                 : 'bg-background hover:bg-muted text-muted-foreground hover:text-foreground border-border'
             )}
-            title={showWeekend ? 'Ẩn Thứ 7 & Chủ nhật' : 'Hiện Thứ 7 & Chủ nhật'}
+            title={showWeekend ? t('daily.hideWeekend', 'Ẩn Thứ 7 & Chủ nhật') : t('daily.showWeekend', 'Hiện Thứ 7 & Chủ nhật')}
           >
             <HugeiconsIcon icon={Calendar03Icon} size={14} />
-            <span>{showWeekend ? 'Ẩn T7, CN' : 'Hiện T7, CN'}</span>
+            <span>{showWeekend ? t('daily.hideWeekendShort', 'Ẩn T7, CN') : t('daily.showWeekendShort', 'Hiện T7, CN')}</span>
           </button>
         </div>
       </div>
@@ -1035,7 +1136,7 @@ export function DailyRoutinePage() {
           {/* Thứ & Ngày */}
           <div className="flex items-center gap-2.5 shrink-0">
             <span className="text-[14px] font-bold tracking-tight text-foreground whitespace-nowrap">
-              {todayDay ? `${todayDay.name}, ${todayDay.date}` : `Hôm nay, ${pad(now.getDate())}/${pad(now.getMonth() + 1)}`}
+              {todayDay ? `${todayDay.name}, ${todayDay.date}` : `${t('daily.badgeToday', 'Hôm nay')}, ${pad(now.getDate())}/${pad(now.getMonth() + 1)}`}
             </span>
           </div>
 
@@ -1218,7 +1319,7 @@ export function DailyRoutinePage() {
         themeName={currentThemeName}
         subThemeName={currentSubThemeName}
         days={currentDays}
-        slots={slots}
+        slots={effectiveSlots}
         activeSlotId={activeSlot?.id}
         activeDayKey={activeDay?.key || activeSlot?.day || activeSlot?.dayKey}
         mode="daily"
@@ -1230,66 +1331,6 @@ export function DailyRoutinePage() {
         onToggleWeekend={handleToggleWeekend}
         isDrawerOpen={Boolean(activeDay || activeSlot)}
       />
-
-      {/* 2.1 Chú thích trạng thái & Hướng dẫn thao tác (Gọn gàng, tinh tế, chuyên nghiệp) */}
-      <div className="border border-border/80 bg-card/60 px-4 py-2.5 rounded-none select-none text-[12px] flex flex-wrap items-center justify-between gap-x-6 gap-y-2.5">
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-          {/* Nhãn chú thích */}
-          <div className="flex items-center gap-1.5 text-foreground font-medium text-[12px] shrink-0">
-            <Info className="size-3.5 text-muted-foreground shrink-0" />
-            <span>{t('daily.legendLabel', 'Chú thích:')}</span>
-          </div>
-
-          {/* Cột Thứ: Điểm danh & Đón */}
-          <div className="flex items-center gap-2 flex-wrap" title={t('daily.attendanceHealthTooltip', 'Nhấp tiêu đề cột Thứ để xem điểm danh, sức khoẻ hoặc đón trẻ')}>
-            <span className="text-[11.5px] text-muted-foreground font-medium">
-              {t('daily.colHeaderShort', 'Cột Thứ:')}
-            </span>
-            <div className="inline-flex items-center gap-1.5 flex-wrap">
-              <div className="flex items-center justify-center px-2 py-0.5 bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-[11px] shadow-2xs whitespace-nowrap">
-                <span className="font-medium text-[#1447e6] dark:text-blue-400">{t('daily.badgeToday', 'Hôm nay')}</span>
-              </div>
-              <div className="flex items-center justify-center px-2 py-0.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200/90 dark:border-amber-800/60 text-[11px] shadow-2xs whitespace-nowrap">
-                <span className="font-medium text-amber-700 dark:text-amber-300">{t('daily.badgeAttendanceDone', 'Đã điểm danh')}</span>
-              </div>
-              <div className="flex items-center justify-center px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/90 dark:border-emerald-800/60 text-[11px] shadow-2xs whitespace-nowrap">
-                <span className="font-medium text-emerald-700 dark:text-emerald-300">{t('daily.badgeDismissalDone', 'Đã đón')}</span>
-              </div>
-              <div className="flex items-center justify-center px-2 py-0.5 bg-muted/75 border border-border/70 text-[11px] shadow-2xs whitespace-nowrap">
-                <span className="text-muted-foreground">{t('daily.badgeNotStarted', 'Chưa điểm danh')}</span>
-              </div>
-              <div className="flex items-center justify-center px-2 py-0.5 bg-muted/75 border border-border/70 text-[11px] shadow-2xs whitespace-nowrap">
-                <span className="text-muted-foreground">{t('daily.badgeHoliday', 'Ngày nghỉ')}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Phân cách */}
-          <div className="hidden lg:block h-3.5 w-px bg-border/80" />
-
-          {/* Thẻ tiết học: Đánh giá */}
-          <div className="flex items-center gap-2 flex-wrap" title={t('daily.lessonEvalTooltip', 'Nhấp vào thẻ tiết học để xem giáo án chi tiết và đánh giá trẻ')}>
-            <span className="text-[11.5px] text-muted-foreground font-medium">
-              {t('daily.lessonSlotShort', 'Tiết học:')}
-            </span>
-            <div className="inline-flex items-center gap-1.5 flex-wrap">
-              <div className="flex items-center justify-center px-2 py-0.5 bg-emerald-500/[0.07] dark:bg-emerald-950/30 border border-emerald-600/30 border-l-2 !border-l-emerald-600 text-[11px] shadow-2xs whitespace-nowrap">
-                <span className="font-medium text-foreground">{t('daily.badgeEvaluated', 'Đã đánh giá')}</span>
-              </div>
-              <div className="flex items-center justify-center px-2 py-0.5 bg-card border border-border/70 text-[11px] shadow-2xs whitespace-nowrap">
-                <span className="text-muted-foreground">{t('daily.badgeNotEvaluated', 'Chưa đánh giá')}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Phím tắt chuyển tuần */}
-        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground shrink-0">
-          <span>{t('planning.switchWeekKeyHint', 'Chuyển tuần: phím')}</span>
-          <kbd className="px-1.5 py-0.5 bg-muted border border-border text-[10.5px] font-mono text-foreground font-medium">←</kbd>
-          <kbd className="px-1.5 py-0.5 bg-muted border border-border text-[10.5px] font-mono text-foreground font-medium">→</kbd>
-        </div>
-      </div>
 
       {/* 3. Slide-over Week Picker Overlay Drawer (Thiết kế đồng bộ với TeacherDrawer) */}
       {isCalendarOpen && (
@@ -1313,7 +1354,7 @@ export function DailyRoutinePage() {
                   {t('planning.selectWeek', 'Chọn tuần học')}
                 </h2>
                 <p className="text-[12px] text-muted-foreground font-normal">
-                  Lựa chọn tuần để xem thời khóa biểu và nhật ký ngày
+                  {t('daily.selectWeekDrawerSubtitle', 'Lựa chọn tuần để xem thời khóa biểu và nhật ký ngày')}
                 </p>
               </div>
 
@@ -1357,14 +1398,12 @@ export function DailyRoutinePage() {
 
       {/* 4. Day Drawer: Điểm danh & Sức khoẻ theo thứ / ngày */}
       {activeDay && (() => {
-        const isDayInPast = Boolean(
-          activeDay?.fullDate
-            ? activeDay.fullDate < todayIsoStr
-            : activeDay?.key
-            ? (currentDays.find((d) => d.key === activeDay.key)?.isPast ?? false)
-            : false
-        );
-        const isDayLockedForEdit = isBgh || isDayInPast || Boolean(activeDay?.isLocked);
+        // Mở cho phép điểm danh, sức khoẻ, đón trẻ trong tương lai theo yêu cầu
+        const isDayInPast = false;
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const isDayInFuture = false;
+        const isDayLockedForEdit = isBgh || Boolean(activeDay?.isLocked) || isSchoolYearEnded;
+        const isHealthLockedForEdit = isBgh || Boolean(activeDay?.isLocked) || isSchoolYearEnded;
 
         return (
           <div className="fixed inset-0 z-50 flex justify-end">
@@ -1395,7 +1434,7 @@ export function DailyRoutinePage() {
                       )}
                       {isDayInPast && (
                         <span className="inline-flex items-center h-6 px-2.5 text-[11.5px] font-medium border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400 rounded-none shrink-0 select-none whitespace-nowrap">
-                          Đã qua ngày (Chỉ xem)
+                          {t('daily.pastDayViewOnly', 'Đã qua ngày (Chỉ xem)')}
                         </span>
                       )}
                       {activeDay?.date && (
@@ -1417,7 +1456,7 @@ export function DailyRoutinePage() {
                           <button
                             type="button"
                             className="size-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-none transition-colors cursor-pointer shrink-0"
-                            title="Tùy chọn khác"
+                            title={t('common.moreOptions', 'Tùy chọn khác')}
                           >
                             <HugeiconsIcon icon={MoreHorizontalIcon} size={16} />
                           </button>
@@ -1428,26 +1467,34 @@ export function DailyRoutinePage() {
                         onClick={() =>
                           setCleanConfirmDialog({
                             type: 'attendance',
-                            title: 'Xóa điểm danh ngày này',
-                            message: `Bạn có chắc chắn muốn xóa toàn bộ điểm danh của ngày ${activeDay?.date || activeDay?.name}? Thao tác này không thể hoàn tác.`,
+                            title: t('daily.deleteAttendanceDayTitle', 'Xóa điểm danh ngày này'),
+                            message: t(
+                              'daily.confirmDeleteAttendanceDayDesc',
+                              'Bạn có chắc chắn muốn xóa toàn bộ điểm danh của ngày {{date}}? Thao tác này không thể hoàn tác.',
+                              { date: activeDay?.date || activeDay?.name }
+                            ),
                           })
                         }
                         className="cursor-pointer text-[12.5px] py-2 px-3 text-foreground rounded-none disabled:opacity-35 disabled:cursor-not-allowed"
                       >
-                        <span>Xoá điểm danh ngày này</span>
+                        <span>{t('daily.deleteAttendanceDayBtn', 'Xoá điểm danh ngày này')}</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         disabled={!Boolean(activeDay && recordedHealthDays[activeDay.key]) || isCleaningDay}
                         onClick={() =>
                           setCleanConfirmDialog({
                             type: 'health',
-                            title: 'Xóa sức khỏe ngày này',
-                            message: `Bạn có chắc chắn muốn xóa toàn bộ dữ liệu sức khỏe của ngày ${activeDay?.date || activeDay?.name}? Thao tác này không thể hoàn tác.`,
+                            title: t('daily.deleteHealthDayTitle', 'Xóa sức khỏe ngày này'),
+                            message: t(
+                              'daily.confirmDeleteHealthDayDesc',
+                              'Bạn có chắc chắn muốn xóa toàn bộ dữ liệu sức khỏe của ngày {{date}}? Thao tác này không thể hoàn tác.',
+                              { date: activeDay?.date || activeDay?.name }
+                            ),
                           })
                         }
                         className="cursor-pointer text-[12.5px] py-2 px-3 text-foreground rounded-none disabled:opacity-35 disabled:cursor-not-allowed"
                       >
-                        <span>Xoá sức khỏe ngày này</span>
+                        <span>{t('daily.deleteHealthDayBtn', 'Xoá sức khỏe ngày này')}</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         disabled={
@@ -1457,13 +1504,17 @@ export function DailyRoutinePage() {
                         onClick={() =>
                           setCleanConfirmDialog({
                             type: 'dismissal',
-                            title: 'Xóa đón trẻ ngày này',
-                            message: `Bạn có chắc chắn muốn xóa toàn bộ thông tin đón trẻ của ngày ${activeDay?.date || activeDay?.name}? Tất cả học sinh đã đón sẽ quay về trạng thái "Đang ở lớp".`,
+                            title: t('daily.deleteDismissalDayTitle', 'Xóa đón trẻ ngày này'),
+                            message: t(
+                              'daily.confirmDeleteDismissalDayDesc',
+                              'Bạn có chắc chắn muốn xóa toàn bộ thông tin đón trẻ của ngày {{date}}? Tất cả học sinh đã đón sẽ quay về trạng thái "Đang ở lớp".',
+                              { date: activeDay?.date || activeDay?.name }
+                            ),
                           })
                         }
                         className="cursor-pointer text-[12.5px] py-2 px-3 text-foreground rounded-none disabled:opacity-35 disabled:cursor-not-allowed"
                       >
-                        <span>Xoá đón trẻ ngày này</span>
+                        <span>{t('daily.deleteDismissalDayBtn', 'Xoá đón trẻ ngày này')}</span>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -1598,7 +1649,7 @@ export function DailyRoutinePage() {
                   date={activeDay?.fullDate || '2026-10-12'}
                   initialStudents={students}
                   isRecorded={Boolean(activeDay && (recordedHealthDays[activeDay.key] || activeDay.isHealthRecorded))}
-                  readOnly={isDayLockedForEdit}
+                  readOnly={isHealthLockedForEdit}
                   onTabChange={setDayTab}
                   onClose={handleCloseDay}
                   onStudentsChange={setStudents}
@@ -1680,14 +1731,9 @@ export function DailyRoutinePage() {
 
         const isSlotAssessed = Boolean(activeSlot?.status === 'COMPLETED' || activeSlot?.isEvaluated);
         const slotFullDate = activeSlot?.fullDate || slotDayObj?.fullDate;
-        const isSlotInPast = Boolean(
-          slotFullDate
-            ? slotFullDate < todayIsoStr
-            : (activeSlot?.dayKey || activeSlot?.day)
-            ? (slotDayObj?.isPast ?? false)
-            : false
-        );
-        const isSlotLockedForEdit = isBgh || isSlotInPast || Boolean(slotDayObj?.isLocked);
+        // Tạm thời tắt khóa qua ngày theo yêu cầu để phục vụ kiểm thử (Thread #8 - ID: 10)
+        const isSlotInPast = false;
+        const isSlotLockedForEdit = isBgh || Boolean(slotDayObj?.isLocked);
 
         return (
           <div className="fixed inset-0 z-50 flex justify-end">
@@ -1713,7 +1759,12 @@ export function DailyRoutinePage() {
                       </h2>
                       {isSlotInPast && (
                         <span className="inline-flex items-center h-6 px-2.5 text-[11.5px] font-medium border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400 rounded-none shrink-0 select-none whitespace-nowrap">
-                          Đã qua ngày (Chỉ xem)
+                          {t('daily.pastDayViewOnly', 'Đã qua ngày (Chỉ xem)')}
+                        </span>
+                      )}
+                      {activeSlot.notes?.includes('[Dạy bù') && (
+                        <span className="inline-flex items-center h-6 px-2.5 text-[11.5px] font-medium border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 rounded-none shrink-0 select-none whitespace-nowrap">
+                          {activeSlot.notes.match(/\[Dạy bù ngày (.*?)\]/)?.[0] || t('daily.makeupSlotBadge', 'Dạy bù')}
                         </span>
                       )}
                     </div>
@@ -1759,7 +1810,7 @@ export function DailyRoutinePage() {
                           <button
                             type="button"
                             className="size-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-none transition-colors cursor-pointer shrink-0"
-                            title="Tùy chọn khác"
+                            title={t('common.moreOptions', 'Tùy chọn khác')}
                           >
                             <HugeiconsIcon icon={MoreHorizontalIcon} size={16} />
                           </button>
@@ -1770,7 +1821,7 @@ export function DailyRoutinePage() {
                             onClick={handleCleanSlotAssessment}
                             className="cursor-pointer text-[12.5px] py-2 px-3 text-foreground rounded-none disabled:opacity-35 disabled:cursor-not-allowed"
                           >
-                            <span>Xoá đánh giá tiết này</span>
+                            <span>{t('daily.deleteSlotEvalBtn', 'Xoá đánh giá tiết này')}</span>
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -1890,7 +1941,7 @@ export function DailyRoutinePage() {
                   {cleanConfirmDialog.title}
                 </h3>
                 <span className="text-[12px] text-muted-foreground">
-                  Ngày {activeDay?.date || activeDay?.name}
+                  {t('common.date', 'Ngày')} {activeDay?.date || activeDay?.name}
                 </span>
               </div>
               <button
@@ -1921,7 +1972,7 @@ export function DailyRoutinePage() {
                 disabled={isCleaningDay}
                 className="h-8 px-4 text-[12.5px] font-medium bg-rose-600 hover:bg-rose-700 text-white rounded-none cursor-pointer shadow-none transition-colors"
               >
-                {isCleaningDay ? 'Đang xóa...' : 'Xác nhận xóa'}
+                {isCleaningDay ? t('common.deleting', 'Đang xóa...') : t('common.confirmDelete', 'Xác nhận xóa')}
               </Button>
             </div>
           </div>

@@ -33,6 +33,7 @@ import { GoalImportDrawer } from './components/GoalImportDrawer';
 import { GoalAiAssistantDrawer } from './components/GoalAiAssistantDrawer';
 import { ExcelActionsDropdown } from '@/components/ExcelActionsDropdown';
 import { downloadBlob } from '@/shared/utils/download';
+import { useAcademicYearStore } from '@/features/academic-years';
 
 const GRADE_LABELS_FULL = {
   nhatre: 'Khối Nhà trẻ (12–36 tháng)',
@@ -251,6 +252,21 @@ export function CurriculumGoalDetailPage() {
   const navigate = useNavigate();
   const { yearId = '2026-2027', ageGroup = 'nhatre' } = useParams();
 
+  const getGradeLabelFull = (grp) => {
+    switch (grp) {
+      case 'nhatre':
+        return `${t('classes.gradeNhaTre', 'Khối Nhà trẻ')} (12–36 ${t('common.months', 'tháng')})`;
+      case 'mam':
+        return `${t('classes.gradeMam', 'Khối Mầm')} (3–4 ${t('common.yearsOld', 'tuổi')})`;
+      case 'choi':
+        return `${t('classes.gradeChoi', 'Khối Chồi')} (4–5 ${t('common.yearsOld', 'tuổi')})`;
+      case 'la':
+        return `${t('classes.gradeLa', 'Khối Lá')} (5–6 ${t('common.yearsOld', 'tuổi')})`;
+      default:
+        return grp;
+    }
+  };
+
   const domainOptions = [
     { value: 'ALL', label: t('planning.domainAll', 'Tất cả lĩnh vực') },
     { value: 'PHYSICAL', label: t('planning.domainPhysical', 'Thể chất') },
@@ -265,6 +281,42 @@ export function CurriculumGoalDetailPage() {
   const [goalTree, setGoalTree] = useState([]);
   const [status, setStatus] = useState('DRAFT');
   const [updatedAt, setUpdatedAt] = useState(() => new Date());
+
+  const academicYears = useAcademicYearStore((state) => state.academicYears);
+  const fetchAcademicYears = useAcademicYearStore((state) => state.fetchAcademicYears);
+
+  useEffect(() => {
+    if (academicYears.length === 0 && fetchAcademicYears) {
+      fetchAcademicYears();
+    }
+  }, [academicYears.length, fetchAcademicYears]);
+
+  const matchedYear = useMemo(() => {
+    const cleanYear = String(yearId || '').replace('–', '-').replace(/^năm\s*học\s*/i, '').trim();
+    return academicYears.find((y) => {
+      const yCleanName = String(y.name || '').replace('–', '-').replace(/^năm\s*học\s*/i, '').trim();
+      return (
+        String(y.id) === String(yearId) ||
+        (y.publicId && String(y.publicId) === String(yearId)) ||
+        yCleanName === cleanYear ||
+        yCleanName.includes(cleanYear) ||
+        (cleanYear && String(y.name || '').includes(cleanYear))
+      );
+    });
+  }, [academicYears, yearId]);
+
+  const isSchoolYearEnded = useMemo(() => {
+    const cleanYear = String(yearId || '').replace('–', '-');
+    const isYear2025 = cleanYear.includes('2025') || cleanYear === '1';
+    return Boolean(
+      matchedYear?.status === 'COMPLETED' ||
+      matchedYear?.status === 'ENDED' ||
+      bankInfo?.isSchoolYearEnded === true ||
+      bankInfo?.schoolYearStatus === 'COMPLETED' ||
+      bankInfo?.schoolYearStatus === 'ENDED' ||
+      (isYear2025 && (!matchedYear || matchedYear.status !== 'ACTIVE'))
+    );
+  }, [matchedYear, bankInfo, yearId]);
 
   // Search & Filter state (No age filter needed)
   const [searchQuery, setSearchQuery] = useState('');
@@ -295,10 +347,10 @@ export function CurriculumGoalDetailPage() {
       });
       const safeYear = (yearId || '2026-2027').replace(/\s+/g, '_');
       downloadBlob(blob, `Khung_Chuong_Trinh_GDMN_${safeYear}.xlsx`);
-      toast.success('Đã xuất khung chương trình GDMN thành công');
+      toast.success(t('curriculum.exportFrameworkSuccess', 'Đã xuất khung chương trình GDMN thành công'));
     } catch (err) {
-      toast.error('Lỗi khi xuất khung chương trình', {
-        description: err.message || 'Vui lòng thử lại sau.',
+      toast.error(t('curriculum.exportError', 'Lỗi khi xuất khung chương trình'), {
+        description: err.message || t('common.tryAgainLater', 'Vui lòng thử lại sau.'),
       });
     } finally {
       setIsExporting(false);
@@ -333,6 +385,10 @@ export function CurriculumGoalDetailPage() {
 
   // Toggle publish status for the entire goal bank
   const handleTogglePublish = async () => {
+    if (isSchoolYearEnded) {
+      toast.warning('Năm học đã kết thúc. Không thể thay đổi trạng thái công bố.');
+      return;
+    }
     const nextStatus = isPublished ? 'DRAFT' : 'PUBLISHED';
 
     if (nextStatus === 'PUBLISHED') {
@@ -340,7 +396,7 @@ export function CurriculumGoalDetailPage() {
       const allGoalsList = goalTree.flatMap((d) => d.children || []);
       const emptyGoal = allGoalsList.find((g) => (g.contentsCount ?? (g.contents || []).length) === 0);
       if (emptyGoal) {
-        toast.error('Không thể xuất bản khung giáo dục vì một hoặc nhiều mục tiêu giáo dục chưa có nội dung giáo dục.');
+        toast.error(t('curriculum.cannotPublishNoContent', 'Không thể xuất bản khung giáo dục vì một hoặc nhiều mục tiêu giáo dục chưa có nội dung giáo dục.'));
         return;
       }
     }
@@ -352,7 +408,7 @@ export function CurriculumGoalDetailPage() {
         status: nextStatus,
       });
       if (res && res.success === false) {
-        throw new Error(res.message || 'Không thể cập nhật trạng thái ngân hàng mục tiêu');
+        throw new Error(res.message || t('curriculum.cannotUpdateBankStatus', 'Không thể cập nhật trạng thái ngân hàng mục tiêu'));
       }
 
       const updatedStatus = res.info?.status || nextStatus;
@@ -363,12 +419,12 @@ export function CurriculumGoalDetailPage() {
 
       toast.success(
         nextStatus === 'PUBLISHED'
-          ? 'Đã công bố toàn bộ mục tiêu trong năm học cho khối này!'
-          : 'Đã chuyển toàn bộ mục tiêu về bản nháp (Được phép chỉnh sửa và lưu)',
+          ? t('curriculum.publishBankSuccess', 'Đã công bố toàn bộ mục tiêu trong năm học cho khối này!')
+          : t('curriculum.unpublishBankSuccess', 'Đã chuyển toàn bộ mục tiêu về bản nháp (Được phép chỉnh sửa và lưu)'),
       );
     } catch (err) {
       console.warn('Failed to update goal bank status on server:', err);
-      const errMsg = err.response?.data?.message || err.message || 'Không thể công bố ngân hàng mục tiêu.';
+      const errMsg = err.response?.data?.message || err.message || t('curriculum.cannotPublishBank', 'Không thể công bố ngân hàng mục tiêu.');
       toast.error(errMsg);
     }
   };
@@ -456,7 +512,7 @@ export function CurriculumGoalDetailPage() {
   // Move goal up or down within a domain
   const handleMoveGoal = (domainId, goalId, direction) => {
     if (isPublished) {
-      toast.warning('Ngân hàng mục tiêu đã công bố. Vui lòng gỡ công bố để thay đổi thứ tự.');
+      toast.warning(t('curriculum.publishedWarningReorder', 'Ngân hàng mục tiêu đã công bố. Vui lòng gỡ công bố để thay đổi thứ tự.'));
       return;
     }
     setGoalTree((prevTree) => {
@@ -484,13 +540,17 @@ export function CurriculumGoalDetailPage() {
       return reindexGoalTree(updatedTree);
     });
     setUpdatedAt(new Date());
-    toast.success('Đã cập nhật thứ tự mục tiêu');
+    toast.success(t('curriculum.reorderSuccess', 'Đã cập nhật thứ tự mục tiêu'));
   };
 
   // Handle Goal Item CRUD
   const handleEditGoal = (goal) => {
+    if (isSchoolYearEnded) {
+      toast.warning('Năm học đã kết thúc. Khung chương trình giáo dục ở chế độ chỉ xem.');
+      return;
+    }
     if (isPublished) {
-      toast.warning('Ngân hàng mục tiêu đã công bố. Vui lòng gỡ công bố để chỉnh sửa mục tiêu.');
+      toast.warning(t('curriculum.publishedWarningEdit', 'Ngân hàng mục tiêu đã công bố. Vui lòng gỡ công bố để chỉnh sửa mục tiêu.'));
       return;
     }
     setEditingGoal(goal);
@@ -498,8 +558,12 @@ export function CurriculumGoalDetailPage() {
   };
 
   const handleAddGoal = () => {
+    if (isSchoolYearEnded) {
+      toast.warning('Năm học đã kết thúc. Khung chương trình giáo dục ở chế độ chỉ xem.');
+      return;
+    }
     if (isPublished) {
-      toast.warning('Ngân hàng mục tiêu đã công bố. Vui lòng gỡ công bố để thêm mục tiêu mới.');
+      toast.warning(t('curriculum.publishedWarningAdd', 'Ngân hàng mục tiêu đã công bố. Vui lòng gỡ công bố để thêm mục tiêu mới.'));
       return;
     }
     setEditingGoal(null);
@@ -507,8 +571,12 @@ export function CurriculumGoalDetailPage() {
   };
 
   const handleDeleteGoal = async (goalId) => {
+    if (isSchoolYearEnded) {
+      toast.warning('Năm học đã kết thúc. Khung chương trình giáo dục ở chế độ chỉ xem.');
+      return;
+    }
     if (isPublished) {
-      toast.error('Không thể xóa mục tiêu khi ngân hàng mục tiêu đã công bố.');
+      toast.error(t('curriculum.publishedErrorDelete', 'Không thể xóa mục tiêu khi ngân hàng mục tiêu đã công bố.'));
       return;
     }
     try {
@@ -531,18 +599,18 @@ export function CurriculumGoalDetailPage() {
       return reindexGoalTree(updated);
     });
     setUpdatedAt(new Date());
-    toast.success('Đã xóa mục tiêu khỏi ngân hàng');
+    toast.success(t('curriculum.deleteGoalSuccess', 'Đã xóa mục tiêu khỏi ngân hàng'));
   };
 
   const handleSaveGoal = async (goalData) => {
     if (isPublished) {
-      toast.warning('Ngân hàng mục tiêu đã công bố. Vui lòng gỡ công bố để chỉnh sửa.');
+      toast.warning(t('curriculum.publishedWarningEdit', 'Ngân hàng mục tiêu đã công bố. Vui lòng gỡ công bố để chỉnh sửa.'));
       return;
     }
 
     const trimmedTitle = (goalData.title || '').trim();
     if (!trimmedTitle) {
-      toast.error('Vui lòng nhập nội dung mục tiêu');
+      toast.error(t('curriculum.pleaseEnterGoalTitle', 'Vui lòng nhập nội dung mục tiêu'));
       return;
     }
 
@@ -561,7 +629,7 @@ export function CurriculumGoalDetailPage() {
     });
 
     if (isDuplicate) {
-      const msg = 'Mục tiêu đã tồn tại trong ngân hàng mục tiêu. Vui lòng kiểm tra hoặc nhập nội dung khác.';
+      const msg = t('curriculum.goalAlreadyExists', 'Mục tiêu đã tồn tại trong ngân hàng mục tiêu. Vui lòng kiểm tra hoặc nhập nội dung khác.');
       throw new Error(msg);
     }
 
@@ -583,7 +651,7 @@ export function CurriculumGoalDetailPage() {
         });
       } catch (err) {
         console.error('API updateGoal failed:', err);
-        const errMsg = err?.response?.data?.message || err?.message || 'Có lỗi xảy ra khi cập nhật mục tiêu';
+        const errMsg = err?.response?.data?.message || err?.message || t('curriculum.updateGoalError', 'Có lỗi xảy ra khi cập nhật mục tiêu');
         throw new Error(errMsg);
       }
 
@@ -653,7 +721,7 @@ export function CurriculumGoalDetailPage() {
 
       setIsItemDrawerOpen(false);
       setEditingGoal(null);
-      toast.success('Đã cập nhật mục tiêu giáo dục thành công!');
+      toast.success(t('curriculum.updateGoalSuccess', 'Đã cập nhật mục tiêu giáo dục thành công!'));
     } else {
       let createdGoal = null;
       try {
@@ -675,7 +743,7 @@ export function CurriculumGoalDetailPage() {
         code: formatGoalCode(createdGoal?.code || goalData.code || nextCodeSuggestion),
         title: goalData.title,
         indicatorCode: goalData.indicatorCode,
-        type: 'Mục tiêu học tập',
+        type: t('curriculum.learningGoalType', 'Mục tiêu học tập'),
         contentsCount: 0,
         contents: [],
       };
@@ -709,7 +777,7 @@ export function CurriculumGoalDetailPage() {
         return reindexGoalTree(updated);
       });
       setUpdatedAt(new Date());
-      toast.success('Đã thêm mục tiêu mới vào ngân hàng');
+      toast.success(t('curriculum.addGoalSuccess', 'Đã thêm mục tiêu mới vào ngân hàng'));
     }
   };
 
@@ -719,6 +787,13 @@ export function CurriculumGoalDetailPage() {
       data-node-id="4947:13246"
       data-name="Curriculum Goal Detail Page"
     >
+      {/* Warning banner for ended school year */}
+      {isSchoolYearEnded && (
+        <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-[13px] font-medium flex items-center gap-2 shrink-0">
+          <span>⚠️ Năm học đã kết thúc. Khung chương trình giáo dục ở chế độ chỉ xem.</span>
+        </div>
+      )}
+
       {/* 1. Page Title Header & Primary Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border/70 shrink-0">
         <div className="flex flex-col gap-1 min-w-0">
@@ -727,7 +802,7 @@ export function CurriculumGoalDetailPage() {
               {t('curriculum.tabGoals', 'Ngân hàng mục tiêu')}
             </h1>
             <span className="px-2 py-0.5 text-[11px] font-medium bg-muted text-foreground border border-border">
-              {GRADE_LABELS_FULL[ageGroup] || ageGroup}
+              {getGradeLabelFull(ageGroup)}
             </span>
             <span
               className={cn(
@@ -741,59 +816,62 @@ export function CurriculumGoalDetailPage() {
             </span>
           </div>
           <p className="text-[12.5px] text-muted-foreground font-normal">
-            Quản lý và thiết lập hệ thống mục tiêu giáo dục theo các lĩnh vực phát triển · Cập nhật: <span className="font-mono text-foreground font-medium">{formatDateTime(updatedAt)}</span>
+            {t('curriculum.goalBankHeaderDesc', 'Quản lý và thiết lập hệ thống mục tiêu giáo dục theo các lĩnh vực phát triển')} · {t('common.updated', 'Cập nhật')}: <span className="font-mono text-foreground font-medium">{formatDateTime(updatedAt)}</span>
           </p>
         </div>
 
         {/* Action Buttons: Giữ trên 1 hàng không bị rớt dòng */}
         <div className="flex items-center gap-2 shrink-0">
-          {/* Excel Actions (Export Framework & Import Goals) */}
+          {/* Excel Actions (Export Framework only - Bỏ button import excel theo yêu cầu) */}
           <ExcelActionsDropdown
             onExport={handleExportExcel}
-            onImport={!isPublished ? () => setIsImportDrawerOpen(true) : null}
+            onImport={null}
             isExporting={isExporting}
-            showImport={!isPublished}
-            exportLabel="Xuất tệp Excel"
-            importLabel="Nhập tệp Excel"
+            showImport={false}
+            exportLabel={t('curriculum.exportExcelFile', 'Xuất tệp Excel')}
           />
 
           {/* Button Thêm mục tiêu */}
-          <Button
-            type="button"
-            onClick={handleAddGoal}
-            disabled={isPublished}
-            className={cn(
-              'h-8 px-3.5 text-white text-[12.5px] font-medium rounded-none shadow-none flex items-center gap-1.5 transition-colors',
-              isPublished
-                ? 'bg-[#1447e6]/50 opacity-50 cursor-not-allowed'
-                : 'bg-[#1447e6] hover:bg-[#1447e6]/90 cursor-pointer',
-            )}
-            title={isPublished ? 'Vui lòng gỡ công bố để thêm mục tiêu' : 'Thêm mục tiêu'}
-          >
-            <HugeiconsIcon icon={PlusSignIcon} size={14} />
-            <span>Thêm mục tiêu</span>
-          </Button>
+          {!isSchoolYearEnded && (
+            <Button
+              type="button"
+              onClick={handleAddGoal}
+              disabled={isPublished}
+              className={cn(
+                'h-8 px-3.5 text-white text-[12.5px] font-medium rounded-none shadow-none flex items-center gap-1.5 transition-colors',
+                isPublished
+                  ? 'bg-[#1447e6]/50 opacity-50 cursor-not-allowed'
+                  : 'bg-[#1447e6] hover:bg-[#1447e6]/90 cursor-pointer',
+              )}
+              title={isPublished ? t('curriculum.unpublishToAddGoal', 'Vui lòng gỡ công bố để thêm mục tiêu') : t('curriculum.addGoal', 'Thêm mục tiêu')}
+            >
+              <HugeiconsIcon icon={PlusSignIcon} size={14} />
+              <span>{t('curriculum.addGoal', 'Thêm mục tiêu')}</span>
+            </Button>
+          )}
 
           {/* Button Công bố / Gỡ công bố ngân hàng */}
-          {isPublished ? (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleTogglePublish}
-              className="h-8 px-3.5 border border-border bg-card hover:bg-muted text-foreground text-[12.5px] font-medium rounded-none shadow-none cursor-pointer flex items-center gap-1.5 transition-colors"
-            >
-              <HugeiconsIcon icon={Cancel01Icon} size={14} className="text-muted-foreground" />
-              <span>Gỡ công bố</span>
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              onClick={handleTogglePublish}
-              className="h-8 px-3.5 bg-[#1447e6] hover:bg-[#1447e6]/90 text-white text-[12.5px] font-medium rounded-none shadow-none cursor-pointer flex items-center gap-1.5 transition-colors"
-            >
-              <HugeiconsIcon icon={SentIcon} size={14} />
-              <span>Công bố ngân hàng</span>
-            </Button>
+          {!isSchoolYearEnded && (
+            isPublished ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleTogglePublish}
+                className="h-8 px-3.5 border border-border bg-card hover:bg-muted text-foreground text-[12.5px] font-medium rounded-none shadow-none cursor-pointer flex items-center gap-1.5 transition-colors"
+              >
+                <HugeiconsIcon icon={Cancel01Icon} size={14} className="text-muted-foreground" />
+                <span>{t('curriculum.unpublish', 'Gỡ công bố')}</span>
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                onClick={handleTogglePublish}
+                className="h-8 px-3.5 bg-[#1447e6] hover:bg-[#1447e6]/90 text-white text-[12.5px] font-medium rounded-none shadow-none cursor-pointer flex items-center gap-1.5 transition-colors"
+              >
+                <HugeiconsIcon icon={SentIcon} size={14} />
+                <span>{t('curriculum.publishBank', 'Công bố ngân hàng')}</span>
+              </Button>
+            )
           )}
         </div>
       </div>
@@ -812,7 +890,7 @@ export function CurriculumGoalDetailPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm kiếm mã MT, tên mục tiêu..."
+              placeholder={t('curriculum.searchGoalCodePlaceholder', 'Tìm kiếm mã MT, tên mục tiêu...')}
               className="w-full h-8 pl-8 pr-2.5 bg-background border border-border text-[12.5px] text-foreground placeholder:text-muted-foreground rounded-none outline-none focus:border-primary transition-colors"
             />
           </div>
@@ -860,15 +938,15 @@ export function CurriculumGoalDetailPage() {
             <span className="font-semibold text-foreground">{t('curriculum.goalStructure', 'Cấu trúc mục tiêu')}</span>
             <span className="text-muted-foreground/40">•</span>
             <span className="text-muted-foreground text-[12px] font-mono">
-              {totalGoalsCount} mục tiêu
+              {t('curriculum.goalsCountUnitWithTotal', '{{count}} mục tiêu', { count: totalGoalsCount })}
             </span>
           </div>
           <div className="text-[12px] text-muted-foreground font-normal">
-            <span>Hiển thị: </span>
+            <span>{t('common.show', 'Hiển thị')}: </span>
             <span className="font-mono font-semibold text-foreground">
               {filteredTree.reduce((acc, d) => acc + (d.children || []).length, 0)}/{totalGoalsCount}
             </span>
-            <span> mục tiêu</span>
+            <span> {t('curriculum.goalsCountUnit', 'mục tiêu')}</span>
           </div>
         </div>
 
@@ -909,7 +987,7 @@ export function CurriculumGoalDetailPage() {
                       </div>
 
                       <span className="px-2 py-0.5 bg-background border border-border/70 text-[11.5px] font-mono text-muted-foreground font-normal">
-                        {goals.length} mục tiêu
+                        {t('curriculum.goalsCountUnitWithTotal', '{{count}} mục tiêu', { count: goals.length })}
                       </span>
                     </div>
 
@@ -918,7 +996,7 @@ export function CurriculumGoalDetailPage() {
                       <div className="divide-y divide-border/30 bg-background">
                         {goals.length === 0 ? (
                           <div className="py-3 px-4 pl-10 text-[12.5px] text-muted-foreground italic">
-                            Chưa có mục tiêu nào trong lĩnh vực này
+                            {t('curriculum.noGoalsInDomain', 'Chưa có mục tiêu nào trong lĩnh vực này')}
                           </div>
                         ) : (
                           goals.map((goal, goalIndex) => {
@@ -934,7 +1012,7 @@ export function CurriculumGoalDetailPage() {
                                 <div
                                   onClick={() => navigate(`/curriculum/goals/${yearId}/${ageGroup}/${goal.id}`)}
                                   className="flex items-start sm:items-center gap-3 min-w-0 pr-4 flex-1 cursor-pointer group/title"
-                                  title="Bấm để xem chi tiết và thiết lập nội dung giáo dục"
+                                  title={t('curriculum.clickToViewAndSetContent', 'Bấm để xem chi tiết và thiết lập nội dung giáo dục')}
                                 >
                                   <span className="px-2 py-0.5 bg-muted/70 border border-border/80 text-[12px] font-bold text-foreground shrink-0 min-w-[56px] text-center font-mono select-none">
                                     {goal.code}
@@ -976,12 +1054,12 @@ export function CurriculumGoalDetailPage() {
                                     )}
                                     title={
                                       isPublished
-                                        ? 'Vui lòng gỡ công bố để thay đổi thứ tự'
+                                        ? t('curriculum.unpublishToReorder', 'Vui lòng gỡ công bố để thay đổi thứ tự')
                                         : isFirst
-                                        ? 'Đang ở vị trí đầu tiên'
-                                        : 'Chuyển mục tiêu lên trên'
+                                        ? t('curriculum.alreadyFirstPosition', 'Đang ở vị trí đầu tiên')
+                                        : t('curriculum.moveGoalUp', 'Chuyển mục tiêu lên trên')
                                     }
-                                    aria-label="Chuyển mục tiêu lên trên"
+                                    aria-label={t('curriculum.moveGoalUp', 'Chuyển mục tiêu lên trên')}
                                   >
                                     <HugeiconsIcon icon={ArrowUp01Icon} size={15} />
                                   </button>
@@ -1002,60 +1080,64 @@ export function CurriculumGoalDetailPage() {
                                     )}
                                     title={
                                       isPublished
-                                        ? 'Vui lòng gỡ công bố để thay đổi thứ tự'
+                                        ? t('curriculum.unpublishToReorder', 'Vui lòng gỡ công bố để thay đổi thứ tự')
                                         : isLast
-                                        ? 'Đang ở vị trí cuối cùng'
-                                        : 'Chuyển mục tiêu xuống dưới'
+                                        ? t('curriculum.alreadyLastPosition', 'Đang ở vị trí cuối cùng')
+                                        : t('curriculum.moveGoalDown', 'Chuyển mục tiêu xuống dưới')
                                     }
-                                    aria-label="Chuyển mục tiêu xuống dưới"
+                                    aria-label={t('curriculum.moveGoalDown', 'Chuyển mục tiêu xuống dưới')}
                                   >
                                     <HugeiconsIcon icon={ArrowDown01Icon} size={15} />
                                   </button>
 
-                                  {/* Subtle separator */}
-                                  <div className="h-3.5 w-px bg-border/60 mx-1" />
+                                  {!isSchoolYearEnded && (
+                                    <>
+                                      {/* Subtle separator */}
+                                      <div className="h-3.5 w-px bg-border/60 mx-1" />
 
-                                  {/* Chỉnh sửa */}
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleEditGoal({ ...goal, domain: domain.domain });
-                                    }}
-                                    className={cn(
-                                      'size-7 flex items-center justify-center rounded-none transition-colors',
-                                      isPublished
-                                        ? 'text-muted-foreground/50 hover:text-muted-foreground cursor-pointer'
-                                        : 'text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer',
-                                    )}
-                                    title={isPublished ? 'Vui lòng gỡ công bố để chỉnh sửa' : t('common.edit', 'Chỉnh sửa')}
-                                    aria-label={t('common.edit', 'Chỉnh sửa')}
-                                  >
-                                    <HugeiconsIcon icon={Edit01Icon} size={15} />
-                                  </button>
+                                      {/* Chỉnh sửa */}
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleEditGoal({ ...goal, domain: domain.domain });
+                                        }}
+                                        className={cn(
+                                          'size-7 flex items-center justify-center rounded-none transition-colors',
+                                          isPublished
+                                            ? 'text-muted-foreground/50 hover:text-muted-foreground cursor-pointer'
+                                            : 'text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer',
+                                        )}
+                                        title={isPublished ? t('curriculum.publishedWarningEdit', 'Vui lòng gỡ công bố để chỉnh sửa') : t('common.edit', 'Chỉnh sửa')}
+                                        aria-label={t('common.edit', 'Chỉnh sửa')}
+                                      >
+                                        <HugeiconsIcon icon={Edit01Icon} size={15} />
+                                      </button>
 
-                                  {/* Xóa */}
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (isPublished) {
-                                        toast.error('Không thể xóa mục tiêu khi ngân hàng mục tiêu đã công bố.');
-                                        return;
-                                      }
-                                      setGoalToDelete(goal);
-                                    }}
-                                    className={cn(
-                                      'size-7 flex items-center justify-center rounded-none transition-colors',
-                                      isPublished
-                                        ? 'text-muted-foreground/50 hover:text-muted-foreground cursor-pointer'
-                                        : 'text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer',
-                                    )}
-                                    title={isPublished ? 'Vui lòng gỡ công bố để xóa' : t('common.delete', 'Xóa')}
-                                    aria-label={t('common.delete', 'Xóa')}
-                                  >
-                                    <HugeiconsIcon icon={Delete02Icon} size={15} />
-                                  </button>
+                                      {/* Xóa */}
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          if (isPublished) {
+                                            toast.error(t('curriculum.publishedErrorDelete', 'Không thể xóa mục tiêu khi ngân hàng mục tiêu đã công bố.'));
+                                            return;
+                                          }
+                                          setGoalToDelete(goal);
+                                        }}
+                                        className={cn(
+                                          'size-7 flex items-center justify-center rounded-none transition-colors',
+                                          isPublished
+                                            ? 'text-muted-foreground/50 hover:text-muted-foreground cursor-pointer'
+                                            : 'text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer',
+                                        )}
+                                        title={isPublished ? 'Vui lòng gỡ công bố để xóa' : t('common.delete', 'Xóa')}
+                                        aria-label={t('common.delete', 'Xóa')}
+                                      >
+                                        <HugeiconsIcon icon={Delete02Icon} size={15} />
+                                      </button>
+                                    </>
+                                  )}
                                 </div>
                               </div>
                             );
@@ -1075,7 +1157,7 @@ export function CurriculumGoalDetailPage() {
         type="button"
         onClick={() => setIsAiDrawerOpen(true)}
         className="fixed bottom-6 right-6 z-40 size-14 rounded-full bg-white dark:bg-card border-2 border-[#1447e6] shadow-xl hover:shadow-2xl hover:scale-105 transition-all flex items-center justify-center cursor-pointer group"
-        title="Trợ lý AI - Chuẩn hoá & Tối ưu ngân hàng mục tiêu"
+        title={t('curriculum.aiAssistantTitle', 'Trợ lý AI - Chuẩn hoá & Tối ưu ngân hàng mục tiêu')}
       >
         <img
           src="/mascot.webp"
@@ -1097,7 +1179,7 @@ export function CurriculumGoalDetailPage() {
         initialData={editingGoal}
         nextCodeSuggestion={nextCodeSuggestion}
         ageGroup={ageGroup}
-        currentAgeGroupLabel={GRADE_LABELS_FULL[ageGroup] || 'Khối Nhà trẻ (12–36 tháng)'}
+        currentAgeGroupLabel={getGradeLabelFull(ageGroup)}
         onSave={handleSaveGoal}
       />
 
@@ -1105,7 +1187,7 @@ export function CurriculumGoalDetailPage() {
         isOpen={isImportDrawerOpen}
         onClose={() => setIsImportDrawerOpen(false)}
         onSuccess={() => {
-          toast.success('Đã import thành công danh sách mục tiêu!');
+          toast.success(t('curriculum.importGoalsSuccess', 'Đã import thành công danh sách mục tiêu!'));
         }}
       />
 
@@ -1113,7 +1195,7 @@ export function CurriculumGoalDetailPage() {
         isOpen={isAiDrawerOpen}
         onClose={() => setIsAiDrawerOpen(false)}
         onApplyProposal={(proposal) => {
-          toast.success('Đã áp dụng đề xuất của AI vào ngân hàng mục tiêu!');
+          toast.success(t('curriculum.appliedProposalSuccess', 'Đã áp dụng đề xuất của AI vào ngân hàng mục tiêu!'));
         }}
       /> */}
       {/* Hộp thoại xác nhận xóa mục tiêu giáo dục */}
@@ -1121,10 +1203,10 @@ export function CurriculumGoalDetailPage() {
         <DialogContent className="sm:max-w-[440px] rounded-none border border-border bg-card p-5 shadow-2xl space-y-4 select-none">
           <DialogHeader className="space-y-1.5 pb-0">
             <DialogTitle className="text-[16px] font-semibold text-foreground tracking-tight">
-              Xác nhận xóa mục tiêu giáo dục
+              {t('curriculum.confirmDeleteGoalTitle', 'Xác nhận xóa mục tiêu giáo dục')}
             </DialogTitle>
             <DialogDescription className="text-[12.5px] text-muted-foreground leading-relaxed pt-1">
-              Mục tiêu giáo dục và toàn bộ danh sách nội dung liên quan sẽ bị xóa khỏi ngân hàng mục tiêu. Thao tác này không thể hoàn tác.
+              {t('curriculum.confirmDeleteGoalDesc', 'Mục tiêu giáo dục và toàn bộ danh sách nội dung liên quan sẽ bị xóa khỏi ngân hàng mục tiêu. Thao tác này không thể hoàn tác.')}
             </DialogDescription>
           </DialogHeader>
 
@@ -1153,7 +1235,7 @@ export function CurriculumGoalDetailPage() {
               onClick={() => setGoalToDelete(null)}
               className="h-8 px-3.5 text-[12.5px] rounded-none border border-border cursor-pointer shadow-none"
             >
-              Hủy bỏ
+              {t('common.cancel', 'Hủy bỏ')}
             </Button>
             <Button
               type="button"
@@ -1166,7 +1248,7 @@ export function CurriculumGoalDetailPage() {
               }}
               className="h-8 px-4 text-[12.5px] font-medium rounded-none bg-destructive hover:bg-destructive/90 text-white cursor-pointer shadow-none"
             >
-              Xác nhận xóa
+              {t('curriculum.confirmDelete', 'Xác nhận xóa')}
             </Button>
           </DialogFooter>
         </DialogContent>

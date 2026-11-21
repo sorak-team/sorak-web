@@ -32,6 +32,7 @@ import { planningApi } from '@/features/planning/planning.api';
 import { cn } from '@/shared/lib/utils';
 import { toast } from 'sonner';
 import { useAuthStore, isTeacherRole } from '@/features/auth';
+import { useAcademicYearStore } from '@/features/academic-years';
 import { curriculumApi } from './curriculum.api';
 
 // Days of the week in VN matching WeekPickerCalendar
@@ -281,6 +282,7 @@ function ThemeDatePicker({
   referenceStartDate,
   placeholder = 'dd/mm/yyyy',
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const initialDate = value || referenceStartDate || minDate || new Date().toISOString().slice(0, 10);
   const parts = initialDate.split('-').map(Number);
@@ -374,7 +376,7 @@ function ThemeDatePicker({
         {type === 'end' && referenceStartDate && (
           <div className="mb-2.5 pb-2.5 border-b border-border/80">
             <div className="text-[11px] font-medium text-muted-foreground mb-1.5 flex items-center justify-between">
-              <span>Chọn nhanh thời lượng chủ đề:</span>
+              <span>{t('curriculum.quickSelectThemeDuration', 'Chọn nhanh thời lượng chủ đề:')}</span>
             </div>
             <div className="grid grid-cols-5 gap-1">
               {[2, 3, 4, 5, 6].map((w) => {
@@ -391,9 +393,9 @@ function ThemeDatePicker({
                         ? 'bg-primary text-primary-foreground border-primary'
                         : 'bg-muted/30 border-border hover:bg-muted text-foreground',
                     )}
-                    title={`${w} tuần: ${formatDateVn(referenceStartDate)} – ${formatDateVn(calculatedEnd)}`}
+                    title={`${w} ${t('common.weeks', 'tuần')}: ${formatDateVn(referenceStartDate)} – ${formatDateVn(calculatedEnd)}`}
                   >
-                    {w} tuần
+                    {w} {t('common.weeks', 'tuần')}
                   </button>
                 );
               })}
@@ -404,7 +406,7 @@ function ThemeDatePicker({
         {/* Calendar Header */}
         <div className="flex items-center justify-between pb-2 mb-1 border-b border-border/60">
           <span className="text-[12.5px] font-semibold text-foreground">
-            Tháng {viewMonth + 1}/{viewYear}
+            {t('curriculum.monthLabel', 'Tháng')} {viewMonth + 1}/{viewYear}
           </span>
           <div className="flex items-center gap-1">
             <button
@@ -468,10 +470,10 @@ function ThemeDatePicker({
                 )}
                 title={
                   type === 'start' && idx % 7 !== 0
-                    ? 'Ngày bắt đầu phải là Thứ Hai (cột T2)'
+                    ? t('curriculum.startMustBeMonday', 'Ngày bắt đầu phải là Thứ Hai (cột T2)')
                     : type === 'end' && idx % 7 !== 6
-                    ? 'Ngày kết thúc phải là Chủ Nhật (cột CN)'
-                    : `Chọn ngày ${formatDateVn(d.dateStr)}`
+                    ? t('curriculum.endMustBeSunday', 'Ngày kết thúc phải là Chủ Nhật (cột CN)')
+                    : t('curriculum.selectDate', 'Chọn ngày {{date}}', { date: formatDateVn(d.dateStr) })
                 }
               >
                 {d.day}
@@ -483,10 +485,10 @@ function ThemeDatePicker({
         <div className="mt-2 pt-2 border-t border-border/60 text-[10.5px] text-muted-foreground flex items-center justify-between">
           <span>
             {type === 'start'
-              ? 'Chỉ chọn Thứ Hai (T2)'
+              ? t('curriculum.onlySelectMonday', 'Chỉ chọn Thứ Hai (T2)')
               : type === 'end'
-              ? 'Chỉ chọn Chủ Nhật (CN)'
-              : 'Chọn ngày hạn nộp BGH'}
+              ? t('curriculum.onlySelectSunday', 'Chỉ chọn Chủ Nhật (CN)')
+              : t('curriculum.selectDeadlineDate', 'Chọn ngày hạn nộp BGH')}
           </span>
           {type === 'deadline' && value && (
             <button
@@ -498,7 +500,7 @@ function ThemeDatePicker({
               }}
               className="text-[10.5px] text-destructive hover:underline cursor-pointer"
             >
-              Xóa hạn nộp
+              {t('curriculum.deleteDeadline', 'Xóa hạn nộp')}
             </button>
           )}
         </div>
@@ -515,8 +517,44 @@ export function CurriculumThemeDetailPage() {
   const currentUser = useAuthStore((state) => state.user);
   const isTeacher = isTeacherRole(currentUser?.role);
 
+  const academicYears = useAcademicYearStore((state) => state.academicYears);
+  const fetchAcademicYears = useAcademicYearStore((state) => state.fetchAcademicYears);
+
+  useEffect(() => {
+    if (academicYears.length === 0 && fetchAcademicYears) {
+      fetchAcademicYears();
+    }
+  }, [academicYears.length, fetchAcademicYears]);
+
+  const matchedYear = useMemo(() => {
+    const cleanYear = String(yearId || '').replace('–', '-').replace(/^năm\s*học\s*/i, '').trim();
+    return academicYears.find((y) => {
+      const yCleanName = String(y.name || '').replace('–', '-').replace(/^năm\s*học\s*/i, '').trim();
+      return (
+        String(y.id) === String(yearId) ||
+        (y.publicId && String(y.publicId) === String(yearId)) ||
+        yCleanName === cleanYear ||
+        yCleanName.includes(cleanYear) ||
+        (cleanYear && String(y.name || '').includes(cleanYear))
+      );
+    });
+  }, [academicYears, yearId]);
+
   const [isLoading, setIsLoading] = useState(true);
   const [themeSetInfo, setThemeSetInfo] = useState(null);
+
+  const isSchoolYearEnded = useMemo(() => {
+    const cleanYear = String(yearId || '').replace('–', '-');
+    const isYear2025 = cleanYear.includes('2025') || cleanYear === '1';
+    return Boolean(
+      matchedYear?.status === 'COMPLETED' ||
+      matchedYear?.status === 'ENDED' ||
+      themeSetInfo?.isSchoolYearEnded === true ||
+      themeSetInfo?.schoolYearStatus === 'COMPLETED' ||
+      themeSetInfo?.schoolYearStatus === 'ENDED' ||
+      (isYear2025 && (!matchedYear || matchedYear.status !== 'ACTIVE'))
+    );
+  }, [matchedYear, themeSetInfo, yearId]);
   const [themes, setThemes] = useState([]);
   const [selectedTopicIndex, setSelectedTopicIndex] = useState(-1);
   const [showRightSidebar, setShowRightSidebar] = useState(true);
@@ -536,10 +574,10 @@ export function CurriculumThemeDetailPage() {
       setIsExportingThemeExcel(true);
       const blob = await planningApi.exportThemePlanExcel({ ageGroup });
       downloadBlob(blob, `Ke_Hoach_Phan_Phoi_Chu_De_35_Tuan_${ageGroup}.xlsx`);
-      toast.success('Đã xuất kế hoạch phân phối chủ đề 35 tuần ra file Excel thành công');
+      toast.success(t('curriculum.exportTheme35WeeksSuccess', 'Đã xuất kế hoạch phân phối chủ đề 35 tuần ra file Excel thành công'));
     } catch (err) {
       console.error('Export theme plan excel failed:', err);
-      toast.error('Có lỗi xảy ra khi xuất file Excel');
+      toast.error(t('curriculum.exportExcelError', 'Có lỗi xảy ra khi xuất file Excel'));
     } finally {
       setIsExportingThemeExcel(false);
     }
@@ -729,20 +767,24 @@ export function CurriculumThemeDetailPage() {
 
   // Handlers for branch topics (Chủ đề nhánh)
   const handleAddSubTheme = () => {
+    if (isSchoolYearEnded) {
+      toast.warning('Năm học đã kết thúc. Không thể thêm chủ đề nhánh.');
+      return;
+    }
     if (isAllPublished) {
-      toast.warning('Bộ chủ đề đã công bố. Vui lòng gỡ công bố ở trang tổng quan để thêm nhánh.');
+      toast.warning(t('curriculum.unpublishToAddSubTheme', 'Bộ chủ đề đã công bố. Vui lòng gỡ công bố ở trang tổng quan để thêm nhánh.'));
       return;
     }
     if (subThemes.length >= 6) {
-      toast.warning('Mỗi chủ đề chỉ được có tối đa 6 chủ đề nhánh.');
+      toast.warning(t('curriculum.maxSubThemesReached', 'Mỗi chủ đề chỉ được có tối đa 6 chủ đề nhánh.'));
       return;
     }
     if (!startDate || !endDate) {
-      toast.warning('Chủ đề chưa có khoảng thời gian bắt đầu và kết thúc.');
+      toast.warning(t('curriculum.themeMissingDateRange', 'Chủ đề chưa có khoảng thời gian bắt đầu và kết thúc.'));
       return;
     }
     if (isThemeFull) {
-      toast.warning(`Chủ đề đã phân bổ đủ thời gian (đến hết ${formatDateVn(endDate)}).`);
+      toast.warning(t('curriculum.themeFullyAllocated', 'Chủ đề đã phân bổ đủ thời gian (đến hết {{date}}).', { date: formatDateVn(endDate) }));
       return;
     }
     let nextStart = startDate || '';
@@ -768,7 +810,7 @@ export function CurriculumThemeDetailPage() {
     setActiveSubThemeIndex(newIdx);
     setRangeSelectionStart(null);
     setHoveredCalendarDate(null);
-    toast.info(`Đã thêm nhánh mới. Bạn có thể chọn ngày trực tiếp trên lịch hoặc bấm "+1 Tuần".`);
+    toast.info(t('curriculum.addedSubThemeInfo', 'Đã thêm nhánh mới. Bạn có thể chọn ngày trực tiếp trên lịch hoặc bấm "+1 Tuần".'));
   };
 
   const handleAssignSubThemeWeek = (index, wStart, wEnd) => {
@@ -788,11 +830,11 @@ export function CurriculumThemeDetailPage() {
   const handleChangeBranchDuration = (bIdx, targetWeeks) => {
     if (isAllPublished) return;
     if (bIdx !== subThemes.length - 1) {
-      toast.warning('Chỉ được sửa thời lượng cho chủ đề nhánh ở cuối.');
+      toast.warning(t('curriculum.onlyEditLastSubThemeDuration', 'Chỉ được sửa thời lượng cho chủ đề nhánh ở cuối.'));
       return;
     }
     if (targetWeeks < 1 || targetWeeks > 5) {
-      toast.warning('Thời lượng chủ đề nhánh phải từ 1 đến 5 tuần (không được là 6 tuần).');
+      toast.warning(t('curriculum.subThemeDurationRangeError', 'Thời lượng chủ đề nhánh phải từ 1 đến 5 tuần (không được là 6 tuần).'));
       return;
     }
     const branch = subThemes[bIdx];
@@ -886,9 +928,13 @@ export function CurriculumThemeDetailPage() {
   };
 
   const handleDeleteSubTheme = (index) => {
+    if (isSchoolYearEnded) {
+      toast.warning('Năm học đã kết thúc. Không thể xóa chủ đề nhánh.');
+      return;
+    }
     if (isAllPublished) return;
     if (index !== subThemes.length - 1) {
-      toast.warning('Chỉ được xóa chủ đề nhánh ở cuối (xóa dần từ nhánh cuối lên).');
+      toast.warning(t('curriculum.onlyDeleteLastSubTheme', 'Chỉ được xóa chủ đề nhánh ở cuối (xóa dần từ nhánh cuối lên).'));
       return;
     }
     if (activeSubThemeIndex === index) {
@@ -901,25 +947,25 @@ export function CurriculumThemeDetailPage() {
     const filtered = subThemes.filter((_, i) => i !== index);
     const cascaded = cascadeSubThemes(filtered, startDate, endDate);
     setSubThemes(cascaded);
-    toast.info('Đã xóa chủ đề nhánh ở cuối.');
+    toast.info(t('curriculum.deletedLastSubTheme', 'Đã xóa chủ đề nhánh ở cuối.'));
   };
 
   // Tự động phân bổ lại thời gian các nhánh khớp chính xác khoảng thời gian của chủ đề lớn
   const handleAutoAlignSubThemes = () => {
     if (isAllPublished || isReadOnly) return;
     if (!startDate || !endDate) {
-      toast.warning('Vui lòng thiết lập ngày bắt đầu và kết thúc của chủ đề chính trước.');
+      toast.warning(t('curriculum.pleaseSetThemeDatesFirst', 'Vui lòng thiết lập ngày bắt đầu và kết thúc của chủ đề chính trước.'));
       return;
     }
     if (!isMonday(startDate) || !isSunday(endDate)) {
-      toast.warning('Chủ đề chính phải bắt đầu vào Thứ Hai và kết thúc vào Chủ Nhật.');
+      toast.warning(t('curriculum.mainThemeMondaySunday', 'Chủ đề chính phải bắt đầu vào Thứ Hai và kết thúc vào Chủ Nhật.'));
       return;
     }
     if (!Array.isArray(subThemes) || subThemes.length === 0) return;
 
     const totalDays = Math.round((new Date(endDate) - new Date(startDate)) / 86400000) + 1;
     if (totalDays % 7 !== 0) {
-      toast.warning(`Thời lượng chủ đề (${totalDays} ngày) phải là các tuần trọn vẹn (chia hết cho 7 ngày).`);
+      toast.warning(t('curriculum.themeMustBeWholeWeeks', 'Thời lượng chủ đề ({{days}} ngày) phải là các tuần trọn vẹn (chia hết cho 7 ngày).', { days: totalDays }));
       return;
     }
 
@@ -933,7 +979,7 @@ export function CurriculumThemeDetailPage() {
       for (let i = 0; i < toAdd; i++) {
         workingList.push({
           id: `st-${Date.now()}-${i}`,
-          name: `Chủ đề nhánh ${workingList.length + 1}`,
+          name: t('curriculum.subThemeDefaultName', 'Chủ đề nhánh {{index}}', { index: workingList.length + 1 }),
           startDate: '',
           endDate: '',
         });
@@ -942,7 +988,7 @@ export function CurriculumThemeDetailPage() {
 
     const count = workingList.length;
     if (count > totalWeeks) {
-      toast.error(`Số lượng nhánh (${count}) nhiều hơn số tuần của chủ đề (${totalWeeks} tuần).`);
+      toast.error(t('curriculum.subThemesExceedThemeWeeks', 'Số lượng nhánh ({{count}}) nhiều hơn số tuần của chủ đề ({{weeks}} tuần).', { count, weeks: totalWeeks }));
       return;
     }
 
@@ -966,14 +1012,14 @@ export function CurriculumThemeDetailPage() {
 
     setSubThemes(aligned);
     toast.success(
-      `Đã tự động căn chỉnh ${aligned.length} chủ đề nhánh theo tuần trọn vẹn (${formatDateVn(startDate)} – ${formatDateVn(endDate)})`,
+      t('curriculum.alignedSubThemesSuccess', 'Đã tự động căn chỉnh {{count}} chủ đề nhánh theo tuần trọn vẹn ({{start}} – {{end}})', { count: aligned.length, start: formatDateVn(startDate), end: formatDateVn(endDate) }),
     );
   };
 
   // Kích hoạt / Tắt chế độ chọn ngày trên lịch cho một nhánh
   const handleToggleSelectSubThemeOnCalendar = (bIdx) => {
     if (isAllPublished) {
-      toast.warning('Bộ chủ đề đã công bố. Vui lòng bấm "Gỡ công bố" để chỉnh sửa thời gian.');
+      toast.warning(t('curriculum.unpublishToEditDates', 'Bộ chủ đề đã công bố. Vui lòng bấm "Gỡ công bố" để chỉnh sửa thời gian.'));
       return;
     }
     if (activeSubThemeIndex === bIdx) {
@@ -1011,7 +1057,7 @@ export function CurriculumThemeDetailPage() {
     const { minDate, maxDate } = getMinMaxForSubTheme(bIdx, subThemes, startDate, endDate);
     const start = branch.startDate || minDate;
     if (!start) {
-      toast.warning('Chưa có mốc ngày bắt đầu hợp lệ.');
+      toast.warning(t('curriculum.noValidStartDate', 'Chưa có mốc ngày bắt đầu hợp lệ.'));
       return;
     }
 
@@ -1032,7 +1078,7 @@ export function CurriculumThemeDetailPage() {
 
     setRangeSelectionStart(null);
     setHoveredCalendarDate(null);
-    toast.success(`Đã gán 1 tuần (${formatDateVn(start)} – ${formatDateVn(end)}) cho nhánh ${bIdx + 1}`);
+    toast.success(t('curriculum.assignedOneWeekSuccess', 'Đã gán 1 tuần ({{start}} – {{end}}) cho nhánh {{index}}', { start: formatDateVn(start), end: formatDateVn(end), index: bIdx + 1 }));
 
     // Nếu đang chọn nhánh này trên lịch, chuyển sang nhánh tiếp theo nếu có
     if (activeSubThemeIndex === bIdx) {
@@ -1064,7 +1110,7 @@ export function CurriculumThemeDetailPage() {
     // Lần click 1: Chọn ngày bắt đầu
     if (!rangeSelectionStart) {
       if (!isMonday(dateStr)) {
-        toast.warning('Ngày bắt đầu nhánh phải là Thứ Hai (cột T2 trên lịch).');
+        toast.warning(t('curriculum.subThemeMondayStart', 'Ngày bắt đầu nhánh phải là Thứ Hai (cột T2 trên lịch).'));
         return;
       }
       setRangeSelectionStart(dateStr);
@@ -1092,7 +1138,7 @@ export function CurriculumThemeDetailPage() {
     }
 
     if (!isSunday(dateStr)) {
-      toast.warning('Ngày kết thúc nhánh phải là Chủ Nhật (cột CN trên lịch).');
+      toast.warning(t('curriculum.subThemeSundayEnd', 'Ngày kết thúc nhánh phải là Chủ Nhật (cột CN trên lịch).'));
       return;
     }
 
@@ -1163,7 +1209,7 @@ export function CurriculumThemeDetailPage() {
     () => themes.length > 0 && themes.every((t) => t.status === 'PUBLISHED'),
     [themes],
   );
-  const isReadOnly = Boolean(isAllPublished || isTeacher);
+  const isReadOnly = Boolean(isAllPublished || isTeacher || isSchoolYearEnded);
 
   // Kiểm tra có thay đổi so với dữ liệu gốc của chủ đề đang chọn hay không
   const hasChanges = useMemo(() => {
@@ -1338,7 +1384,7 @@ export function CurriculumThemeDetailPage() {
     }
 
     if (!isMonday(val)) {
-      toast.error('Ngày bắt đầu chủ đề phải là Thứ Hai (đầu tuần).');
+      toast.error(t('curriculum.mainThemeMondayStartError', 'Ngày bắt đầu chủ đề phải là Thứ Hai (đầu tuần).'));
       return;
     }
 
@@ -1414,7 +1460,7 @@ export function CurriculumThemeDetailPage() {
     }
 
     if (!isSunday(val)) {
-      toast.error('Ngày kết thúc chủ đề phải là Chủ Nhật (cuối tuần).');
+      toast.error(t('curriculum.mainThemeSundayEndError', 'Ngày kết thúc chủ đề phải là Chủ Nhật (cuối tuần).'));
       return;
     }
 
@@ -1512,19 +1558,19 @@ export function CurriculumThemeDetailPage() {
   const handleSaveTopic = async (isSilent = false) => {
     if (isTeacher || isReadOnly || isSaving) return;
     if (!topicName.trim()) {
-      if (!isSilent) toast.error('Tên chủ đề không được để trống.');
+      if (!isSilent) toast.error(t('curriculum.topicNameRequired', 'Tên chủ đề không được để trống.'));
       return;
     }
     if (isDuplicateThemeName) {
-      if (!isSilent) toast.error('Tên chủ đề đã tồn tại trong bộ chủ đề này. Vui lòng nhập tên khác.');
+      if (!isSilent) toast.error(t('curriculum.themeNameExistsDesc', 'Tên chủ đề đã tồn tại trong bộ chủ đề này. Vui lòng nhập tên khác.'));
       return;
     }
     if (duplicateSubThemeIndexes.size > 0) {
-      if (!isSilent) toast.error('Tên chủ đề nhánh đã tồn tại trong chủ đề này. Vui lòng nhập tên khác.');
+      if (!isSilent) toast.error(t('curriculum.subThemeNameExistsDesc', 'Tên chủ đề nhánh đã tồn tại trong chủ đề này. Vui lòng nhập tên khác.'));
       return;
     }
     if (!startDate || !endDate) {
-      if (!isSilent) toast.error('Vui lòng chọn đầy đủ ngày bắt đầu và ngày kết thúc.');
+      if (!isSilent) toast.error(t('curriculum.missingDatesError', 'Vui lòng chọn đầy đủ ngày bắt đầu và ngày kết thúc.'));
       return;
     }
     if (startDate > endDate) {
@@ -1754,6 +1800,10 @@ export function CurriculumThemeDetailPage() {
   ]);
 
   const handleTogglePublish = async () => {
+    if (isSchoolYearEnded) {
+      toast.warning('Năm học đã kết thúc. Không thể thay đổi trạng thái công bố bộ chủ đề.');
+      return;
+    }
     if (!isAllPublished) {
       // Kiểm tra tất cả chủ đề: thời lượng 2–6 tuần, từ 2 đến 6 nhánh, và nhánh bao phủ trọn thời gian
       for (const th of themes) {
@@ -1855,6 +1905,10 @@ export function CurriculumThemeDetailPage() {
   };
 
   const handleDeleteCurrentTopic = async () => {
+    if (isSchoolYearEnded) {
+      toast.warning('Năm học đã kết thúc. Không thể xóa chủ đề.');
+      return;
+    }
     if (isAllPublished) {
       toast.error('Không thể xóa chủ đề khi bộ chủ đề đã công bố.');
       return;
@@ -1895,6 +1949,10 @@ export function CurriculumThemeDetailPage() {
 
   // Add new topic
   const handleAddNewTopic = async () => {
+    if (isSchoolYearEnded) {
+      toast.warning('Năm học đã kết thúc. Không thể thêm chủ đề mới.');
+      return;
+    }
     if (isAllPublished) {
       toast.warning('Bộ chủ đề đã công bố. Vui lòng gỡ công bố để thêm chủ đề mới.');
       return;
@@ -2262,6 +2320,13 @@ export function CurriculumThemeDetailPage() {
       data-node-id="4772:9956"
       data-name="Curriculum Theme Detail Page"
     >
+      {/* Warning banner for ended school year */}
+      {isSchoolYearEnded && (
+        <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-[13px] font-medium flex items-center gap-2 shrink-0">
+          <span>⚠️ Năm học đã kết thúc. Kế hoạch phân phối chủ đề ở chế độ chỉ xem.</span>
+        </div>
+      )}
+
       {/* Main Workspace (3 columns layout: Topics Navigator + Topic Editor + Topic Settings Sidebar) */}
       <div className="flex flex-1 overflow-hidden h-[calc(100vh-104px)] lg:h-[calc(100vh-120px)]">
         {/* Left Column: Desktop Topics Navigator */}
@@ -2272,7 +2337,7 @@ export function CurriculumThemeDetailPage() {
               {t('curriculum.topicList')}
             </h2>
             <p className="text-[12px] text-muted-foreground mt-0.5">
-              Các chủ đề giáo dục được phân bổ trong năm học
+              {t('curriculum.themesHeaderDesc', 'Các chủ đề giáo dục được phân bổ trong năm học')}
             </p>
           </div>
 
@@ -2281,16 +2346,18 @@ export function CurriculumThemeDetailPage() {
             <Button
               type="button"
               variant="outline"
-              disabled={isAllPublished || isAcademicYearFull}
+              disabled={isAllPublished || isAcademicYearFull || isSchoolYearEnded}
               onClick={handleAddNewTopic}
               className={cn(
                 'w-full h-8 border border-border text-[13px] font-medium rounded-none flex items-center justify-center gap-1.5 shadow-none transition-colors',
-                (isAllPublished || isAcademicYearFull)
+                (isAllPublished || isAcademicYearFull || isSchoolYearEnded)
                   ? 'opacity-50 cursor-not-allowed bg-muted/40 text-muted-foreground'
                   : 'hover:bg-muted cursor-pointer',
               )}
               title={
-                isAllPublished
+                isSchoolYearEnded
+                  ? 'Năm học đã kết thúc. Không thể thêm chủ đề mới'
+                  : isAllPublished
                   ? 'Vui lòng gỡ công bố để thêm chủ đề mới'
                   : isAcademicYearFull
                   ? 'Đã đạt tối đa 20 chủ đề trong một năm học'
@@ -2298,7 +2365,7 @@ export function CurriculumThemeDetailPage() {
               }
             >
               <HugeiconsIcon icon={PlusSignIcon} size={14} />
-              <span>{isAcademicYearFull ? 'Đã đủ tối đa 20 chủ đề' : t('curriculum.createTheme')}</span>
+              <span>{isSchoolYearEnded ? 'Năm học đã kết thúc' : isAcademicYearFull ? 'Đã đủ tối đa 20 chủ đề' : t('curriculum.createTheme')}</span>
             </Button>
           </div>
 
@@ -2306,7 +2373,7 @@ export function CurriculumThemeDetailPage() {
           <div className="flex-1 overflow-y-auto divide-y divide-border/40 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             {themes.length === 0 ? (
               <div className="p-6 text-center text-[12.5px] text-muted-foreground italic select-none">
-                Chưa có chủ đề nào
+                {t('curriculum.noThemesYet', 'Chưa có chủ đề nào')}
               </div>
             ) : (
               themes.map((topic, idx) => {
@@ -2369,7 +2436,7 @@ export function CurriculumThemeDetailPage() {
                     {t('curriculum.topicList')}
                   </h2>
                   <p className="text-[11.5px] text-muted-foreground mt-0.5">
-                    {themes.length} chủ đề trong năm học
+                    {t('curriculum.themesInSchoolYear', '{{count}} chủ đề trong năm học', { count: themes.length })}
                   </p>
                 </div>
                 <button
@@ -2385,20 +2452,20 @@ export function CurriculumThemeDetailPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={isAllPublished || isAcademicYearFull}
+                  disabled={isAllPublished || isAcademicYearFull || isSchoolYearEnded}
                   onClick={() => {
                     handleAddNewTopic();
                     setShowMobileTopics(false);
                   }}
                   className={cn(
                     'w-full h-8 border border-border text-[12.5px] font-medium rounded-none flex items-center justify-center gap-1.5 shadow-none transition-colors',
-                    (isAllPublished || isAcademicYearFull)
+                    (isAllPublished || isAcademicYearFull || isSchoolYearEnded)
                       ? 'opacity-50 cursor-not-allowed bg-muted/40 text-muted-foreground'
                       : 'hover:bg-muted cursor-pointer',
                   )}
                 >
                   <HugeiconsIcon icon={PlusSignIcon} size={14} />
-                  <span>{isAcademicYearFull ? 'Đã đủ tối đa 20 chủ đề' : t('curriculum.createTheme')}</span>
+                  <span>{isSchoolYearEnded ? 'Năm học đã kết thúc' : isAcademicYearFull ? 'Đã đủ tối đa 20 chủ đề' : t('curriculum.createTheme')}</span>
                 </Button>
               </div>
 
@@ -2485,11 +2552,11 @@ export function CurriculumThemeDetailPage() {
                 type="button"
                 variant="outline"
                 onClick={handleAddNewTopic}
-                disabled={isAllPublished || isAcademicYearFull}
+                disabled={isAllPublished || isAcademicYearFull || isSchoolYearEnded}
                 className="mt-5 h-8.5 px-4 text-[13px] font-medium border-border hover:bg-muted text-foreground rounded-none shadow-none flex items-center gap-1.5 cursor-pointer"
               >
                 <HugeiconsIcon icon={PlusSignIcon} size={15} />
-                <span>Tạo chủ đề</span>
+                <span>{isSchoolYearEnded ? 'Năm học đã kết thúc' : t('curriculum.createThemeBtn', 'Tạo chủ đề')}</span>
               </Button>
             </div>
           ) : (
@@ -2518,16 +2585,6 @@ export function CurriculumThemeDetailPage() {
 
                 {/* Top Right Controls: Toggle Lịch, In Kế hoạch & Nút Xóa */}
                 <div className="flex items-center gap-1.5 shrink-0">
-                  {/* Nút In Kế hoạch Chủ đề 35 tuần A4 */}
-                  <button
-                    type="button"
-                    onClick={handlePrintThemePlan}
-                    className="size-8 flex items-center justify-center border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer rounded-none shrink-0"
-                    title="In Kế hoạch phân phối chủ đề 35 tuần (Khổ A4)"
-                  >
-                    <Printer size={15} />
-                  </button>
-
                   {/* Nút Xuất Excel Kế hoạch chủ đề 35 tuần */}
                   <ExcelActionsDropdown
                     onExport={handleExportThemePlanExcel}
@@ -2544,7 +2601,7 @@ export function CurriculumThemeDetailPage() {
                         ? 'bg-muted text-foreground font-medium'
                         : 'bg-background text-muted-foreground hover:text-foreground hover:bg-muted/50',
                     )}
-                    title={showRightSidebar ? 'Thu gọn lịch' : 'Mở lịch & tiến độ'}
+                    title={showRightSidebar ? t('curriculum.collapseCalendar', 'Thu gọn lịch') : t('curriculum.openCalendarAndProgress', 'Mở lịch & tiến độ')}
                   >
                     <HugeiconsIcon icon={SidebarRightIcon} size={16} />
                   </button>
@@ -2552,9 +2609,15 @@ export function CurriculumThemeDetailPage() {
                   <button
                     type="button"
                     onClick={handleDeleteCurrentTopic}
-                    disabled={isAllPublished}
+                    disabled={isAllPublished || isSchoolYearEnded}
                     className="size-8 flex items-center justify-center border border-border bg-background hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors cursor-pointer rounded-none disabled:opacity-40 disabled:cursor-not-allowed"
-                    title="Xóa chủ đề này"
+                    title={
+                      isSchoolYearEnded
+                        ? 'Năm học đã kết thúc. Không thể xóa chủ đề'
+                        : isAllPublished
+                        ? 'Không thể xóa chủ đề khi bộ chủ đề đã công bố'
+                        : t('curriculum.deleteThisTheme', 'Xóa chủ đề này')
+                    }
                   >
                     <HugeiconsIcon icon={Delete02Icon} size={16} />
                   </button>
@@ -2576,16 +2639,16 @@ export function CurriculumThemeDetailPage() {
 
                 <span className="text-[11.5px] text-muted-foreground/70 shrink-0 font-sans tracking-tight select-none">
                   {isSaving ? (
-                    <span className="text-primary font-medium">Đang lưu...</span>
+                    <span className="text-primary font-medium">{t('common.saving', 'Đang lưu...')}</span>
                   ) : isDuplicateThemeName ? (
-                    <span className="text-destructive font-medium">Tên chủ đề đã tồn tại trong bộ chủ đề này</span>
+                    <span className="text-destructive font-medium">{t('curriculum.themeNameAlreadyExists', 'Tên chủ đề đã tồn tại trong bộ chủ đề này')}</span>
                   ) : duplicateSubThemeIndexes.size > 0 ? (
-                    <span className="text-destructive font-medium">Tên chủ đề nhánh đã tồn tại trong chủ đề này</span>
+                    <span className="text-destructive font-medium">{t('curriculum.subThemeNameAlreadyExists', 'Tên chủ đề nhánh đã tồn tại trong chủ đề này')}</span>
                   ) : hasChanges ? (
-                    <span className="text-amber-600 font-medium">Đang chờ lưu...</span>
+                    <span className="text-amber-600 font-medium">{t('curriculum.waitingToSave', 'Đang chờ lưu...')}</span>
                   ) : (
                     <>
-                      Đã lưu lúc <span className="font-mono text-muted-foreground font-medium">{formatDateTime(lastSavedAt || updatedAt)}</span>
+                      {t('curriculum.savedAtTime', 'Đã lưu lúc')} <span className="font-mono text-muted-foreground font-medium">{formatDateTime(lastSavedAt || updatedAt)}</span>
                     </>
                   )}
                 </span>
@@ -2621,14 +2684,14 @@ export function CurriculumThemeDetailPage() {
                         return copy;
                       });
                     }}
-                    disabled={isAllPublished}
+                    disabled={isReadOnly}
                     placeholder={t('curriculum.topicName')}
                     className={cn(
                       'w-full h-8 px-3 bg-background border text-[13px] text-foreground rounded-none outline-none transition-colors',
                       isDuplicateThemeName
                         ? 'border-destructive focus:border-destructive text-destructive'
                         : 'border-border focus:border-primary',
-                      isAllPublished && 'bg-muted/40 text-muted-foreground cursor-not-allowed',
+                      isReadOnly && 'bg-muted/40 text-muted-foreground cursor-not-allowed',
                     )}
                   />
                   {isDuplicateThemeName && (
@@ -2638,7 +2701,7 @@ export function CurriculumThemeDetailPage() {
                   )}
                 </div>
 
-                {/* Timing Fields: Ngày bắt đầu, Ngày kết thúc, Hạn nộp kế hoạch */}
+                {/* Timing Fields: Ngày bắt đầu, Ngày kết thúc, {t('curriculum.planSubmissionDeadline', 'Hạn nộp kế hoạch')} */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-1.5">
                     <label className="text-[12.5px] font-medium text-foreground">
@@ -2647,7 +2710,7 @@ export function CurriculumThemeDetailPage() {
                     <ThemeDatePicker
                       value={startDate}
                       onChange={handleStartDateChange}
-                      disabled={isAllPublished}
+                      disabled={isReadOnly}
                       type="start"
                       minDate={themeDateBounds.minAllowedStart || undefined}
                       maxDate={themeDateBounds.maxAllowedStart || undefined}
@@ -2661,7 +2724,7 @@ export function CurriculumThemeDetailPage() {
                     <ThemeDatePicker
                       value={endDate}
                       onChange={handleEndDateChange}
-                      disabled={isAllPublished}
+                      disabled={isReadOnly}
                       type="end"
                       referenceStartDate={startDate}
                       minDate={themeDateBounds.minAllowedEnd || undefined}
@@ -2676,7 +2739,7 @@ export function CurriculumThemeDetailPage() {
                     <ThemeDatePicker
                       value={submissionDeadline || (startDate ? addDaysToDate(startDate, -5) : '')}
                       onChange={(val) => setSubmissionDeadline(val)}
-                      disabled={isAllPublished}
+                      disabled={isReadOnly}
                       type="deadline"
                       placeholder="dd/mm/yyyy"
                     />
@@ -2693,7 +2756,7 @@ export function CurriculumThemeDetailPage() {
                     {t('curriculum.subThemes', 'Nhánh chủ đề')}
                   </h2>
                   <p className="text-[12px] text-muted-foreground">
-                    Một chủ đề có thể có nhiều chủ đề nhánh.
+                    {t('curriculum.subThemeGuideDesc', 'Một chủ đề có thể có nhiều chủ đề nhánh.')}
                   </p>
                 </div>
 
@@ -2704,15 +2767,17 @@ export function CurriculumThemeDetailPage() {
                     variant="outline"
                     size="sm"
                     onClick={handleAddSubTheme}
-                    disabled={isAllPublished || isThemeFull}
+                    disabled={isReadOnly || isThemeFull}
                     className={cn(
                       'h-8 px-2.5 text-[12.5px] font-medium border-border rounded-none shadow-none flex items-center gap-1.5 transition-colors',
-                      isAllPublished || isThemeFull
+                      isReadOnly || isThemeFull
                         ? 'opacity-40 cursor-not-allowed bg-muted/30 text-muted-foreground'
                         : 'hover:bg-muted text-foreground cursor-pointer',
                     )}
                     title={
-                      isAllPublished
+                      isSchoolYearEnded
+                        ? 'Năm học đã kết thúc. Không thể thêm chủ đề nhánh'
+                        : isAllPublished
                         ? 'Bộ chủ đề đã công bố'
                         : isThemeFull
                         ? `Chủ đề đã phân bổ đủ thời gian (đến hết ${formatDateVn(endDate)})`
@@ -2720,7 +2785,7 @@ export function CurriculumThemeDetailPage() {
                     }
                   >
                     <HugeiconsIcon icon={PlusSignIcon} size={14} />
-                    <span>{isThemeFull ? 'Đã đủ chủ đề nhánh' : 'Thêm chủ đề nhánh'}</span>
+                    <span>{isSchoolYearEnded ? 'Năm học đã kết thúc' : isThemeFull ? 'Đã đủ chủ đề nhánh' : 'Thêm chủ đề nhánh'}</span>
                   </Button>
                 </div>
               </div>
@@ -2729,17 +2794,17 @@ export function CurriculumThemeDetailPage() {
               <div className="space-y-2 pt-1">
                 {subThemes.length === 0 ? (
                   <div className="py-7 px-4 text-center border border-dashed border-border/80 text-[12.5px] text-muted-foreground bg-muted/10 space-y-3">
-                    <p className="italic">Chủ đề này chưa có chủ đề nhánh nào.</p>
+                    <p className="italic">{t('curriculum.noSubThemesInTheme', 'Chủ đề này chưa có chủ đề nhánh nào.')}</p>
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
                       onClick={handleAddSubTheme}
-                      disabled={isAllPublished}
+                      disabled={isReadOnly}
                       className="h-8 px-3 text-[12.5px] font-medium border-border hover:bg-muted text-foreground rounded-none cursor-pointer shadow-none inline-flex items-center gap-1.5"
                     >
                       <HugeiconsIcon icon={PlusSignIcon} size={14} />
-                      <span>Thêm chủ đề nhánh đầu tiên</span>
+                      <span>{isSchoolYearEnded ? 'Năm học đã kết thúc' : t('curriculum.addFirstSubTheme', 'Thêm chủ đề nhánh đầu tiên')}</span>
                     </Button>
                   </div>
                 ) : (
@@ -2809,7 +2874,7 @@ export function CurriculumThemeDetailPage() {
                                 }
                               }}
                               onChange={(e) => handleUpdateSubTheme(bIdx, 'name', e.target.value)}
-                              disabled={isAllPublished}
+                              disabled={isReadOnly}
                               placeholder={`Tên chủ đề nhánh ${bIdx + 1}...`}
                               className={cn(
                                 'flex-1 min-w-0 h-7 px-2 bg-transparent text-[13px] text-foreground outline-none transition-colors rounded-xs',
@@ -2817,12 +2882,12 @@ export function CurriculumThemeDetailPage() {
                                   ? 'border border-destructive focus:ring-1 focus:ring-destructive text-destructive font-medium'
                                   : 'border-0 hover:bg-muted/30 focus:bg-background focus:ring-1 focus:ring-border',
                                 isSelected ? 'font-medium' : 'font-normal',
-                                isAllPublished && 'cursor-not-allowed text-muted-foreground',
+                                isReadOnly && 'cursor-not-allowed text-muted-foreground',
                               )}
                             />
 
                             {/* Nút xóa nhánh ở góc trên bên phải (chỉ hiện khi hover vào nhánh cuối) */}
-                            {!isAllPublished && bIdx === subThemes.length - 1 ? (
+                            {!isReadOnly && bIdx === subThemes.length - 1 ? (
                               <button
                                 type="button"
                                 onClick={(e) => {
@@ -2830,7 +2895,7 @@ export function CurriculumThemeDetailPage() {
                                   handleDeleteSubTheme(bIdx);
                                 }}
                                 className="size-6 flex items-center justify-center text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 rounded-xs transition-all cursor-pointer opacity-0 group-hover:opacity-100 focus:opacity-100 shrink-0"
-                                title="Xóa nhánh ở cuối này"
+                                title={t('curriculum.deleteThisSubThemeAtEnd', 'Xóa nhánh ở cuối này')}
                               >
                                 <HugeiconsIcon icon={Cancel01Icon} size={14} />
                               </button>
@@ -2861,13 +2926,13 @@ export function CurriculumThemeDetailPage() {
                             ) : (
                               <div className="flex items-center gap-1.5 text-xs text-muted-foreground/60 italic">
                                 <HugeiconsIcon icon={Calendar03Icon} size={13} className="text-muted-foreground/40 shrink-0" />
-                                <span>Chưa chọn tuần</span>
+                                <span>{t('curriculum.notScheduledWeeks', 'Chưa chọn tuần')}</span>
                               </div>
                             )}
 
                             {/* Bên phải: Ô thời lượng tuần NẰM SÁT PHẢI - CÙNG KÍCH THƯỚC CHÍNH XÁC w-[76px] h-[24px] CHO TẤT CẢ CÁC HÀNG */}
                             {hasDates ? (
-                              !isAllPublished && bIdx === subThemes.length - 1 ? (
+                              !isReadOnly && bIdx === subThemes.length - 1 ? (
                                 (() => {
                                   let themeTotalWeeks = 0;
                                   if (startDate && endDate) {
@@ -2897,7 +2962,7 @@ export function CurriculumThemeDetailPage() {
                                           className="w-[82px] h-7 px-2.5 flex items-center justify-between text-[12px] font-medium text-foreground bg-muted/40 hover:bg-muted/70 border border-border/70 hover:border-border rounded-xs transition-colors cursor-pointer outline-none shrink-0 focus-visible:ring-1 focus-visible:ring-ring"
                                           title={`Thời lượng nhánh cuối (tối đa ${maxAllowed} tuần)`}
                                         >
-                                          <span>{currentWeeks} tuần</span>
+                                          <span>{t('curriculum.weeksCount', '{{count}} tuần', { count: currentWeeks })}</span>
                                           <HugeiconsIcon icon={ArrowDown01Icon} size={12} className="text-muted-foreground/60 shrink-0" />
                                         </button>
                                       </DropdownMenuTrigger>
@@ -2919,7 +2984,7 @@ export function CurriculumThemeDetailPage() {
                                                   : 'text-foreground hover:bg-muted/70',
                                               )}
                                             >
-                                              <span>{w} tuần</span>
+                                              <span>{t('curriculum.weeksCount', '{{count}} tuần', { count: w })}</span>
                                             </DropdownMenuItem>
                                           );
                                         })}
@@ -2929,7 +2994,7 @@ export function CurriculumThemeDetailPage() {
                                 })()
                               ) : (
                                 <div className="w-[82px] h-7 px-2.5 flex items-center justify-between text-[12px] font-medium text-muted-foreground/80 bg-muted/20 border border-border/40 rounded-xs select-none shrink-0">
-                                  <span>{Math.round(durationDays / 7) || 1} tuần</span>
+                                  <span>{t('curriculum.weeksCount', '{{count}} tuần', { count: Math.round(durationDays / 7) || 1 })}</span>
                                   <span className="w-3 shrink-0" aria-hidden="true" />
                                 </div>
                               )
@@ -2958,24 +3023,24 @@ export function CurriculumThemeDetailPage() {
                 rows={3}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                disabled={isAllPublished}
+                disabled={isReadOnly}
                 placeholder={t('curriculum.note')}
                 className={cn(
                   'w-full p-3 bg-background border border-border text-[13px] text-foreground rounded-none outline-none focus:border-primary transition-colors resize-none placeholder:text-muted-foreground',
-                  isAllPublished && 'bg-muted/40 text-muted-foreground cursor-not-allowed',
+                  isReadOnly && 'bg-muted/40 text-muted-foreground cursor-not-allowed',
                 )}
               />
             </div>
 
             {/* Chú thích hướng dẫn sử dụng clean, không màu, không icon (nằm bên dưới Ghi chú) */}
             <div className="text-[12px] text-muted-foreground leading-relaxed select-none px-1 pt-1">
-              <span className="font-medium text-foreground">Hướng dẫn:</span> Thời gian chủ đề chính gồm các tuần trọn vẹn từ 2 đến 6 tuần (Thứ Hai – Chủ Nhật). Các chủ đề nhánh (từ 1 đến 5 tuần, không được là 6 tuần) cần được phân bổ nối tiếp liên tục để phủ trọn vẹn thời gian của chủ đề. Bạn có thể nhấp trực tiếp vào tên nhánh để sửa tên, chọn tuần trên lịch hoặc điều chỉnh thời lượng (từ 1 đến 5 tuần) cho từng nhánh.
+              <span className="font-medium text-foreground">{t('curriculum.themeGuidanceNote', 'Hướng dẫn:')}</span> {t('curriculum.themeGuidanceFullText', 'Thời gian chủ đề chính gồm các tuần trọn vẹn từ 2 đến 6 tuần (Thứ Hai – Chủ Nhật). Các chủ đề nhánh (từ 1 đến 5 tuần, không được là 6 tuần) cần được phân bổ nối tiếp liên tục để phủ trọn vẹn thời gian của chủ đề. Bạn có thể nhấp trực tiếp vào tên nhánh để sửa tên, chọn tuần trên lịch hoặc điều chỉnh thời lượng (từ 1 đến 5 tuần) cho từng nhánh.')}
             </div>
 
           </div>
 
           {/* Bottom Action Bar: Chỉ hiển thị ở cột giữa nếu đã thu gọn sidebar lịch */}
-          {!showRightSidebar && (
+          {!showRightSidebar && !isSchoolYearEnded && (
             <div className="p-3 px-6 bg-card border-t border-border flex items-center justify-end shrink-0 select-none">
               <div className="flex items-center gap-2.5">
                 {isAllPublished ? (
@@ -2986,7 +3051,7 @@ export function CurriculumThemeDetailPage() {
                     className="h-10 px-4 border border-border bg-card hover:bg-muted text-foreground text-[13.5px] font-medium rounded-none shadow-none cursor-pointer flex items-center gap-2 transition-colors"
                   >
                     <HugeiconsIcon icon={Cancel01Icon} size={16} className="text-muted-foreground" />
-                    <span>Gỡ công bố</span>
+                    <span>{t('curriculum.unpublish', 'Gỡ công bố')}</span>
                   </Button>
                 ) : (
                   <Button
@@ -3018,12 +3083,12 @@ export function CurriculumThemeDetailPage() {
             <div className="fixed inset-y-0 right-0 z-50 w-[340px] max-w-[92vw] shadow-2xl border-l border-border bg-card overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden h-full flex flex-col xl:static xl:z-auto xl:w-[320px] 2xl:w-[340px] xl:shadow-none animate-in slide-in-from-right duration-200">
               {/* Mobile close bar */}
               <div className="xl:hidden p-3 border-b border-border flex items-center justify-between bg-muted/30 shrink-0">
-                <span className="text-[13px] font-semibold text-foreground">Lịch chủ đề & tiến độ</span>
+                <span className="text-[13px] font-semibold text-foreground">{t('curriculum.calendarAndProgress', 'Lịch chủ đề & tiến độ')}</span>
                 <button
                   type="button"
                   onClick={() => setShowRightSidebar(false)}
                   className="size-7 flex items-center justify-center hover:bg-muted text-muted-foreground rounded-xs cursor-pointer"
-                  title="Đóng lịch"
+                  title={t('curriculum.closeCalendar', 'Đóng lịch')}
                 >
                   <HugeiconsIcon icon={Cancel01Icon} size={15} />
                 </button>
@@ -3043,13 +3108,13 @@ export function CurriculumThemeDetailPage() {
                       ? 'opacity-25 cursor-not-allowed hover:bg-transparent text-muted-foreground/40'
                       : 'cursor-pointer'
                   )}
-                  title={isPrevDisabled ? 'Đã ở tháng đầu tiên của năm học' : 'Lùi 1 tháng'}
+                  title={isPrevDisabled ? t('curriculum.firstMonthInYear', 'Đã ở tháng đầu tiên của năm học') : t('curriculum.prevOneMonth', 'Lùi 1 tháng')}
                 >
                   <HugeiconsIcon icon={ArrowLeft01Icon} size={15} />
                 </button>
 
                 <span className="text-[13px] font-semibold text-foreground tracking-tight tabular-nums select-none">
-                  Tháng {calendarMonth + 1}/{calendarYear} – {month2 + 1}/{month2Year}
+                  {t('curriculum.monthLabel', 'Tháng')} {calendarMonth + 1}/{calendarYear} – {month2 + 1}/{month2Year}
                 </span>
 
                 <button
@@ -3062,7 +3127,7 @@ export function CurriculumThemeDetailPage() {
                       ? 'opacity-25 cursor-not-allowed hover:bg-transparent text-muted-foreground/40'
                       : 'cursor-pointer'
                   )}
-                  title={isNextDisabled ? 'Đã ở tháng cuối cùng của năm học' : 'Tiến 1 tháng'}
+                  title={isNextDisabled ? t('curriculum.lastMonthInYear', 'Đã ở tháng cuối cùng của năm học') : t('curriculum.nextOneMonth', 'Tiến 1 tháng')}
                 >
                   <HugeiconsIcon icon={ArrowRight01Icon} size={15} />
                 </button>
@@ -3077,7 +3142,7 @@ export function CurriculumThemeDetailPage() {
                   <div key={mObj.key} className={cn('flex flex-col gap-1.5', !mObj.isFirst && 'pt-3.5 border-t border-border/70')}>
                     <div className="flex items-center justify-between px-0.5">
                       <span className="text-[13px] font-bold text-foreground tracking-tight">
-                        Tháng {mObj.month + 1}/{mObj.year}
+                        {t('curriculum.monthLabel', 'Tháng')} {mObj.month + 1}/{mObj.year}
                       </span>
                     </div>
 
@@ -3324,7 +3389,7 @@ export function CurriculumThemeDetailPage() {
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-1.5 shrink-0" title="Chủ đề đang xem">
                     <span className="size-2.5 bg-[#1447e6] shrink-0" />
-                    <span className="font-medium text-foreground/85">Chủ đề này</span>
+                    <span className="font-medium text-foreground/85">{t('curriculum.thisTheme', 'Chủ đề này')}</span>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0" title="Chưa xếp nhánh">
                     <span
@@ -3334,7 +3399,7 @@ export function CurriculumThemeDetailPage() {
                           'repeating-linear-gradient(45deg, rgba(20, 71, 230, 0.2), rgba(20, 71, 230, 0.2) 2px, rgba(20, 71, 230, 0.4) 2px, rgba(20, 71, 230, 0.4) 4px)',
                       }}
                     />
-                    <span>Chưa xếp nhánh</span>
+                    <span>{t('curriculum.unallocatedSubTheme', 'Chưa xếp nhánh')}</span>
                   </div>
                 </div>
 
@@ -3366,7 +3431,7 @@ export function CurriculumThemeDetailPage() {
                     <div className="space-y-1.5 text-[11px]">
                       <div className="flex items-center gap-2">
                         <span className="size-3 bg-[#1447e6] shrink-0" />
-                        <span className="text-foreground">Chủ đề đang chọn</span>
+                        <span className="text-foreground">{t('curriculum.selectedTheme', 'Chủ đề đang chọn')}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span
@@ -3376,25 +3441,25 @@ export function CurriculumThemeDetailPage() {
                               'repeating-linear-gradient(45deg, rgba(20, 71, 230, 0.2), rgba(20, 71, 230, 0.2) 2px, rgba(20, 71, 230, 0.4) 2px, rgba(20, 71, 230, 0.4) 4px)',
                           }}
                         />
-                        <span className="text-foreground">Chưa xếp nhánh</span>
+                        <span className="text-foreground">{t('curriculum.unallocatedSubTheme', 'Chưa xếp nhánh')}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="size-3 bg-slate-100 dark:bg-slate-800/60 border border-border/60 shrink-0" />
-                        <span className="text-muted-foreground">Chủ đề khác</span>
+                        <span className="text-muted-foreground">{t('curriculum.otherTheme', 'Chủ đề khác')}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="size-3 border border-dashed border-border/80 bg-muted/20 shrink-0" />
-                        <span className="text-muted-foreground">Chưa có chủ đề</span>
+                        <span className="text-muted-foreground">{t('curriculum.noThemeYet', 'Chưa có chủ đề')}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="size-3 opacity-25 bg-muted/40 shrink-0" />
-                        <span className="text-muted-foreground/70">Ngoài năm học</span>
+                        <span className="text-muted-foreground/70">{t('curriculum.outOfSchoolYear', 'Ngoài năm học')}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] font-mono font-bold px-1 py-0.2 bg-slate-900 text-white shrink-0">
                           N1
                         </span>
-                        <span className="text-foreground">Mốc bắt đầu chủ đề nhánh</span>
+                        <span className="text-foreground">{t('curriculum.branchStartMilestone', 'Mốc bắt đầu chủ đề nhánh')}</span>
                       </div>
                     </div>
                   </PopoverContent>
@@ -3402,32 +3467,34 @@ export function CurriculumThemeDetailPage() {
               </div>
 
               {/* Thanh thao tác: Công bố bộ chủ đề */}
-              <div className="pt-2.5 border-t border-border/70 select-none">
-                <div className="flex items-center gap-2">
-                  {isAllPublished ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleTogglePublish}
-                      className="w-full h-10 px-4 border border-border bg-card hover:bg-muted text-foreground text-[13.5px] font-medium rounded-none shadow-none cursor-pointer flex items-center justify-center gap-2 transition-colors"
-                    >
-                      <HugeiconsIcon icon={Cancel01Icon} size={16} className="text-muted-foreground" />
-                      <span>Gỡ công bố bộ chủ đề</span>
-                    </Button>
-                  ) : (
-                    <Button
-                      type="button"
-                      disabled={!hasSelectedTopic || themes.length === 0 || isTeacher || isSaving}
-                      onClick={handleTogglePublish}
-                      className="w-full h-10 px-4 bg-[#1447e6] hover:bg-[#1447e6]/90 text-white text-[13.5px] font-semibold rounded-none shadow-sm cursor-pointer flex items-center justify-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                      title={!hasSelectedTopic || themes.length === 0 ? 'Cần tạo ít nhất một chủ đề để công bố' : 'Công bố bộ chủ đề'}
-                    >
-                      <HugeiconsIcon icon={SentIcon} size={16} className="text-white" />
-                      <span>Công bố bộ chủ đề</span>
-                    </Button>
-                  )}
+              {!isSchoolYearEnded && (
+                <div className="pt-2.5 border-t border-border/70 select-none">
+                  <div className="flex items-center gap-2">
+                    {isAllPublished ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleTogglePublish}
+                        className="w-full h-10 px-4 border border-border bg-card hover:bg-muted text-foreground text-[13.5px] font-medium rounded-none shadow-none cursor-pointer flex items-center justify-center gap-2 transition-colors"
+                      >
+                        <HugeiconsIcon icon={Cancel01Icon} size={16} className="text-muted-foreground" />
+                        <span>{t('curriculum.unpublishThemeSet', 'Gỡ công bố bộ chủ đề')}</span>
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        disabled={!hasSelectedTopic || themes.length === 0 || isTeacher || isSaving}
+                        onClick={handleTogglePublish}
+                        className="w-full h-10 px-4 bg-[#1447e6] hover:bg-[#1447e6]/90 text-white text-[13.5px] font-semibold rounded-none shadow-sm cursor-pointer flex items-center justify-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        title={!hasSelectedTopic || themes.length === 0 ? 'Cần tạo ít nhất một chủ đề để công bố' : 'Công bố bộ chủ đề'}
+                      >
+                        <HugeiconsIcon icon={SentIcon} size={16} className="text-white" />
+                        <span>Công bố bộ chủ đề</span>
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </>
