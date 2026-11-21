@@ -24,19 +24,19 @@ export function NotificationFilterDropdown() {
   const setStatusFilter = useNotificationsManagementStore((state) => state.setStatusFilter);
 
   const broadcastScopes = [
-    { key: 'all', label: 'Tất cả phạm vi' },
-    { key: 'ALL', label: 'Toàn trường' },
-    { key: 'ALL_TEACHERS', label: 'Tất cả Giáo viên' },
-    { key: 'ALL_PARENTS', label: 'Tất cả Phụ huynh' },
-    { key: 'GRADE', label: 'Theo Khối tuổi' },
-    { key: 'CLASS', label: 'Theo Lớp học' },
-    { key: 'INDIVIDUAL', label: 'Cá nhân' },
+    { key: 'all', label: t('notifications.management.allScopes', 'Tất cả phạm vi') },
+    { key: 'ALL', label: t('notifications.management.scopeAll', 'Toàn trường') },
+    { key: 'ALL_TEACHERS', label: t('notifications.management.scopeTeachers', 'Tất cả Giáo viên') },
+    { key: 'ALL_PARENTS', label: t('notifications.management.scopeParents', 'Tất cả Phụ huynh') },
+    { key: 'GRADE', label: t('notifications.management.scopeGrade', 'Theo Khối tuổi') },
+    { key: 'CLASS', label: t('notifications.management.scopeByClass', 'Theo Lớp học') },
+    { key: 'INDIVIDUAL', label: t('notifications.management.scopeIndividual', 'Cá nhân') },
   ];
 
   const broadcastStatuses = [
-    { key: 'all', label: 'Tất cả trạng thái' },
-    { key: 'SENT', label: 'Đã phát hành' },
-    { key: 'SCHEDULED', label: 'Đã lên lịch' },
+    { key: 'all', label: t('notifications.management.allStatuses', 'Tất cả trạng thái') },
+    { key: 'SENT', label: t('notifications.management.statusPublished', 'Đã phát hành') },
+    { key: 'SCHEDULED', label: t('notifications.management.statusScheduled', 'Đã lên lịch') },
   ];
 
   const isFiltered = scopeFilter !== 'all' || statusFilter !== 'all';
@@ -50,7 +50,7 @@ export function NotificationFilterDropdown() {
             'size-8 bg-background border border-border text-foreground hover:bg-muted/50 rounded-none flex items-center justify-center transition-colors cursor-pointer select-none',
             isFiltered && 'border-primary text-primary bg-primary/5',
           )}
-          title="Lọc bản tin"
+          title={t('notifications.management.filterTooltip', 'Lọc bản tin')}
           data-name="Filter · Notifications"
         >
           <HugeiconsIcon icon={FilterHorizontalIcon} size={16} />
@@ -62,7 +62,7 @@ export function NotificationFilterDropdown() {
       >
         {/* Scope Filter */}
         <DropdownMenuLabel className="px-2 py-1 text-[12px] font-medium text-muted-foreground">
-          Phạm vi gửi
+          {t('notifications.management.filterScope', 'Phạm vi gửi')}
         </DropdownMenuLabel>
         {broadcastScopes.map((s) => {
           const isSelected = scopeFilter === s.key;
@@ -91,7 +91,7 @@ export function NotificationFilterDropdown() {
 
         {/* Status Filter */}
         <DropdownMenuLabel className="px-2 py-1 text-[12px] font-medium text-muted-foreground">
-          Trạng thái
+          {t('notifications.management.filterStatus', 'Trạng thái')}
         </DropdownMenuLabel>
         {broadcastStatuses.map((st) => {
           const isSelected = statusFilter === st.key;
@@ -126,7 +126,7 @@ export function NotificationFilterDropdown() {
               }}
               className="px-2 py-1.5 text-[12px] text-destructive hover:bg-destructive/10 rounded-none cursor-pointer justify-center"
             >
-              Đặt lại bộ lọc
+              {t('common.resetFilter', 'Đặt lại bộ lọc')}
             </DropdownMenuItem>
           </>
         )}

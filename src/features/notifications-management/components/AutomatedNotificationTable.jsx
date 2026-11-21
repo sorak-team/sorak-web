@@ -38,7 +38,7 @@ export function AutomatedNotificationTable({ paginatedNotifications }) {
   if (!isAutomatedLoading && (!paginatedNotifications || paginatedNotifications.length === 0)) {
     return (
       <div className="w-full border border-border bg-card p-12 text-center text-muted-foreground rounded-none">
-        <p className="text-[14px]">Chưa có thông báo tự động nào được ghi nhận.</p>
+        <p className="text-[14px]">{t('notifications.management.noAutomatedFound', 'Chưa có thông báo tự động nào được ghi nhận.')}</p>
       </div>
     );
   }
@@ -53,30 +53,30 @@ export function AutomatedNotificationTable({ paginatedNotifications }) {
         <thead>
           <tr className="h-10 border-b border-border bg-muted/30 text-[13px] font-medium text-foreground">
             <th className="px-4 min-w-[320px] font-medium">
-              Thông báo
+              {t('notifications.title', 'Thông báo')}
             </th>
             {automatedVisibleColumns.recipient && (
               <th className="px-4 min-w-[180px] font-medium">
-                Người nhận
+                {t('notifications.management.colRecipient', 'Người nhận')}
               </th>
             )}
             {automatedVisibleColumns.role && (
               <th className="px-4 min-w-[140px] font-medium">
-                Vai trò
+                {t('account.role', 'Vai trò')}
               </th>
             )}
             {automatedVisibleColumns.createdAt && (
               <th className="px-4 min-w-[160px] font-medium">
-                Thời gian gửi
+                {t('notifications.management.colDispatchDate', 'Thời gian gửi')}
               </th>
             )}
             {automatedVisibleColumns.isRead && (
               <th className="px-4 min-w-[130px] font-medium">
-                Trạng thái đọc
+                {t('notifications.management.colReadRate', 'Trạng thái đọc')}
               </th>
             )}
             <th className="px-4 min-w-[80px] w-[80px] text-right font-medium whitespace-nowrap">
-              Thao tác
+              {t('notifications.management.colActions', 'Thao tác')}
             </th>
           </tr>
         </thead>
@@ -159,11 +159,11 @@ export function AutomatedNotificationTable({ paginatedNotifications }) {
                     <td className="px-4 py-3 text-[14px] whitespace-nowrap">
                       {item.isRead ? (
                         <span className="text-foreground font-normal">
-                          Đã xem
+                          {t('notifications.read', 'Đã xem')}
                         </span>
                       ) : (
                         <span className="text-muted-foreground font-normal">
-                          Chưa xem
+                          {t('notifications.unread', 'Chưa xem')}
                         </span>
                       )}
                     </td>
@@ -179,7 +179,7 @@ export function AutomatedNotificationTable({ paginatedNotifications }) {
                         <button
                           type="button"
                           className="size-7 inline-flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-none transition-colors cursor-pointer"
-                          title="Thao tác"
+                          title={t('notifications.management.colActions', 'Thao tác')}
                         >
                           <HugeiconsIcon icon={MoreHorizontalIcon} size={15} />
                         </button>
@@ -190,7 +190,7 @@ export function AutomatedNotificationTable({ paginatedNotifications }) {
                           className="flex items-center gap-2 text-[13px] cursor-pointer"
                         >
                           <HugeiconsIcon icon={ViewIcon} size={14} />
-                          <span>Xem chi tiết</span>
+                          <span>{t('notifications.management.viewDetail', 'Xem chi tiết')}</span>
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

@@ -86,24 +86,26 @@ export function NotificationOverviewPage() {
   const getScopeLabel = (scope, grade, classIds = []) => {
     switch (scope) {
       case 'ALL':
-        return 'Toàn trường (Giáo viên + Phụ huynh)';
+        return t('notifications.management.scopeAll', 'Toàn trường (Giáo viên + Phụ huynh)');
       case 'ALL_TEACHERS':
-        return 'Tất cả Giáo viên';
+        return t('notifications.management.scopeTeachers', 'Tất cả Giáo viên');
       case 'ALL_PARENTS':
-        return 'Tất cả Phụ huynh';
+        return t('notifications.management.scopeParents', 'Tất cả Phụ huynh');
       case 'GRADE': {
         const gradeMap = {
-          NHA_TRE: 'Nhà trẻ (18 - 36 tháng)',
-          MAM: 'Khối Mầm (3 - 4 tuổi)',
-          CHOI: 'Khối Chồi (4 - 5 tuổi)',
-          LA: 'Khối Lá (5 - 6 tuổi)',
+          NHA_TRE: t('classes.nursery', 'Nhà trẻ (18 - 36 tháng)'),
+          MAM: t('classes.kindergarten3', 'Khối Mầm (3 - 4 tuổi)'),
+          CHOI: t('classes.kindergarten4', 'Khối Chồi (4 - 5 tuổi)'),
+          LA: t('classes.kindergarten5', 'Khối Lá (5 - 6 tuổi)'),
         };
-        return gradeMap[grade] || `Khối ${grade || ''}`;
+        return gradeMap[grade] || `${t('classes.gradePrefix', 'Khối')} ${grade || ''}`;
       }
       case 'CLASS':
-        return classIds.length > 1 ? `${classIds.length} lớp học` : 'Theo lớp học';
+        return classIds.length > 1
+          ? t('notifications.management.scopeClassesCount', '{{count}} lớp học', { count: classIds.length })
+          : t('notifications.management.scopeByClass', 'Theo lớp học');
       case 'INDIVIDUAL':
-        return 'Cá nhân';
+        return t('notifications.management.scopeIndividual', 'Cá nhân');
       default:
         return scope;
     }
@@ -184,21 +186,23 @@ export function NotificationOverviewPage() {
                   : 'bg-secondary text-secondary-foreground',
               )}
             >
-              {detail.status === 'SCHEDULED' ? 'Đã lên lịch phát hành' : 'Đã phát hành'}
+              {detail.status === 'SCHEDULED'
+                ? t('notifications.management.statusScheduled', 'Đã lên lịch phát hành')
+                : t('notifications.management.statusPublished', 'Đã phát hành')}
             </span>
           </div>
           <p className="text-[13px] text-muted-foreground font-normal">
-            Mã bản tin:{' '}
+            {t('notifications.management.newsCode', 'Mã bản tin')}:{' '}
             <span className="font-mono font-medium text-foreground">
               {detail.batchId ? detail.batchId.substring(0, 8).toUpperCase() : 'BT-SORAK'}
             </span>
             {' · '}
-            Thời gian phát:{' '}
+            {t('notifications.management.dispatchTime', 'Thời gian phát')}:{' '}
             <span className="text-foreground">
               {formatDateTime(detail.scheduledAt || detail.createdAt)}
             </span>
             {' · '}
-            Phạm vi:{' '}
+            {t('notifications.management.scope', 'Phạm vi')}:{' '}
             <span className="text-foreground font-medium">
               {getScopeLabel(detail.targetScope, detail.targetGrade, detail.targetClassIds)}
             </span>
@@ -213,7 +217,7 @@ export function NotificationOverviewPage() {
             size="icon"
             onClick={() => openEditDrawer(detail)}
             className="size-8 rounded-none border border-border bg-background hover:bg-muted text-foreground cursor-pointer"
-            title="Chỉnh sửa bản tin"
+            title={t('notifications.management.editTooltip', 'Chỉnh sửa bản tin')}
           >
             <HugeiconsIcon icon={PencilEdit02Icon} size={15} />
           </Button>
@@ -224,7 +228,7 @@ export function NotificationOverviewPage() {
             size="icon"
             onClick={() => openDeleteDialog(detail.batchId)}
             className="size-8 rounded-none border border-border bg-background hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 text-foreground cursor-pointer transition-colors"
-            title="Thu hồi bản tin"
+            title={t('notifications.management.deleteTooltip', 'Thu hồi bản tin')}
           >
             <HugeiconsIcon icon={Delete02Icon} size={15} />
           </Button>
@@ -237,36 +241,36 @@ export function NotificationOverviewPage() {
         <div className="border border-border bg-card rounded-none overflow-hidden shadow-xs">
           <div className="p-4 border-b border-border bg-muted/20">
             <h2 className="text-[14px] font-semibold text-foreground">
-              Thông tin phát hành
+              {t('notifications.management.publishInfoTitle', 'Thông tin phát hành')}
             </h2>
             <p className="text-[12px] text-muted-foreground font-normal">
-              Chi tiết cấu hình đối tượng và thống kê tiếp cận
+              {t('notifications.management.publishInfoSubtitle', 'Chi tiết cấu hình đối tượng và thống kê tiếp cận')}
             </p>
           </div>
 
           <div className="divide-y divide-border/60 text-[13px]">
             <div className="flex items-center justify-between p-4 h-[52px]">
-              <span className="text-muted-foreground">Phạm vi đối tượng</span>
+              <span className="text-muted-foreground">{t('notifications.management.targetAudience', 'Phạm vi đối tượng')}</span>
               <span className="font-medium text-foreground">
                 {getScopeLabel(detail.targetScope, detail.targetGrade, detail.targetClassIds)}
               </span>
             </div>
             <div className="flex items-center justify-between p-4 h-[52px]">
-              <span className="text-muted-foreground">Thời gian phát hành</span>
+              <span className="text-muted-foreground">{t('notifications.management.dispatchTime', 'Thời gian phát hành')}</span>
               <span className="font-medium text-foreground">
                 {formatDateTime(detail.scheduledAt || detail.createdAt)}
               </span>
             </div>
             <div className="flex items-center justify-between p-4 h-[52px]">
-              <span className="text-muted-foreground">Tổng số người nhận</span>
+              <span className="text-muted-foreground">{t('notifications.management.totalRecipients', 'Tổng số người nhận')}</span>
               <span className="font-medium text-foreground">
-                {total} tài khoản
+                {t('notifications.management.accountsUnit', '{{count}} tài khoản', { count: total })}
               </span>
             </div>
             <div className="flex items-center justify-between p-4 h-[52px]">
-              <span className="text-muted-foreground">Tiến độ người đọc</span>
+              <span className="text-muted-foreground">{t('notifications.management.readProgress', 'Tiến độ người đọc')}</span>
               <span className="font-medium text-foreground">
-                {read}/{total} đã xem ({percentage}%)
+                {t('notifications.management.readProgressValue', '{{read}}/{{total}} đã xem ({{percentage}}%)', { read, total, percentage })}
               </span>
             </div>
           </div>
@@ -276,10 +280,10 @@ export function NotificationOverviewPage() {
         <div className="border border-border bg-card rounded-none overflow-hidden shadow-xs">
           <div className="p-4 border-b border-border bg-muted/20">
             <h2 className="text-[14px] font-semibold text-foreground">
-              Nội dung bản tin
+              {t('notifications.management.contentCardTitle', 'Nội dung bản tin')}
             </h2>
             <p className="text-[12px] text-muted-foreground font-normal">
-              Văn bản bản tin phát đến ứng dụng giáo viên và phụ huynh
+              {t('notifications.management.contentCardSubtitle', 'Văn bản bản tin phát đến ứng dụng giáo viên và phụ huynh')}
             </p>
           </div>
 
@@ -291,7 +295,7 @@ export function NotificationOverviewPage() {
             {detail.attachments?.length > 0 && (
               <div className="space-y-2 pt-2 border-t border-border/70">
                 <span className="text-[12px] font-medium text-muted-foreground block">
-                  Hình ảnh đính kèm ({detail.attachments.length})
+                  {t('notifications.management.attachedImages', 'Hình ảnh đính kèm ({{count}})', { count: detail.attachments.length })}
                 </span>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                   {detail.attachments.map((url, i) => (
@@ -299,7 +303,7 @@ export function NotificationOverviewPage() {
                       key={i}
                       onClick={() => setPreviewImageUrl(url)}
                       className="group relative border border-border bg-muted/20 aspect-video rounded-none overflow-hidden block hover:border-foreground/50 transition-colors shadow-2xs cursor-pointer select-none"
-                      title="Bấm để phóng to ảnh"
+                      title={t('notifications.management.clickToZoom', 'Bấm để phóng to ảnh')}
                     >
                       <img
                         src={url}
@@ -324,10 +328,10 @@ export function NotificationOverviewPage() {
         <div className="p-4 border-b border-border bg-muted/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="text-[14px] font-semibold text-foreground">
-              Danh sách người nhận ({detail.recipients?.length || 0})
+              {t('notifications.management.recipientsListTitle', 'Danh sách người nhận ({{count}})', { count: detail.recipients?.length || 0 })}
             </h2>
             <p className="text-[12px] text-muted-foreground font-normal">
-              Theo dõi chi tiết thời điểm xem bản tin của từng giáo viên và phụ huynh
+              {t('notifications.management.recipientsListSubtitle', 'Theo dõi chi tiết thời điểm xem bản tin của từng giáo viên và phụ huynh')}
             </p>
           </div>
 
@@ -343,7 +347,7 @@ export function NotificationOverviewPage() {
                 type="text"
                 value={recipientSearch}
                 onChange={(e) => setRecipientSearch(e.target.value)}
-                placeholder="Tìm tên người nhận..."
+                placeholder={t('notifications.management.searchRecipientPlaceholder', 'Tìm tên người nhận...')}
                 className="h-8 pl-8 pr-2.5 text-[13px] bg-background border-border rounded-none shadow-none focus-visible:ring-1 focus-visible:ring-ring"
               />
             </div>
@@ -356,7 +360,7 @@ export function NotificationOverviewPage() {
                     'size-8 bg-background border border-border text-foreground hover:bg-muted/50 rounded-none flex items-center justify-center transition-colors cursor-pointer select-none',
                     recipientStatusFilter !== 'ALL' && 'border-primary text-primary bg-primary/5',
                   )}
-                  title="Lọc trạng thái đọc tin"
+                  title={t('notifications.management.filterRecipientStatusTooltip', 'Lọc trạng thái đọc tin')}
                   data-name="Filter · Recipients"
                 >
                   <HugeiconsIcon icon={FilterHorizontalIcon} size={16} />
@@ -367,13 +371,13 @@ export function NotificationOverviewPage() {
                 className="w-48 p-1.5 rounded-none border border-border bg-card shadow-xl z-50 text-foreground"
               >
                 <DropdownMenuLabel className="px-2 py-1 text-[12px] font-medium text-muted-foreground">
-                  Trạng thái đọc tin
+                  {t('notifications.management.recipientReadStatus', 'Trạng thái đọc tin')}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="my-1 border-t border-border" />
                 {[
-                  { key: 'ALL', label: 'Tất cả trạng thái' },
-                  { key: 'READ', label: 'Đã xem' },
-                  { key: 'UNREAD', label: 'Chưa xem' },
+                  { key: 'ALL', label: t('notifications.management.allReadStatuses', 'Tất cả trạng thái') },
+                  { key: 'READ', label: t('notifications.management.read', 'Đã xem') },
+                  { key: 'UNREAD', label: t('notifications.management.unread', 'Chưa xem') },
                 ].map((st) => {
                   const isSelected = recipientStatusFilter === st.key;
                   return (
@@ -406,16 +410,16 @@ export function NotificationOverviewPage() {
           <table className="w-full text-left border-collapse min-w-[700px]">
             <thead>
               <tr className="h-10 border-b border-border bg-muted/30 text-[13px] font-medium text-foreground">
-                <th className="px-4 font-medium min-w-[240px]">Họ và tên người nhận</th>
-                <th className="px-4 font-medium min-w-[140px]">Vai trò</th>
-                <th className="px-4 font-medium min-w-[160px] text-right">Trạng thái đọc tin</th>
+                <th className="px-4 font-medium min-w-[240px]">{t('notifications.management.colRecipientName', 'Họ và tên người nhận')}</th>
+                <th className="px-4 font-medium min-w-[140px]">{t('notifications.management.colRole', 'Vai trò')}</th>
+                <th className="px-4 font-medium min-w-[160px] text-right">{t('notifications.management.colReadStatus', 'Trạng thái đọc tin')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60 text-[13px]">
               {filteredRecipients.length === 0 ? (
                 <tr>
                   <td colSpan={3} className="py-10 text-center text-muted-foreground text-[13px]">
-                    Không có người nhận nào phù hợp với bộ lọc
+                    {t('notifications.management.noRecipientsMatched', 'Không có người nhận nào phù hợp với bộ lọc')}
                   </td>
                 </tr>
               ) : (
@@ -425,16 +429,16 @@ export function NotificationOverviewPage() {
                       {cleanRecipientName(r.name)}
                     </td>
                     <td className="px-4 text-foreground/80">
-                      {r.role === 'TEACHER_GV' || r.role === 'Giáo viên' ? 'Giáo viên' : 'Phụ huynh'}
+                      {r.role === 'TEACHER_GV' || r.role === 'Giáo viên' ? t('notifications.management.teacherRole', 'Giáo viên') : t('notifications.management.parentRole', 'Phụ huynh')}
                     </td>
                     <td className="px-4 text-right">
                       {r.isRead ? (
                         <span className="text-foreground text-[13px] font-normal">
-                          Đã đọc {r.readAt ? `(${formatDateTime(r.readAt)})` : ''}
+                          {t('notifications.management.readAt', 'Đã đọc ({{time}})', { time: r.readAt ? `(${formatDateTime(r.readAt)})` : '' })}
                         </span>
                       ) : (
                         <span className="text-muted-foreground text-[13px] font-normal">
-                          Chưa xem
+                          {t('notifications.management.unread', 'Chưa xem')}
                         </span>
                       )}
                     </td>
@@ -462,13 +466,13 @@ export function NotificationOverviewPage() {
           >
             <div className="w-full flex items-center justify-between pb-2 border-b border-border/70 mb-2.5">
               <span className="text-[12.5px] font-medium text-foreground truncate">
-                Xem hình ảnh đính kèm
+                {t('notifications.management.imagePreviewTitle', 'Xem hình ảnh đính kèm')}
               </span>
               <button
                 type="button"
                 onClick={() => setPreviewImageUrl(null)}
                 className="size-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-none transition-colors cursor-pointer"
-                title="Đóng (Esc)"
+                title={t('notifications.management.closeEsc', 'Đóng (Esc)')}
               >
                 <HugeiconsIcon icon={Cancel01Icon} size={16} />
               </button>

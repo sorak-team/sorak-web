@@ -39,24 +39,26 @@ export function NotificationTable({ paginatedBroadcasts }) {
   const getScopeLabel = (scope, grade, classIds = []) => {
     switch (scope) {
       case 'ALL':
-        return 'Toàn trường';
+        return t('notifications.management.scopeAll', 'Toàn trường');
       case 'ALL_TEACHERS':
-        return 'Tất cả Giáo viên';
+        return t('notifications.management.scopeTeachers', 'Tất cả Giáo viên');
       case 'ALL_PARENTS':
-        return 'Tất cả Phụ huynh';
+        return t('notifications.management.scopeParents', 'Tất cả Phụ huynh');
       case 'GRADE': {
         const gradeMap = {
-          NHA_TRE: 'Nhà trẻ',
-          MAM: 'Khối Mầm',
-          CHOI: 'Khối Chồi',
-          LA: 'Khối Lá',
+          NHA_TRE: t('classes.grades.nhaTre', 'Nhà trẻ'),
+          MAM: t('classes.grades.mam', 'Khối Mầm'),
+          CHOI: t('classes.grades.choi', 'Khối Chồi'),
+          LA: t('classes.grades.la', 'Khối Lá'),
         };
-        return gradeMap[grade] || `Khối ${grade || ''}`;
+        return gradeMap[grade] || `${t('classes.grade', 'Khối')} ${grade || ''}`;
       }
       case 'CLASS':
-        return classIds.length > 1 ? `${classIds.length} lớp học` : 'Theo lớp học';
+        return classIds.length > 1
+          ? t('notifications.management.scopeClassesCount', { count: classIds.length, defaultValue: `${classIds.length} lớp học` })
+          : t('notifications.management.scopeByClass', 'Theo lớp học');
       case 'INDIVIDUAL':
-        return 'Cá nhân';
+        return t('notifications.management.scopeIndividual', 'Cá nhân');
       default:
         return scope;
     }
@@ -66,13 +68,13 @@ export function NotificationTable({ paginatedBroadcasts }) {
     if (status === 'SCHEDULED') {
       return (
         <span className="inline-flex items-center justify-center px-2 py-0.5 text-[12px] font-medium bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 rounded-none">
-          Đã lên lịch
+          {t('notifications.management.statusScheduled', 'Đã lên lịch')}
         </span>
       );
     }
     return (
       <span className="inline-flex items-center justify-center px-2 py-0.5 text-[12px] font-medium bg-secondary text-secondary-foreground rounded-none">
-        Đã phát hành
+        {t('notifications.management.statusPublished', 'Đã phát hành')}
       </span>
     );
   };
@@ -80,7 +82,7 @@ export function NotificationTable({ paginatedBroadcasts }) {
   if (!isLoading && (!paginatedBroadcasts || paginatedBroadcasts.length === 0)) {
     return (
       <div className="w-full border border-border bg-card p-12 text-center text-muted-foreground rounded-none">
-        <p className="text-[14px]">Không tìm thấy bản tin nào phù hợp.</p>
+        <p className="text-[14px]">{t('notifications.management.noBroadcastsFound', 'Không tìm thấy bản tin nào phù hợp.')}</p>
       </div>
     );
   }
@@ -95,30 +97,30 @@ export function NotificationTable({ paginatedBroadcasts }) {
         <thead>
           <tr className="h-10 border-b border-border bg-muted/30 text-[13px] font-medium text-foreground">
             <th className="px-3 min-w-[260px] font-medium">
-              Bản tin
+              {t('notifications.management.colBroadcast', 'Bản tin')}
             </th>
             {visibleColumns.targetScope && (
               <th className="px-3 min-w-[140px] font-medium">
-                Phạm vi gửi
+                {t('notifications.management.colScope', 'Phạm vi gửi')}
               </th>
             )}
             {visibleColumns.status && (
               <th className="px-3 min-w-[120px] font-medium">
-                Trạng thái
+                {t('notifications.management.colStatus', 'Trạng thái')}
               </th>
             )}
             {visibleColumns.dispatchTime && (
               <th className="px-3 min-w-[140px] font-medium">
-                Ngày phát hành
+                {t('notifications.management.colDispatchDate', 'Ngày phát hành')}
               </th>
             )}
             {visibleColumns.readRate && (
               <th className="px-3 min-w-[140px] font-medium">
-                Tỷ lệ đã đọc
+                {t('notifications.management.colReadRate', 'Tỷ lệ đã đọc')}
               </th>
             )}
             <th className="px-3 min-w-[95px] w-[95px] text-right font-medium whitespace-nowrap">
-              Thao tác
+              {t('notifications.management.colActions', 'Thao tác')}
             </th>
           </tr>
         </thead>
@@ -231,14 +233,14 @@ export function NotificationTable({ paginatedBroadcasts }) {
                           className="flex items-center gap-2 h-8 px-2 text-[13px] cursor-pointer rounded-none hover:bg-muted/60 focus:bg-muted/60"
                         >
                           <HugeiconsIcon icon={ViewIcon} size={15} />
-                          <span>Xem chi tiết</span>
+                          <span>{t('notifications.management.viewDetail', 'Xem chi tiết')}</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => openEditDrawer(item)}
                           className="flex items-center gap-2 h-8 px-2 text-[13px] cursor-pointer rounded-none hover:bg-muted/60 focus:bg-muted/60"
                         >
                           <HugeiconsIcon icon={PencilEdit02Icon} size={15} />
-                          <span>Chỉnh sửa</span>
+                          <span>{t('notifications.management.editBroadcast', 'Chỉnh sửa')}</span>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator className="my-1 border-t border-border" />
                         <DropdownMenuItem
@@ -246,7 +248,7 @@ export function NotificationTable({ paginatedBroadcasts }) {
                           className="flex items-center gap-2 h-8 px-2 text-[13px] text-destructive hover:text-destructive hover:bg-destructive/10 focus:text-destructive focus:bg-destructive/10 data-[highlighted]:text-destructive data-[highlighted]:bg-destructive/10 cursor-pointer rounded-none"
                         >
                           <HugeiconsIcon icon={Delete02Icon} size={15} />
-                          <span>Thu hồi bản tin</span>
+                          <span>{t('notifications.management.deleteBroadcast', 'Thu hồi bản tin')}</span>
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

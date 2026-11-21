@@ -91,9 +91,15 @@ function getNotificationAction(item, userRole) {
 
   if (type.startsWith('THEME') || type.startsWith('PLANNING')) {
     if (isBGH) {
+      const classTarget = data.class_public_id || data.class_id;
+      const themeTarget = data.theme_id || data.theme_public_id;
+      const query = new URLSearchParams();
+      if (classTarget) query.set('classId', classTarget);
+      if (themeTarget) query.set('themeId', themeTarget);
+      const qs = query.toString();
       return {
-        label: 'Xem khung giáo dục',
-        path: '/curriculum',
+        label: 'Xem kế hoạch cần duyệt',
+        path: `/planning/reviews${qs ? `?${qs}` : ''}`,
       };
     }
     const classTarget = data.class_public_id || data.class_id;
@@ -112,6 +118,12 @@ function getNotificationAction(item, userRole) {
   }
 
   if (type.startsWith('ACADEMIC_CALENDAR')) {
+    if (!isBGH) {
+      return {
+        label: 'Xem thời khóa biểu',
+        path: '/daily',
+      };
+    }
     return {
       label: 'Xem lịch năm học',
       path: '/school-years',
@@ -550,6 +562,8 @@ export function NotificationsPanel({
     const { icon: DetailIcon, color: detailIconColor } = resolveNotificationIcon(selectedNotification);
     const action = getNotificationAction(selectedNotification, user?.role);
     const notifData = selectedNotification.data || {};
+    const rawAttachments = notifData.attachments || selectedNotification.attachments || notifData.imageUrl || notifData.image || [];
+    const attachments = (Array.isArray(rawAttachments) ? rawAttachments : [rawAttachments]).filter(Boolean);
 
     return (
       <div
@@ -557,7 +571,7 @@ export function NotificationsPanel({
         onClick={() => setSelectedNotification(null)}
       >
         <div
-          className="w-full max-w-md bg-card border border-border shadow-2xl p-5 flex flex-col gap-4 text-foreground rounded-none animate-in zoom-in-95 duration-150 select-text"
+          className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-card border border-border shadow-2xl p-5 flex flex-col gap-4 text-foreground rounded-none animate-in zoom-in-95 duration-150 select-text"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header: Icon + Title + Close Button */}
@@ -591,6 +605,36 @@ export function NotificationsPanel({
             <div className="p-3 bg-muted/20 border border-border/70 text-[13px] text-foreground leading-relaxed whitespace-pre-wrap">
               {selectedNotification.body || 'Không có nội dung chi tiết.'}
             </div>
+
+            {/* Image Attachments */}
+            {attachments.length > 0 && (
+              <div className="space-y-2 pt-2 border-t border-border/70">
+                <span className="text-[12px] font-medium text-muted-foreground block">
+                  Hình ảnh đính kèm ({attachments.length})
+                </span>
+                <div className={cn('grid gap-2.5', attachments.length === 1 ? 'grid-cols-1' : 'grid-cols-2')}>
+                  {attachments.map((url, i) => (
+                    <a
+                      key={i}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group relative border border-border bg-muted/20 aspect-video rounded-none overflow-hidden block hover:border-foreground/50 transition-colors shadow-2xs cursor-pointer select-none"
+                      title="Bấm để mở ảnh kích thước đầy đủ"
+                    >
+                      <img
+                        src={url}
+                        alt={`Ảnh đính kèm ${i + 1}`}
+                        className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Additional Metadata if present */}
             {(notifData.studentName || notifData.className || notifData.senderName) && (

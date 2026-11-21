@@ -245,17 +245,17 @@ export function NotificationDrawer({ onSaved }) {
           <div className="flex flex-col gap-1">
             <h2 className="text-[18px] font-semibold text-foreground tracking-tight">
               {drawerMode === 'create'
-                ? 'Tạo bản tin mới'
+                ? t('notifications.management.drawer.createTitle', 'Tạo bản tin mới')
                 : drawerMode === 'edit'
-                ? 'Chỉnh sửa bản tin'
-                : 'Chi tiết bản tin'}
+                ? t('notifications.management.drawer.editTitle', 'Chỉnh sửa bản tin')
+                : t('notifications.management.newsCode', 'Chi tiết bản tin')}
             </h2>
             <p className="text-[12px] text-muted-foreground font-normal">
               {drawerMode === 'create'
-                ? 'Soạn và phát hành bản tin đến giáo viên và phụ huynh'
+                ? t('notifications.management.drawer.createDesc', 'Phát thông báo nhanh đến giáo viên, phụ huynh hoặc theo lớp học')
                 : drawerMode === 'edit'
-                ? 'Cập nhật tiêu đề, nội dung và thời gian phát hành của bản tin'
-                : 'Xem nội dung bản tin và danh sách người nhận'}
+                ? t('notifications.management.drawer.editDesc', 'Cập nhật tiêu đề, nội dung và thời gian phát hành của bản tin')
+                : t('notifications.management.contentCardSubtitle', 'Xem nội dung bản tin và danh sách người nhận')}
             </p>
           </div>
 
@@ -279,10 +279,10 @@ export function NotificationDrawer({ onSaved }) {
             <div className="border border-border bg-card rounded-none overflow-hidden">
               <div className="p-4 border-b border-border bg-muted/20">
                 <h3 className="text-[14px] font-semibold text-foreground">
-                  Nội dung bản tin
+                  {t('notifications.management.contentCardTitle', 'Nội dung bản tin')}
                 </h3>
                 <p className="text-[12px] text-muted-foreground font-normal">
-                  Tiêu đề và nội dung chi tiết của bản tin
+                  {t('notifications.management.contentCardSubtitle', 'Tiêu đề và nội dung chi tiết của bản tin')}
                 </p>
               </div>
 
@@ -290,31 +290,31 @@ export function NotificationDrawer({ onSaved }) {
                 {/* Tiêu đề */}
                 <div className="space-y-1.5">
                   <Label className="text-[12px] font-medium text-foreground">
-                    Tiêu đề bản tin <span className="text-destructive">*</span>
+                    {t('notifications.management.drawer.fieldTitle', 'Tiêu đề bản tin')} <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="VD: Lịch hoạt động ngoại khóa tham quan nông trại..."
+                    placeholder={t('notifications.management.drawer.fieldTitlePlaceholder', 'Nhập tiêu đề bản tin...')}
                     maxLength={150}
                     required
                     className="h-9 text-[13px] rounded-none border-border"
                   />
                   <span className="text-[11px] text-muted-foreground block text-right">
-                    {title.length}/150 ký tự
+                    {title.length}/150 {t('common.characters', 'ký tự')}
                   </span>
                 </div>
 
                 {/* Nội dung */}
                 <div className="space-y-1.5">
                   <Label className="text-[12px] font-medium text-foreground">
-                    Nội dung chi tiết <span className="text-destructive">*</span>
+                    {t('notifications.management.drawer.fieldBody', 'Nội dung chi tiết')} <span className="text-destructive">*</span>
                   </Label>
                   <textarea
                     value={body}
                     onChange={(e) => setBody(e.target.value)}
-                    placeholder="Nhập nội dung bản tin tại đây..."
+                    placeholder={t('notifications.management.drawer.fieldBodyPlaceholder', 'Nhập nội dung thông báo chi tiết...')}
                     rows={5}
                     required
                     className="w-full p-2.5 text-[13px] rounded-none bg-background border border-border focus:outline-none focus:ring-1 focus:ring-ring text-foreground resize-y leading-relaxed"
@@ -325,10 +325,10 @@ export function NotificationDrawer({ onSaved }) {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label className="text-[12px] font-medium text-foreground">
-                      Hình ảnh đính kèm (Tải lên MinIO S3)
+                      {t('notifications.management.attachedImages', 'Hình ảnh đính kèm ({{count}})', { count: attachments.length })}
                     </Label>
                     <span className="text-[11px] text-muted-foreground">
-                      {attachments.length} ảnh
+                      {attachments.length} {t('common.photos', 'ảnh')}
                     </span>
                   </div>
 
@@ -354,10 +354,10 @@ export function NotificationDrawer({ onSaved }) {
                       <HugeiconsIcon icon={Upload01Icon} size={18} />
                     </div>
                     <div className="text-[12.5px] font-medium text-foreground">
-                      {isUploadingImages ? 'Đang tải ảnh lên MinIO S3...' : 'Bấm để tải ảnh lên từ thiết bị'}
+                      {isUploadingImages ? t('common.uploading', 'Đang tải ảnh lên...') : t('notifications.management.drawer.uploadBtn', 'Tải ảnh lên')}
                     </div>
                     <p className="text-[11px] text-muted-foreground">
-                      Hỗ trợ JPG, PNG, WebP, GIF (tối đa 10MB/ảnh, có thể chọn nhiều ảnh cùng lúc)
+                      {t('notifications.management.drawer.uploadHint', 'Tối đa 5 ảnh, định dạng PNG, JPG')}
                     </p>
                   </div>
 
@@ -369,7 +369,7 @@ export function NotificationDrawer({ onSaved }) {
                           key={idx}
                           onClick={() => setPreviewImageUrl(url)}
                           className="group relative border border-border bg-muted/20 aspect-video rounded-none overflow-hidden flex items-center justify-center shadow-2xs cursor-pointer select-none"
-                          title="Bấm để phóng to xem ảnh"
+                          title={t('notifications.management.clickToZoom', 'Bấm để phóng to xem ảnh')}
                         >
                           <img
                             src={url}
@@ -388,7 +388,7 @@ export function NotificationDrawer({ onSaved }) {
                               handleRemoveAttachment(idx);
                             }}
                             className="absolute top-1 right-1 size-6 bg-destructive/90 text-destructive-foreground hover:bg-destructive opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer rounded-none shadow-xs transition-opacity"
-                            title="Xóa ảnh này"
+                            title={t('common.delete', 'Xóa')}
                           >
                             <HugeiconsIcon icon={Delete02Icon} size={12} />
                           </button>
@@ -404,28 +404,28 @@ export function NotificationDrawer({ onSaved }) {
             <div className="border border-border bg-card rounded-none overflow-hidden">
               <div className="p-4 border-b border-border bg-muted/20">
                 <h3 className="text-[14px] font-semibold text-foreground">
-                  Phạm vi người nhận
+                  {t('notifications.management.targetAudience', 'Phạm vi người nhận')}
                 </h3>
                 <p className="text-[12px] text-muted-foreground font-normal">
-                  Chỉ định đối tượng giáo viên và phụ huynh nhận bản tin
+                  {t('notifications.management.publishInfoSubtitle', 'Chỉ định đối tượng giáo viên và phụ huynh nhận bản tin')}
                 </p>
               </div>
 
               <div className="p-4 space-y-4">
                 <div className="space-y-1.5">
                   <Label className="text-[12px] font-medium text-foreground">
-                    Nhóm đối tượng <span className="text-destructive">*</span>
+                    {t('notifications.management.drawer.fieldScope', 'Nhóm đối tượng')} <span className="text-destructive">*</span>
                   </Label>
                   <select
                     value={targetScope}
                     onChange={(e) => setTargetScope(e.target.value)}
                     className="h-9 w-full px-3 text-[13px] bg-background border border-border rounded-none text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
                   >
-                    <option value="ALL">Toàn trường (Tất cả Giáo viên & Phụ huynh)</option>
-                    <option value="ALL_TEACHERS">Tất cả Giáo viên</option>
-                    <option value="ALL_PARENTS">Tất cả Phụ huynh</option>
-                    <option value="GRADE">Theo Khối tuổi</option>
-                    <option value="CLASS">Theo Lớp học cụ thể</option>
+                    <option value="ALL">{t('notifications.management.drawer.scopeAll', 'Toàn trường (Tất cả Giáo viên & Phụ huynh)')}</option>
+                    <option value="ALL_TEACHERS">{t('notifications.management.drawer.scopeTeachers', 'Tất cả Giáo viên')}</option>
+                    <option value="ALL_PARENTS">{t('notifications.management.drawer.scopeParents', 'Tất cả Phụ huynh')}</option>
+                    <option value="GRADE">{t('notifications.management.drawer.scopeGrade', 'Theo Khối tuổi')}</option>
+                    <option value="CLASS">{t('notifications.management.drawer.scopeClass', 'Theo Lớp học cụ thể')}</option>
                   </select>
                 </div>
 
@@ -433,17 +433,17 @@ export function NotificationDrawer({ onSaved }) {
                 {targetScope === 'GRADE' && (
                   <div className="space-y-1.5 pt-1">
                     <Label className="text-[12px] font-medium text-foreground">
-                      Chọn Khối tuổi
+                      {t('notifications.management.drawer.fieldGrade', 'Chọn Khối tuổi')}
                     </Label>
                     <select
                       value={targetGrade}
                       onChange={(e) => setTargetGrade(e.target.value)}
                       className="h-9 w-full px-3 text-[13px] bg-background border border-border rounded-none text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
                     >
-                      <option value="NHA_TRE">Nhà trẻ (18 - 36 tháng)</option>
-                      <option value="MAM">Khối Mầm (3 - 4 tuổi)</option>
-                      <option value="CHOI">Khối Chồi (4 - 5 tuổi)</option>
-                      <option value="LA">Khối Lá (5 - 6 tuổi)</option>
+                      <option value="NHA_TRE">{t('classes.nursery', 'Nhà trẻ (18 - 36 tháng)')}</option>
+                      <option value="MAM">{t('classes.kindergarten3', 'Khối Mầm (3 - 4 tuổi)')}</option>
+                      <option value="CHOI">{t('classes.kindergarten4', 'Khối Chồi (4 - 5 tuổi)')}</option>
+                      <option value="LA">{t('classes.kindergarten5', 'Khối Lá (5 - 6 tuổi)')}</option>
                     </select>
                   </div>
                 )}
@@ -453,10 +453,10 @@ export function NotificationDrawer({ onSaved }) {
                   <div className="space-y-2 pt-1">
                     <div className="flex items-center justify-between">
                       <Label className="text-[12px] font-medium text-foreground">
-                        Chọn các lớp học
+                        {t('notifications.management.drawer.fieldClasses', 'Chọn các lớp học')}
                       </Label>
                       <span className="text-[11px] text-muted-foreground">
-                        Đã chọn {selectedClassIds.length} lớp
+                        {t('notifications.management.scopeClassesCount', '{{count}} lớp học', { count: selectedClassIds.length })}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto p-2 border border-border bg-background">
@@ -489,32 +489,32 @@ export function NotificationDrawer({ onSaved }) {
             <div className="border border-border bg-card rounded-none overflow-hidden">
               <div className="p-4 border-b border-border bg-muted/20">
                 <h3 className="text-[14px] font-semibold text-foreground">
-                  Thời gian phát hành
+                  {t('notifications.management.dispatchTime', 'Thời gian phát hành')}
                 </h3>
                 <p className="text-[12px] text-muted-foreground font-normal">
-                  Chọn phát ngay hoặc đặt lịch phát hành trong tương lai
+                  {t('notifications.management.drawer.timingDesc', 'Chọn phát ngay hoặc đặt lịch phát hành trong tương lai')}
                 </p>
               </div>
 
               <div className="p-4 space-y-4">
                 <div className="space-y-1.5">
                   <Label className="text-[12px] font-medium text-foreground">
-                    Hình thức phát hành
+                    {t('notifications.management.drawer.fieldTiming', 'Hình thức phát hành')}
                   </Label>
                   <select
                     value={dispatchTiming}
                     onChange={(e) => setDispatchTiming(e.target.value)}
                     className="h-9 w-full px-3 text-[13px] bg-background border border-border rounded-none text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
                   >
-                    <option value="NOW">Gửi ngay bây giờ</option>
-                    <option value="SCHEDULED">Lên lịch phát hành trong tương lai</option>
+                    <option value="NOW">{t('notifications.management.drawer.timingNow', 'Gửi ngay bây giờ')}</option>
+                    <option value="SCHEDULED">{t('notifications.management.drawer.timingScheduled', 'Lên lịch phát hành trong tương lai')}</option>
                   </select>
                 </div>
 
                 {dispatchTiming === 'SCHEDULED' && (
                   <div className="space-y-1.5 pt-1">
                     <Label className="text-[12px] font-medium text-foreground">
-                      Ngày và giờ phát hành <span className="text-destructive">*</span>
+                      {t('notifications.management.drawer.fieldScheduleTime', 'Ngày và giờ phát hành')} <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       type="datetime-local"
@@ -524,7 +524,7 @@ export function NotificationDrawer({ onSaved }) {
                       className="h-9 text-[13px] rounded-none border-border"
                     />
                     <p className="text-[11px] text-muted-foreground">
-                      Hệ thống sẽ tự động gửi thông báo đến người nhận khi đến đúng thời điểm này.
+                      {t('notifications.management.drawer.scheduleHint', 'Hệ thống sẽ tự động gửi thông báo đến người nhận khi đến đúng thời điểm này.')}
                     </p>
                   </div>
                 )}
@@ -536,7 +536,7 @@ export function NotificationDrawer({ onSaved }) {
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             {isDetailLoading || !activeBroadcastDetail ? (
               <div className="py-16 text-center text-muted-foreground text-[13px] animate-pulse">
-                Đang tải dữ liệu chi tiết...
+                {t('common.loading', 'Đang tải dữ liệu chi tiết...')}
               </div>
             ) : (
               <>
@@ -545,10 +545,10 @@ export function NotificationDrawer({ onSaved }) {
                   <div className="p-4 border-b border-border bg-muted/20 flex items-center justify-between">
                     <div>
                       <h3 className="text-[14px] font-semibold text-foreground">
-                        Thông tin đợt thông báo
+                        {t('notifications.management.publishInfoTitle', 'Thông tin đợt thông báo')}
                       </h3>
                       <p className="text-[12px] text-muted-foreground font-normal">
-                        Trạng thái phát hành và tiến độ người đọc
+                        {t('notifications.management.publishInfoSubtitle', 'Trạng thái phát hành và tiến độ người đọc')}
                       </p>
                     </div>
                     <span
@@ -560,21 +560,21 @@ export function NotificationDrawer({ onSaved }) {
                       )}
                     >
                       {activeBroadcastDetail.status === 'SCHEDULED'
-                        ? 'Đã lên lịch'
-                        : 'Đã phát hành'}
+                        ? t('notifications.management.statusScheduled', 'Đã lên lịch')
+                        : t('notifications.management.statusPublished', 'Đã phát hành')}
                     </span>
                   </div>
 
                   <div className="p-4 space-y-3 text-[13px]">
                     <div>
-                      <span className="text-muted-foreground">Tiêu đề: </span>
+                      <span className="text-muted-foreground">{t('notifications.management.colBroadcast', 'Tiêu đề')}: </span>
                       <span className="font-semibold text-foreground">
                         {activeBroadcastDetail.title}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-[12px]">
                       <div>
-                        <span className="text-muted-foreground">Thời gian phát: </span>
+                        <span className="text-muted-foreground">{t('notifications.management.dispatchTime', 'Thời gian phát')}: </span>
                         <span className="font-medium text-foreground">
                           {formatDateTime(
                             activeBroadcastDetail.scheduledAt || activeBroadcastDetail.createdAt,
@@ -582,19 +582,19 @@ export function NotificationDrawer({ onSaved }) {
                         </span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Phạm vi gửi: </span>
+                        <span className="text-muted-foreground">{t('notifications.management.colScope', 'Phạm vi gửi')}: </span>
                         <span className="font-medium text-foreground">
                           {activeBroadcastDetail.targetScope}
                         </span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Tổng người nhận: </span>
+                        <span className="text-muted-foreground">{t('notifications.management.totalRecipients', 'Tổng người nhận')}: </span>
                         <span className="font-medium text-foreground">
-                          {activeBroadcastDetail.totalRecipients} tài khoản
+                          {t('notifications.management.accountsUnit', '{{count}} tài khoản', { count: activeBroadcastDetail.totalRecipients })}
                         </span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Đã đọc: </span>
+                        <span className="text-muted-foreground">{t('notifications.management.read', 'Đã đọc')}: </span>
                         <span className="font-medium text-primary">
                           {activeBroadcastDetail.readCount} /{' '}
                           {activeBroadcastDetail.totalRecipients} (
@@ -616,7 +616,7 @@ export function NotificationDrawer({ onSaved }) {
                 <div className="border border-border bg-card rounded-none overflow-hidden">
                   <div className="p-4 border-b border-border bg-muted/20">
                     <h3 className="text-[14px] font-semibold text-foreground">
-                      Nội dung thông điệp
+                      {t('notifications.management.contentCardTitle', 'Nội dung thông điệp')}
                     </h3>
                   </div>
                   <div className="p-4 text-[13px] leading-relaxed text-foreground whitespace-pre-wrap">
@@ -625,7 +625,7 @@ export function NotificationDrawer({ onSaved }) {
                   {activeBroadcastDetail.attachments?.length > 0 && (
                     <div className="p-4 pt-0 space-y-1.5">
                       <Label className="text-[12px] font-medium text-muted-foreground">
-                        Tệp đính kèm ({activeBroadcastDetail.attachments.length})
+                        {t('notifications.management.attachedImages', 'Tệp đính kèm ({{count}})', { count: activeBroadcastDetail.attachments.length })}
                       </Label>
                       {activeBroadcastDetail.attachments.map((url, i) => (
                         <a
@@ -646,16 +646,16 @@ export function NotificationDrawer({ onSaved }) {
                 <div className="border border-border bg-card rounded-none overflow-hidden">
                   <div className="p-4 border-b border-border bg-muted/20">
                     <h3 className="text-[14px] font-semibold text-foreground">
-                      Danh sách người nhận ({activeBroadcastDetail.recipients?.length || 0})
+                      {t('notifications.management.recipientsListTitle', 'Danh sách người nhận ({{count}})', { count: activeBroadcastDetail.recipients?.length || 0 })}
                     </h3>
                   </div>
                   <div className="max-h-56 overflow-y-auto">
                     <table className="w-full text-left text-[12px]">
                       <thead className="bg-muted/40 border-b border-border sticky top-0 text-muted-foreground font-medium">
                         <tr>
-                          <th className="px-3 py-2">Tên người nhận</th>
-                          <th className="px-3 py-2">Vai trò</th>
-                          <th className="px-3 py-2 text-right">Trạng thái</th>
+                          <th className="px-3 py-2">{t('notifications.management.colRecipientName', 'Tên người nhận')}</th>
+                          <th className="px-3 py-2">{t('notifications.management.colRole', 'Vai trò')}</th>
+                          <th className="px-3 py-2 text-right">{t('notifications.management.colStatus', 'Trạng thái')}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
@@ -665,17 +665,17 @@ export function NotificationDrawer({ onSaved }) {
                               {r.name}
                             </td>
                             <td className="px-3 py-2 text-muted-foreground">
-                              {r.role === 'TEACHER_GV' ? 'Giáo viên' : 'Phụ huynh'}
+                              {r.role === 'TEACHER_GV' ? t('notifications.management.teacherRole', 'Giáo viên') : t('notifications.management.parentRole', 'Phụ huynh')}
                             </td>
                             <td className="px-3 py-2 text-right">
                               {r.isRead ? (
                                 <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium text-[11px]">
                                   <HugeiconsIcon icon={CheckmarkCircle02Icon} size={12} />
-                                  Đã đọc
+                                  {t('notifications.management.read', 'Đã đọc')}
                                 </span>
                               ) : (
                                 <span className="text-muted-foreground text-[11px]">
-                                  Chưa xem
+                                  {t('notifications.management.unread', 'Chưa xem')}
                                 </span>
                               )}
                             </td>
@@ -701,7 +701,7 @@ export function NotificationDrawer({ onSaved }) {
                 disabled={isSubmitting}
                 className="h-8 px-4 text-[13px] rounded-none border-border cursor-pointer"
               >
-                Hủy
+                {t('common.cancel', 'Hủy')}
               </Button>
               <Button
                 type="submit"
@@ -710,12 +710,12 @@ export function NotificationDrawer({ onSaved }) {
                 className="h-8 px-4 text-[13px] rounded-none bg-[#1447e6] hover:bg-[#1447e6]/90 text-white cursor-pointer"
               >
                 {isSubmitting
-                  ? 'Đang lưu...'
+                  ? t('common.saving', 'Đang lưu...')
                   : drawerMode === 'edit'
-                  ? 'Lưu thay đổi'
+                  ? t('common.saveChanges', 'Lưu thay đổi')
                   : dispatchTiming === 'SCHEDULED'
-                  ? 'Lên lịch'
-                  : 'Phát hành'}
+                  ? t('notifications.management.scheduleBtn', 'Lên lịch')
+                  : t('notifications.management.drawer.publish', 'Phát hành')}
               </Button>
             </>
           ) : (
@@ -726,7 +726,7 @@ export function NotificationDrawer({ onSaved }) {
                 onClick={() => openDeleteDialog(activeBroadcastDetail.batchId)}
                 className="h-8 px-3 text-[12px] rounded-none cursor-pointer mr-auto"
               >
-                Thu hồi bản tin
+                {t('notifications.management.deleteTooltip', 'Thu hồi bản tin')}
               </Button>
               <Button
                 type="button"
@@ -734,7 +734,7 @@ export function NotificationDrawer({ onSaved }) {
                 onClick={closeDrawer}
                 className="h-8 px-4 text-[13px] rounded-none border-border cursor-pointer"
               >
-                Đóng
+                {t('common.close', 'Đóng')}
               </Button>
             </>
           )}
@@ -753,13 +753,13 @@ export function NotificationDrawer({ onSaved }) {
           >
             <div className="w-full flex items-center justify-between pb-2 border-b border-border/70 mb-2.5">
               <span className="text-[12.5px] font-medium text-foreground truncate">
-                Xem hình ảnh đính kèm
+                {t('notifications.management.imagePreviewTitle', 'Xem hình ảnh đính kèm')}
               </span>
               <button
                 type="button"
                 onClick={() => setPreviewImageUrl(null)}
                 className="size-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-none transition-colors cursor-pointer"
-                title="Đóng (Esc)"
+                title={t('notifications.management.closeEsc', 'Đóng (Esc)')}
               >
                 <HugeiconsIcon icon={Cancel01Icon} size={16} />
               </button>

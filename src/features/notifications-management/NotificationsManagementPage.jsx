@@ -106,7 +106,7 @@ export function NotificationsManagementPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm kiếm bản tin..."
+              placeholder={t('notifications.management.searchPlaceholder', 'Tìm kiếm bản tin...')}
               className="h-8 pl-8 pr-2.5 text-[13px] bg-background border-border rounded-none shadow-none focus-visible:ring-1 focus-visible:ring-ring"
             />
           </div>
@@ -122,7 +122,7 @@ export function NotificationsManagementPage() {
             <button
               type="button"
               onClick={() => setViewMode('list')}
-              title="Dạng bảng"
+              title={t('common.tableView', 'Dạng bảng')}
               className={cn(
                 'size-8 flex items-center justify-center transition-colors cursor-pointer border-r border-border',
                 viewMode === 'list'
@@ -136,7 +136,7 @@ export function NotificationsManagementPage() {
             <button
               type="button"
               onClick={() => setViewMode('grid')}
-              title="Dạng lưới"
+              title={t('common.gridView', 'Dạng lưới')}
               className={cn(
                 'size-8 flex items-center justify-center transition-colors cursor-pointer',
                 viewMode === 'grid'
@@ -155,18 +155,18 @@ export function NotificationsManagementPage() {
             variant="outline"
             onClick={async () => {
               await fetchBroadcasts();
-              toast.success('Đã làm mới danh sách bản tin');
+              toast.success(t('notifications.management.refreshSuccess', 'Đã làm mới danh sách bản tin'));
             }}
             disabled={isLoading}
             className="h-8 px-2.5 text-[13px] rounded-none cursor-pointer flex items-center gap-1.5"
-            title="Tải lại danh sách bản tin"
+            title={t('notifications.management.reloadTitle', 'Tải lại danh sách bản tin')}
           >
             <HugeiconsIcon
               icon={RefreshIcon}
               size={14}
               className={cn(isLoading && 'animate-spin')}
             />
-            <span>Làm mới</span>
+            <span>{t('notifications.management.refresh', 'Làm mới')}</span>
           </Button>
 
           {/* Add Notification Button */}
@@ -177,7 +177,7 @@ export function NotificationsManagementPage() {
             data-name="Button · Tạo bản tin"
           >
             <HugeiconsIcon icon={Add01Icon} size={15} />
-            <span>Tạo bản tin</span>
+            <span>{t('notifications.management.createBtn', 'Tạo bản tin')}</span>
           </Button>
         </div>
       </div>
@@ -185,10 +185,10 @@ export function NotificationsManagementPage() {
       {/* List Heading */}
       <div className="flex items-center justify-between pt-1">
         <h2 className="text-[16px] font-semibold text-foreground">
-          Danh sách bản tin
+          {t('notifications.management.title', 'Danh sách bản tin')}
         </h2>
         <span className="text-[12px] text-muted-foreground font-normal">
-          {filteredBroadcasts.length} bản tin
+          {t('notifications.management.countLabel', { count: filteredBroadcasts.length, defaultValue: `${filteredBroadcasts.length} bản tin` })}
         </span>
       </div>
 
@@ -204,7 +204,7 @@ export function NotificationsManagementPage() {
         currentPage={currentPage}
         totalItems={filteredBroadcasts.length}
         onPageChange={setCurrentPage}
-        itemLabel="bản tin"
+        itemLabel={t('notifications.management.itemLabel', 'bản tin')}
       />
 
       {/* Global Slide-in Drawer & Action Modals */}

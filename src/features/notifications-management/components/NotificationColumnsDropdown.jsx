@@ -21,10 +21,10 @@ export function NotificationColumnsDropdown() {
   const toggleColumn = useNotificationsManagementStore((state) => state.toggleColumn);
 
   const columns = [
-    { key: 'targetScope', label: 'Phạm vi gửi' },
-    { key: 'status', label: 'Trạng thái' },
-    { key: 'dispatchTime', label: 'Thời gian phát' },
-    { key: 'readRate', label: 'Tỷ lệ đã đọc' },
+    { key: 'targetScope', label: t('notifications.management.colScope', 'Phạm vi gửi') },
+    { key: 'status', label: t('notifications.management.colStatus', 'Trạng thái') },
+    { key: 'dispatchTime', label: t('notifications.management.colDispatchDate', 'Thời gian phát') },
+    { key: 'readRate', label: t('notifications.management.colReadRate', 'Tỷ lệ đã đọc') },
   ];
 
   return (
@@ -35,7 +35,7 @@ export function NotificationColumnsDropdown() {
           className="h-8 px-2.5 bg-background border border-border text-[14px] font-medium text-foreground hover:bg-muted/50 rounded-none flex items-center justify-center gap-1 transition-colors cursor-pointer select-none"
           data-name="Columns · Notifications"
         >
-          <span>Cột</span>
+          <span>{t('common.columns', 'Cột')}</span>
           <HugeiconsIcon
             icon={ArrowDown01Icon}
             size={14}
@@ -48,7 +48,7 @@ export function NotificationColumnsDropdown() {
         className="w-48 p-1.5 rounded-none border border-border bg-card shadow-xl z-50 text-foreground"
       >
         <DropdownMenuLabel className="px-2 py-1 text-[12px] font-medium text-muted-foreground">
-          Hiển thị cột
+          {t('common.visibleColumns', 'Hiển thị cột')}
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="my-1 border-t border-border" />
         {columns.map((col) => (
