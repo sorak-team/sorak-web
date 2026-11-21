@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
   FileSpreadsheetIcon,
@@ -16,20 +17,25 @@ export function ExcelActionsDropdown({
   onExport,
   onImport,
   isExporting = false,
+  isExportDisabled = false,
   showImport = true,
-  exportLabel = 'Xuất tệp Excel',
-  importLabel = 'Nhập tệp Excel',
+  exportLabel,
+  importLabel,
   extraItems = null,
   trigger = null,
   align = 'end',
 }) {
+  const { t } = useTranslation();
+  const effectiveExportLabel = exportLabel || t('excel.exportFile', 'Xuất tệp Excel');
+  const effectiveImportLabel = importLabel || t('excel.importFile', 'Nhập tệp Excel');
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         {trigger || (
           <button
             type="button"
-            title="Thao tác Excel"
+            title={t('excel.actionsTitle', 'Thao tác Excel')}
             className="size-8 flex items-center justify-center bg-background border border-border text-foreground hover:bg-muted/50 rounded-none transition-colors cursor-pointer select-none"
             data-name="Excel Actions Dropdown"
           >
@@ -46,10 +52,12 @@ export function ExcelActionsDropdown({
           <DropdownMenuItem
             onClick={onExport}
             disabled={isExporting}
-            className="flex items-center gap-2 h-8 px-2 text-[13px] cursor-pointer rounded-none hover:bg-muted/60 whitespace-nowrap text-foreground"
+            className={`flex items-center gap-2 h-8 px-2 text-[13px] rounded-none whitespace-nowrap text-foreground ${
+              isExporting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-muted/60'
+            }`}
           >
             <HugeiconsIcon icon={Download01Icon} size={15} className="text-muted-foreground shrink-0" />
-            <span>{isExporting ? 'Đang xuất tệp...' : exportLabel}</span>
+            <span>{isExporting ? t('excel.exporting', 'Đang xuất tệp...') : effectiveExportLabel}</span>
           </DropdownMenuItem>
         )}
 
@@ -61,7 +69,7 @@ export function ExcelActionsDropdown({
             className="flex items-center gap-2 h-8 px-2 text-[13px] cursor-pointer rounded-none hover:bg-muted/60 whitespace-nowrap text-foreground"
           >
             <HugeiconsIcon icon={Upload01Icon} size={15} className="text-muted-foreground shrink-0" />
-            <span>{importLabel}</span>
+            <span>{effectiveImportLabel}</span>
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>

@@ -593,7 +593,7 @@ export default function LoginPage() {
                     onClick={(e) => {
                       e.preventDefault();
                       toast.info(t('auth.schoolHotline', 'Hotline trường'), {
-                        description: 'Hotline: 1900 6868 (8:00 - 17:30 từ Thứ 2 đến Thứ 6)',
+                        description: t('auth.hotlineDesc', 'Hotline: 1900 6868 (8:00 - 17:30 từ Thứ 2 đến Thứ 6)'),
                       });
                     }}
                     className="text-foreground font-medium underline underline-offset-2 hover:text-primary transition-colors"
@@ -721,7 +721,7 @@ export default function LoginPage() {
                 />
                 <button
                   type="button"
-                  aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                  aria-label={showPassword ? t('auth.hidePassword', 'Ẩn mật khẩu') : t('auth.showPassword', 'Hiện mật khẩu')}
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded-none transition-colors"
                 >
@@ -778,7 +778,7 @@ export default function LoginPage() {
                 onClick={(e) => {
                   e.preventDefault();
                   toast.info(t('auth.terms', 'Điều khoản'), {
-                    description: 'Tài liệu điều khoản sử dụng của hệ thống Sorak.',
+                    description: t('auth.termsDesc', 'Tài liệu điều khoản sử dụng của hệ thống Sorak.'),
                   });
                 }}
                 className="text-foreground/90 font-medium underline underline-offset-2 hover:text-primary transition-colors"
@@ -791,7 +791,7 @@ export default function LoginPage() {
                 onClick={(e) => {
                   e.preventDefault();
                   toast.info(t('auth.privacy', 'Chính sách'), {
-                    description: 'Quy định bảo mật và quyền riêng tư thông tin học sinh.',
+                    description: t('auth.privacyDesc', 'Quy định bảo mật và quyền riêng tư thông tin học sinh.'),
                   });
                 }}
                 className="text-foreground/90 font-medium underline underline-offset-2 hover:text-primary transition-colors"
