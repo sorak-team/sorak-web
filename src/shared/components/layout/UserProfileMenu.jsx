@@ -168,7 +168,7 @@ export function UserProfileMenu({
                   <>
                     <span className="text-muted-foreground/40 shrink-0 select-none">•</span>
                     <span className="font-mono text-[10.5px] text-muted-foreground shrink-0">
-                      Mã CB: {employeeCode}
+                      {t('profile.staffCode', 'Mã CB')}: {employeeCode}
                     </span>
                   </>
                 )}

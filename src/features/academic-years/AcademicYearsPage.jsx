@@ -113,7 +113,7 @@ export function AcademicYearsPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-3 text-muted-foreground select-none">
         <div className="size-7 border-2 border-primary border-t-transparent animate-spin rounded-full" />
-        <span className="text-[13px] font-medium">Đang mở năm học đang hoạt động...</span>
+        <span className="text-[13px] font-medium">{t('schoolYear.openingActiveYear', 'Đang mở năm học đang hoạt động...')}</span>
       </div>
     );
   }
@@ -198,7 +198,7 @@ export function AcademicYearsPage() {
         </h2>
         <span className="text-[12px] text-muted-foreground font-normal">
           {isLoading && academicYears.length === 0
-            ? 'Đang tải...'
+            ? t('common.loading', 'Đang tải...')
             : t('schoolYear.yearCount', { count: filteredYears.length })}
         </span>
       </div>
@@ -219,7 +219,7 @@ export function AcademicYearsPage() {
             <div className="w-[130px]">{t('schoolYear.colTotalClasses')}</div>
             <div className="w-[200px]">{t('schoolYear.semester1', 'Học kỳ 1')}</div>
             <div className="w-[200px]">{t('schoolYear.semester2', 'Học kỳ 2')}</div>
-            <div className="w-[110px] text-right font-medium">Thao tác</div>
+            <div className="w-[110px] text-right font-medium">{t('common.actions', 'Thao tác')}</div>
           </div>
 
           {/* Table Rows */}
@@ -255,7 +255,7 @@ export function AcademicYearsPage() {
             ))
           ) : filteredYears.length === 0 ? (
             <div className="p-12 text-center text-sm text-muted-foreground">
-              Không tìm thấy năm học phù hợp
+              {t('schoolYear.noYearFound', 'Không tìm thấy năm học phù hợp')}
             </div>
           ) : (
             filteredYears.map((year) => (
@@ -370,7 +370,7 @@ export function AcademicYearsPage() {
             ))
           ) : filteredYears.length === 0 ? (
             <div className="col-span-2 p-12 text-center text-sm text-muted-foreground border border-border bg-card">
-              Không tìm thấy năm học phù hợp
+              {t('schoolYear.noYearFound', 'Không tìm thấy năm học phù hợp')}
             </div>
           ) : (
             filteredYears.map((year) => (

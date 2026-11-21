@@ -427,7 +427,7 @@ export function AddAccountDrawer() {
                             </span>
                           </div>
                           <span className="text-[12px] text-muted-foreground truncate mt-0.5">
-                            {teacher.position || teacher.role || 'Giáo viên'}
+                            {teacher.position || teacher.role || t('account.roleTeacher', 'Giáo viên')}
                             {teacher.email ? ` · ${teacher.email}` : ''}
                           </span>
                         </div>

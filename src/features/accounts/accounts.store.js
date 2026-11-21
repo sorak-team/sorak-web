@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { accountsApi } from './accounts.api';
+import { getStudentAvatarUrl } from '@/features/students/students.store';
 
 export const initialStaffAccounts = [];
 
@@ -47,8 +48,15 @@ export function getAccountAvatarUrl(avatar, fullNameOrCode, role) {
     return avatar;
   }
   const seed = fullNameOrCode && String(fullNameOrCode).trim() ? String(fullNameOrCode).trim() : 'User';
-  if (role === 'student' || role === 'STUDENT') {
-    return `https://api.dicebear.com/10.x/critters/svg?seed=${encodeURIComponent(seed)}&backgroundColor=ff2e63,00c2a8,ffb300,3d5afe,8e24aa,00e676`;
+  if (
+    role === 'student' ||
+    role === 'STUDENT' ||
+    role === 'parent' ||
+    role === 'PARENT' ||
+    role === 'PARENT_PH' ||
+    role === 'parents'
+  ) {
+    return getStudentAvatarUrl(avatar, seed);
   }
   return `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(seed)}`;
 }
@@ -72,8 +80,8 @@ function transformBackendAccount(acc) {
   
   // Use full name as seed to match getTeacherAvatarUrl in teachers.store.js
   const teacherSeed = (acc.teacherProfile?.fullName || acc.fullName || 'GV').trim();
-  const parentSeed = (acc.parentProfile?.fullName || acc.fullName || 'PH').trim();
   const studentSeed = (studentCode || acc.studentProfile?.fullName || acc.fullName || 'student').trim();
+  const parentSeed = studentSeed;
   const seed = isStaff ? teacherSeed : isParent ? parentSeed : studentSeed;
 
   const workStatus = acc.teacherProfile
@@ -93,12 +101,12 @@ function transformBackendAccount(acc) {
         ? teacherAvatar
         : getAccountAvatarUrl(null, teacherSeed, 'teacher'))
     : isParent
-    ? (parentAvatar && typeof parentAvatar === 'string' && parentAvatar.trim() !== '' && !parentAvatar.includes('unsplash.com') && !parentAvatar.includes('api.dicebear.com')
-        ? parentAvatar
-        : getAccountAvatarUrl(null, parentSeed, 'parent'))
-    : (studentAvatar && typeof studentAvatar === 'string' && studentAvatar.trim() !== '' && !studentAvatar.includes('unsplash.com')
+    ? (studentAvatar && typeof studentAvatar === 'string' && studentAvatar.trim() !== '' && !studentAvatar.includes('unsplash.com') && !studentAvatar.includes('api.dicebear.com')
         ? studentAvatar
-        : getAccountAvatarUrl(null, studentSeed, 'student'));
+        : getStudentAvatarUrl(studentAvatar, studentSeed))
+    : (studentAvatar && typeof studentAvatar === 'string' && studentAvatar.trim() !== '' && !studentAvatar.includes('unsplash.com') && !studentAvatar.includes('api.dicebear.com')
+        ? studentAvatar
+        : getStudentAvatarUrl(studentAvatar, studentSeed));
 
   const studentClass =
     acc.studentProfile?.currentClass?.className ||

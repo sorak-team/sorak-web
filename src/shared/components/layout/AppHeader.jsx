@@ -16,34 +16,37 @@ import { ClassCommandMenu, useClassesStore, findTeacherClassForYear } from '@/fe
 import { useAuthStore } from '@/features/auth';
 import { PageMoreMenu } from './PageMoreMenu';
 
-const DEFAULT_THEME_NAMES = {
-  'th-1': 'Bản thân',
-  '01': 'Bản thân',
-  '1': 'Bản thân',
-  'th-2': 'Gia đình',
-  '02': 'Gia đình',
-  '2': 'Gia đình',
-  'th-3': 'Trường mầm non',
-  '03': 'Trường mầm non',
-  '3': 'Trường mầm non',
-  'th-4': 'Nghề nghiệp',
-  '04': 'Nghề nghiệp',
-  '4': 'Nghề nghiệp',
-  'th-5': 'Thế giới thực vật',
-  '05': 'Thế giới thực vật',
-  '5': 'Thế giới thực vật',
-  'th-6': 'Thế giới động vật',
-  '06': 'Thế giới động vật',
-  '6': 'Thế giới động vật',
-  'th-7': 'Giao thông',
-  '07': 'Giao thông',
-  '7': 'Giao thông',
-  'th-8': 'Nước & hiện tượng tự nhiên',
-  '08': 'Nước & hiện tượng tự nhiên',
-  '8': 'Nước & hiện tượng tự nhiên',
-  'th-9': 'Quê hương đất nước',
-  '09': 'Quê hương đất nước',
-  '9': 'Quê hương đất nước',
+const getDefaultThemeName = (key, t) => {
+  const map = {
+    'th-1': t('curriculum.themeSelf', 'Bản thân'),
+    '01': t('curriculum.themeSelf', 'Bản thân'),
+    '1': t('curriculum.themeSelf', 'Bản thân'),
+    'th-2': t('curriculum.themeFamily', 'Gia đình'),
+    '02': t('curriculum.themeFamily', 'Gia đình'),
+    '2': t('curriculum.themeFamily', 'Gia đình'),
+    'th-3': t('curriculum.themeKindergarten', 'Trường mầm non'),
+    '03': t('curriculum.themeKindergarten', 'Trường mầm non'),
+    '3': t('curriculum.themeKindergarten', 'Trường mầm non'),
+    'th-4': t('curriculum.themeOccupation', 'Nghề nghiệp'),
+    '04': t('curriculum.themeOccupation', 'Nghề nghiệp'),
+    '4': t('curriculum.themeOccupation', 'Nghề nghiệp'),
+    'th-5': t('curriculum.themePlants', 'Thế giới thực vật'),
+    '05': t('curriculum.themePlants', 'Thế giới thực vật'),
+    '5': t('curriculum.themePlants', 'Thế giới thực vật'),
+    'th-6': t('curriculum.themeAnimals', 'Thế giới động vật'),
+    '06': t('curriculum.themeAnimals', 'Thế giới động vật'),
+    '6': t('curriculum.themeAnimals', 'Thế giới động vật'),
+    'th-7': t('curriculum.themeTransportation', 'Giao thông'),
+    '07': t('curriculum.themeTransportation', 'Giao thông'),
+    '7': t('curriculum.themeTransportation', 'Giao thông'),
+    'th-8': t('curriculum.themeWaterNature', 'Nước & hiện tượng tự nhiên'),
+    '08': t('curriculum.themeWaterNature', 'Nước & hiện tượng tự nhiên'),
+    '8': t('curriculum.themeWaterNature', 'Nước & hiện tượng tự nhiên'),
+    'th-9': t('curriculum.themeHomeland', 'Quê hương đất nước'),
+    '09': t('curriculum.themeHomeland', 'Quê hương đất nước'),
+    '9': t('curriculum.themeHomeland', 'Quê hương đất nước'),
+  };
+  return map[key];
 };
 
 const formatGoalCode = (code) => {
@@ -244,7 +247,7 @@ export function AppHeader({ sidebarCollapsed, onToggleSidebar, currentTitle }) {
         size="icon"
         onClick={onToggleSidebar}
         className="size-8 rounded-none text-foreground/80 hover:text-foreground hover:bg-muted"
-        title={sidebarCollapsed ? 'Mở rộng sidebar' : 'Thu gọn sidebar'}
+        title={sidebarCollapsed ? t('sidebar.expand', 'Mở rộng sidebar') : t('sidebar.collapse', 'Thu gọn sidebar')}
         data-node-id="4053:1127"
       >
         <HugeiconsIcon icon={SidebarLeftIcon} size={16} />
@@ -579,7 +582,7 @@ export function AppHeader({ sidebarCollapsed, onToggleSidebar, currentTitle }) {
               className="text-muted-foreground/70"
             />
             <span className="text-foreground font-normal">
-              Chi tiết bản tin
+              {t('notifications.detailTitle', 'Chi tiết bản tin')}
             </span>
           </>
         ) : isStudents ? (
@@ -597,7 +600,7 @@ export function AppHeader({ sidebarCollapsed, onToggleSidebar, currentTitle }) {
               ? classes.find((c) => String(c.id) === String(studentClassId) || String(c.publicId) === String(studentClassId))
               : null;
             const studentClassName = targetClassObj?.name || (isTeacher ? teacherClass?.name : currentStudent?.currentClass?.className);
-            const yearName = targetClassObj?.schoolYear?.name || currentStudent?.currentClass?.schoolYearName || getYearName(selectedYear) || 'Năm học 2026–2027';
+            const yearName = targetClassObj?.schoolYear?.name || currentStudent?.currentClass?.schoolYearName || getYearName(selectedYear) || `${t('schoolYear.title', 'Năm học')} 2026–2027`;
 
             if (isViewingInClassContext && studentClassId) {
               return (
@@ -715,7 +718,7 @@ export function AppHeader({ sidebarCollapsed, onToggleSidebar, currentTitle }) {
             const parentThemePath = `/curriculum/themes/${match[1]}/${match[2]}`;
             const themeTitle =
               activeCurriculumThemeName ||
-              DEFAULT_THEME_NAMES[match[3]] ||
+              getDefaultThemeName(match[3], t) ||
               t('curriculum.singleTheme', 'Chủ đề');
             return (
               <>
@@ -820,7 +823,7 @@ export function AppHeader({ sidebarCollapsed, onToggleSidebar, currentTitle }) {
                       className="text-muted-foreground/70"
                     />
                     <span className="text-foreground font-normal">
-                      {activeCurriculumGoal?.code || 'Chi tiết mục tiêu'}
+                      {activeCurriculumGoal?.code || t('curriculum.goalDetail', 'Chi tiết mục tiêu')}
                     </span>
                   </>
                 );
@@ -903,7 +906,7 @@ export function AppHeader({ sidebarCollapsed, onToggleSidebar, currentTitle }) {
               className="text-muted-foreground/70"
             />
             <span className="text-foreground font-normal">
-              Chi tiết yêu cầu
+              {t('transfers.requestDetail', 'Chi tiết yêu cầu')}
             </span>
           </>
         ) : location.pathname === '/daily' ? (

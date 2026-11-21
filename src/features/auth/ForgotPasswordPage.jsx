@@ -108,12 +108,12 @@ export default function ForgotPasswordPage() {
         localStorage.setItem(`forgot_email_${trimmedId}`, targetEmail);
       }
 
-      toast.success('Đã gửi mã xác thực!', {
+      toast.success(t('auth.otpSentSuccess', 'Đã gửi mã xác thực!'), {
         description:
           payload.message ||
           (maskedEmail
-            ? `Mã OTP gồm 6 chữ số đã được gửi tới ${maskedEmail}.`
-            : `Mã OTP gồm 6 chữ số đã được gửi tới email liên kết của bạn.`),
+            ? t('auth.otpSentToEmail', 'Mã OTP gồm 6 chữ số đã được gửi tới {{email}}.', { email: maskedEmail })
+            : t('auth.otpSentToLinkedEmail', 'Mã OTP gồm 6 chữ số đã được gửi tới email liên kết của bạn.')),
       });
 
       navigate(
@@ -129,7 +129,7 @@ export default function ForgotPasswordPage() {
       const errorMsg =
         error.response?.data?.message ||
         error.message ||
-        'Không thể gửi yêu cầu xác thực. Vui lòng thử lại.';
+        t('auth.cannotSendVerification', 'Không thể gửi yêu cầu xác thực. Vui lòng thử lại.');
 
       // Fallback: If user is a teacher or identifier without @ is entered, show Contact Admin screen
       if (!isParent && !data.identifier.includes('@')) {
@@ -137,13 +137,15 @@ export default function ForgotPasswordPage() {
           username: data.identifier,
           role: 'TEACHER_GV',
           isAdminSupport: true,
-          message:
+          message: t(
+            'auth.accountTeacherNoEmail',
             'Tài khoản giáo viên chưa được liên kết email. Vui lòng liên hệ ban giám hiệu hoặc quản trị viên nhà trường để được hỗ trợ.',
+          ),
         });
         return;
       }
 
-      toast.error('Không tìm thấy tài khoản', {
+      toast.error(t('auth.accountNotFound', 'Không tìm thấy tài khoản'), {
         description: errorMsg,
       });
     } finally {
@@ -338,7 +340,7 @@ export default function ForgotPasswordPage() {
                   <div className="p-3 bg-muted/40 border border-border/70 text-[11px] space-y-2">
                     {contactTeacherData.className && (
                       <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Lớp học:</span>
+                        <span className="text-muted-foreground">{t('auth.classLabel', 'Lớp học')}:</span>
                         <span className="font-semibold text-foreground">
                           {contactTeacherData.className}
                         </span>
@@ -346,7 +348,7 @@ export default function ForgotPasswordPage() {
                     )}
                     {contactTeacherData.teacherName && (
                       <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Giáo viên phụ trách:</span>
+                        <span className="text-muted-foreground">{t('auth.teacherLabel', 'Giáo viên phụ trách')}:</span>
                         <span className="font-semibold text-foreground">
                           {contactTeacherData.teacherName}
                         </span>
@@ -354,7 +356,7 @@ export default function ForgotPasswordPage() {
                     )}
                     {contactTeacherData.teacherPhone && (
                       <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">SĐT giáo viên:</span>
+                        <span className="text-muted-foreground">{t('auth.teacherPhoneLabel', 'SĐT giáo viên')}:</span>
                         <a
                           href={`tel:${contactTeacherData.teacherPhone}`}
                           className="font-semibold text-[#1447e6] hover:underline"
@@ -364,7 +366,7 @@ export default function ForgotPasswordPage() {
                       </div>
                     )}
                     <div className="flex items-center justify-between pt-1 border-t border-border/50">
-                      <span className="text-muted-foreground">Hotline nhà trường:</span>
+                      <span className="text-muted-foreground">{t('auth.hotline', 'Hotline nhà trường')}:</span>
                       <a
                         href="tel:02473001866"
                         className="font-semibold text-foreground hover:underline"
@@ -373,8 +375,8 @@ export default function ForgotPasswordPage() {
                       </a>
                     </div>
                     <div className="flex items-center justify-between text-muted-foreground/80">
-                      <span>Thời gian hỗ trợ:</span>
-                      <span>07:30 – 17:30 (Thứ 2 – Thứ 6)</span>
+                      <span>{t('auth.supportHours', 'Thời gian hỗ trợ')}:</span>
+                      <span>{t('auth.supportHoursValue', '07:30 – 17:30 (Thứ 2 – Thứ 6)')}</span>
                     </div>
                   </div>
                 </div>
@@ -443,8 +445,8 @@ export default function ForgotPasswordPage() {
                     type="text"
                     placeholder={
                       isParent
-                        ? 'Ví dụ: HS26001, HS25001...'
-                        : 'Ví dụ: CB20001, CB24001...'
+                        ? t('auth.identifierPlaceholderParent', 'Ví dụ: HS26001, HS25001...')
+                        : t('auth.identifierPlaceholderSchool', 'Ví dụ: CB20001, CB24001...')
                     }
                     autoComplete="username"
                     disabled={isSubmitting}
@@ -490,8 +492,10 @@ export default function ForgotPasswordPage() {
                       setContactTeacherData({
                         username: 'Học sinh',
                         role: 'PARENT_PH',
-                        message:
+                        message: t(
+                          'auth.parentNoEmailNotice',
                           'Quý phụ huynh vui lòng liên hệ giáo viên chủ nhiệm hoặc hotline nhà trường để được hỗ trợ.',
+                        ),
                       })
                     }
                     className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
@@ -512,8 +516,10 @@ export default function ForgotPasswordPage() {
                         username: watch('identifier')?.trim() || 'Giáo viên',
                         role: 'TEACHER_GV',
                         isAdminSupport: true,
-                        message:
+                        message: t(
+                          'auth.teacherNoEmailNotice',
                           'Thầy/Cô vui lòng liên hệ Ban giám hiệu hoặc Quản trị viên hệ thống để được hỗ trợ cấp lại mật khẩu hoặc cập nhật email.',
+                        ),
                       })
                     }
                     className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
