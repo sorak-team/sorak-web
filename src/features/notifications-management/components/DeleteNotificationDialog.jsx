@@ -44,14 +44,10 @@ export function DeleteNotificationDialog() {
       <DialogContent className="sm:max-w-[425px] rounded-none border border-border p-6 bg-card text-foreground shadow-2xl">
         <DialogHeader>
           <DialogTitle className="text-[18px] font-semibold text-foreground">
-            Xác nhận thu hồi bản tin
+            {t('notifications.management.deleteDialogTitle', 'Xác nhận thu hồi bản tin')}
           </DialogTitle>
           <DialogDescription className="text-[13px] text-muted-foreground pt-2">
-            Bạn có chắc chắn muốn thu hồi bản tin{' '}
-            <span className="font-semibold text-foreground">
-              "{target?.title || 'này'}"
-            </span>
-            ? Bản tin sẽ bị ẩn khỏi toàn bộ hộp thư của giáo viên và phụ huynh đã nhận.
+            {t('notifications.management.deleteDialogDesc', 'Bạn có chắc chắn muốn thu hồi bản tin "{{title}}"? Bản tin sẽ bị ẩn khỏi toàn bộ hộp thư của giáo viên và phụ huynh đã nhận.', { title: target?.title || '' })}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="mt-6 flex items-center justify-end gap-2">
@@ -62,7 +58,7 @@ export function DeleteNotificationDialog() {
             disabled={isDeleting}
             className="h-8 px-3 text-[13px] rounded-none border-border cursor-pointer"
           >
-            Hủy
+            {t('common.cancel', 'Hủy')}
           </Button>
           <Button
             type="button"
@@ -71,7 +67,7 @@ export function DeleteNotificationDialog() {
             disabled={isDeleting}
             className="h-8 px-3 text-[13px] rounded-none bg-destructive hover:bg-destructive/90 cursor-pointer"
           >
-            {isDeleting ? 'Đang thu hồi...' : 'Thu hồi'}
+            {isDeleting ? t('notifications.management.revoking', 'Đang thu hồi...') : t('notifications.management.revokeBtn', 'Thu hồi')}
           </Button>
         </DialogFooter>
       </DialogContent>

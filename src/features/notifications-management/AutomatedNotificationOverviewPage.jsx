@@ -93,7 +93,7 @@ export function AutomatedNotificationOverviewPage() {
           onClick={handleBack}
           className="h-8 px-4 text-[13px] rounded-none cursor-pointer"
         >
-          Quay lại danh sách
+          {t('notifications.management.backToList', 'Quay lại danh sách')}
         </Button>
       </div>
     );
@@ -115,24 +115,24 @@ export function AutomatedNotificationOverviewPage() {
               {detail.title}
             </h1>
             <span className="inline-flex items-center justify-center px-2.5 py-0.5 text-[12px] font-medium bg-secondary text-secondary-foreground rounded-none">
-              {detail.categoryLabel || 'Hệ thống'}
+              {detail.categoryLabel || t('common.system', 'Hệ thống')}
             </span>
           </div>
 
           <p className="text-[13px] text-muted-foreground font-normal">
-            Mã thông báo:{' '}
+            {t('notifications.management.automatedDetail.code', 'Mã thông báo')}:{' '}
             <span className="font-mono font-medium text-foreground">
               #{detail.notificationId || detail.id?.slice(0, 8)}
             </span>
             {' · '}
-            Thời gian gửi:{' '}
+            {t('notifications.management.automatedDetail.sendTime', 'Thời gian gửi')}:{' '}
             <span className="text-foreground font-medium">
               {formatDateTime(detail.createdAt)}
             </span>
             {' · '}
-            Trạng thái:{' '}
+            {t('notifications.management.filterStatus', 'Trạng thái')}:{' '}
             <span className={cn('font-medium', detail.isRead ? 'text-emerald-700 dark:text-emerald-400' : 'text-muted-foreground')}>
-              {detail.isRead ? `Đã đọc (${formatDateTime(detail.readAt)})` : 'Chưa đọc'}
+              {detail.isRead ? t('notifications.management.readAt', 'Đã đọc ({{time}})', { time: formatDateTime(detail.readAt) }) : t('notifications.management.unread', 'Chưa đọc')}
             </span>
           </p>
         </div>
@@ -145,7 +145,7 @@ export function AutomatedNotificationOverviewPage() {
             className="h-8 px-3 text-[13px] rounded-none cursor-pointer flex items-center gap-1.5"
           >
             <HugeiconsIcon icon={ArrowLeft02Icon} size={15} />
-            <span>Quay lại danh sách</span>
+            <span>{t('notifications.management.backToList', 'Quay lại danh sách')}</span>
           </Button>
         </div>
       </div>
@@ -156,36 +156,36 @@ export function AutomatedNotificationOverviewPage() {
         <div className="border border-border bg-card rounded-none overflow-hidden shadow-xs">
           <div className="p-4 border-b border-border bg-muted/20">
             <h2 className="text-[14px] font-semibold text-foreground">
-              Thông tin người nhận
+              {t('notifications.management.automatedDetail.recipientInfo', 'Thông tin người nhận')}
             </h2>
             <p className="text-[12px] text-muted-foreground font-normal">
-              Chi tiết tài khoản nhận thông báo tự động từ hệ thống
+              {t('notifications.management.automatedDetail.recipientSubtitle', 'Chi tiết tài khoản nhận thông báo tự động từ hệ thống')}
             </p>
           </div>
 
           <div className="divide-y divide-border/60 text-[13px]">
             <div className="flex items-center justify-between p-4 h-[52px]">
-              <span className="text-muted-foreground">Họ và tên</span>
+              <span className="text-muted-foreground">{t('notifications.management.automatedDetail.fullName', 'Họ và tên')}</span>
               <span className="font-medium text-foreground">
                 {detail.recipient?.name || '—'}
               </span>
             </div>
             <div className="flex items-center justify-between p-4 h-[52px]">
-              <span className="text-muted-foreground">Vai trò người nhận</span>
+              <span className="text-muted-foreground">{t('notifications.management.automatedDetail.recipientRole', 'Vai trò người nhận')}</span>
               <span className="font-medium text-foreground">
                 {detail.recipient?.role || 'Khác'}
               </span>
             </div>
             <div className="flex items-center justify-between p-4 h-[52px]">
-              <span className="text-muted-foreground">Tài khoản đăng nhập</span>
+              <span className="text-muted-foreground">{t('notifications.management.automatedDetail.username', 'Tài khoản đăng nhập')}</span>
               <span className="font-mono text-foreground font-medium">
                 {detail.recipient?.username || '—'}
               </span>
             </div>
             <div className="flex items-center justify-between p-4 h-[52px]">
-              <span className="text-muted-foreground">Kênh tiếp nhận</span>
+              <span className="text-muted-foreground">{t('notifications.management.automatedDetail.channel', 'Kênh tiếp nhận')}</span>
               <span className="font-medium text-foreground">
-                Ứng dụng Sorak (Thông báo tự động)
+                {t('notifications.management.automatedDetail.appChannel', 'Ứng dụng Sorak (Thông báo tự động)')}
               </span>
             </div>
           </div>
@@ -195,10 +195,10 @@ export function AutomatedNotificationOverviewPage() {
         <div className="border border-border bg-card rounded-none overflow-hidden shadow-xs">
           <div className="p-4 border-b border-border bg-muted/20">
             <h2 className="text-[14px] font-semibold text-foreground">
-              Nội dung thông điệp
+              {t('notifications.management.automatedDetail.contentTitle', 'Nội dung thông điệp')}
             </h2>
             <p className="text-[12px] text-muted-foreground font-normal">
-              Văn bản thông báo phát đến ứng dụng giáo viên và phụ huynh
+              {t('notifications.management.automatedDetail.contentSubtitle', 'Văn bản thông báo phát đến ứng dụng giáo viên và phụ huynh')}
             </p>
           </div>
 
@@ -215,10 +215,10 @@ export function AutomatedNotificationOverviewPage() {
         <div className="border border-border bg-card rounded-none overflow-hidden shadow-xs">
           <div className="p-4 border-b border-border bg-muted/20">
             <h2 className="text-[14px] font-semibold text-foreground">
-              Dữ liệu sự kiện nghiệp vụ
+              {t('notifications.management.automatedDetail.businessDataTitle', 'Dữ liệu sự kiện nghiệp vụ')}
             </h2>
             <p className="text-[12px] text-muted-foreground font-normal">
-              Chi tiết các tham số hệ thống ghi nhận khi sự kiện phát sinh
+              {t('notifications.management.automatedDetail.businessDataSubtitle', 'Chi tiết các tham số hệ thống ghi nhận khi sự kiện phát sinh')}
             </p>
           </div>
 
@@ -226,61 +226,61 @@ export function AutomatedNotificationOverviewPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-[13px]">
               {detail.data.student_name && (
                 <div className="p-3 border border-border bg-background rounded-none">
-                  <span className="text-muted-foreground text-[12px] block">Học sinh liên quan:</span>
+                  <span className="text-muted-foreground text-[12px] block">{t('notifications.management.automatedDetail.relatedStudent', 'Học sinh liên quan')}:</span>
                   <span className="font-medium text-foreground">{detail.data.student_name}</span>
                 </div>
               )}
               {detail.data.class_name && (
                 <div className="p-3 border border-border bg-background rounded-none">
-                  <span className="text-muted-foreground text-[12px] block">Lớp học:</span>
+                  <span className="text-muted-foreground text-[12px] block">{t('notifications.management.automatedDetail.classroom', 'Lớp học')}:</span>
                   <span className="font-medium text-foreground">{detail.data.class_name}</span>
                 </div>
               )}
               {detail.data.source_class && (
                 <div className="p-3 border border-border bg-background rounded-none">
-                  <span className="text-muted-foreground text-[12px] block">Lớp chuyển đi:</span>
+                  <span className="text-muted-foreground text-[12px] block">{t('notifications.management.automatedDetail.sourceClass', 'Lớp chuyển đi')}:</span>
                   <span className="font-medium text-foreground">{detail.data.source_class}</span>
                 </div>
               )}
               {detail.data.destination_class && (
                 <div className="p-3 border border-border bg-background rounded-none">
-                  <span className="text-muted-foreground text-[12px] block">Lớp chuyển đến:</span>
+                  <span className="text-muted-foreground text-[12px] block">{t('notifications.management.automatedDetail.destClass', 'Lớp chuyển đến')}:</span>
                   <span className="font-medium text-foreground">{detail.data.destination_class}</span>
                 </div>
               )}
               {detail.data.authorized_person && (
                 <div className="p-3 border border-border bg-background rounded-none">
-                  <span className="text-muted-foreground text-[12px] block">Người đón hộ:</span>
+                  <span className="text-muted-foreground text-[12px] block">{t('notifications.management.automatedDetail.pickupPerson', 'Người đón hộ')}:</span>
                   <span className="font-medium text-foreground">{detail.data.authorized_person}</span>
                 </div>
               )}
               {detail.data.theme_name && (
                 <div className="p-3 border border-border bg-background rounded-none">
-                  <span className="text-muted-foreground text-[12px] block">Chủ đề giáo dục:</span>
+                  <span className="text-muted-foreground text-[12px] block">{t('notifications.management.automatedDetail.themeName', 'Chủ đề giáo dục')}:</span>
                   <span className="font-medium text-foreground">{detail.data.theme_name}</span>
                 </div>
               )}
               {detail.data.month && (
                 <div className="p-3 border border-border bg-background rounded-none">
-                  <span className="text-muted-foreground text-[12px] block">Tháng đánh giá:</span>
+                  <span className="text-muted-foreground text-[12px] block">{t('notifications.management.automatedDetail.assessmentMonth', 'Tháng đánh giá')}:</span>
                   <span className="font-medium text-foreground">{detail.data.month}</span>
                 </div>
               )}
               {detail.data.time && (
                 <div className="p-3 border border-border bg-background rounded-none">
-                  <span className="text-muted-foreground text-[12px] block">Thời điểm ghi nhận:</span>
+                  <span className="text-muted-foreground text-[12px] block">{t('notifications.management.automatedDetail.timestamp', 'Thời điểm ghi nhận')}:</span>
                   <span className="font-medium text-foreground">{detail.data.time}</span>
                 </div>
               )}
               {detail.data.holiday_name && (
                 <div className="p-3 border border-border bg-background rounded-none">
-                  <span className="text-muted-foreground text-[12px] block">Tên ngày nghỉ / Sự kiện:</span>
+                  <span className="text-muted-foreground text-[12px] block">{t('notifications.management.automatedDetail.holidayName', 'Tên ngày nghỉ / Sự kiện')}:</span>
                   <span className="font-medium text-foreground">{detail.data.holiday_name}</span>
                 </div>
               )}
               {detail.data.reason && (
                 <div className="p-3 border border-border bg-background rounded-none md:col-span-2">
-                  <span className="text-muted-foreground text-[12px] block">Lý do / Nội dung chi tiết:</span>
+                  <span className="text-muted-foreground text-[12px] block">{t('notifications.management.automatedDetail.reason', 'Lý do / Nội dung chi tiết')}:</span>
                   <span className="font-medium text-foreground">{detail.data.reason}</span>
                 </div>
               )}
