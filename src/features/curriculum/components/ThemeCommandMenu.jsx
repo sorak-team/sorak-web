@@ -156,11 +156,11 @@ export function ThemeCommandMenu({
           type="button"
           onClick={() => setIsOpen(!isOpen)}
           className="inline-flex items-center gap-1 cursor-pointer outline-none focus:outline-none"
-          title="Chuyển chủ đề chính"
+          title={t('curriculum.switchMainTheme', 'Chuyển chủ đề chính')}
           data-name="Theme Switcher Trigger"
         >
           <span className="font-medium text-foreground">
-            {currentThemeName || 'Chọn chủ đề'}
+            {currentThemeName || t('curriculum.selectTheme', 'Chọn chủ đề')}
           </span>
           <HugeiconsIcon
             icon={UnfoldMoreIcon}
@@ -176,7 +176,7 @@ export function ThemeCommandMenu({
             type="button"
             onClick={handleCloseTheme}
             className="size-4 rounded-none flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer"
-            title="Đóng & quay lại danh sách chủ đề"
+            title={t('curriculum.closeAndBackToThemes', 'Đóng & quay lại danh sách chủ đề')}
             data-name="Close Theme Button"
           >
             <HugeiconsIcon icon={Cancel01Icon} size={12} />
@@ -201,7 +201,7 @@ export function ThemeCommandMenu({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm chủ đề chính..."
+              placeholder={t('curriculum.searchMainTheme', 'Tìm chủ đề chính...')}
               autoFocus
               className="flex-1 bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground outline-none border-0 focus:outline-none focus:ring-0 shadow-none"
             />
@@ -214,7 +214,7 @@ export function ThemeCommandMenu({
           <div className="max-h-[280px] overflow-y-auto p-1 divide-y divide-border/30">
             {filteredThemes.length === 0 ? (
               <div className="p-4 text-center text-[13px] text-muted-foreground">
-                Không tìm thấy chủ đề phù hợp.
+                {t('curriculum.noMatchingThemes', 'Không tìm thấy chủ đề phù hợp.')}
               </div>
             ) : (
               filteredThemes.map((th) => {
@@ -247,7 +247,9 @@ export function ThemeCommandMenu({
                     <div className="flex flex-col min-w-0 flex-1 leading-tight">
                       <span className="truncate font-medium">{th.name}</span>
                       <span className="text-[11.5px] text-muted-foreground truncate">
-                        {subCount > 0 ? `${subCount} chủ đề nhánh` : 'Chưa có nhánh'}
+                        {subCount > 0
+                          ? t('curriculum.subThemesCount', '{{count}} chủ đề nhánh', { count: subCount })
+                          : t('curriculum.noSubThemes', 'Chưa có nhánh')}
                         {dateText ? ` · ${dateText}` : ''}
                       </span>
                     </div>
@@ -275,7 +277,7 @@ export function ThemeCommandMenu({
               className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[12.5px] font-normal text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer rounded-none"
             >
               <HugeiconsIcon icon={ArrowLeft01Icon} size={13} />
-              <span>Quay lại danh sách bộ chủ đề</span>
+              <span>{t('curriculum.backToThemesList', 'Quay lại danh sách bộ chủ đề')}</span>
             </button>
           </div>
         </div>
