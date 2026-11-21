@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
@@ -37,10 +38,11 @@ const getAgeGroupRank = (ageGroup, name = '') => {
 };
 
 export function SchoolOverviewDashboard({ year, yearId }) {
+  const { t } = useTranslation();
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
-  const [studentCategoryTab, setStudentCategoryTab] = useState('SUPPORT'); // 'SUPPORT' | 'OUTSTANDING'
+  const [studentCategoryTab, setStudentCategoryTab] = useState('BY_CLASS'); // 'BY_CLASS' | 'SUPPORT' | 'OUTSTANDING'
   const [supportPage, setSupportPage] = useState(1);
   const [outstandingPage, setOutstandingPage] = useState(1);
   const STUDENTS_PER_PAGE = 5;
@@ -55,7 +57,7 @@ export function SchoolOverviewDashboard({ year, yearId }) {
       setData(res);
     } catch (err) {
       console.error('Failed to load school overview statistics:', err);
-      toast.error('Không thể tải dữ liệu thống kê tổng quan trường.');
+      toast.error(t('schoolOverview.loadError', 'Không thể tải dữ liệu thống kê tổng quan trường.'));
     } finally {
       setIsLoading(false);
     }
@@ -72,10 +74,10 @@ export function SchoolOverviewDashboard({ year, yearId }) {
       const cleanName = (year?.name || '2026-2027').replace(/[^a-zA-Z0-9_-]/g, '_');
       const filename = `Bao_Cao_Thong_Ke_Toan_Truong_${cleanName}.xlsx`;
       downloadBlob(blob, filename);
-      toast.success('Đã xuất báo cáo thống kê toàn trường ra file Excel thành công.');
+      toast.success(t('schoolOverview.exportSuccess', 'Đã xuất báo cáo thống kê toàn trường ra file Excel thành công.'));
     } catch (err) {
       console.error('Export error:', err);
-      toast.error('Không thể xuất file Excel. Vui lòng thử lại sau.');
+      toast.error(t('schoolOverview.exportError', 'Không thể xuất file Excel. Vui lòng thử lại sau.'));
     } finally {
       setIsExporting(false);
     }
@@ -85,7 +87,7 @@ export function SchoolOverviewDashboard({ year, yearId }) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[360px] py-12 gap-3 text-muted-foreground select-none">
         <div className="size-7 border-2 border-primary border-t-transparent animate-spin rounded-full" />
-        <span className="text-[13px] font-medium">Đang tải dữ liệu thống kê trường...</span>
+        <span className="text-[13px] font-medium">{t('schoolOverview.loadingData', 'Đang tải dữ liệu thống kê trường...')}</span>
       </div>
     );
   }
@@ -93,6 +95,7 @@ export function SchoolOverviewDashboard({ year, yearId }) {
   const summary = data?.summary || {};
   const matrix = data?.monthlyStudentMatrix || { months: [], classes: [], footer: {} };
   const plans = data?.planStatistics || {};
+  const assessments = data?.assessmentStatistics || {};
   const needSupport = data?.childrenNeedingSupport || [];
   const outstanding = data?.childrenOutstanding || [];
 
@@ -119,16 +122,23 @@ export function SchoolOverviewDashboard({ year, yearId }) {
     return (a.className || '').localeCompare(b.className || '', 'vi', { numeric: true });
   });
 
+  const sortedAssessmentClasses = [...(assessments.byClass || [])].sort((a, b) => {
+    const rankA = getAgeGroupRank(a.ageGroup, a.className);
+    const rankB = getAgeGroupRank(b.ageGroup, b.className);
+    if (rankA !== rankB) return rankA - rankB;
+    return (a.className || '').localeCompare(b.className || '', 'vi', { numeric: true });
+  });
+
   return (
     <div className="flex flex-col gap-3.5 text-foreground select-none animate-in fade-in-50 duration-200">
       {/* 1. Header Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-0.5">
         <div>
           <h2 className="text-[16px] font-semibold text-foreground tracking-tight">
-            Thống kê trường & Sĩ số năm học
+            {t('schoolOverview.overviewTitle', 'Thống kê trường & Sĩ số năm học')}
           </h2>
           <p className="text-[11.5px] text-muted-foreground mt-0.5">
-            Số hóa bảng thống kê sĩ số học sinh và theo dõi chất lượng giáo dục toàn trường
+            {t('schoolOverview.overviewSubtitle', 'Số hóa bảng thống kê sĩ số học sinh và theo dõi chất lượng giáo dục toàn trường')}
           </p>
         </div>
 
@@ -139,10 +149,10 @@ export function SchoolOverviewDashboard({ year, yearId }) {
           onClick={handleExportExcel}
           disabled={isExporting}
           className="h-7 px-2.5 rounded-none border-border bg-background hover:bg-muted/60 text-foreground text-[11.5px] font-normal cursor-pointer shadow-none flex items-center gap-1.5 shrink-0"
-          title="Xuất tệp Excel"
+          title={t('schoolOverview.exportExcel', 'Xuất tệp Excel')}
         >
           <HugeiconsIcon icon={Download01Icon} size={13} className="text-muted-foreground" />
-          <span>{isExporting ? 'Đang xuất tệp...' : 'Xuất tệp Excel'}</span>
+          <span>{isExporting ? t('schoolOverview.exportingExcel', 'Đang xuất tệp...') : t('schoolOverview.exportExcel', 'Xuất tệp Excel')}</span>
         </Button>
       </div>
 
@@ -150,18 +160,21 @@ export function SchoolOverviewDashboard({ year, yearId }) {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
         {/* Cơ cấu giới tính */}
         <div className="border border-border bg-card py-2.5 px-3 rounded-none flex flex-col justify-between min-h-[86px] shadow-2xs">
-          <span className="text-[11.5px] text-muted-foreground font-medium">Cơ cấu giới tính</span>
+          <span className="text-[11.5px] text-muted-foreground font-medium">{t('schoolOverview.genderRatio', 'Cơ cấu giới tính')}</span>
           <span className="text-[20px] font-semibold text-foreground tracking-tight leading-none font-mono">
-            {summary.femaleRate || 0}% <span className="text-[12px] text-muted-foreground font-normal">nữ</span>
+            {summary.femaleRate || 0}% <span className="text-[12px] text-muted-foreground font-normal">{t('schoolOverview.femaleUnit', 'nữ')}</span>
           </span>
           <span className="text-[11px] text-muted-foreground font-mono leading-normal">
-            {summary.totalFemaleStudents || 0} nữ / {summary.totalMaleStudents || 0} nam
+            {t('schoolOverview.femaleSlashMale', '{{female}} nữ / {{male}} nam', {
+              female: summary.totalFemaleStudents || 0,
+              male: summary.totalMaleStudents || 0,
+            })}
           </span>
         </div>
 
         {/* Duyệt kế hoạch giáo dục */}
         <div className="border border-border bg-card py-2.5 px-3 rounded-none flex flex-col justify-between min-h-[86px] shadow-2xs">
-          <span className="text-[11.5px] text-muted-foreground font-medium">Tiến độ kế hoạch</span>
+          <span className="text-[11.5px] text-muted-foreground font-medium">{t('schoolOverview.planProgress', 'Tiến độ kế hoạch')}</span>
           <span className="text-[20px] font-semibold text-foreground tracking-tight leading-none font-mono">
             {summary.planApprovalRate || 0}%{' '}
             <span className="text-[12px] text-muted-foreground font-normal">
@@ -169,29 +182,33 @@ export function SchoolOverviewDashboard({ year, yearId }) {
             </span>
           </span>
           <span className="text-[11px] text-muted-foreground leading-normal pb-0.5">
-            {plans.pendingPlans > 0 ? `${plans.pendingPlans} kế hoạch chờ duyệt` : 'Đã duyệt toàn bộ'}
+            {(summary.totalPlans || 0) === 0
+              ? t('schoolOverview.noPlanData', 'Chưa có dữ liệu kế hoạch')
+              : plans.pendingPlans > 0
+              ? t('schoolOverview.pendingPlansCount', '{{count}} kế hoạch chờ duyệt', { count: plans.pendingPlans })
+              : t('schoolOverview.allPlansApproved', 'Đã duyệt toàn bộ')}
           </span>
         </div>
 
         {/* Trẻ cần hỗ trợ */}
         <div className="border border-border bg-card py-2.5 px-3 rounded-none flex flex-col justify-between min-h-[86px] shadow-2xs">
-          <span className="text-[11.5px] text-muted-foreground font-medium">Trẻ cần hỗ trợ</span>
+          <span className="text-[11.5px] text-muted-foreground font-medium">{t('schoolOverview.supportNeeded', 'Trẻ cần hỗ trợ')}</span>
           <span className="text-[20px] font-semibold text-foreground tracking-tight leading-none font-mono">
-            {needSupport.length} <span className="text-[12px] text-muted-foreground font-normal">học sinh</span>
+            {needSupport.length} <span className="text-[12px] text-muted-foreground font-normal">{t('schoolOverview.studentsUnit', 'học sinh')}</span>
           </span>
           <span className="text-[11px] text-muted-foreground leading-normal">
-            {needSupport.length > 0 ? 'Cần theo dõi thêm' : 'Đạt chuẩn phát triển'}
+            {needSupport.length > 0 ? t('schoolOverview.needMonitoring', 'Cần theo dõi thêm') : t('schoolOverview.developmentStandardMet', 'Đạt chuẩn phát triển')}
           </span>
         </div>
 
         {/* Trẻ vượt trội */}
         <div className="border border-border bg-card py-2.5 px-3 rounded-none flex flex-col justify-between min-h-[86px] shadow-2xs">
-          <span className="text-[11.5px] text-muted-foreground font-medium">Trẻ vượt trội</span>
+          <span className="text-[11.5px] text-muted-foreground font-medium">{t('schoolOverview.outstandingStudents', 'Trẻ vượt trội')}</span>
           <span className="text-[20px] font-semibold text-foreground tracking-tight leading-none font-mono">
-            {outstanding.length} <span className="text-[12px] text-muted-foreground font-normal">học sinh</span>
+            {outstanding.length} <span className="text-[12px] text-muted-foreground font-normal">{t('schoolOverview.studentsUnit', 'học sinh')}</span>
           </span>
           <span className="text-[11px] text-muted-foreground leading-normal">
-            {outstanding.length > 0 ? 'Xuất sắc & vượt trội mục tiêu' : 'Đang cập nhật đánh giá'}
+            {outstanding.length > 0 ? t('schoolOverview.excellentAndExceeded', 'Xuất sắc & vượt trội mục tiêu') : t('schoolOverview.updatingEvaluation', 'Đang cập nhật đánh giá')}
           </span>
         </div>
       </div>
@@ -202,14 +219,14 @@ export function SchoolOverviewDashboard({ year, yearId }) {
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-[13.5px] font-semibold text-foreground tracking-tight uppercase">
-                Bảng thống kê sĩ số học sinh
+                {t('schoolOverview.enrollmentTableTitle', 'Bảng thống kê sĩ số học sinh')}
               </h3>
               <span className="text-[11px] text-muted-foreground font-mono">
-                ({matrix.classes?.length || 0} lớp học)
+                ({t('schoolOverview.classesCount', '{{count}} lớp học', { count: matrix.classes?.length || 0 })})
               </span>
             </div>
             <p className="text-[11.5px] text-muted-foreground mt-0.5">
-              Quy chuẩn: <strong className="font-semibold text-foreground font-mono">Nữ / Tổng số trẻ</strong> (Ví dụ: 8/15 tức là 8 trẻ nữ trên tổng 15 trẻ của lớp). Các tháng chưa tới để trống.
+              {t('schoolOverview.enrollmentConvention', 'Quy chuẩn: Nữ / Tổng số trẻ (Ví dụ: 8/15 tức là 8 trẻ nữ trên tổng 15 trẻ của lớp). Các tháng chưa tới để trống.')}
             </p>
           </div>
         </div>
@@ -220,7 +237,7 @@ export function SchoolOverviewDashboard({ year, yearId }) {
             <thead>
               <tr className="bg-muted/30 border-b border-border text-muted-foreground text-[11.5px] font-semibold uppercase h-9">
                 <th className="py-2 px-3.5 w-[28%] min-w-[190px] border-r border-border text-left whitespace-nowrap">
-                  Lớp & Giáo viên
+                  {t('schoolOverview.colClassAndTeacher', 'Lớp & Giáo viên')}
                 </th>
                 {(matrix.months || []).map((m) => (
                   <th key={m.month} className="py-2 px-1 w-[8%] text-center border-r border-border font-mono whitespace-nowrap text-[11px]">
@@ -233,7 +250,7 @@ export function SchoolOverviewDashboard({ year, yearId }) {
               {sortedMatrixClasses?.length === 0 ? (
                 <tr>
                   <td colSpan={10} className="py-8 text-center text-muted-foreground text-[12.5px]">
-                    Chưa có dữ liệu lớp học trong năm học này.
+                    {t('schoolOverview.noClassDataInYear', 'Chưa có dữ liệu lớp học trong năm học này.')}
                   </td>
                 </tr>
               ) : (
@@ -246,7 +263,7 @@ export function SchoolOverviewDashboard({ year, yearId }) {
 
                   const teacherDisplay = isAssigned
                     ? cls.teacherName
-                    : 'Chưa phân công giáo viên';
+                    : t('schoolOverview.teacherUnassigned', 'Chưa phân công giáo viên');
 
                   return (
                     <tr key={cls.classId} className="hover:bg-muted/15 transition-colors h-[46px]">
@@ -254,7 +271,7 @@ export function SchoolOverviewDashboard({ year, yearId }) {
                         <Link
                           to={`/classes/${cls.classId}`}
                           className="hover:underline transition-colors text-[13px] font-medium text-foreground block leading-snug truncate"
-                          title="Xem chi tiết lớp"
+                          title={t('schoolOverview.viewClassDetail', 'Xem chi tiết lớp')}
                         >
                           {cls.name}
                         </Link>
@@ -262,8 +279,8 @@ export function SchoolOverviewDashboard({ year, yearId }) {
                           className="text-[11px] text-muted-foreground block leading-tight mt-0.5 truncate"
                           title={
                             isAssigned
-                              ? `Giáo viên phụ trách: ${cls.teacherName}`
-                              : 'Chưa phân công giáo viên'
+                              ? t('schoolOverview.teacherInCharge', 'Giáo viên phụ trách: {{name}}', { name: cls.teacherName })
+                              : t('schoolOverview.teacherUnassigned', 'Chưa phân công giáo viên')
                           }
                         >
                           {teacherDisplay}
@@ -272,7 +289,7 @@ export function SchoolOverviewDashboard({ year, yearId }) {
 
                       {(cls.monthsData || []).map((m, idx) => {
                         const isZero = m.total === 0;
-                        const displayLabel = m.isFuture || isZero ? '-' : m.label;
+                        const displayLabel = m.isFuture || isZero ? '—' : m.label;
 
                         return (
                           <td
@@ -294,7 +311,7 @@ export function SchoolOverviewDashboard({ year, yearId }) {
               {/* TỔNG SỐ ROW */}
               <tr className="bg-muted/30 border-t-2 border-border text-foreground font-semibold h-9">
                 <td className="py-2 px-3.5 border-r border-border uppercase tracking-wider text-[11.5px] text-foreground font-bold whitespace-nowrap">
-                  Tổng số
+                  {t('schoolOverview.totalCount', 'Tổng số')}
                 </td>
                 {(matrix.footer?.totalRow || []).map((m, idx) => (
                   <td
@@ -314,7 +331,7 @@ export function SchoolOverviewDashboard({ year, yearId }) {
               {/* TĂNG ROW */}
               <tr className="text-foreground h-8">
                 <td className="py-1.5 px-3.5 border-r border-border text-[11px] font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap">
-                  Tăng
+                  {t('schoolOverview.increase', 'Tăng')}
                 </td>
                 {(matrix.footer?.increaseRow || []).map((m, idx) => (
                   <td
@@ -336,7 +353,7 @@ export function SchoolOverviewDashboard({ year, yearId }) {
               {/* GIẢM ROW */}
               <tr className="text-foreground h-8">
                 <td className="py-1.5 px-3.5 border-r border-border text-[11px] font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap">
-                  Giảm
+                  {t('schoolOverview.decrease', 'Giảm')}
                 </td>
                 {(matrix.footer?.decreaseRow || []).map((m, idx) => (
                   <td
@@ -366,17 +383,17 @@ export function SchoolOverviewDashboard({ year, yearId }) {
           <div className="flex items-center justify-between pb-1 border-b border-border/60">
             <div>
               <h3 className="text-[13.5px] font-semibold text-foreground tracking-tight">
-                Tiến độ Kế hoạch Giáo dục
+                {t('schoolOverview.curriculumPlanProgressTitle', 'Tiến độ Kế hoạch Giáo dục')}
               </h3>
               <p className="text-[11.5px] text-muted-foreground mt-0.5">
-                Tình trạng nộp và duyệt kế hoạch chủ đề của các lớp
+                {t('schoolOverview.curriculumPlanProgressSub', 'Tình trạng nộp và duyệt kế hoạch chủ đề của các lớp')}
               </p>
             </div>
 
             <Link
               to="/planning/reviews"
-              title="Xem danh sách duyệt kế hoạch"
-              aria-label="Xem danh sách duyệt kế hoạch"
+              title={t('schoolOverview.viewPlanApprovalList', 'Xem danh sách duyệt kế hoạch')}
+              aria-label={t('schoolOverview.viewPlanApprovalList', 'Xem danh sách duyệt kế hoạch')}
               className="h-7 w-7 flex items-center justify-center border border-border/70 bg-muted/20 hover:bg-muted text-muted-foreground hover:text-foreground transition-all rounded-none shrink-0 group"
             >
               <HugeiconsIcon
@@ -390,25 +407,25 @@ export function SchoolOverviewDashboard({ year, yearId }) {
           {/* 4 Summary Counters */}
           <div className="grid grid-cols-4 gap-1.5 text-center">
             <div className="p-1.5 border border-border/70 bg-muted/20 rounded-none">
-              <span className="text-[10.5px] text-muted-foreground block">Đã phê duyệt</span>
+              <span className="text-[10.5px] text-muted-foreground block">{t('schoolOverview.statusApproved', 'Đã phê duyệt')}</span>
               <span className="text-[15px] font-semibold font-mono text-foreground">
                 {plans.approvedPlans || 0}
               </span>
             </div>
             <div className="p-1.5 border border-border/70 bg-muted/20 rounded-none">
-              <span className="text-[10.5px] text-muted-foreground block">Chờ phê duyệt</span>
+              <span className="text-[10.5px] text-muted-foreground block">{t('schoolOverview.statusPending', 'Chờ phê duyệt')}</span>
               <span className="text-[15px] font-semibold font-mono text-foreground">
                 {plans.pendingPlans || 0}
               </span>
             </div>
             <div className="p-1.5 border border-border/70 bg-muted/20 rounded-none">
-              <span className="text-[10.5px] text-muted-foreground block">Cần chỉnh sửa</span>
+              <span className="text-[10.5px] text-muted-foreground block">{t('schoolOverview.statusRevision', 'Cần chỉnh sửa')}</span>
               <span className="text-[15px] font-semibold font-mono text-foreground">
                 {plans.rejectedPlans || 0}
               </span>
             </div>
             <div className="p-1.5 border border-border/70 bg-muted/20 rounded-none">
-              <span className="text-[10.5px] text-muted-foreground block">Bản nháp</span>
+              <span className="text-[10.5px] text-muted-foreground block">{t('schoolOverview.statusDraft', 'Bản nháp')}</span>
               <span className="text-[15px] font-semibold font-mono text-foreground">
                 {plans.draftPlans || 0}
               </span>
@@ -420,16 +437,17 @@ export function SchoolOverviewDashboard({ year, yearId }) {
             <table className="w-full text-left text-[12px] border-collapse min-w-[340px]">
               <thead>
                 <tr className="bg-muted/30 border-b border-border/80 text-muted-foreground text-[11px] font-medium tracking-wide sticky top-0 bg-muted/90 backdrop-blur-xs z-10">
-                  <th className="py-1.5 px-2.5 w-[110px]">Lớp</th>
-                  <th className="py-1.5 px-2.5 w-[95px] text-center">Tiến độ nộp</th>
-                  <th className="py-1.5 px-2.5">Trạng thái phê duyệt</th>
+                  <th className="py-1.5 px-2.5 w-[110px]">{t('schoolOverview.colClass', 'Lớp')}</th>
+                  <th className="py-1.5 px-2.5 w-[110px] text-center">{t('schoolOverview.colSubmissionProgress', 'Tiến độ kế hoạch')}</th>
+                  <th className="py-1.5 px-2.5">{t('schoolOverview.colApprovalStatus', 'Chủ đề gần nhất')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
                 {sortedPlansByClass.map((cls) => {
-                  const isApproved = cls.totalPlans > 0 && cls.approved === cls.totalPlans;
-                  const isPending = cls.pending > 0;
-                  const isRejected = cls.rejected > 0;
+                  const isApproved = cls.latestStatus === 'USED';
+                  const isPending = cls.latestStatus === 'PENDING_APPROVAL';
+                  const isRejected = cls.latestStatus === 'REJECTED';
+                  const isNotSubmitted = !cls.latestStatus || cls.latestStatus === 'NOT_SUBMITTED';
 
                   return (
                     <tr key={cls.classId} className="hover:bg-muted/15 transition-colors">
@@ -437,22 +455,39 @@ export function SchoolOverviewDashboard({ year, yearId }) {
                         {cls.className}
                       </td>
 
-                      <td className="py-1.5 px-2.5 text-center font-mono text-[11.5px] text-muted-foreground whitespace-nowrap">
-                        {cls.approved}/{cls.totalPlans} KH
+                      <td className="py-1.5 px-2.5 text-center whitespace-nowrap">
+                        <span className="font-mono text-[11.5px] text-foreground font-medium">
+                          {cls.approved}/{cls.totalPlannedThemes || cls.totalPlans} {t('schoolOverview.plansUnit', 'KH')}
+                        </span>
+                        {(cls.totalPlannedThemes || cls.totalPlans) > 0 && (
+                          <span className="text-[11px] text-muted-foreground ml-1 font-mono">
+                            ({cls.completionRate || 0}%)
+                          </span>
+                        )}
                       </td>
 
                       <td className="py-1.5 px-2.5 whitespace-nowrap">
-                        <span
-                          className={cn(
-                            'text-[11.5px]',
-                            isPending && 'text-foreground font-medium',
-                            isRejected && 'text-rose-700 dark:text-rose-400 font-medium',
-                            isApproved && 'text-muted-foreground font-normal',
-                            !isPending && !isRejected && !isApproved && 'text-muted-foreground/60 font-normal',
+                        <div className="flex flex-col">
+                          <span
+                            className={cn(
+                              'text-[11.5px]',
+                              isPending && 'text-foreground font-medium',
+                              isRejected && 'text-rose-700 dark:text-rose-400 font-medium',
+                              isApproved && 'text-emerald-700 dark:text-emerald-400 font-medium',
+                              isNotSubmitted && 'text-muted-foreground/60 font-normal',
+                            )}
+                          >
+                            {cls.statusText}
+                          </span>
+                          {cls.latestThemeName && (
+                            <span
+                              className="text-[10.5px] text-muted-foreground/80 truncate max-w-[165px] leading-tight mt-0.5"
+                              title={cls.latestThemeName}
+                            >
+                              {cls.latestThemeName}
+                            </span>
                           )}
-                        >
-                          {cls.statusText}
-                        </span>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -467,17 +502,17 @@ export function SchoolOverviewDashboard({ year, yearId }) {
           <div className="flex items-center justify-between pb-1 border-b border-border/60">
             <div>
               <h3 className="text-[13.5px] font-semibold text-foreground tracking-tight">
-                Theo dõi Đánh giá Học sinh
+                {t('schoolOverview.studentEvaluationMonitorTitle', 'Theo dõi Đánh giá Học sinh')}
               </h3>
               <p className="text-[11.5px] text-muted-foreground mt-0.5">
-                Phân loại theo chuẩn mục tiêu và lĩnh vực phát triển
+                {t('schoolOverview.studentEvaluationMonitorSub', 'Phân loại theo chuẩn mục tiêu và lĩnh vực phát triển')}
               </p>
             </div>
 
             <Link
               to="/assessment"
-              title="Xem sổ đánh giá chi tiết"
-              aria-label="Xem sổ đánh giá chi tiết"
+              title={t('schoolOverview.viewDetailAssessmentBook', 'Xem sổ đánh giá chi tiết')}
+              aria-label={t('schoolOverview.viewDetailAssessmentBook', 'Xem sổ đánh giá chi tiết')}
               className="h-7 w-7 flex items-center justify-center border border-border/70 bg-muted/20 hover:bg-muted text-muted-foreground hover:text-foreground transition-all rounded-none shrink-0 group"
             >
               <HugeiconsIcon
@@ -488,20 +523,36 @@ export function SchoolOverviewDashboard({ year, yearId }) {
             </Link>
           </div>
 
-          {/* 2 Summary Counters (Clean neutral switcher matching Panel 1) */}
-          <div className="grid grid-cols-2 gap-2 text-center">
+          {/* 3 Summary Switcher Buttons */}
+          <div className="grid grid-cols-3 gap-1.5 text-center">
+            <button
+              type="button"
+              onClick={() => setStudentCategoryTab('BY_CLASS')}
+              className={cn(
+                'p-1.5 border rounded-none text-center cursor-pointer transition-colors flex items-center justify-between px-2.5',
+                studentCategoryTab === 'BY_CLASS'
+                  ? 'border-border bg-muted/60 text-foreground font-medium shadow-2xs'
+                  : 'border-border/60 bg-muted/10 text-muted-foreground hover:bg-muted/30',
+              )}
+            >
+              <span className="text-[11px] truncate">{t('schoolOverview.assessByClass', 'Theo từng lớp')}</span>
+              <span className="text-[14px] font-semibold font-mono text-foreground">
+                {(assessments.byClass || []).length}
+              </span>
+            </button>
+
             <button
               type="button"
               onClick={() => setStudentCategoryTab('SUPPORT')}
               className={cn(
-                'p-1.5 border rounded-none text-center cursor-pointer transition-colors flex items-center justify-between px-3',
+                'p-1.5 border rounded-none text-center cursor-pointer transition-colors flex items-center justify-between px-2.5',
                 studentCategoryTab === 'SUPPORT'
                   ? 'border-border bg-muted/60 text-foreground font-medium shadow-2xs'
                   : 'border-border/60 bg-muted/10 text-muted-foreground hover:bg-muted/30',
               )}
             >
-              <span className="text-[11px]">Trẻ cần hỗ trợ</span>
-              <span className="text-[15px] font-semibold font-mono text-foreground">
+              <span className="text-[11px] truncate">{t('schoolOverview.supportNeeded', 'Cần hỗ trợ')}</span>
+              <span className="text-[14px] font-semibold font-mono text-foreground">
                 {needSupport.length}
               </span>
             </button>
@@ -510,148 +561,329 @@ export function SchoolOverviewDashboard({ year, yearId }) {
               type="button"
               onClick={() => setStudentCategoryTab('OUTSTANDING')}
               className={cn(
-                'p-1.5 border rounded-none text-center cursor-pointer transition-colors flex items-center justify-between px-3',
+                'p-1.5 border rounded-none text-center cursor-pointer transition-colors flex items-center justify-between px-2.5',
                 studentCategoryTab === 'OUTSTANDING'
                   ? 'border-border bg-muted/60 text-foreground font-medium shadow-2xs'
                   : 'border-border/60 bg-muted/10 text-muted-foreground hover:bg-muted/30',
               )}
             >
-              <span className="text-[11px]">Trẻ vượt trội</span>
-              <span className="text-[15px] font-semibold font-mono text-foreground">
+              <span className="text-[11px] truncate">{t('schoolOverview.outstandingStudents', 'Vượt trội')}</span>
+              <span className="text-[14px] font-semibold font-mono text-foreground">
                 {outstanding.length}
               </span>
             </button>
           </div>
 
-          {/* Proper 3-Column Table with Mini Pagination (Consistent height, no jump/layout shift) */}
-          <div className="border border-border bg-card flex flex-col justify-between">
-            <div className="w-full overflow-x-auto min-h-[280px]">
-              {currentCategoryList.length === 0 ? (
-                <div className="py-12 text-center text-muted-foreground text-[12px]">
-                  {studentCategoryTab === 'SUPPORT'
-                    ? 'Hiện tại không có học sinh thuộc nhóm cần hỗ trợ.'
-                    : 'Chưa có học sinh đạt chuẩn vượt trội trong kỳ đánh giá này.'}
-                </div>
-              ) : (
-                <table className="w-full text-left text-[11.5px] border-collapse min-w-[340px]">
-                  <thead>
-                    <tr className="bg-muted/30 border-b border-border/80 text-[11px] font-medium text-muted-foreground tracking-wide">
-                      <th className="py-2 px-2.5 w-[145px] whitespace-nowrap">Học sinh</th>
-                      <th className="py-2 px-1.5 w-[65px] text-center whitespace-nowrap">Lớp</th>
-                      <th className="py-2 px-2.5">
-                        {studentCategoryTab === 'SUPPORT' ? 'Tình trạng đánh giá' : 'Kết quả vượt trội'}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedStudents.map((st) => (
-                      <tr key={st.studentId} className="border-b border-border/60 hover:bg-muted/15 transition-colors">
-                        <td className="py-2 px-2.5 font-medium text-foreground whitespace-nowrap align-top">
-                          <Link
-                            to={`/classes/${st.classId || '1'}/students/${st.studentId}`}
-                            className="hover:text-foreground hover:underline inline"
-                          >
-                            {st.fullName}
-                          </Link>
-                          <span className="text-[11px] text-muted-foreground ml-1.5 font-normal inline">
-                            ({st.gender === 'FEMALE' || st.gender === 'Nữ' ? 'Nữ' : 'Nam'})
-                          </span>
-                        </td>
-
-                        <td className="py-2 px-1.5 text-center text-muted-foreground font-medium whitespace-nowrap align-top">
-                          {st.className}
-                        </td>
-
-                        <td className="py-2 px-2.5 text-[11.5px] text-foreground align-top">
-                          {studentCategoryTab === 'SUPPORT' ? (
-                            <>
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="font-mono text-[11px] font-semibold text-rose-700 dark:text-rose-400">
-                                  {st.notAchievedCount}/{st.totalGoals} MT chưa đạt ({st.notAchievedPct}%)
-                                </span>
-                              </div>
-                              {st.reasons && (
-                                <span className="text-muted-foreground block text-[11px] mt-0.5 leading-snug">
-                                  {st.reasons.join(' · ')}
-                                </span>
-                              )}
-                            </>
-                          ) : (
-                            <>
-                              <span className="font-medium text-foreground block leading-snug">
-                                {st.outstandingType || 'Xuất sắc toàn diện'}
-                              </span>
-                              <span className="text-muted-foreground block text-[11px] mt-0.5 leading-snug">
-                                {st.reasons && st.reasons.length > 0
-                                  ? st.reasons.join(' · ')
-                                  : 'Đạt 100% mục tiêu đánh giá GDMN'}
-                              </span>
-                            </>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-
-                    {/* Hàng lưới trống (Empty grid rows) để giữ cấu trúc bảng luôn đủ 5 dòng có line đều đặn */}
-                    {Array.from({
-                      length: Math.max(0, STUDENTS_PER_PAGE - paginatedStudents.length),
-                    }).map((_, idx) => (
-                      <tr key={`empty-${idx}`} className="border-b border-border/30 h-[48px]">
-                        <td className="py-2 px-2.5">&nbsp;</td>
-                        <td className="py-2 px-1.5">&nbsp;</td>
-                        <td className="py-2 px-2.5">&nbsp;</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-
-            {/* Mini Pagination Footer (Stationary, no jumping) */}
-            {currentCategoryList.length > 0 && (
-              <div className="flex items-center justify-between px-3 py-2 border-t border-border bg-muted/20 text-[11px] text-muted-foreground select-none">
-                <span className="font-mono">
-                  {(currentPage - 1) * STUDENTS_PER_PAGE + 1}–{Math.min(currentPage * STUDENTS_PER_PAGE, currentCategoryList.length)} trong {currentCategoryList.length} học sinh
-                </span>
-
-                <div className="flex items-center gap-1.5">
-                  <span className="font-mono mr-1 text-[11px]">
-                    Trang {currentPage}/{totalPages}
+          {studentCategoryTab === 'BY_CLASS' ? (
+            <>
+              {/* 4 Summary Counters for Assessments (Matching Panel 1) */}
+              <div className="grid grid-cols-4 gap-1.5 text-center">
+                <div className="p-1.5 border border-border/70 bg-muted/20 rounded-none">
+                  <span className="text-[10.5px] text-muted-foreground block">{t('schoolOverview.assessedTotal', 'Tổng lượt')}</span>
+                  <span className="text-[15px] font-semibold font-mono text-foreground">
+                    {assessments.totalDailyAssessments || 0}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage <= 1}
-                    className={cn(
-                      'h-7 w-7 flex items-center justify-center border border-border rounded-none bg-background transition-colors',
-                      currentPage <= 1
-                        ? 'opacity-35 cursor-not-allowed text-muted-foreground/40'
-                        : 'hover:bg-muted text-foreground cursor-pointer shadow-2xs active:scale-95',
-                    )}
-                    title="Trang trước"
-                    aria-label="Trang trước"
-                  >
-                    <HugeiconsIcon icon={ArrowLeft01Icon} size={13} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={currentPage >= totalPages}
-                    className={cn(
-                      'h-7 w-7 flex items-center justify-center border border-border rounded-none bg-background transition-colors',
-                      currentPage >= totalPages
-                        ? 'opacity-35 cursor-not-allowed text-muted-foreground/40'
-                        : 'hover:bg-muted text-foreground cursor-pointer shadow-2xs active:scale-95',
-                    )}
-                    title="Trang sau"
-                    aria-label="Trang sau"
-                  >
-                    <HugeiconsIcon icon={ArrowRight01Icon} size={13} />
-                  </button>
+                </div>
+                <div className="p-1.5 border border-border/70 bg-muted/20 rounded-none">
+                  <span className="text-[10.5px] text-muted-foreground block">{t('schoolOverview.assessedAchieved', 'Đạt chuẩn')}</span>
+                  <span className="text-[15px] font-semibold font-mono text-foreground">
+                    {assessments.achievedCount || 0}
+                  </span>
+                </div>
+                <div className="p-1.5 border border-border/70 bg-muted/20 rounded-none">
+                  <span className="text-[10.5px] text-muted-foreground block">{t('schoolOverview.assessedOutstanding', 'Vượt trội')}</span>
+                  <span className="text-[15px] font-semibold font-mono text-foreground">
+                    {assessments.outstandingCount || 0}
+                  </span>
+                </div>
+                <div className="p-1.5 border border-border/70 bg-muted/20 rounded-none">
+                  <span className="text-[10.5px] text-muted-foreground block">{t('schoolOverview.assessedNotAchieved', 'Chưa đạt')}</span>
+                  <span className="text-[15px] font-semibold font-mono text-rose-600 dark:text-rose-400">
+                    {assessments.notAchievedCount || 0}
+                  </span>
                 </div>
               </div>
-            )}
+
+              {/* Table of Assessment by Class */}
+              <div className="w-full overflow-x-auto border border-border bg-card">
+                <table className="w-full text-left text-[12px] border-collapse min-w-[340px]">
+                  <thead>
+                    <tr className="bg-muted/30 border-b border-border/80 text-muted-foreground text-[11px] font-medium tracking-wide sticky top-0 bg-muted/90 backdrop-blur-xs z-10">
+                      <th className="py-1.5 px-2.5 w-[110px]">{t('schoolOverview.colClass', 'Lớp')}</th>
+                      <th className="py-1.5 px-2.5 text-center">{t('schoolOverview.colGoalProgress', 'Tiến độ mục tiêu')}</th>
+                      <th className="py-1.5 px-2.5 w-[95px] text-center">{t('schoolOverview.colPassRate', 'Tỷ lệ đạt')}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/60">
+                    {sortedAssessmentClasses.length === 0 ? (
+                      <tr>
+                        <td colSpan={3} className="py-8 text-center text-muted-foreground text-[12px]">
+                          {t('schoolOverview.noClassAssessmentData', 'Chưa có dữ liệu đánh giá theo lớp')}
+                        </td>
+                      </tr>
+                    ) : (
+                      sortedAssessmentClasses.map((cls) => {
+                        const hasAssessments = (cls.totalAssessments || 0) > 0;
+                        const assessedGoals = cls.assessedGoalsCount || 0;
+                        const plannedGoals = cls.plannedGoalsCount || 0;
+                        const coverageRate = cls.goalCoverageRate || 0;
+
+                        return (
+                          <tr key={cls.classId} className="hover:bg-muted/15 transition-colors">
+                            <td className="py-1.5 px-2.5 font-medium text-foreground whitespace-nowrap">
+                              {cls.className}
+                            </td>
+
+                            <td className="py-1.5 px-2.5 text-center whitespace-nowrap">
+                              <span className="font-mono text-[11.5px] text-foreground font-medium">
+                                {assessedGoals}/{plannedGoals} {t('schoolOverview.goalsUnit', 'MT')}
+                              </span>
+                              {plannedGoals > 0 && (
+                                <span className="text-[11px] text-muted-foreground ml-1.5 font-mono">
+                                  ({coverageRate}%)
+                                </span>
+                              )}
+                            </td>
+
+                            <td className="py-1.5 px-2.5 text-center font-mono text-[11.5px] whitespace-nowrap">
+                              {hasAssessments ? (
+                                <span
+                                  className={cn(
+                                    'font-medium',
+                                    cls.passRate >= 85
+                                      ? 'text-emerald-600 dark:text-emerald-400'
+                                      : cls.passRate >= 70
+                                      ? 'text-foreground'
+                                      : 'text-rose-600 dark:text-rose-400',
+                                  )}
+                                >
+                                  {cls.passRate}%
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground/50 font-normal">—</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : (
+            /* Proper 3-Column Table with Mini Pagination for Support / Outstanding */
+            <div className="border border-border bg-card flex flex-col justify-between">
+              <div className="w-full overflow-x-auto min-h-[280px]">
+                {currentCategoryList.length === 0 ? (
+                  <div className="py-12 text-center text-muted-foreground text-[12px]">
+                    {studentCategoryTab === 'SUPPORT'
+                      ? t('schoolOverview.noSupportStudents', 'Hiện tại không có học sinh thuộc nhóm cần hỗ trợ.')
+                      : t('schoolOverview.noOutstandingStudents', 'Chưa có học sinh đạt chuẩn vượt trội trong kỳ đánh giá này.')}
+                  </div>
+                ) : (
+                  <table className="w-full text-left text-[11.5px] border-collapse min-w-[340px]">
+                    <thead>
+                      <tr className="bg-muted/30 border-b border-border/80 text-[11px] font-medium text-muted-foreground tracking-wide">
+                        <th className="py-2 px-2.5 w-[145px] whitespace-nowrap">{t('schoolOverview.colStudent', 'Học sinh')}</th>
+                        <th className="py-2 px-1.5 w-[65px] text-center whitespace-nowrap">{t('schoolOverview.colClass', 'Lớp')}</th>
+                        <th className="py-2 px-2.5">
+                          {studentCategoryTab === 'SUPPORT' ? t('schoolOverview.colEvaluationStatus', 'Tình trạng đánh giá') : t('schoolOverview.colOutstandingResult', 'Kết quả vượt trội')}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedStudents.map((st) => (
+                        <tr key={st.studentId} className="border-b border-border/60 hover:bg-muted/15 transition-colors">
+                          <td className="py-2 px-2.5 font-medium text-foreground whitespace-nowrap align-top">
+                            <Link
+                              to={`/classes/${st.classId || '1'}/students/${st.studentId}`}
+                              className="hover:text-foreground hover:underline inline"
+                            >
+                              {st.fullName}
+                            </Link>
+                            <span className="text-[11px] text-muted-foreground ml-1.5 font-normal inline">
+                              ({st.gender === 'FEMALE' || st.gender === 'Nữ' ? t('common.female', 'Nữ') : t('common.male', 'Nam')})
+                            </span>
+                          </td>
+
+                          <td className="py-2 px-1.5 text-center text-muted-foreground font-medium whitespace-nowrap align-top">
+                            {st.className}
+                          </td>
+
+                          <td className="py-2 px-2.5 text-[11.5px] text-foreground align-top">
+                            {studentCategoryTab === 'SUPPORT' ? (
+                              <>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-mono text-[11px] font-semibold text-rose-700 dark:text-rose-400">
+                                    {t('schoolOverview.goalsNotAchievedSummary', '{{count}}/{{total}} MT chưa đạt ({{pct}}%)', {
+                                      count: st.notAchievedCount,
+                                      total: st.totalGoals,
+                                      pct: st.notAchievedPct,
+                                    })}
+                                  </span>
+                                </div>
+                                {st.reasons && (
+                                  <span className="text-muted-foreground block text-[11px] mt-0.5 leading-snug">
+                                    {st.reasons.join(' · ')}
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              <>
+                                <span className="font-medium text-foreground block leading-snug">
+                                  {st.outstandingType || t('schoolOverview.comprehensiveExcellence', 'Xuất sắc toàn diện')}
+                                </span>
+                                <span className="text-muted-foreground block text-[11px] mt-0.5 leading-snug">
+                                  {st.reasons && st.reasons.length > 0
+                                    ? st.reasons.join(' · ')
+                                    : t('schoolOverview.achieved100Goals', 'Đạt 100% mục tiêu đánh giá GDMN')}
+                                </span>
+                              </>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+
+                      {/* Hàng lưới trống (Empty grid rows) để giữ cấu trúc bảng luôn đủ 5 dòng có line đều đặn */}
+                      {Array.from({
+                        length: Math.max(0, STUDENTS_PER_PAGE - paginatedStudents.length),
+                      }).map((_, idx) => (
+                        <tr key={`empty-${idx}`} className="border-b border-border/30 h-[48px]">
+                          <td className="py-2 px-2.5">&nbsp;</td>
+                          <td className="py-2 px-1.5">&nbsp;</td>
+                          <td className="py-2 px-2.5">&nbsp;</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+
+              {/* Mini Pagination Footer (Stationary, no jumping) */}
+              {currentCategoryList.length > 0 && (
+                <div className="flex items-center justify-between px-3 py-2 border-t border-border bg-muted/20 text-[11px] text-muted-foreground select-none">
+                  <span className="font-mono">
+                    {t('schoolOverview.paginationInfo', '{{start}}–{{end}} trong {{total}} học sinh', {
+                      start: (currentPage - 1) * STUDENTS_PER_PAGE + 1,
+                      end: Math.min(currentPage * STUDENTS_PER_PAGE, currentCategoryList.length),
+                      total: currentCategoryList.length,
+                    })}
+                  </span>
+
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-mono mr-1 text-[11px]">
+                      {t('schoolOverview.pageIndicator', 'Trang {{current}}/{{total}}', {
+                        current: currentPage,
+                        total: totalPages,
+                      })}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage <= 1}
+                      className={cn(
+                        'h-7 w-7 flex items-center justify-center border border-border rounded-none bg-background transition-colors',
+                        currentPage <= 1
+                          ? 'opacity-35 cursor-not-allowed text-muted-foreground/40'
+                          : 'hover:bg-muted text-foreground cursor-pointer shadow-2xs active:scale-95',
+                      )}
+                      title={t('common.prevPage', 'Trang trước')}
+                      aria-label={t('common.prevPage', 'Trang trước')}
+                    >
+                      <HugeiconsIcon icon={ArrowLeft01Icon} size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage >= totalPages}
+                      className={cn(
+                        'h-7 w-7 flex items-center justify-center border border-border rounded-none bg-background transition-colors',
+                        currentPage >= totalPages
+                          ? 'opacity-35 cursor-not-allowed text-muted-foreground/40'
+                          : 'hover:bg-muted text-foreground cursor-pointer shadow-2xs active:scale-95',
+                      )}
+                      title={t('common.nextPage', 'Trang sau')}
+                      aria-label={t('common.nextPage', 'Trang sau')}
+                    >
+                      <HugeiconsIcon icon={ArrowRight01Icon} size={13} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 5. Panel: Thống kê Chuyên cần Điểm danh theo Từng Lớp (Class Attendance Statistics for Principal) */}
+      <div className="border border-border bg-card p-4 sm:p-5 rounded-none shadow-2xs flex flex-col gap-2.5">
+        <div className="flex items-center justify-between pb-1 border-b border-border/60">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-[13.5px] font-semibold text-foreground tracking-tight">
+                {t('schoolOverview.attendanceTitle', 'Thống kê Chuyên cần theo Lớp')}
+              </h3>
+              <span className="text-[11px] text-muted-foreground font-mono">
+                ({t('schoolOverview.avgAttendanceRate', 'Trung bình: {{rate}}%', {
+                  rate: data?.attendanceStatistics?.schoolAttendanceRate || 100,
+                })})
+              </span>
+            </div>
+            <p className="text-[11.5px] text-muted-foreground mt-0.5">
+              {t('schoolOverview.attendanceSubtitle', 'Tỷ lệ đi học đủ buổi và tình hình chuyên cần của học sinh phân bổ theo từng lớp')}
+            </p>
           </div>
+        </div>
+
+        <div className="w-full overflow-x-auto border border-border bg-card">
+          <table className="w-full text-left text-[12px] border-collapse min-w-[500px]">
+            <thead>
+              <tr className="bg-muted/30 border-b border-border/80 text-muted-foreground text-[11px] font-medium tracking-wide">
+                <th className="py-2 px-3">{t('schoolOverview.colClass', 'Lớp')}</th>
+                <th className="py-2 px-3 text-center">{t('schoolOverview.colStudents', 'Sĩ số')}</th>
+                <th className="py-2 px-3 text-center">{t('schoolOverview.colRecordedSlots', 'Tổng lượt ghi nhận')}</th>
+                <th className="py-2 px-3 text-center">{t('schoolOverview.colPresent', 'Có mặt')}</th>
+                <th className="py-2 px-3 text-center">{t('schoolOverview.colExcused', 'Nghỉ có phép')}</th>
+                <th className="py-2 px-3 text-center">{t('schoolOverview.colUnexcused', 'Nghỉ không phép')}</th>
+                <th className="py-2 px-3 text-center">{t('schoolOverview.colAttendanceRate', 'Tỷ lệ chuyên cần')}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/60">
+              {(!data?.attendanceStatistics?.byClass || data.attendanceStatistics.byClass.length === 0) ? (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-muted-foreground text-[12px]">
+                    {t('schoolOverview.noAttendanceData', 'Chưa có dữ liệu điểm danh')}
+                  </td>
+                </tr>
+              ) : (
+                data.attendanceStatistics.byClass.map((cls) => {
+                  const rate = cls.attendanceRate ?? 100;
+
+                  return (
+                    <tr key={cls.classId} className="hover:bg-muted/15 transition-colors h-[38px]">
+                      <td className="py-1.5 px-3 font-medium text-foreground whitespace-nowrap">
+                        <Link
+                          to={`/classes/${cls.classId}/attendance`}
+                          className="hover:underline text-foreground hover:text-primary transition-colors"
+                        >
+                          {cls.className}
+                        </Link>
+                      </td>
+                      <td className="py-1.5 px-3 text-center font-mono text-[11.5px] text-foreground">{cls.totalStudents}</td>
+                      <td className="py-1.5 px-3 text-center font-mono text-[11.5px] text-muted-foreground">{cls.totalRecorded}</td>
+                      <td className="py-1.5 px-3 text-center font-mono text-[11.5px] text-foreground">{cls.presentCount}</td>
+                      <td className="py-1.5 px-3 text-center font-mono text-[11.5px] text-muted-foreground">{cls.excusedCount}</td>
+                      <td className="py-1.5 px-3 text-center font-mono text-[11.5px] text-muted-foreground">{cls.unexcusedCount}</td>
+                      <td className="py-1.5 px-3 text-center font-mono text-[12px] font-semibold text-foreground">
+                        {rate}%
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
