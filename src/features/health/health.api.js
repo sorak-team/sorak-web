@@ -36,4 +36,15 @@ export const healthApi = {
     });
     return response.data;
   },
+
+  /**
+   * Xuất báo cáo sức khỏe chi tiết của 1 học sinh (.xlsx)
+   */
+  async exportStudentHealthExcel(studentId, params = {}) {
+    const response = await apiClient.get(`/student-health/students/${studentId}/export/excel`, {
+      params,
+      responseType: 'blob',
+    });
+    return response.data;
+  },
 };

@@ -120,14 +120,14 @@ export function TeacherDrawer() {
     e.preventDefault();
     const errors = {};
     if (!fullName.trim()) {
-      errors.fullName = 'Vui lòng nhập họ và tên.';
+      errors.fullName = t('teacher.validationFullName', 'Vui lòng nhập họ và tên.');
     }
 
     const trimmedCccd = citizenId.trim();
     if (!trimmedCccd) {
-      errors.citizenId = 'Vui lòng nhập số CCCD/CMND.';
+      errors.citizenId = t('teacher.validationCitizenId', 'Vui lòng nhập số CCCD/CMND.');
     } else if (!/^([0-9]{9}|[0-9]{12})$/.test(trimmedCccd)) {
-      errors.citizenId = 'Số CCCD/CMND không đúng định dạng. Vui lòng kiểm tra lại.';
+      errors.citizenId = t('teacher.validationCitizenIdFormat', 'Số CCCD/CMND không đúng định dạng. Vui lòng kiểm tra lại.');
     } else {
       const dupCccd = teachers.find(
         (t) =>
@@ -136,14 +136,14 @@ export function TeacherDrawer() {
           t.citizenId.trim() === trimmedCccd,
       );
       if (dupCccd) {
-        errors.citizenId = `Số CCCD/CMND '${trimmedCccd}' đã được đăng ký bởi cán bộ khác (${dupCccd.fullName}).`;
+        errors.citizenId = t('teacher.validationCitizenIdDuplicate', "Số CCCD/CMND '{{id}}' đã được đăng ký bởi cán bộ khác ({{name}}).", { id: trimmedCccd, name: dupCccd.fullName });
       }
     }
 
     if (!email.trim()) {
-      errors.email = 'Vui lòng nhập email.';
+      errors.email = t('teacher.validationEmail', 'Vui lòng nhập email.');
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      errors.email = 'Email không đúng định dạng.';
+      errors.email = t('teacher.validationEmailFormat', 'Email không đúng định dạng.');
     } else {
       const dupEmail = teachers.find(
         (t) =>
@@ -152,13 +152,13 @@ export function TeacherDrawer() {
           t.email.trim().toLowerCase() === email.trim().toLowerCase(),
       );
       if (dupEmail) {
-        errors.email = `Email '${email.trim()}' đã được đăng ký bởi cán bộ khác (${dupEmail.fullName}).`;
+        errors.email = t('teacher.validationEmailDuplicate', "Email '{{email}}' đã được đăng ký bởi cán bộ khác ({{name}}).", { email: email.trim(), name: dupEmail.fullName });
       }
     }
 
     if (phone.trim()) {
       if (!/^[0-9]{9,15}$/.test(phone.trim())) {
-        errors.phone = 'Số điện thoại không đúng định dạng (từ 9 đến 15 chữ số).';
+        errors.phone = t('teacher.validationPhoneFormat', 'Số điện thoại không đúng định dạng (từ 9 đến 15 chữ số).');
       } else {
         const dupPhone = teachers.find(
           (t) =>
@@ -167,15 +167,15 @@ export function TeacherDrawer() {
             t.phone.trim() === phone.trim(),
         );
         if (dupPhone) {
-          errors.phone = `Số điện thoại '${phone.trim()}' đã được đăng ký bởi cán bộ khác (${dupPhone.fullName}).`;
+          errors.phone = t('teacher.validationPhoneDuplicate', "Số điện thoại '{{phone}}' đã được đăng ký bởi cán bộ khác ({{name}}).", { phone: phone.trim(), name: dupPhone.fullName });
         }
       }
     }
 
     if (!joinDate.trim()) {
-      errors.joinDate = 'Vui lòng chọn ngày vào làm.';
+      errors.joinDate = t('teacher.validationJoinDate', 'Vui lòng chọn ngày vào làm.');
     } else if (!isValidCalendarDate(joinDate)) {
-      errors.joinDate = 'Ngày vào làm không tồn tại. Vui lòng nhập ngày hợp lệ.';
+      errors.joinDate = t('teacher.validationJoinDateInvalid', 'Ngày vào làm không tồn tại. Vui lòng nhập ngày hợp lệ.');
     } else {
       let yr;
       if (joinDate.includes('/')) {
@@ -185,12 +185,12 @@ export function TeacherDrawer() {
         yr = new Date(joinDate).getFullYear();
       }
       if (yr && !isNaN(yr) && yr < 2000) {
-        errors.joinDate = 'Năm bắt đầu công tác tối thiểu phải từ năm 2000';
+        errors.joinDate = t('teacher.validationJoinDateMinYear', 'Năm bắt đầu công tác tối thiểu phải từ năm 2000');
       }
     }
 
     if (dob.trim() && !isValidCalendarDate(dob)) {
-      errors.dob = 'Ngày sinh không tồn tại. Vui lòng nhập ngày hợp lệ.';
+      errors.dob = t('teacher.validationDobInvalid', 'Ngày sinh không tồn tại. Vui lòng nhập ngày hợp lệ.');
     }
 
     if (Object.keys(errors).length > 0) {
@@ -213,22 +213,22 @@ export function TeacherDrawer() {
       status,
       joinDate: joinDate.trim(),
       address: address.trim(),
-      updatedAt: drawerMode === 'edit' ? (currentTeacher?.updatedAt || undefined) : undefined,
+      updatedAt: drawerMode === 'edit' ? (currentTeacher?.updatedAt || currentTeacher?.updated_at || undefined) : undefined,
     };
 
     try {
       if (drawerMode === 'edit' && editingTeacherId) {
         await updateTeacher(editingTeacherId, payload);
-        toast.success('Đã cập nhật hồ sơ giáo viên thành công');
+        toast.success(t('teacher.toastUpdated', 'Đã cập nhật hồ sơ giáo viên thành công'));
       } else {
         await createTeacher(payload);
-        toast.success('Đã thêm giáo viên mới thành công');
+        toast.success(t('teacher.toastCreated', 'Đã thêm giáo viên mới thành công'));
       }
     } catch (err) {
       console.error('Teacher save failed:', err);
-      const msg = err.response?.data?.message || err.message || 'Thao tác không thành công';
+      const msg = err.response?.data?.message || err.message || t('teacher.actionFailed', 'Thao tác không thành công');
       if (err.response?.status === 409) {
-        toast.error(msg || 'Dữ liệu đã được phiên khác cập nhật. Thay đổi của bạn chưa được lưu. Vui lòng tải lại dữ liệu mới nhất và thực hiện lại.', {
+        toast.error(msg || t('teacher.concurrentEditError', 'Dữ liệu đã được phiên khác cập nhật. Thay đổi của bạn chưa được lưu. Vui lòng tải lại dữ liệu mới nhất và thực hiện lại.'), {
           duration: 6000,
         });
         useTeacherStore.getState().fetchTeachers();
@@ -443,8 +443,8 @@ export function TeacherDrawer() {
                     onChange={(e) => setGender(e.target.value)}
                     className="h-9 w-full px-3 text-[13px] bg-background border border-border rounded-none text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
                   >
-                    <option value="Nam">Nam</option>
-                    <option value="Nữ">Nữ</option>
+                    <option value="Nam">{t('teacher.genderMale', 'Nam')}</option>
+                    <option value="Nữ">{t('teacher.genderFemale', 'Nữ')}</option>
                   </select>
                 </div>
                 <div className="space-y-1.5">
@@ -516,9 +516,9 @@ export function TeacherDrawer() {
                     disabled={isSelf}
                     className="h-9 w-full px-3 text-[13px] bg-background border border-border rounded-none text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    <option value="Giáo viên">Giáo viên</option>
-                    <option value="Phó hiệu trưởng">Phó hiệu trưởng</option>
-                    <option value="Hiệu trưởng">Hiệu trưởng</option>
+                    <option value="Giáo viên">{t('teacher.roleTeacher', 'Giáo viên')}</option>
+                    <option value="Phó hiệu trưởng">{t('teacher.roleVicePrincipal', 'Phó hiệu trưởng')}</option>
+                    <option value="Hiệu trưởng">{t('teacher.rolePrincipal', 'Hiệu trưởng')}</option>
                   </select>
                 </div>
                 <div className="space-y-1.5">

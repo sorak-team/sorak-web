@@ -52,18 +52,28 @@ export function TeachersPage() {
   const [isExporting, setIsExporting] = useState(false);
 
   const handleExportExcel = async () => {
+    if (filteredTeachers.length === 0) {
+      toast.warning(t('teacher.noDataToExport', 'Không có dữ liệu cán bộ phù hợp để xuất file Excel.'));
+      return;
+    }
     try {
       setIsExporting(true);
+      const normStatus = statusFilter !== 'all' ? (
+        statusFilter === 'active' ? 'WORKING' :
+        statusFilter === 'on_leave' ? 'LEAVE_OF_ABSENCE' :
+        statusFilter === 'resigned' ? 'RESIGNED' :
+        statusFilter.toUpperCase()
+      ) : undefined;
       const blob = await teachersApi.exportExcel({
-        workStatus: statusFilter !== 'all' ? statusFilter : undefined,
+        workStatus: normStatus,
         search: searchQuery || undefined,
         schoolYearId: selectedYearId || undefined,
       });
       const filename = `Danh_Sach_Giao_Vien_${new Date().toISOString().slice(0, 10)}.xlsx`;
       downloadBlob(blob, filename);
-      toast.success('Đã xuất danh sách cán bộ giáo viên ra file Excel thành công.');
+      toast.success(t('teacher.toastExportSuccess', 'Đã xuất danh sách cán bộ giáo viên ra file Excel thành công.'));
     } catch (err) {
-      toast.error('Không thể xuất file Excel. Vui lòng thử lại sau.');
+      toast.error(t('teacher.toastExportError', 'Không thể xuất file Excel. Vui lòng thử lại sau.'));
     } finally {
       setIsExporting(false);
     }
@@ -245,8 +255,8 @@ export function TeachersPage() {
       <ExcelImportModal
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
-        title="Nhập cán bộ giáo viên từ Excel"
-        description="Tải file mẫu, điền thông tin nhân sự để nhập hàng loạt và tự động cấp tài khoản cho giáo viên."
+        title={t('teacher.importTitle', 'Nhập cán bộ giáo viên từ Excel')}
+        description={t('teacher.importDesc', 'Tải file mẫu, điền thông tin nhân sự để nhập hàng loạt và tự động cấp tài khoản cho giáo viên.')}
         templateFileName="Mau_Nhap_Giao_Vien_Sorak.xlsx"
         onDownloadTemplate={teachersApi.getImportTemplate}
         onPreview={teachersApi.previewImport}

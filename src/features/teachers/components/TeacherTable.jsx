@@ -71,7 +71,7 @@ export function TeacherTable({ paginatedTeachers }) {
   if (!paginatedTeachers || paginatedTeachers.length === 0) {
     return (
       <div className="w-full border border-border bg-card p-12 text-center text-muted-foreground rounded-none">
-        <p className="text-[14px]">Không tìm thấy giáo viên nào phù hợp.</p>
+        <p className="text-[14px]">{t('teacher.noTeacherFound', 'Không tìm thấy giáo viên nào phù hợp.')}</p>
       </div>
     );
   }
@@ -207,7 +207,7 @@ export function TeacherTable({ paginatedTeachers }) {
                     <span className="text-[12px] text-muted-foreground truncate">
                       {teacher.position || teacher.role || t('teacher.roleTeacher', 'Giáo viên')} · <span className="font-mono">{teacher.employeeCode || '—'}</span>
                       {teacher.account?.isDeleted && (
-                        <span className="ml-1.5 text-[11px] text-amber-600 dark:text-amber-400 font-medium">(Chưa có quyền đăng nhập)</span>
+                        <span className="ml-1.5 text-[11px] text-amber-600 dark:text-amber-400 font-medium">{t('teacher.noLoginPermission', '(Chưa có quyền đăng nhập)')}</span>
                       )}
                     </span>
                   </div>
