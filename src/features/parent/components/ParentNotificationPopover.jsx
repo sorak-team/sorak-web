@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Bell, CheckCheck, UserCheck, HeartPulse, Award, Info, X } from 'lucide-react';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { parentApi } from '../api/parent.api';
 
 export function ParentNotificationPopover() {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [filter, setFilter] = useState('all'); // 'all' | 'unread'
   const [notifications, setNotifications] = useState([]);
@@ -124,10 +126,10 @@ export function ParentNotificationPopover() {
         {/* Header */}
         <div className="flex items-center justify-between p-3.5 border-b border-border bg-slate-50 dark:bg-muted/40">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-sm">Thông báo</span>
+            <span className="font-semibold text-sm">{t('notifications.title', 'Thông báo')}</span>
             {unreadCount > 0 && (
               <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-primary/10 text-primary">
-                {unreadCount} mới
+                {unreadCount} {t('common.new', 'mới')}
               </span>
             )}
           </div>
@@ -137,10 +139,10 @@ export function ParentNotificationPopover() {
                 type="button"
                 onClick={handleMarkAllRead}
                 className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1 px-2 py-1 rounded hover:bg-muted transition-colors cursor-pointer"
-                title="Đánh dấu tất cả đã đọc"
+                title={t('notifications.markAllAsRead', 'Đánh dấu tất cả đã đọc')}
               >
                 <CheckCheck className="w-3.5 h-3.5" />
-                <span>Đã đọc</span>
+                <span>{t('notifications.markAllRead', 'Đã đọc')}</span>
               </button>
             )}
             <button
@@ -164,7 +166,7 @@ export function ParentNotificationPopover() {
                 : 'border-transparent text-muted-foreground hover:text-foreground'
             }`}
           >
-            Tất cả ({notifications.length})
+            {t('common.all', 'Tất cả')} ({notifications.length})
           </button>
           <button
             type="button"
@@ -175,7 +177,7 @@ export function ParentNotificationPopover() {
                 : 'border-transparent text-muted-foreground hover:text-foreground'
             }`}
           >
-            Chưa đọc ({unreadCount})
+            {t('notifications.unread', 'Chưa đọc')} ({unreadCount})
           </button>
         </div>
 
@@ -183,7 +185,7 @@ export function ParentNotificationPopover() {
         <div className="max-h-80 overflow-y-auto divide-y divide-border bg-white dark:bg-card">
           {filteredNotifications.length === 0 ? (
             <div className="py-8 text-center text-xs text-muted-foreground">
-              Không có thông báo nào.
+              {t('notifications.noNotifications', 'Không có thông báo nào.')}
             </div>
           ) : (
             filteredNotifications.map((n) => (

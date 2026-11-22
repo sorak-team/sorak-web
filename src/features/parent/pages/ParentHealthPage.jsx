@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useOutletContext } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Heart,
   Activity,
@@ -11,9 +12,10 @@ import {
 } from 'lucide-react';
 import { parentApi } from '../api/parent.api';
 import { cn } from '@/shared/lib/utils';
-import { evaluateChildGrowth } from '@/features/students/components/WhoGrowthCharts';
+import { WhoGrowthCharts, evaluateChildGrowth } from '@/features/students/components/WhoGrowthCharts';
 
 export function ParentHealthPage() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const outletCtx = useOutletContext() || {};
   const [data, setData] = useState(null);
@@ -111,7 +113,7 @@ export function ParentHealthPage() {
         {/* Metric 1: Chiều cao hiện tại */}
         <div className="p-3.5 flex flex-col justify-between gap-2 bg-card">
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-[11.5px]">Chiều cao hiện tại</span>
+            <span className="text-[11.5px]">{t('health.currentHeight', 'Chiều cao hiện tại')}</span>
             <Ruler className="size-4 text-blue-500" />
           </div>
           <div className="flex items-baseline gap-1.5">
@@ -128,7 +130,7 @@ export function ParentHealthPage() {
                   'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
               )}
             >
-              {latestEvaluation?.heightEvaluation?.label || 'Đạt chuẩn'}
+              {latestEvaluation?.heightEvaluation?.label || t('health.standard', 'Đạt chuẩn')}
             </span>
           </div>
         </div>
@@ -136,7 +138,7 @@ export function ParentHealthPage() {
         {/* Metric 2: Cân nặng hiện tại */}
         <div className="p-3.5 flex flex-col justify-between gap-2 bg-card">
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-[11.5px]">Cân nặng hiện tại</span>
+            <span className="text-[11.5px]">{t('health.currentWeight', 'Cân nặng hiện tại')}</span>
             <Scale className="size-4 text-emerald-500" />
           </div>
           <div className="flex items-baseline gap-1.5">
@@ -153,7 +155,7 @@ export function ParentHealthPage() {
                   'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
               )}
             >
-              {latestEvaluation?.weightEvaluation?.label || 'Đạt chuẩn'}
+              {latestEvaluation?.weightEvaluation?.label || t('health.standard', 'Đạt chuẩn')}
             </span>
           </div>
         </div>
@@ -161,12 +163,12 @@ export function ParentHealthPage() {
         {/* Metric 3: Đánh giá thể lực chung (thay thế cho BMI) */}
         <div className="p-3.5 flex flex-col justify-between gap-2 bg-card">
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-[11.5px]">Thể lực chung</span>
+            <span className="text-[11.5px]">{t('health.generalFitness', 'Thể lực chung')}</span>
             <Heart className="size-4 text-rose-500" />
           </div>
           <div className="flex items-baseline gap-1.5">
             <span className="text-xl sm:text-2xl font-bold text-foreground">
-              {hasHistory ? (isOverallGood ? 'Phát triển tốt' : 'Cần theo dõi') : '—'}
+              {hasHistory ? (isOverallGood ? t('health.goodGrowth', 'Phát triển tốt') : t('health.needMonitor', 'Cần theo dõi')) : '—'}
             </span>
           </div>
           <div>
@@ -180,9 +182,9 @@ export function ParentHealthPage() {
             >
               {hasHistory
                 ? isOverallGood
-                  ? 'Chiều cao & Cân nặng đạt chuẩn'
-                  : 'Có chỉ số cần lưu ý'
-                : 'Chưa có dữ liệu'}
+                  ? t('health.heightWeightNormal', 'Chiều cao & Cân nặng đạt chuẩn')
+                  : t('health.metricsAttention', 'Có chỉ số cần lưu ý')
+                : t('common.noData', 'Chưa có dữ liệu')}
             </span>
           </div>
         </div>
@@ -190,7 +192,7 @@ export function ParentHealthPage() {
         {/* Metric 4: Giáo viên thực hiện đo */}
         <div className="p-3.5 flex flex-col justify-between gap-2 bg-card">
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-[11.5px]">Giáo viên thực hiện đo</span>
+            <span className="text-[11.5px]">{t('health.measuringStaff', 'Giáo viên thực hiện đo')}</span>
             <User className="size-4 text-muted-foreground" />
           </div>
           <div className="flex items-baseline gap-1.5">
@@ -200,7 +202,7 @@ export function ParentHealthPage() {
           </div>
           <div>
             <span className="px-2 py-0.5 text-[10.5px] font-semibold border rounded-none bg-muted text-muted-foreground border-border inline-block">
-              Đo thể chất định kỳ
+              {t('health.periodicPhysicalExam', 'Đo thể chất định kỳ')}
             </span>
           </div>
         </div>
@@ -213,11 +215,11 @@ export function ParentHealthPage() {
           <div className="flex items-center gap-2 pb-1.5 border-b border-border">
             <ShieldCheck className="size-4 text-emerald-600" />
             <span className="text-[13px] font-semibold text-foreground">
-              Tiền sử bệnh lý & Tình trạng sức khỏe
+              {t('health.medicalHistoryTitle', 'Tiền sử bệnh lý & Tình trạng sức khỏe')}
             </span>
           </div>
           <p className="text-[12.5px] text-muted-foreground leading-relaxed">
-            {student.medicalNotes || 'Sức khỏe tổng quát tốt, tiêm chủng đầy đủ theo chương trình tiêm chủng mở rộng.'}
+            {student.medicalNotes || t('health.defaultMedicalNotes', 'Sức khỏe tổng quát tốt, tiêm chủng đầy đủ theo chương trình tiêm chủng mở rộng.')}
           </p>
         </div>
 
@@ -226,11 +228,11 @@ export function ParentHealthPage() {
           <div className="flex items-center gap-2 pb-1.5 border-b border-border">
             <AlertCircle className="size-4 text-amber-500" />
             <span className="text-[13px] font-semibold text-foreground">
-              Ghi nhận dị ứng thực phẩm & thuốc
+              {t('health.allergyTitle', 'Ghi nhận dị ứng thực phẩm & thuốc')}
             </span>
           </div>
           <p className="text-[12.5px] text-muted-foreground leading-relaxed">
-            {student.allergyNotes || 'Không ghi nhận dị ứng thức ăn hay thuốc.'}
+            {student.allergyNotes || t('health.defaultAllergyNotes', 'Không ghi nhận dị ứng thức ăn hay thuốc.')}
           </p>
         </div>
       </div>
@@ -241,11 +243,11 @@ export function ParentHealthPage() {
           <div className="flex items-center gap-2">
             <Activity className="size-4 text-primary" />
             <span className="text-[13px] font-semibold text-foreground">
-              Lịch sử các đợt đo thể chất định kỳ
+              {t('health.historyTitle', 'Lịch sử các đợt đo thể chất định kỳ')}
             </span>
           </div>
           <span className="text-[11.5px] font-mono text-muted-foreground">
-            {healthHistory.length} đợt đo
+            {healthHistory.length} {t('health.examRounds', 'đợt đo')}
           </span>
         </div>
 
@@ -253,20 +255,20 @@ export function ParentHealthPage() {
           <table className="w-full text-left border-collapse text-[12.5px]">
             <thead>
               <tr className="border-b border-border bg-muted/15 text-muted-foreground text-[11px] font-semibold uppercase tracking-tight">
-                <th className="py-2.5 px-3.5">Ngày đo</th>
-                <th className="py-2.5 px-3.5">Chiều cao</th>
-                <th className="py-2.5 px-3.5">Chuẩn chiều cao</th>
-                <th className="py-2.5 px-3.5">Cân nặng</th>
-                <th className="py-2.5 px-3.5">Chuẩn cân nặng</th>
-                <th className="py-2.5 px-3.5">Nhận xét kết luận</th>
-                <th className="py-2.5 px-3.5 text-right">Giáo viên đo</th>
+                <th className="py-2.5 px-3.5">{t('health.date', 'Ngày đo')}</th>
+                <th className="py-2.5 px-3.5">{t('health.height', 'Chiều cao')}</th>
+                <th className="py-2.5 px-3.5">{t('health.heightStandard', 'Chuẩn chiều cao')}</th>
+                <th className="py-2.5 px-3.5">{t('health.weight', 'Cân nặng')}</th>
+                <th className="py-2.5 px-3.5">{t('health.weightStandard', 'Chuẩn cân nặng')}</th>
+                <th className="py-2.5 px-3.5">{t('health.conclusionNotes', 'Nhận xét kết luận')}</th>
+                <th className="py-2.5 px-3.5 text-right">{t('health.measuredBy', 'Giáo viên đo')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {healthHistory.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-8 text-center text-muted-foreground text-[13px]">
-                    Chưa có dữ liệu khám sức khỏe cho giai đoạn này.
+                    {t('health.noDataForPeriod', 'Chưa có dữ liệu khám sức khỏe cho giai đoạn này.')}
                   </td>
                 </tr>
               ) : (
@@ -312,7 +314,7 @@ export function ParentHealthPage() {
                         {cleanNotes(h.notes)}
                       </td>
                       <td className="py-2.5 px-3.5 text-right text-muted-foreground whitespace-nowrap text-[11px] font-mono">
-                        {h.recordedBy || 'Giáo viên phụ trách'}
+                        {h.recordedBy || t('parent.hero.inChargeTeacher', 'Giáo viên phụ trách')}
                       </td>
                     </tr>
                   );
@@ -323,9 +325,29 @@ export function ParentHealthPage() {
         </div>
       </div>
 
-      {/* 5. Minimalist Reference Note */}
+      {/* 5. Biểu đồ Tăng trưởng Thể chất Chuẩn WHO (Chiều cao theo tuổi & Cân nặng theo tuổi) */}
+      <div className="border border-border bg-card shadow-xs p-3.5 sm:p-5 overflow-hidden flex flex-col gap-4">
+        <div className="flex items-center gap-2 border-b border-border pb-3">
+          <Activity className="size-4 text-primary" />
+          <div>
+            <h3 className="text-[13.5px] font-semibold text-foreground">
+              {t('health.whoChartsTitle', 'Biểu đồ tăng trưởng thể chất chuẩn WHO')}
+            </h3>
+            <p className="text-[11.5px] text-muted-foreground mt-0.5">
+              {t('health.whoChartsSubtitle', 'Đối chiếu chỉ số chiều cao và cân nặng của bé theo biểu đồ phân vị chuẩn của Tổ chức Y tế Thế giới')}
+            </p>
+          </div>
+        </div>
+
+        <WhoGrowthCharts
+          student={student}
+          healthData={{ history: healthHistory }}
+        />
+      </div>
+
+      {/* 6. Minimalist Reference Note */}
       <p className="text-[11.5px] text-muted-foreground text-center pt-1">
-        Tiêu chuẩn Chiều cao theo tuổi và Cân nặng theo tuổi được đối chiếu theo bảng chuẩn tăng trưởng của Tổ chức Y tế Thế giới (WHO).
+        {t('health.whoStandardNote', 'Tiêu chuẩn Chiều cao theo tuổi và Cân nặng theo tuổi được đối chiếu theo bảng chuẩn tăng trưởng của Tổ chức Y tế Thế giới (WHO).')}
       </p>
     </div>
   );

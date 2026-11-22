@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Sun, BookOpen, Gamepad2, Trees, Moon, Coffee, HeartHandshake, CheckCircle2, Clock, Activity, MessageSquare } from 'lucide-react';
 
 const ICON_MAP = {
@@ -14,6 +15,7 @@ const ICON_MAP = {
 };
 
 export function ParentActivitySheet({ isOpen, onClose, studentName = 'Bé', timeline = [] }) {
+  const { t } = useTranslation();
   if (!isOpen) return null;
 
   const defaultTimeline = [
@@ -99,19 +101,20 @@ export function ParentActivitySheet({ isOpen, onClose, studentName = 'Bé', time
         <div className="flex items-center justify-between p-4 sm:p-5 border-b border-border bg-muted/30">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-base sm:text-lg font-bold">Nhật ký hoạt động ở trường</h2>
+              <h2 className="text-base sm:text-lg font-bold">{t('parent.schedule.activitySheetTitle', 'Nhật ký hoạt động ở trường')}</h2>
               <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary/10 text-primary">
-                Hôm nay
+                {t('common.today', 'Hôm nay')}
               </span>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Theo dõi chi tiết các mốc thời gian sinh hoạt của {studentName} tại lớp
+              {t('parent.schedule.activitySheetDesc', 'Theo dõi chi tiết các mốc thời gian sinh hoạt của')} {studentName}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg border border-border/80 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            title={t('common.close', 'Đóng')}
+            className="p-1.5 rounded-lg border border-border/80 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>

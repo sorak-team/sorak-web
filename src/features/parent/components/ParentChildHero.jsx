@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Phone,
   Info,
@@ -31,6 +32,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ParentNotificationPopover } from './ParentNotificationPopover';
 import { ClassVisual } from '@/features/classes/components/ClassVisual';
+import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher';
 
 export function ParentChildHero({
   student,
@@ -56,22 +58,23 @@ export function ParentChildHero({
 }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [isTeacherModalOpen, setIsTeacherModalOpen] = React.useState(false);
-  const studentName = student?.fullName || student?.name || 'Học sinh';
+  const studentName = student?.fullName || student?.name || t('common.student', 'Học sinh');
   const studentCode = student?.code || student?.studentCode || 'HS26001';
-  const age = student?.age || '3 tuổi';
-  const className = homeroomClass?.name || 'Nhà trẻ A1';
+  const age = student?.age || '';
+  const className = homeroomClass?.name || '';
   const cleanSchoolYear = (schoolYear || '').replace(/^Năm học\s*/i, '');
 
   // Dữ liệu thật từ database:
   // Toàn bộ giáo viên trong lớp đều là Giáo viên phụ trách (co-teachers).
   const staffList = React.useMemo(() => {
     if (Array.isArray(teachers) && teachers.length > 0) {
-      return teachers.map((t, idx) => ({
-        id: t.id || `teacher-${idx}`,
-        name: t.fullName || t.name,
-        roleBadge: 'Giáo viên phụ trách',
-        phone: t.phone || null,
+      return teachers.map((tItem, idx) => ({
+        id: tItem.id || `teacher-${idx}`,
+        name: tItem.fullName || tItem.name,
+        roleBadge: t('parent.hero.inChargeTeacher', 'Giáo viên phụ trách'),
+        phone: tItem.phone || null,
       }));
     }
 
@@ -80,19 +83,19 @@ export function ParentChildHero({
         {
           id: primaryTeacher.id || 'primary-teacher',
           name: primaryTeacher.fullName,
-          roleBadge: 'Giáo viên phụ trách',
+          roleBadge: t('parent.hero.inChargeTeacher', 'Giáo viên phụ trách'),
           phone: primaryTeacher.phone || null,
         },
       ];
     }
 
     return [];
-  }, [primaryTeacher, teachers]);
+  }, [primaryTeacher, teachers, t]);
 
   const teacherName =
     staffList.length > 0
       ? staffList.map((s) => s.name).join(', ')
-      : 'Chưa phân công';
+      : t('parent.hero.unassigned', 'Chưa phân công');
 
   const avatarUrl = getStudentAvatarUrl(
     student?.avatarUrl || student?.avatar,
@@ -155,7 +158,7 @@ export function ParentChildHero({
                   size="icon"
                   onClick={onToggleMobileMenu}
                   className="lg:hidden size-8 rounded-none border border-border bg-white/90 dark:bg-card/90 backdrop-blur-xs cursor-pointer shadow-2xs"
-                  aria-label="Mở menu"
+                  aria-label={t('parent.hero.openMenu', 'Mở menu')}
                 >
                   {isMobileMenuOpen ? <X className="size-4" /> : <Menu className="size-4" />}
                 </Button>
@@ -170,21 +173,23 @@ export function ParentChildHero({
                 <div className="flex items-center gap-1.5 leading-none">
                   <span className="font-bold text-[14.5px] text-foreground tracking-tight">Sorak</span>
                   <span className="hidden sm:inline text-[12.5px] text-muted-foreground font-medium">
-                    · Trường Mầm non Hòn Tre
+                    · {t('parent.schoolName', 'Trường Mầm non Hòn Tre')}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Right: Actions & Child Switcher (Clean static glass without hover effects) */}
+            {/* Right: Actions & Child Switcher */}
             <div className="flex items-center gap-1.5 sm:gap-2">
+              <LanguageSwitcher className="bg-white/60 dark:bg-card/60 border-white/60 dark:border-border/50 h-8 shadow-2xs rounded-none" />
+
               {onOpenActivitySheet && (
                 <Button
                   type="button"
                   variant="outline"
                   size="icon"
                   onClick={onOpenActivitySheet}
-                  title="Nhật ký hoạt động hôm nay"
+                  title={t('parent.hero.activityLogToday', 'Nhật ký hoạt động hôm nay')}
                   className="size-8 rounded-none border border-white/60 dark:border-border/50 bg-white/60 dark:bg-card/60 backdrop-blur-xs text-foreground cursor-pointer shadow-2xs hover:bg-white/60 hover:text-foreground"
                 >
                   <Clock className="size-3.5" />
@@ -218,10 +223,10 @@ export function ParentChildHero({
                     {/* Header: Title & Context */}
                     <div className="px-2 py-1.5 flex items-center justify-between border-b border-border/60 pb-2 mb-1">
                       <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider font-mono">
-                        Hồ sơ các con
+                        {t('parent.hero.childrenProfiles', 'Hồ sơ các con')}
                       </span>
                       <span className="text-[10.5px] px-1.5 py-0.5 bg-muted text-muted-foreground font-medium">
-                        {linkedAccounts?.length > 0 ? `${linkedAccounts.length} tài khoản` : '1 tài khoản'}
+                        {t('parent.hero.accountsCount', { count: linkedAccounts?.length || 1, defaultValue: `${linkedAccounts?.length || 1} tài khoản` })}
                       </span>
                     </div>
 
@@ -229,9 +234,11 @@ export function ParentChildHero({
                     <div className="flex flex-col gap-1 py-1">
                       {linkedAccounts?.length > 0 ? (
                         linkedAccounts.map((acc) => {
-                          const isCurrent = acc.user?.id === student?.id || acc.user?.identifier === studentCode;
+                          const isCurrent =
+                            (student?.id && (acc.user?.id === student.id || acc.user?.student?.id === student.id)) ||
+                            (studentCode && (acc.user?.student?.studentCode === studentCode || acc.user?.student?.code === studentCode || acc.user?.identifier === studentCode || acc.user?.username === studentCode));
                           const cName = acc.user?.student?.fullName || acc.user?.name || acc.user?.fullName || acc.user?.identifier;
-                          const cCode = acc.user?.student?.studentCode || acc.user?.identifier || '';
+                          const cCode = acc.user?.student?.studentCode || acc.user?.student?.code || acc.user?.identifier || '';
                           const cClass = acc.user?.student?.className || className || '';
                           const cAvatar = getStudentAvatarUrl(
                             acc.user?.student?.avatarUrl || acc.user?.avatarUrl,
@@ -240,7 +247,8 @@ export function ParentChildHero({
 
                           return (
                             <DropdownMenuItem
-                              key={acc.user?.id || acc.user?.identifier}
+                              key={acc.user?.student?.studentCode || acc.user?.id || acc.user?.identifier}
+                              onSelect={() => onSwitchAccount(acc.user)}
                               onClick={() => onSwitchAccount(acc.user)}
                               className={cn(
                                 'flex items-center gap-2.5 p-2 cursor-pointer rounded-none transition-colors border',
@@ -261,7 +269,7 @@ export function ParentChildHero({
                                 </span>
                               </div>
                               {isCurrent && (
-                                <span className="size-2 rounded-full bg-[#1447e6] shrink-0" title="Đang chọn" />
+                                <span className="size-2 rounded-full bg-[#1447e6] shrink-0" title={t('common.selected', 'Đang chọn')} />
                               )}
                             </DropdownMenuItem>
                           );
@@ -279,7 +287,7 @@ export function ParentChildHero({
                               {studentCode} · {className}
                             </span>
                           </div>
-                          <span className="size-2 rounded-full bg-[#1447e6] shrink-0" title="Đang chọn" />
+                          <span className="size-2 rounded-full bg-[#1447e6] shrink-0" title={t('common.selected', 'Đang chọn')} />
                         </div>
                       )}
                     </div>
@@ -292,7 +300,7 @@ export function ParentChildHero({
                           onClick={onOpenLinkChildModal}
                           className="flex items-center px-3 py-2 text-[12.5px] cursor-pointer rounded-none hover:bg-muted/60 text-[#1447e6] dark:text-blue-400 font-medium transition-colors"
                         >
-                          <span>+ Liên kết tài khoản con</span>
+                          <span>{t('parent.hero.linkChildAccount', '+ Liên kết tài khoản con')}</span>
                         </DropdownMenuItem>
                       </>
                     )}
@@ -306,7 +314,7 @@ export function ParentChildHero({
                           className="flex items-center px-3 py-2 text-[12.5px] cursor-pointer rounded-none text-muted-foreground hover:text-destructive hover:bg-destructive/10 font-medium transition-colors"
                         >
                           <LogOut className="size-3.5 mr-2" />
-                          <span>Đăng xuất</span>
+                          <span>{t('parent.hero.logout', 'Đăng xuất')}</span>
                         </DropdownMenuItem>
                       </>
                     )}
@@ -352,14 +360,14 @@ export function ParentChildHero({
             {/* Homeroom Teacher */}
             <div className="flex flex-col gap-1">
               <span className="text-[11px] text-muted-foreground font-normal">
-                Giáo viên
+                {t('parent.hero.inChargeTeacher', 'Giáo viên')}
               </span>
               <div className="h-8 flex items-center">
                 <button
                   type="button"
                   onClick={() => setIsTeacherModalOpen(true)}
                   className="group inline-flex items-center gap-2 h-7.5 px-2.5 border border-border bg-background hover:bg-muted/70 transition-colors cursor-pointer rounded-none text-left select-none shadow-2xs"
-                  title="Xem thông tin giáo viên lớp"
+                  title={t('parent.hero.viewTeacherInfo', 'Xem thông tin giáo viên lớp')}
                 >
                   <span className="text-[12.5px] font-semibold text-foreground group-hover:text-primary transition-colors">
                     {teacherName}
@@ -376,7 +384,7 @@ export function ParentChildHero({
             {/* School Status */}
             <div className="flex flex-col gap-1">
               <span className="text-[11px] text-muted-foreground font-normal">
-                Tình trạng
+                {t('common.status', 'Tình trạng')}
               </span>
               <div className="h-8 flex items-center">
                 <div
@@ -398,7 +406,7 @@ export function ParentChildHero({
             {/* School Year & Class Switcher */}
             <div className="flex flex-col gap-1">
               <span className="text-[11px] text-muted-foreground font-normal">
-                Lớp & Năm học
+                {t('parent.hero.classAndYear', 'Lớp & Năm học')}
               </span>
               {enrollments && enrollments.length > 1 ? (
                 <div className="h-8 flex items-center">
@@ -426,9 +434,9 @@ export function ParentChildHero({
                       className="w-[350px] p-2 rounded-none bg-popover border border-border shadow-xl select-none"
                     >
                       <div className="px-2.5 py-1.5 text-[11px] font-semibold text-muted-foreground tracking-wider uppercase flex items-center justify-between border-b border-border/60 mb-1">
-                        <span>Lịch sử lớp học của bé</span>
+                        <span>{t('parent.hero.classHistory', 'Lịch sử lớp học của bé')}</span>
                         <span className="text-[10px] text-muted-foreground font-normal">
-                          {enrollments.length} lớp học
+                          {t('parent.hero.classesCount', { count: enrollments.length, defaultValue: `${enrollments.length} lớp học` })}
                         </span>
                       </div>
 
@@ -439,7 +447,9 @@ export function ParentChildHero({
                           const cleanYear = String(en.schoolYear || '')
                             .replace(/^(Năm\s*học\s*)+/gi, '')
                             .trim();
-                          const displayYear = cleanYear ? `Năm học ${cleanYear}` : 'Năm học 2026–2027';
+                          const displayYear = cleanYear
+                            ? `${t('schoolYear.title', 'Năm học')} ${cleanYear}`
+                            : `${t('schoolYear.title', 'Năm học')} 2026–2027`;
 
                           return (
                             <DropdownMenuItem
@@ -469,11 +479,11 @@ export function ParentChildHero({
                               <div className="flex items-center gap-2 shrink-0">
                                 {en.isCurrent ? (
                                   <span className="text-[10.5px] font-medium px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 whitespace-nowrap">
-                                    Hiện tại
+                                    {t('common.current', 'Hiện tại')}
                                   </span>
                                 ) : (
                                   <span className="text-[10.5px] font-normal px-2 py-0.5 bg-muted text-muted-foreground border border-border whitespace-nowrap">
-                                    Lớp cũ
+                                    {t('parent.hero.pastClass', 'Lớp cũ')}
                                   </span>
                                 )}
                                 <div className="w-4 flex items-center justify-center shrink-0">
@@ -581,14 +591,14 @@ export function ParentChildHero({
             <div className="px-5 py-4 border-b border-border bg-card flex items-start justify-between gap-3 shrink-0">
               <div className="flex flex-col gap-0.5 min-w-0">
                 <h3 className="text-[16px] font-bold text-foreground leading-snug">
-                  Giáo viên lớp
+                  {t('parent.hero.teachersModalTitle', 'Giáo viên lớp')}
                 </h3>
                 <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground font-normal">
-                  <span className="font-medium text-foreground">Lớp {className}</span>
+                  <span className="font-medium text-foreground">{t('classes.class', 'Lớp')} {className}</span>
                   {cleanSchoolYear && (
                     <>
                       <span>•</span>
-                      <span>Năm học {cleanSchoolYear}</span>
+                      <span>{t('schoolYear.title', 'Năm học')} {cleanSchoolYear}</span>
                     </>
                   )}
                 </div>
@@ -597,7 +607,7 @@ export function ParentChildHero({
                 type="button"
                 onClick={() => setIsTeacherModalOpen(false)}
                 className="size-7.5 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer transition-colors shrink-0"
-                title="Đóng"
+                title={t('common.close', 'Đóng')}
               >
                 <X className="size-4" />
               </button>
@@ -628,7 +638,7 @@ export function ParentChildHero({
                             <span>{staff.phone}</span>
                           </a>
                         ) : (
-                          <span className="text-[12px] text-muted-foreground">Chưa có số điện thoại</span>
+                          <span className="text-[12px] text-muted-foreground">{t('parent.hero.noPhone', 'Chưa có số điện thoại')}</span>
                         )}
                       </div>
 
@@ -636,7 +646,7 @@ export function ParentChildHero({
                         <a
                           href={`tel:${staff.phone}`}
                           className="size-8 flex items-center justify-center border border-border bg-background hover:bg-muted text-muted-foreground hover:text-primary transition-colors shrink-0"
-                          title={`Gọi cho ${staff.name}`}
+                          title={`${t('common.call', 'Gọi cho')} ${staff.name}`}
                         >
                           <Phone className="size-3.5" />
                         </a>
@@ -646,7 +656,7 @@ export function ParentChildHero({
                 })
               ) : (
                 <div className="py-6 text-center text-muted-foreground text-[13px]">
-                  Lớp học hiện chưa có thông tin phân công giáo viên trong hệ thống.
+                  {t('parent.hero.noTeachersAssigned', 'Lớp học hiện chưa có thông tin phân công giáo viên trong hệ thống.')}
                 </div>
               )}
             </div>
@@ -660,7 +670,7 @@ export function ParentChildHero({
                 onClick={() => setIsTeacherModalOpen(false)}
                 className="rounded-none text-[12.5px] h-8 px-4 cursor-pointer hover:bg-muted"
               >
-                Đóng
+                {t('common.close', 'Đóng')}
               </Button>
             </div>
           </div>

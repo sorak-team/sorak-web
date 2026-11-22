@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams, useOutletContext } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
   ArrowLeft02Icon,
@@ -40,6 +41,7 @@ import { WeekPickerCalendar, CALENDAR_WEEKS } from '@/shared/components/calendar
 import { cn } from '@/shared/lib/utils';
 
 export function ParentSchedulePage() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const outletCtx = useOutletContext() || {};
   const [data, setData] = useState(null);
@@ -229,6 +231,7 @@ export function ParentSchedulePage() {
   }, [resolvedClassId, selectedWeekId, activeWeekObj]);
 
   const timetable = data?.timetable || { routineSlots: [], weeklyActivities: [] };
+  const holidays = useMemo(() => data?.holidays || data?.timetable?.holidays || [], [data]);
   const attendancesList = useMemo(() => {
     return data?.attendances || data?.attendance?.records || [];
   }, [data]);
@@ -241,20 +244,33 @@ export function ParentSchedulePage() {
 
   const currentDays = useMemo(() => {
     const baseDays = [
-      { key: 'T2', shortName: 'T2', name: 'Thứ 2', dow: 'MONDAY' },
-      { key: 'T3', shortName: 'T3', name: 'Thứ 3', dow: 'TUESDAY' },
-      { key: 'T4', shortName: 'T4', name: 'Thứ 4', dow: 'WEDNESDAY' },
-      { key: 'T5', shortName: 'T5', name: 'Thứ 5', dow: 'THURSDAY' },
-      { key: 'T6', shortName: 'T6', name: 'Thứ 6', dow: 'FRIDAY' },
-      { key: 'T7', shortName: 'T7', name: 'Thứ 7', dow: 'SATURDAY', isWeekend: true },
-      { key: 'CN', shortName: 'CN', name: 'CN', dow: 'SUNDAY', isWeekend: true },
+      { key: 'T2', shortName: t('calendar.monShort', 'T2'), name: t('calendar.mon', 'Thứ 2'), dow: 'MONDAY' },
+      { key: 'T3', shortName: t('calendar.tueShort', 'T3'), name: t('calendar.tue', 'Thứ 3'), dow: 'TUESDAY' },
+      { key: 'T4', shortName: t('calendar.wedShort', 'T4'), name: t('calendar.wed', 'Thứ 4'), dow: 'WEDNESDAY' },
+      { key: 'T5', shortName: t('calendar.thuShort', 'T5'), name: t('calendar.thu', 'Thứ 5'), dow: 'THURSDAY' },
+      { key: 'T6', shortName: t('calendar.friShort', 'T6'), name: t('calendar.fri', 'Thứ 6'), dow: 'FRIDAY' },
+      { key: 'T7', shortName: t('calendar.satShort', 'T7'), name: t('calendar.sat', 'Thứ 7'), dow: 'SATURDAY', isWeekend: true },
+      { key: 'CN', shortName: t('calendar.sunShort', 'CN'), name: t('calendar.sun', 'Chủ nhật'), dow: 'SUNDAY', isWeekend: true },
     ];
 
-    // Tự động mở rộng hiển thị Thứ 7, CN nếu tuần này có hoạt động giáo dục xếp vào cuối tuần
+    // Tự động mở rộng hiển thị Thứ 7, CN nếu tuần này có hoạt động giáo dục xếp vào cuối tuần HOẶC có ngày học bù
     const hasWeekendActivities = (timetable.weeklyActivities || []).some(
       (a) => a.dayOfWeek === 'SATURDAY' || a.dayOfWeek === 'SUNDAY'
     );
-    const daysToRender = (showWeekend || hasWeekendActivities) ? baseDays : baseDays.filter((d) => !d.isWeekend);
+    const hasWeekendMakeup = holidays.some((h) => {
+      if (h.makeupDate) {
+        return activeWeekObj?.dayDetails?.some(
+          (det, idx) => (idx === 5 || idx === 6) && det.dateStr === h.makeupDate
+        );
+      }
+      if (h.isTeachingAllowed && (h.affectsClass ?? true)) {
+        return activeWeekObj?.dayDetails?.some(
+          (det, idx) => (idx === 5 || idx === 6) && det.dateStr >= h.startDate && det.dateStr <= h.endDate
+        );
+      }
+      return false;
+    });
+    const daysToRender = (showWeekend || hasWeekendActivities || hasWeekendMakeup) ? baseDays : baseDays.filter((d) => !d.isWeekend);
 
     return daysToRender.map((d) => {
       const dayIdx = DAY_INDEX_MAP[d.key];
@@ -274,14 +290,53 @@ export function ParentSchedulePage() {
         (fullIsoDate && fullIsoDate === todayIsoStr)
       );
 
+      // Check makeup day (Ngày học bù theo BR-54)
+      let makeupHoliday = null;
+      let isMakeupDay = false;
+      if (fullIsoDate && holidays.length > 0) {
+        for (const h of holidays) {
+          if (h.affectsClass ?? true) {
+            if (h.makeupDate && h.makeupDate === fullIsoDate) {
+              makeupHoliday = h;
+              isMakeupDay = true;
+              break;
+            }
+            if (h.isTeachingAllowed && fullIsoDate >= h.startDate && fullIsoDate <= h.endDate && (d.key === 'T7' || d.key === 'CN')) {
+              makeupHoliday = h;
+              isMakeupDay = true;
+              break;
+            }
+          }
+        }
+      }
+
+      // Check holiday (Ngày nghỉ theo lịch nhà trường) - nếu là ngày học bù thì không tính là holiday nghỉ
+      let holiday = null;
+      let isHoliday = false;
+      if (!isMakeupDay && fullIsoDate && holidays.length > 0) {
+        for (const h of holidays) {
+          if (!h.isTeachingAllowed && (h.affectsClass ?? true)) {
+            if (fullIsoDate >= h.startDate && fullIsoDate <= h.endDate) {
+              holiday = h;
+              isHoliday = true;
+              break;
+            }
+          }
+        }
+      }
+
       return {
         ...d,
         date: formattedDate,
         fullIsoDate,
         isToday,
+        isHoliday,
+        holiday,
+        isMakeupDay,
+        makeupHoliday,
       };
     });
-  }, [activeWeekObj, showWeekend]);
+  }, [activeWeekObj, showWeekend, holidays, timetable.weeklyActivities, t]);
 
   // 3. Khung giờ hoạt động chuẩn (Đồng bộ 100% với 7 khung giờ của giáo viên)
   const ROUTINE_SLOTS = [
@@ -410,7 +465,9 @@ export function ParentSchedulePage() {
   // 5. Nhật ký điểm danh & đưa đón theo từng ngày và tuần cụ thể
   const getDayAttendance = useCallback(
     (dayKey) => {
-      if (dayKey === 'T7' || dayKey === 'CN') {
+      const dayObj = currentDays.find((d) => d.key === dayKey);
+
+      if ((dayKey === 'T7' || dayKey === 'CN') && !dayObj?.isMakeupDay) {
         return {
           isWeekend: true,
           statusText: 'Nghỉ cuối tuần',
@@ -419,9 +476,21 @@ export function ParentSchedulePage() {
       }
 
       // Tích hợp dữ liệu điểm danh thực tế từ backend
-      const dayObj = currentDays.find((d) => d.key === dayKey);
-      if (!dayObj || dayObj.isWeekend) {
+      if (!dayObj || (dayObj.isWeekend && !dayObj.isMakeupDay)) {
         return null;
+      }
+
+      if (dayObj.isHoliday) {
+        return {
+          isHoliday: true,
+          status: 'HOLIDAY',
+          statusText: dayObj.holiday?.name || 'Nghỉ lễ / Ngày nghỉ',
+          statusLabel: 'Ngày nghỉ',
+          holidayName: dayObj.holiday?.name || 'Ngày nghỉ',
+          note: `Bé nghỉ theo lịch của nhà trường: ${dayObj.holiday?.name || 'Ngày nghỉ'}.`,
+          date: dayObj.date,
+          dayName: dayObj.name,
+        };
       }
 
       const teacherName = data?.primaryTeacher?.fullName || 'Cô Nguyễn Thị Mai (Giáo viên phụ trách)';
@@ -533,6 +602,24 @@ export function ParentSchedulePage() {
 
   // Helper tính toán Style cho ô tiêu đề Thứ (Nền phẳng clean, kèm nhãn trạng thái đã đón, đang ở lớp)
   const getDayAttendanceStyle = useCallback((dayAttendance, day) => {
+    if (day.isMakeupDay) {
+      const origDateStr = day.makeupHoliday?.startDate;
+      let makeupTooltip = `Ngày học bù · ${day.name}`;
+      if (origDateStr) {
+        const [oy, om, od] = origDateStr.split('-');
+        makeupTooltip = `Ngày học bù cho ngày ${od}/${om} (${day.makeupHoliday?.name || 'Nghỉ học'}) · ${day.name}`;
+      }
+      return {
+        type: 'MAKEUP',
+        thClass: 'bg-emerald-500/[0.04] text-foreground border-b border-border transition-colors',
+        titleClass: cn('text-foreground font-semibold', day.isToday && 'text-[#1447e6] dark:text-blue-400 font-bold'),
+        dateClass: cn('text-muted-foreground', day.isToday && 'text-[#1447e6]/80 dark:text-blue-400 font-medium'),
+        badgeClass: 'bg-emerald-50 text-emerald-700 border border-emerald-200/90 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60 font-semibold',
+        label: 'Ngày học bù',
+        tooltip: makeupTooltip,
+      };
+    }
+
     if (day.isWeekend) {
       return {
         type: 'WEEKEND',
@@ -542,6 +629,25 @@ export function ParentSchedulePage() {
         badgeClass: '',
         label: null,
         tooltip: `Cuối tuần · ${day.name}`,
+      };
+    }
+
+    if (day.isHoliday) {
+      let holidayLabel = 'Ngày nghỉ';
+      let tooltip = `${day.holiday?.name || 'Ngày nghỉ'} · ${day.name}`;
+      if (day.holiday?.makeupDate) {
+        const [my, mm, md] = day.holiday.makeupDate.split('-');
+        holidayLabel = `Nghỉ (Bù ${md}/${mm})`;
+        tooltip = `${day.holiday?.name || 'Ngày nghỉ'} · ${day.name} (Bố trí dạy bù sang Thứ 7, ngày ${md}/${mm})`;
+      }
+      return {
+        type: 'HOLIDAY',
+        thClass: 'bg-muted/15 text-muted-foreground border-b border-border',
+        titleClass: 'text-muted-foreground font-medium',
+        dateClass: 'text-muted-foreground/80',
+        badgeClass: 'bg-rose-50 text-rose-700 border border-rose-200/90 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/60 font-medium',
+        label: holidayLabel,
+        tooltip,
       };
     }
 
@@ -715,8 +821,8 @@ export function ParentSchedulePage() {
   // Xử lý bấm vào một ô slot trên thời khóa biểu
   const handleCellClick = (slotDef, day) => {
     const act = getActivityData(slotDef.key, day.key);
-    // Nếu là cuối tuần mà không có hoạt động nào được xếp thì không mở modal
-    if (day.isWeekend && act.isEmpty) return;
+    // Nếu là cuối tuần (không phải ngày học bù) mà không có hoạt động nào được xếp thì không mở modal
+    if (day.isWeekend && !day.isMakeupDay && act.isEmpty) return;
 
     const dayLog = getDayAttendance(day.key);
     const evaluation = getSlotEvaluation(slotDef.key, day.key);
@@ -783,13 +889,13 @@ export function ParentSchedulePage() {
               onClick={handlePrevWeek}
               disabled={CALENDAR_WEEKS.findIndex((w) => w.id === selectedWeekId) <= 0}
               className="size-8 flex items-center justify-center hover:bg-muted text-muted-foreground hover:text-foreground border-r border-border transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
-              title="Tuần trước (Phím ←)"
+              title={`${t('parent.schedule.prevWeek', 'Tuần trước')} (←)`}
             >
               <HugeiconsIcon icon={ArrowLeft02Icon} size={14} />
             </button>
 
             <div className="w-[195px] h-8 flex items-center justify-center font-medium select-none text-[12.5px] text-foreground tabular-nums shrink-0">
-              <span>Tuần {activeWeekObj?.label}</span>
+              <span>{t('assessment.week', 'Tuần')} {activeWeekObj?.label}</span>
             </div>
 
             <button
@@ -797,7 +903,7 @@ export function ParentSchedulePage() {
               onClick={handleNextWeek}
               disabled={CALENDAR_WEEKS.findIndex((w) => w.id === selectedWeekId) >= CALENDAR_WEEKS.length - 1}
               className="size-8 flex items-center justify-center hover:bg-muted text-muted-foreground hover:text-foreground border-l border-border transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
-              title="Tuần sau (Phím →)"
+              title={`${t('parent.schedule.nextWeek', 'Tuần sau')} (→)`}
             >
               <HugeiconsIcon icon={ArrowRight02Icon} size={14} />
             </button>
@@ -813,7 +919,7 @@ export function ParentSchedulePage() {
                 ? 'bg-primary text-primary-foreground border-primary'
                 : 'bg-background hover:bg-muted text-muted-foreground hover:text-foreground'
             )}
-            title="Chọn tuần từ lịch"
+            title={t('parent.schedule.selectWeekFromCalendar', 'Chọn tuần từ lịch')}
           >
             <HugeiconsIcon icon={SidebarRightIcon} size={15} />
           </button>
@@ -828,10 +934,10 @@ export function ParentSchedulePage() {
                 ? 'bg-primary/10 text-primary border-primary/40 font-semibold'
                 : 'bg-background hover:bg-muted text-muted-foreground hover:text-foreground border-border'
             )}
-            title={showWeekend ? 'Ẩn Thứ 7 & Chủ nhật' : 'Hiện Thứ 7 & Chủ nhật'}
+            title={showWeekend ? t('parent.schedule.hideWeekend', 'Ẩn Thứ 7 & Chủ nhật') : t('parent.schedule.showWeekend', 'Hiện Thứ 7 & Chủ nhật')}
           >
             <HugeiconsIcon icon={Calendar03Icon} size={14} />
-            <span>{showWeekend ? 'Ẩn T7, CN' : 'Hiện T7, CN'}</span>
+            <span>{showWeekend ? t('parent.schedule.hideWeekend', 'Ẩn T7, CN') : t('parent.schedule.showWeekend', 'Hiện T7, CN')}</span>
           </button>
         </div>
       </div>
@@ -846,16 +952,16 @@ export function ParentSchedulePage() {
                 {/* Góc trên bên trái: Ô dành cho cột khung giờ */}
                 <th className="w-[115px] sm:w-[130px] p-2.5 border-r border-border bg-muted/15 select-none align-middle" />
 
-                {/* Các cột Thứ trong tuần (T2 – T6): Gọn gàng, tối giản, chỉ giữ tên Thứ và Ngày */}
+                {/* Các cột Thứ trong tuần (T2 – T6, kèm T7, CN nếu có hoạt động/học bù): Gọn gàng, tối giản, chỉ giữ tên Thứ và Ngày */}
                 {currentDays.map((day) => {
-                  const dayAttendance = !day.isWeekend ? getDayAttendance(day.key) : null;
+                  const dayAttendance = (!day.isWeekend || day.isMakeupDay) ? getDayAttendance(day.key) : null;
                   const style = getDayAttendanceStyle(dayAttendance, day);
 
                   return (
                     <th
                       key={day.key}
                       onClick={() => {
-                        if (!day.isWeekend) {
+                        if (!day.isWeekend || day.isMakeupDay) {
                           setQuickStatusDayKey(day.key);
                           setSelectedDayAttendance({ day, dayLog: getDayAttendance(day.key) });
                         }
@@ -863,7 +969,7 @@ export function ParentSchedulePage() {
                       className={cn(
                         'p-2 sm:p-2.5 align-top border-r last:border-r-0 border-border text-center select-none transition-all group',
                         style.thClass,
-                        !day.isWeekend && 'cursor-pointer'
+                        (!day.isWeekend || day.isMakeupDay) && 'cursor-pointer'
                       )}
                       title={style.tooltip}
                     >
@@ -939,39 +1045,48 @@ export function ParentSchedulePage() {
                     {/* Các ô hoạt động trong tuần: Cột hôm nay màu xanh blue nhạt, line màu bên trái giống giáo viên (Tím: Vượt trội, Xanh lá: Đạt, Đỏ: Chưa đạt) */}
                     {currentDays.map((day) => {
                       const act = getActivityData(slotDef.key, day.key);
-                      const isWeekendDay = day.isWeekend;
+                      const isWeekendDay = day.isWeekend && !day.isMakeupDay;
+                      const isHolidayDay = day.isHoliday;
                       const evaluation = getSlotEvaluation(slotDef.key, day.key);
 
                       return (
                         <td
                           key={day.key}
-                          onClick={() => handleCellClick(slotDef, day)}
+                          onClick={() => (!isHolidayDay && !(isWeekendDay && act.isEmpty)) && handleCellClick(slotDef, day)}
                           className={cn(
                             'p-1.5 border-r last:border-r-0 border-border align-middle min-w-[145px] h-[88px] transition-colors select-none',
-                            isWeekendDay && act.isEmpty
-                              ? 'bg-muted/10 text-center'
-                              : 'bg-card hover:bg-muted/30 cursor-pointer'
+                            isHolidayDay
+                              ? 'bg-muted/10 text-center cursor-default'
+                              : isWeekendDay && act.isEmpty
+                                ? 'bg-muted/10 text-center cursor-default'
+                                : 'bg-card hover:bg-muted/30 cursor-pointer'
                           )}
-                          title={!(isWeekendDay && act.isEmpty) ? `${act.title || slotDef.name} · Nhấp để xem chi tiết` : undefined}
+                          title={isHolidayDay ? `${day.holiday?.name || 'Ngày nghỉ'}` : !(isWeekendDay && act.isEmpty) ? `${act.title || slotDef.name} · Nhấp để xem chi tiết` : undefined}
                         >
                           {/* Inner card cách viền ô bên ngoài một khoảng nhỏ giống hình mẫu */}
                           <div
                             className={cn(
                               'h-full w-full p-2 flex items-center justify-center text-center transition-all',
-                              isWeekendDay && act.isEmpty
-                                ? 'flex items-center justify-center'
-                                : evaluation?.status === 'OUTSTANDING' || evaluation?.status === 'EXCELLENT'
-                                  ? 'border border-border/75 border-l-2 border-l-purple-500 bg-purple-500/[0.06] dark:bg-purple-400/[0.10] hover:bg-purple-500/[0.10] hover:border-purple-300 dark:hover:border-purple-700'
-                                  : evaluation?.status === 'ACHIEVED'
-                                    ? 'border border-border/75 border-l-2 border-l-emerald-500 bg-emerald-500/[0.05] dark:bg-emerald-400/[0.08] hover:bg-emerald-500/[0.09] hover:border-emerald-300 dark:hover:border-emerald-700'
-                                    : evaluation?.status === 'NOT_ACHIEVED'
-                                      ? 'border border-border/75 border-l-2 border-l-rose-500 bg-rose-500/[0.06] dark:bg-rose-400/[0.10] hover:bg-rose-500/[0.10] hover:border-rose-300 dark:hover:border-rose-700'
-                                      : act.status === 'COMPLETED'
-                                        ? 'border border-border/75 border-l-2 border-l-emerald-600/70 bg-emerald-500/[0.03] hover:bg-emerald-500/[0.06]'
-                                        : 'border border-border/75 bg-card hover:bg-muted/30'
+                              isHolidayDay
+                                ? 'border border-dashed border-border/40 bg-muted/20 opacity-70'
+                                : isWeekendDay && act.isEmpty
+                                  ? 'flex items-center justify-center'
+                                  : evaluation?.status === 'OUTSTANDING' || evaluation?.status === 'EXCELLENT'
+                                    ? 'border border-border/75 border-l-2 border-l-purple-500 bg-purple-500/[0.06] dark:bg-purple-400/[0.10] hover:bg-purple-500/[0.10] hover:border-purple-300 dark:hover:border-purple-700'
+                                    : evaluation?.status === 'ACHIEVED'
+                                      ? 'border border-border/75 border-l-2 border-l-emerald-500 bg-emerald-500/[0.05] dark:bg-emerald-400/[0.08] hover:bg-emerald-500/[0.09] hover:border-emerald-300 dark:hover:border-emerald-700'
+                                      : evaluation?.status === 'NOT_ACHIEVED'
+                                        ? 'border border-border/75 border-l-2 border-l-rose-500 bg-rose-500/[0.06] dark:bg-rose-400/[0.10] hover:bg-rose-500/[0.10] hover:border-rose-300 dark:hover:border-rose-700'
+                                        : act.status === 'COMPLETED'
+                                          ? 'border border-border/75 border-l-2 border-l-emerald-600/70 bg-emerald-500/[0.03] hover:bg-emerald-500/[0.06]'
+                                          : 'border border-border/75 bg-card hover:bg-muted/30'
                             )}
                           >
-                            {isWeekendDay && act.isEmpty ? (
+                            {isHolidayDay ? (
+                              <span className="text-[11.5px] font-normal text-muted-foreground line-clamp-3 leading-snug px-1 select-none" title={day.holiday?.name || 'Ngày nghỉ'}>
+                                {day.holiday?.name || 'Ngày nghỉ'}
+                              </span>
+                            ) : isWeekendDay && act.isEmpty ? (
                               <span className="text-muted-foreground/30 font-light text-[13px] select-none">—</span>
                             ) : act.isEmpty ? (
                               <span className="text-muted-foreground/40 font-normal text-[11.5px] italic select-none">
@@ -1205,7 +1320,7 @@ export function ParentSchedulePage() {
       {selectedDayAttendance && (() => {
         const { day, dayLog } = selectedDayAttendance;
         const isFuture = dayLog?.isFuture;
-        const isWeekend = day?.isWeekend;
+        const isWeekend = day?.isWeekend && !day?.isMakeupDay;
         const checkIn = dayLog?.checkIn;
         const checkOut = dayLog?.checkOut;
 
@@ -1244,6 +1359,29 @@ export function ParentSchedulePage() {
                 {isWeekend ? (
                   <div className="p-5 bg-muted/20 border border-border text-center text-muted-foreground text-[12.5px]">
                     Học sinh nghỉ sinh hoạt cuối tuần tại gia đình.
+                  </div>
+                ) : day?.isMakeupDay && (!checkIn && !checkOut) ? (
+                  <div className="p-5 bg-emerald-500/[0.06] border border-emerald-200/80 text-emerald-800 text-[12.5px] text-center">
+                    {dayLog?.note || 'Ngày học bù theo quy định và lịch năm học của nhà trường.'}
+                  </div>
+                ) : day?.isHoliday || dayLog?.isHoliday ? (
+                  <div className="p-6 bg-muted/15 border border-border flex flex-col items-center justify-center text-center gap-3">
+                    <div className="size-11 rounded-none bg-rose-50 border border-rose-200/80 flex items-center justify-center text-rose-600 dark:bg-rose-950/40 dark:border-rose-800">
+                      <Calendar className="size-5" />
+                    </div>
+                    <div className="flex flex-col gap-1 max-w-md">
+                      <span className="font-semibold text-foreground text-[15px]">
+                        {day.holiday?.name || dayLog?.holidayName || 'Nghỉ lễ / Ngày nghỉ'}
+                      </span>
+                      <p className="text-muted-foreground text-[12.5px] leading-relaxed">
+                        Học sinh được nghỉ học theo kế hoạch và quy định của nhà trường.
+                        {day.holiday?.description ? ` (${day.holiday.description})` : ''}
+                      </p>
+                    </div>
+                    <div className="mt-1 inline-flex items-center gap-1.5 px-2.5 py-1 text-[11.5px] font-medium bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800">
+                      <span>Trạng thái:</span>
+                      <span className="font-semibold">Ngày nghỉ toàn trường</span>
+                    </div>
                   </div>
                 ) : (dayLog?.isNotYet || !checkIn || dayLog?.status === 'NOT_YET') ? (
                   <div className="p-6 bg-muted/15 border border-border flex flex-col items-center justify-center text-center gap-3">

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, UploadCloud } from 'lucide-react';
 import { toast } from 'sonner';
 import { parentApi } from '../api/parent.api';
@@ -41,6 +42,7 @@ export function PickupDelegationDrawer({
   onSuccess,
   studentName = 'bé',
 }) {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     pickup_person_name: '',
     pickup_person_phone: '',
@@ -94,27 +96,27 @@ export function PickupDelegationDrawer({
     return {
       hk1: {
         id: 'HK1',
-        label: 'Học kỳ 1',
+        label: t('parent.behavior.semester1', 'Học kỳ 1'),
         startIso: toIsoDateString(hk1StartDmy),
         endIso: toIsoDateString(hk1EndDmy),
         displayRange: `${hk1StartDmy} – ${hk1EndDmy}`,
       },
       hk2: {
         id: 'HK2',
-        label: 'Học kỳ 2',
+        label: t('parent.behavior.semester2', 'Học kỳ 2'),
         startIso: toIsoDateString(hk2StartDmy),
         endIso: toIsoDateString(hk2EndDmy),
         displayRange: `${hk2StartDmy} – ${hk2EndDmy}`,
       },
       fullYear: {
         id: 'FULL_YEAR',
-        label: 'Cả năm',
+        label: t('common.fullYear', 'Cả năm'),
         startIso: toIsoDateString(fullYearStartDmy),
         endIso: toIsoDateString(fullYearEndDmy),
         displayRange: `${fullYearStartDmy} – ${fullYearEndDmy}`,
       },
     };
-  }, [currentAcademicYear]);
+  }, [currentAcademicYear, t]);
 
   // Tự động nhận diện preset ngày đang được chọn (nếu khớp)
   const activeDatePreset = useMemo(() => {
@@ -316,10 +318,10 @@ export function PickupDelegationDrawer({
         <div className="flex items-start justify-between px-6 py-4 border-b border-border shrink-0 bg-card">
           <div className="flex flex-col gap-0.5">
             <h2 className="text-[17px] font-semibold text-foreground tracking-tight">
-              Ủy thác người đưa đón
+              {t('parent.profile.pickupDelegation', 'Ủy thác người đưa đón')}
             </h2>
             <p className="text-[12px] text-muted-foreground font-normal">
-              Đăng ký người thân hoặc người giám hộ được phép đón {studentName} tại trường
+              {t('parent.profile.delegationSubtitle', 'Đăng ký người thân hoặc người giám hộ được phép đón')} {studentName}
             </p>
           </div>
 
@@ -327,7 +329,7 @@ export function PickupDelegationDrawer({
             type="button"
             onClick={onClose}
             className="size-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-none transition-colors cursor-pointer"
-            title="Đóng (Esc)"
+            title={t('common.close', 'Đóng')}
           >
             <X className="size-4" />
           </button>
@@ -341,14 +343,14 @@ export function PickupDelegationDrawer({
               {/* Họ và tên */}
               <div className="flex flex-col gap-1">
                 <label className="text-[12.5px] font-medium text-foreground">
-                  Họ và tên người đón <span className="text-destructive">*</span>
+                  {t('parent.profile.delegateName', 'Họ và tên người đón')} <span className="text-destructive">*</span>
                 </label>
                 <input
                   type="text"
                   required
                   value={formData.pickup_person_name}
                   onChange={(e) => handleChange('pickup_person_name', e.target.value)}
-                  placeholder="Ví dụ: Đỗ Ngọc Lan"
+                  placeholder={t('parent.profile.delegateNamePlaceholder', 'Ví dụ: Đỗ Ngọc Lan')}
                   className={cn(
                     "w-full h-9 px-3 text-[13px] rounded-none border bg-background text-foreground focus:outline-hidden shadow-2xs",
                     fieldErrors.pickup_person_name
@@ -552,7 +554,7 @@ export function PickupDelegationDrawer({
             disabled={isSubmitting}
             className="h-8.5 px-4 text-[12.5px] rounded-none border-border cursor-pointer shadow-none hover:bg-muted"
           >
-            Hủy
+            {t('common.cancel', 'Hủy')}
           </Button>
           <Button
             type="submit"
@@ -560,7 +562,7 @@ export function PickupDelegationDrawer({
             disabled={isSubmitting || calendarValidation.hasConflict}
             className="h-8.5 px-5 text-[12.5px] rounded-none bg-[#1447e6] hover:bg-[#123ec4] text-white cursor-pointer shadow-none font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? 'Đang gửi...' : 'Gửi đơn ủy thác'}
+            {isSubmitting ? t('common.submitting', 'Đang gửi...') : t('parent.profile.submitDelegation', 'Gửi đơn ủy thác')}
           </Button>
         </div>
       </div>
@@ -571,7 +573,7 @@ export function PickupDelegationDrawer({
           <div className="w-full max-w-md bg-card border border-border shadow-2xl p-5 space-y-4 rounded-none text-foreground">
             <div className="space-y-1.5">
               <h3 className="text-[16px] font-semibold text-foreground">
-                Học sinh đang vắng trong ngày được ủy quyền
+                {t('parent.profile.absentWarningTitle', 'Học sinh đang vắng trong ngày được ủy quyền')}
               </h3>
               <p className="text-[13px] text-muted-foreground leading-relaxed">
                 {absentWarning.warningMessage}
@@ -584,7 +586,7 @@ export function PickupDelegationDrawer({
                 onClick={() => setAbsentWarning(null)}
                 className="h-8 px-3 text-[13px] rounded-none border-border cursor-pointer"
               >
-                Quay lại
+                {t('common.back', 'Quay lại')}
               </Button>
               <Button
                 type="button"
@@ -594,7 +596,7 @@ export function PickupDelegationDrawer({
                 }}
                 className="h-8 px-4 text-[13px] rounded-none bg-[#1447e6] hover:bg-[#1447e6]/90 text-white cursor-pointer"
               >
-                Tiếp tục tạo đơn
+                {t('common.continue', 'Tiếp tục tạo đơn')}
               </Button>
             </div>
           </div>

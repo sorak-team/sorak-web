@@ -34,10 +34,10 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Printer } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/shared/lib/utils';
 import { useAuthStore } from '@/features/auth';
+import { useAcademicYearStore } from '@/features/academic-years';
 import { assessmentApi } from '../assessment.api';
 import { goodBehaviorApi } from '@/features/good-behavior/good-behavior.api';
 import { ExcelActionsDropdown } from '@/components/ExcelActionsDropdown';
@@ -69,6 +69,12 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
     currentUser?.role?.toLowerCase()?.includes('principal') ||
     currentUser?.role?.toLowerCase()?.includes('bgh')
   );
+
+  const academicYears = useAcademicYearStore((state) => state.academicYears);
+  const selectedYearId = useAcademicYearStore((state) => state.selectedYearId);
+  const selectedAcademicYear = academicYears.find((y) => String(y.id) === String(selectedYearId)) || academicYears[0];
+  const isSchoolYearEnded = selectedAcademicYear?.status === 'COMPLETED' || selectedAcademicYear?.status === 'ENDED';
+  const isReadOnly = isPrincipal || isSchoolYearEnded;
 
   const initialPeriod = useMemo(() => getDefaultAssessmentPeriod(), []);
 
@@ -176,10 +182,15 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
       const className = currentClass?.name || `Lop_${targetClassId}`;
       const safeName = className.replace(/\s+/g, '_');
       downloadBlob(blob, `So_Be_Ngoan_Thang_${selectedMonth}_${selectedYear}_${safeName}.xlsx`);
-      toast.success(`Đã xuất sổ bé ngoan tháng ${selectedMonth}/${selectedYear} ra file Excel thành công`);
+      toast.success(
+        t('assessment.exportGoodBehaviorSuccess', 'Đã xuất sổ bé ngoan tháng {{month}}/{{year}} ra file Excel thành công', {
+          month: selectedMonth,
+          year: selectedYear,
+        })
+      );
     } catch (err) {
       console.error('Export good behavior excel failed:', err);
-      toast.error('Có lỗi xảy ra khi xuất sổ bé ngoan ra file Excel');
+      toast.error(t('assessment.exportGoodBehaviorError', 'Có lỗi xảy ra khi xuất sổ bé ngoan ra file Excel'));
     } finally {
       setIsExportingExcel(false);
     }
@@ -637,7 +648,7 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
 
   // Handle toggling weekly rose on table
   const handleToggleWeekRose = (studentId, weekNum) => {
-    if (isPrincipal || !selectedMonthObj?.isEnded) return;
+    if (isReadOnly || !selectedMonthObj?.isEnded) return;
     setStudents((prev) =>
       prev.map((s) => {
         if (s.id !== studentId) return s;
@@ -665,7 +676,7 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
 
   // Auto-suggest roses using teacher's configured criteria
   const handleAutoSuggestRoses = (targetWeeks, customCriteria = null) => {
-    if (isPrincipal || !selectedMonthObj?.isEnded) return;
+    if (isReadOnly || !selectedMonthObj?.isEnded) return;
     const criteria = customCriteria || suggestionCriteria;
     const weeksToProcess = Array.isArray(targetWeeks) ? targetWeeks : [targetWeeks];
 
@@ -714,16 +725,19 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
 
     const weekText =
       weeksToProcess.length === 1
-        ? `Tuần ${weeksToProcess[0]}`
-        : `cả ${weeksToProcess.length} tuần trong tháng`;
+        ? t('assessment.weekNumText', 'Tuần {{week}}', { week: weeksToProcess[0] })
+        : t('assessment.allWeeksInMonth', 'cả {{count}} tuần trong tháng', { count: weeksToProcess.length });
     toast.success(
-      `Đã gợi ý tặng hoa ${weekText}! (${totalAwarded} lượt hoa được trao)`
+      t('assessment.suggestFlowersSuccess', 'Đã gợi ý tặng hoa {{weekText}}! ({{totalAwarded}} lượt hoa được trao)', {
+        weekText,
+        totalAwarded,
+      })
     );
   };
 
   // Handle inline teacher comment change
   const handleNotesChange = (studentId, teacherNotes) => {
-    if (isPrincipal || !selectedMonthObj?.isEnded) return;
+    if (isReadOnly || !selectedMonthObj?.isEnded) return;
     setStudents((prev) =>
       prev.map((s) => (s.id === studentId ? { ...s, teacherNotes } : s))
     );
@@ -770,9 +784,14 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
       setInitialStudents(JSON.parse(JSON.stringify(students)));
       const cacheKey = `${targetClassId}_${selectedMonth}_${selectedYear}`;
       monthCacheRef.current.set(cacheKey, students);
-      toast.success(`Đã lưu thành công Sổ Bé Ngoan tháng ${selectedMonth}/${selectedYear}!`);
+      toast.success(
+        t('assessment.saveGoodBehaviorSuccess', 'Đã lưu thành công Sổ Bé Ngoan tháng {{month}}/{{year}}!', {
+          month: selectedMonth,
+          year: selectedYear,
+        })
+      );
     } catch {
-      toast.error('Không thể lưu sổ bé ngoan. Vui lòng thử lại.');
+      toast.error(t('assessment.saveGoodBehaviorError', 'Không thể lưu sổ bé ngoan. Vui lòng thử lại.'));
     } finally {
       setIsSavingAll(false);
     }
@@ -794,11 +813,23 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
       toast.success(
         res?.message ||
           (nextPublished
-            ? `Đã công bố Sổ Bé Ngoan tháng ${selectedMonth}/${selectedYear} cho cả lớp!`
-            : `Đã gỡ công bố Sổ Bé Ngoan tháng ${selectedMonth}/${selectedYear}.`)
+            ? t(
+                'assessment.publishGoodBehaviorSuccess',
+                'Đã công bố Sổ Bé Ngoan tháng {{month}}/{{year}} cho cả lớp!',
+                { month: selectedMonth, year: selectedYear }
+              )
+            : t(
+                'assessment.unpublishGoodBehaviorSuccess',
+                'Đã gỡ công bố Sổ Bé Ngoan tháng {{month}}/{{year}}.',
+                { month: selectedMonth, year: selectedYear }
+              ))
       );
     } catch (err) {
-      toast.error(err?.response?.data?.message || err?.message || 'Không thể thay đổi trạng thái công bố.');
+      toast.error(
+        err?.response?.data?.message ||
+          err?.message ||
+          t('assessment.cannotChangePublishStatus', 'Không thể thay đổi trạng thái công bố.')
+      );
     } finally {
       setIsPublishing(false);
     }
@@ -806,7 +837,7 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
 
   // Auto-save effect: automatically persists changes when teacher modifies roses or comments
   useEffect(() => {
-    if (isInitialLoadRef.current || !isDirty || isPrincipal || !selectedMonthObj?.isEnded) {
+    if (isInitialLoadRef.current || !isDirty || isReadOnly || !selectedMonthObj?.isEnded) {
       return;
     }
 
@@ -992,7 +1023,7 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
                     : 'bg-muted/60 text-muted-foreground border-border'
                 )}
               >
-                {isPublished ? 'Đã công bố' : 'Bản nháp'}
+                {isPublished ? t('assessment.published', 'Đã công bố') : t('assessment.draft', 'Bản nháp')}
               </span>
             </h1>
             <p className="text-[12px] text-muted-foreground font-normal">
@@ -1078,16 +1109,6 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
               </button>
             </div>
 
-            {/* Nút In Phiếu Bé Ngoan A4 */}
-            <button
-              type="button"
-              onClick={handlePrintGoodBehavior}
-              className="size-8 flex items-center justify-center border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer rounded-none shrink-0"
-              title="In Phiếu Bé Ngoan (Khổ A4)"
-            >
-              <Printer size={15} />
-            </button>
-
             {/* Nút Xuất Excel Sổ Bé Ngoan */}
             <ExcelActionsDropdown
               onExport={handleExportGoodBehaviorExcel}
@@ -1143,7 +1164,7 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
                   : 'bg-card text-muted-foreground border-border hover:bg-muted/70 hover:text-foreground'
               )}
             >
-              <img src="/lotus.webp" alt="Bông Sen" className="size-4 object-contain" />
+              <img src="/lotus.webp" alt={t('assessment.lotusAlt', 'Hoa sen')} className="size-4 object-contain" />
               <span>{t('assessment.monthlySummary', 'Tổng kết tháng')}</span>
             </button>
           </div>
@@ -1153,7 +1174,7 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
             {/* Auto-Save Status Indicator (Arranged to the left so all buttons stay grouped together) */}
             {!isPrincipal && lastSavedTime && (
               <span className="text-[11.5px] text-muted-foreground/70 shrink-0 font-sans tracking-tight">
-                Đã lưu lúc <span className="font-mono text-muted-foreground font-medium">{lastSavedTime}</span>
+                {t('assessment.savedAt', 'Đã lưu lúc')} <span className="font-mono text-muted-foreground font-medium">{lastSavedTime}</span>
               </span>
             )}
 
@@ -1163,7 +1184,7 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
                 <button
                   type="button"
                   className="h-8 px-2.5 text-[13px] font-medium bg-background border border-border rounded-none text-foreground hover:bg-muted/60 flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
-                  title="Chọn tháng đánh giá sổ bé ngoan"
+                  title={t('assessment.selectMonthTooltip', 'Chọn tháng đánh giá sổ bé ngoan')}
                 >
                   <span className="font-semibold">{selectedMonthObj?.label || `Tháng ${selectedMonth}/${selectedYear}`}</span>
                   <HugeiconsIcon icon={ArrowDown01Icon} size={12} className="text-muted-foreground ml-0.5" />
@@ -1175,10 +1196,10 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
               >
                 <div className="px-2.5 py-1.5 border-b border-border/60">
                   <div className="text-[12px] font-medium text-foreground">
-                    Chọn tháng sổ bé ngoan
+                    {t('assessment.selectMonthTitle', 'Chọn tháng sổ bé ngoan')}
                   </div>
                   <div className="text-[11px] text-muted-foreground">
-                    Chỉ đánh giá khi tháng đã kết thúc
+                    {t('assessment.onlyEvaluateEndedMonth', 'Chỉ đánh giá khi tháng đã kết thúc')}
                   </div>
                 </div>
                 <div className="py-1">
@@ -1206,10 +1227,10 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
                           {item.isEnded
                             ? isSelected
                               ? '✓'
-                              : 'Đã kết thúc'
+                              : t('assessment.statusEnded', 'Đã kết thúc')
                             : item.isCurrent
-                            ? 'Đang diễn ra'
-                            : 'Chưa diễn ra'}
+                            ? t('assessment.statusOngoing', 'Đang diễn ra')
+                            : t('assessment.statusNotStarted', 'Chưa diễn ra')}
                         </span>
                       </DropdownMenuItem>
                     );
@@ -1227,7 +1248,7 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
                   disabled={!selectedMonthObj?.isEnded}
                   onClick={() => handleAutoSuggestRoses(monthWeeks)}
                   className="h-8 px-3 text-[13px] font-medium rounded-none border-border bg-card hover:bg-muted text-foreground flex items-center justify-center gap-1.5 cursor-pointer shadow-none shrink-0 border-r-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={`Tự động xét và trao hoa cả ${monthWeeks.length} tuần theo tiêu chí đã cấu hình`}
+                  title={t('assessment.autoSuggestFlowersTooltip', 'Tự động xét và trao hoa cả {{count}} tuần theo tiêu chí đã cấu hình', { count: monthWeeks.length })}
                 >
                   <span>{t('assessment.flowerSuggest', 'Gợi ý tặng hoa')}</span>
                 </Button>
@@ -1251,9 +1272,9 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
                   onClick={() => setIsConfirmModalOpen(true)}
                   disabled={isPublishing}
                   className="h-8 w-[118px] px-2 text-[12.5px] font-medium justify-center text-center rounded-none border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/15 cursor-pointer shadow-none shrink-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ease-in-out select-none"
-                  title="Sổ bé ngoan tháng đã được công bố cho phụ huynh. Bấm để gỡ công bố"
+                  title={t('assessment.unpublishMonthlyTooltip', 'Sổ bé ngoan tháng đã được công bố cho phụ huynh. Bấm để gỡ công bố')}
                 >
-                  {isPublishing ? 'Đang xử lý...' : 'Đã công bố'}
+                  {isPublishing ? t('assessment.processing', 'Đang xử lý...') : t('assessment.published', 'Đã công bố')}
                 </Button>
               ) : (
                 <Button
@@ -1264,20 +1285,20 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
                   className="h-8 w-[118px] px-2 text-[12.5px] justify-center text-center rounded-none cursor-pointer shadow-none shrink-0 transition-all duration-200 ease-in-out select-none border border-border bg-card hover:bg-muted text-foreground font-medium disabled:opacity-40 disabled:cursor-not-allowed"
                   title={
                     !selectedMonthObj?.isEnded
-                      ? 'Tháng chưa kết thúc. Chỉ được công bố khi tháng đã kết thúc.'
+                      ? t('assessment.monthNotEndedPublishTooltip', 'Tháng chưa kết thúc. Chỉ được công bố khi tháng đã kết thúc.')
                       : isAllEvaluated
-                      ? 'Tất cả học sinh đã có nhận xét. Bấm để công bố Sổ Bé Ngoan cho phụ huynh'
-                      : 'Công bố Sổ Bé Ngoan tháng này cho phụ huynh'
+                      ? t('assessment.allEvaluatedPublishMonthTooltip', 'Tất cả học sinh đã có nhận xét. Bấm để công bố Sổ Bé Ngoan cho phụ huynh')
+                      : t('assessment.publishMonthTooltip', 'Công bố Sổ Bé Ngoan tháng này cho phụ huynh')
                   }
                 >
-                  {isPublishing ? 'Đang xử lý...' : 'Công bố sổ tháng'}
+                  {isPublishing ? t('assessment.processing', 'Đang xử lý...') : t('assessment.publishMonthBtn', 'Công bố sổ tháng')}
                 </Button>
               )
             )}
 
             {isPrincipal && (
               <span className="text-[12px] text-muted-foreground italic bg-muted/40 px-2.5 py-1 border border-border/60">
-                {isVi ? 'Chế độ xem dành cho Ban giám hiệu' : 'Principal view-only mode'}
+                {isVi ? t('assessment.principalViewOnly', 'Chế độ xem dành cho Ban giám hiệu') : 'Principal view-only mode'}
               </span>
             )}
           </div>
@@ -1288,7 +1309,7 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
           <div className="flex items-center gap-2 px-3.5 py-2.5 border border-amber-500/30 bg-amber-500/[0.06] text-amber-800 dark:text-amber-300 text-[12.5px] rounded-none">
             <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
             <span>
-              <strong>{selectedMonthObj?.label}</strong> {selectedMonthObj?.isCurrent ? 'đang diễn ra (chưa kết thúc tháng).' : 'chưa diễn ra.'} Theo quy chế trường mầm non, sổ bé ngoan chỉ được đánh giá và trao hoa khi tháng đã kết thúc.
+              <strong>{selectedMonthObj?.label}</strong> {selectedMonthObj?.isCurrent ? t('assessment.ongoingStatusNotice', 'đang diễn ra (chưa kết thúc tháng).') : t('assessment.notStartedStatusNotice', 'chưa diễn ra.')} {t('assessment.monthNotEndedRegulation', 'Theo quy chế trường mầm non, sổ bé ngoan chỉ được đánh giá và trao hoa khi tháng đã kết thúc.')}
             </span>
           </div>
         )}
@@ -1304,10 +1325,10 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
                     {t('assessment.monthlySummary', 'Tổng kết')} {selectedMonthObj?.label ? selectedMonthObj.label.toLowerCase() : `tháng ${selectedMonth}`}:
                   </span>
                   <span className="text-muted-foreground font-mono text-[12px]">
-                    Từ ngày <strong className="font-semibold text-foreground">{monthDateRange.startDateStr}</strong> đến ngày <strong className="font-semibold text-foreground">{monthDateRange.endDateStr}</strong>
+                    {t('common.from', 'Từ ngày')} <strong className="font-semibold text-foreground">{monthDateRange.startDateStr}</strong> {t('common.to', 'đến ngày')} <strong className="font-semibold text-foreground">{monthDateRange.endDateStr}</strong>
                   </span>
                   <span className="inline-flex items-center px-1.5 py-0.2 text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 rounded-none ml-1">
-                    {monthWeeks.length} tuần học
+                    {t('assessment.schoolWeeksCount', '{{count}} tuần học', { count: monthWeeks.length })}
                   </span>
                 </div>
               </div>
@@ -1325,7 +1346,7 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
                 {/* Khoảng thời gian (Bỏ icon lịch và chữ Tuần X) */}
                 <div className="flex items-center gap-1.5 shrink-0">
                   <span className="text-muted-foreground font-mono text-[12px]">
-                    Từ ngày <strong className="font-semibold text-foreground">{currentWeekRange.startDateStr}</strong> đến ngày <strong className="font-semibold text-foreground">{currentWeekRange.endDateStr}</strong>
+                    {t('common.from', 'Từ ngày')} <strong className="font-semibold text-foreground">{currentWeekRange.startDateStr}</strong> {t('common.to', 'đến ngày')} <strong className="font-semibold text-foreground">{currentWeekRange.endDateStr}</strong>
                   </span>
                   {currentWeekRange.isCurrentWeek && (
                     <span className="inline-flex items-center px-1.5 py-0.2 text-[10px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-none ml-1">
@@ -1339,12 +1360,12 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
                   <>
                     <div className="h-3.5 w-[1px] bg-border mx-0.5 shrink-0 hidden sm:block" />
                     <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground shrink-0">
-                      <span className="text-muted-foreground">Chủ đề:</span>
+                      <span className="text-muted-foreground">{t('assessment.themeLabel', 'Chủ đề:')}</span>
                       <span className="font-medium text-foreground">{currentWeekRange.themeName}</span>
                       {currentWeekRange.subThemeName && (
                         <>
                           <span className="text-muted-foreground/40 font-mono">›</span>
-                          <span className="text-muted-foreground">Nhánh:</span>
+                          <span className="text-muted-foreground">{t('assessment.subThemeLabel', 'Nhánh:')}</span>
                           <span className="font-medium text-primary">{currentWeekRange.subThemeName}</span>
                         </>
                       )}
@@ -1448,15 +1469,15 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
                         <td className="px-3 align-middle">
                           <textarea
                             rows={2}
-                            readOnly={isPrincipal}
-                            disabled={isPrincipal}
+                            readOnly={isReadOnly}
+                            disabled={isReadOnly}
                             value={st.teacherNotes || ''}
                             onChange={(e) => handleNotesChange(st.id, e.target.value)}
-                            placeholder={isPrincipal ? '' : t('assessment.monthlyNotePlaceholder', 'Nhập nhận xét tổng kết cả tháng của bé...')}
+                            placeholder={isReadOnly ? '' : t('assessment.monthlyNotePlaceholder', 'Nhập nhận xét tổng kết cả tháng của bé...')}
                             title={st.teacherNotes || ''}
                             className={cn(
                               "w-full max-w-[360px] h-[46px] py-1 px-2 text-[13px] leading-[19px] text-foreground font-normal bg-transparent border border-transparent hover:border-border focus:border-[#1447e6] focus:bg-background rounded-none transition-colors resize-none focus:outline-none placeholder:text-muted-foreground/40 overflow-hidden focus:overflow-y-auto block select-text",
-                              isPrincipal && "cursor-default opacity-85 hover:border-transparent focus:border-transparent"
+                              isReadOnly && "cursor-default opacity-85 hover:border-transparent focus:border-transparent"
                             )}
                           />
                         </td>
@@ -1669,13 +1690,13 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
                         <td className="px-3 text-center">
                           <button
                             type="button"
-                            disabled={isPrincipal || !selectedMonthObj?.isEnded}
+                            disabled={isReadOnly || !selectedMonthObj?.isEnded}
                             onClick={() => handleToggleWeekRose(st.id, currentWeekNumber)}
                             className={cn(
                               "size-9 mx-auto flex items-center justify-center rounded-none transition-all group/rose",
-                              isPrincipal ? "cursor-default opacity-85" : "cursor-pointer hover:bg-muted/70"
+                              isReadOnly ? "cursor-default opacity-85" : "cursor-pointer hover:bg-muted/70"
                             )}
-                            title={isPrincipal ? '' : isAwarded ? t('assessment.removeRose', 'Bấm để hủy hoa') : t('assessment.awardRose', 'Bấm để trao hoa hồng')}
+                            title={isReadOnly ? '' : isAwarded ? t('assessment.removeRose', 'Bấm để hủy hoa') : t('assessment.awardRose', 'Bấm để trao hoa hồng')}
                           >
                             {isAwarded ? (
                               <img
@@ -1973,12 +1994,22 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
         <DialogContent className="max-w-md rounded-none p-5">
           <DialogHeader>
             <DialogTitle className="text-[16px] font-semibold text-foreground">
-              {isPublished ? 'Xác nhận gỡ công bố' : 'Xác nhận công bố Sổ Bé Ngoan'}
+              {isPublished
+                ? t('assessment.confirmUnpublishMonth', 'Xác nhận gỡ công bố')
+                : t('assessment.confirmPublishMonth', 'Xác nhận công bố Sổ Bé Ngoan')}
             </DialogTitle>
             <DialogDescription className="text-[13px] text-muted-foreground pt-1.5 leading-relaxed">
               {isPublished
-                ? `Bạn có chắc chắn muốn gỡ công bố Sổ Bé Ngoan tháng ${selectedMonth}/${selectedYear}? Phụ huynh sẽ tạm thời không xem được sổ tháng này trên ứng dụng cho đến khi được công bố lại.`
-                : `Công bố Sổ Bé Ngoan tháng ${selectedMonth}/${selectedYear} cho cả lớp (${students.length} học sinh)? Sau khi công bố, phụ huynh sẽ nhận được thông báo và xem được hoa bé ngoan cùng nhận xét trên ứng dụng.`}
+                ? t(
+                    'assessment.confirmUnpublishMonthDesc',
+                    'Bạn có chắc chắn muốn gỡ công bố Sổ Bé Ngoan tháng {{month}}/{{year}}? Phụ huynh sẽ tạm thời không xem được sổ tháng này trên ứng dụng cho đến khi được công bố lại.',
+                    { month: selectedMonth, year: selectedYear }
+                  )
+                : t(
+                    'assessment.confirmPublishMonthDesc',
+                    'Công bố Sổ Bé Ngoan tháng {{month}}/{{year}} cho cả lớp ({{count}} học sinh)? Sau khi công bố, phụ huynh sẽ nhận được thông báo và xem được hoa bé ngoan cùng nhận xét trên ứng dụng.',
+                    { month: selectedMonth, year: selectedYear, count: students.length }
+                  )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-4 flex items-center justify-end gap-2">
@@ -1989,7 +2020,7 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
               disabled={isPublishing}
               className="h-8 px-3 text-[12.5px] font-medium rounded-none border-border bg-card hover:bg-muted text-foreground shadow-none"
             >
-              Hủy
+              {t('common.cancel', 'Hủy')}
             </Button>
             <Button
               type="button"
@@ -2005,7 +2036,11 @@ export function MonthlyAssessmentTab({ targetClassId, currentClass }) {
                   : 'bg-foreground text-background hover:bg-foreground/90'
               )}
             >
-              {isPublishing ? 'Đang xử lý...' : (isPublished ? 'Gỡ công bố' : 'Xác nhận công bố')}
+              {isPublishing
+                ? t('assessment.processing', 'Đang xử lý...')
+                : isPublished
+                ? t('assessment.unpublishBtn', 'Gỡ công bố')
+                : t('assessment.confirmPublishMonthBtn', 'Xác nhận công bố')}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useOutletContext } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Plus, KeyRound, ShieldCheck, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { parentApi } from '../api/parent.api';
 import { authApi } from '@/features/auth/auth.api';
@@ -20,6 +21,7 @@ import {
 import { cn } from '@/shared/lib/utils';
 
 export function ParentStudentProfilePage() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const outletCtx = useOutletContext() || {};
   const [profile, setProfile] = useState(null);
@@ -139,40 +141,40 @@ export function ParentStudentProfilePage() {
       <div className="border border-border bg-card shadow-xs overflow-hidden">
         <div className="px-4 py-3 border-b border-border bg-card flex items-center justify-between">
           <h3 className="text-[13.5px] font-semibold text-foreground">
-            Thông tin nhân khẩu & Hộ tịch học sinh
+            {t('parent.profile.studentInfo', 'Thông tin nhân khẩu & Hộ tịch học sinh')}
           </h3>
           <span className="text-[11.5px] text-muted-foreground font-mono">
-            Mã định danh: <strong className="text-foreground">{student.studentCode}</strong>
+            {t('parent.profile.studentCode', 'Mã định danh')}: <strong className="text-foreground">{student.studentCode}</strong>
           </span>
         </div>
 
         <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-3 text-[13px]">
           <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-            <span className="text-muted-foreground">Ngày sinh:</span>
+            <span className="text-muted-foreground">{t('parent.profile.dob', 'Ngày sinh')}:</span>
             <span className="font-medium text-foreground font-mono">{student.dateOfBirth}</span>
           </div>
           <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-            <span className="text-muted-foreground">Giới tính:</span>
+            <span className="text-muted-foreground">{t('parent.profile.gender', 'Giới tính')}:</span>
             <span className="font-medium text-foreground">{student.gender}</span>
           </div>
           <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-            <span className="text-muted-foreground">Dân tộc:</span>
+            <span className="text-muted-foreground">{t('parent.profile.ethnicity', 'Dân tộc')}:</span>
             <span className="font-medium text-foreground">{student.ethnic || 'Kinh'}</span>
           </div>
           <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-            <span className="text-muted-foreground">Quốc tịch:</span>
+            <span className="text-muted-foreground">{t('student.nationality', 'Quốc tịch')}:</span>
             <span className="font-medium text-foreground">{student.nationality || 'Việt Nam'}</span>
           </div>
           <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-            <span className="text-muted-foreground">Nơi sinh:</span>
+            <span className="text-muted-foreground">{t('student.birthPlace', 'Nơi sinh')}:</span>
             <span className="font-medium text-foreground">{student.placeOfBirth || 'Kiên Giang'}</span>
           </div>
           <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-            <span className="text-muted-foreground">Trạng thái:</span>
-            <span className="font-medium text-emerald-600 dark:text-emerald-400">Đang học</span>
+            <span className="text-muted-foreground">{t('common.status', 'Trạng thái')}:</span>
+            <span className="font-medium text-emerald-600 dark:text-emerald-400">{t('parent.status.enrolled', 'Đang học')}</span>
           </div>
           <div className="flex items-center justify-between py-1.5 border-b border-border/50 col-span-full">
-            <span className="text-muted-foreground shrink-0 mr-4">Địa chỉ cư trú:</span>
+            <span className="text-muted-foreground shrink-0 mr-4">{t('parent.profile.address', 'Địa chỉ cư trú')}:</span>
             <span className="font-medium text-foreground text-right">{student.permanentResidence}</span>
           </div>
         </div>
@@ -182,7 +184,7 @@ export function ParentStudentProfilePage() {
       <div className="border border-border bg-card shadow-xs overflow-hidden">
         <div className="px-4 py-3 border-b border-border bg-card">
           <h3 className="text-[13.5px] font-semibold text-foreground">
-            Phụ huynh & Người giám hộ hợp pháp
+            {t('parent.profile.familyInfo', 'Phụ huynh & Người giám hộ hợp pháp')}
           </h3>
         </div>
 
@@ -190,10 +192,10 @@ export function ParentStudentProfilePage() {
           <table className="w-full text-left border-collapse text-[13px]">
             <thead>
               <tr className="border-b border-border bg-muted/15 text-muted-foreground text-[11px] font-semibold uppercase tracking-wider">
-                <th className="py-2.5 px-4">Họ và tên</th>
-                <th className="py-2.5 px-4">Quan hệ</th>
-                <th className="py-2.5 px-4">Số điện thoại</th>
-                <th className="py-2.5 px-4 text-right">Số CCCD / Định danh</th>
+                <th className="py-2.5 px-4">{t('parent.profile.fullName', 'Họ và tên')}</th>
+                <th className="py-2.5 px-4">{t('parent.profile.delegateRelationship', 'Quan hệ')}</th>
+                <th className="py-2.5 px-4">{t('parent.profile.delegatePhone', 'Số điện thoại')}</th>
+                <th className="py-2.5 px-4 text-right">{t('parent.profile.delegateIdCard', 'Số CCCD / Định danh')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -223,7 +225,7 @@ export function ParentStudentProfilePage() {
         <div className="px-4 py-3 border-b border-border bg-card flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <h3 className="text-[13.5px] font-semibold text-foreground">
-              Danh sách ủy quyền đưa đón trẻ
+              {t('parent.profile.pickupDelegation', 'Danh sách ủy quyền đưa đón trẻ')}
             </h3>
             <span className="px-1.5 py-0.2 text-[10.5px] font-mono border border-border bg-muted/60 text-muted-foreground font-semibold">
               {pickupAuthorizations.length}
@@ -237,27 +239,27 @@ export function ParentStudentProfilePage() {
               className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-none text-[12.5px] h-8 px-3.5 font-medium shadow-2xs cursor-pointer flex items-center gap-1.5"
             >
               <Plus className="size-3.5" />
-              <span>Thêm người ủy quyền đón</span>
+              <span>{t('parent.profile.addDelegationBtn', 'Thêm người ủy quyền đón')}</span>
             </Button>
           )}
         </div>
 
         {pickupAuthorizations.length === 0 ? (
           <div className="p-6 text-center text-[12.5px] text-muted-foreground bg-muted/5">
-            Chưa có người được ủy quyền đón bổ sung ngoài bố mẹ. Bấm "Thêm người ủy quyền đón" để đăng ký người thân đưa đón bé.
+            {t('parent.profile.noDelegationsNotice', 'Chưa có người được ủy quyền đón bổ sung ngoài bố mẹ. Bấm "Thêm người ủy quyền đón" để đăng ký người thân đưa đón bé.')}
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-[13px]">
               <thead>
                 <tr className="border-b border-border bg-muted/15 text-muted-foreground text-[11px] font-semibold uppercase tracking-wider">
-                  <th className="py-2.5 px-4">Người được ủy quyền</th>
-                  <th className="py-2.5 px-4">Quan hệ</th>
-                  <th className="py-2.5 px-4">Số điện thoại</th>
-                  <th className="py-2.5 px-4">Thời hạn hiệu lực</th>
-                  <th className="py-2.5 px-4">Ghi chú</th>
-                  <th className="py-2.5 px-4">Trạng thái</th>
-                  <th className="py-2.5 px-4 text-right">Người duyệt</th>
+                  <th className="py-2.5 px-4">{t('parent.profile.delegateName', 'Người được ủy quyền')}</th>
+                  <th className="py-2.5 px-4">{t('parent.profile.delegateRelationship', 'Quan hệ')}</th>
+                  <th className="py-2.5 px-4">{t('parent.profile.delegatePhone', 'Số điện thoại')}</th>
+                  <th className="py-2.5 px-4">{t('parent.profile.validityPeriod', 'Thời hạn hiệu lực')}</th>
+                  <th className="py-2.5 px-4">{t('common.notes', 'Ghi chú')}</th>
+                  <th className="py-2.5 px-4">{t('common.status', 'Trạng thái')}</th>
+                  <th className="py-2.5 px-4 text-right">{t('parent.profile.approvedBy', 'Người duyệt')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -309,7 +311,7 @@ export function ParentStudentProfilePage() {
           <div className="flex items-center gap-2">
             <ShieldCheck className="size-4 text-primary" />
             <h3 className="text-[13.5px] font-semibold text-foreground">
-              Tài khoản & Bảo mật
+              {t('settings.accountSecurity', 'Tài khoản & Bảo mật')}
             </h3>
           </div>
           <Button
@@ -323,22 +325,22 @@ export function ParentStudentProfilePage() {
             className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-none text-[12.5px] h-8 px-3.5 font-medium shadow-2xs cursor-pointer flex items-center gap-1.5"
           >
             <KeyRound className="size-3.5" />
-            <span>Đổi mật khẩu</span>
+            <span>{t('settings.changePassword', 'Đổi mật khẩu')}</span>
           </Button>
         </div>
 
         <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-3 text-[13px]">
           <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-            <span className="text-muted-foreground">Mã học sinh đăng nhập:</span>
+            <span className="text-muted-foreground">{t('auth.identifier', 'Mã học sinh đăng nhập')}:</span>
             <span className="font-medium text-foreground font-mono">{student.studentCode}</span>
           </div>
           <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-            <span className="text-muted-foreground">Mật khẩu hiện tại:</span>
+            <span className="text-muted-foreground">{t('auth.currentPassword', 'Mật khẩu hiện tại')}:</span>
             <span className="font-medium text-foreground font-mono">••••••••</span>
           </div>
           <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-            <span className="text-muted-foreground">Trạng thái bảo mật:</span>
-            <span className="font-medium text-emerald-600 dark:text-emerald-400">Đang hoạt động</span>
+            <span className="text-muted-foreground">{t('settings.securityStatus', 'Trạng thái bảo mật')}:</span>
+            <span className="font-medium text-emerald-600 dark:text-emerald-400">{t('common.active', 'Đang hoạt động')}</span>
           </div>
         </div>
       </div>
@@ -348,10 +350,10 @@ export function ParentStudentProfilePage() {
         <DialogContent className="max-w-[420px] p-5 rounded-none border border-border bg-card text-card-foreground shadow-2xl">
           <DialogHeader className="space-y-1 text-left pb-1">
             <DialogTitle className="text-[16px] font-semibold text-foreground tracking-tight">
-              Đổi mật khẩu tài khoản
+              {t('settings.changePassword', 'Đổi mật khẩu tài khoản')}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
-              Cập nhật mật khẩu mới cho tài khoản học sinh {student.fullName} ({student.studentCode}).
+              {t('settings.updatePasswordFor', 'Cập nhật mật khẩu mới cho tài khoản học sinh')} {student.fullName} ({student.studentCode}).
             </DialogDescription>
           </DialogHeader>
 

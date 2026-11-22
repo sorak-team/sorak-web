@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { KeyRound, User, Info, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { authApi } from '@/features/auth/auth.api';
+import { parentApi } from '../api/parent.api';
 import { useAuthStore } from '@/features/auth/auth.store';
 import {
   Dialog,
@@ -16,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export function LinkChildModal({ isOpen, onClose }) {
+  const { t } = useTranslation();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -33,31 +36,27 @@ export function LinkChildModal({ isOpen, onClose }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!identifier.trim() || !password.trim()) {
-      toast.error('Vui lòng nhập đầy đủ mã học sinh và mật khẩu.');
+      toast.error(t('parent.linkModal.fillRequired', 'Vui lòng nhập đầy đủ mã học sinh và mật khẩu.'));
       return;
     }
 
     try {
       setIsSubmitting(true);
-      const res = await authApi.login({
+      const res = await parentApi.linkChild({
         identifier: identifier.trim(),
         password: password.trim(),
-        role: 'PARENT_PH',
-        rememberMe: true,
-        captchaToken: 'sorak-link-child-bypass',
-        isLinkingChild: true,
       });
 
-      const payload = res.data?.data || res.data || res;
+      const payload = res?.data || res;
       if (payload?.user) {
         if (payload.user.role !== 'PARENT_PH') {
-          toast.error('Tài khoản này không phải tài khoản phụ huynh học sinh.');
+          toast.error(t('parent.linkModal.notParentAccount', 'Tài khoản này không phải tài khoản phụ huynh học sinh.'));
           return;
         }
 
         addLinkedAccount(payload.user, payload.accessToken);
-        toast.success(`Đã liên kết hồ sơ của bé ${payload.user.student?.fullName || payload.user.name || identifier.trim()}!`, {
-          description: 'Hệ thống đã tự động chuyển sang tài khoản mới liên kết.',
+        toast.success(`${t('parent.linkModal.linkSuccess', 'Đã liên kết hồ sơ của bé')} ${payload.user.student?.fullName || payload.user.name || identifier.trim()}!`, {
+          description: t('parent.linkModal.autoSwitched', 'Hệ thống đã tự động chuyển sang tài khoản mới liên kết.'),
         });
         setIdentifier('');
         setPassword('');
@@ -65,11 +64,11 @@ export function LinkChildModal({ isOpen, onClose }) {
         onClose();
         window.location.reload();
       } else {
-        toast.error('Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.');
+        toast.error(t('parent.linkModal.linkFailed', 'Liên kết không thành công. Vui lòng kiểm tra lại thông tin.'));
       }
     } catch (err) {
-      toast.error('Liên kết tài khoản thất bại', {
-        description: err.response?.data?.message || err.message || 'Mã học sinh hoặc mật khẩu không chính xác.',
+      toast.error(t('parent.linkModal.linkFailed', 'Liên kết tài khoản thất bại'), {
+        description: err.response?.data?.message || err.message || t('parent.linkModal.invalidCredentials', 'Mã học sinh hoặc mật khẩu không chính xác.'),
       });
     } finally {
       setIsSubmitting(false);
@@ -82,10 +81,10 @@ export function LinkChildModal({ isOpen, onClose }) {
         {/* Header - Clean, không icon thừa kế bên tiêu đề, bỏ bo góc */}
         <DialogHeader className="space-y-1 text-left pb-1">
           <DialogTitle className="text-[16px] font-semibold text-foreground tracking-tight">
-            Thêm tài khoản con khác
+            {t('parent.linkModal.title', 'Thêm tài khoản con khác')}
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
-            Quản lý nhiều bé trên cùng một tài khoản đăng nhập.
+            {t('parent.linkModal.subtitle', 'Quản lý nhiều bé trên cùng một tài khoản đăng nhập.')}
           </DialogDescription>
         </DialogHeader>
 
@@ -93,7 +92,7 @@ export function LinkChildModal({ isOpen, onClose }) {
         <div className="rounded-none bg-muted/40 border border-border p-3 text-xs text-muted-foreground leading-relaxed flex items-start gap-2.5">
           <Info className="size-4 text-muted-foreground/80 shrink-0 mt-0.5" />
           <span>
-            Nhập mã học sinh và mật khẩu được nhà trường cấp cho bé thứ hai để liên kết quản lý chung.
+            {t('parent.linkModal.notice', 'Nhập mã học sinh và mật khẩu được nhà trường cấp cho bé thứ hai để liên kết quản lý chung.')}
           </span>
         </div>
 
@@ -101,7 +100,7 @@ export function LinkChildModal({ isOpen, onClose }) {
         <form onSubmit={handleSubmit} className="space-y-4 pt-1">
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-foreground">
-              Mã học sinh của bé <span className="text-destructive">*</span>
+              {t('parent.linkModal.studentCodeLabel', 'Mã học sinh của bé')} <span className="text-destructive">*</span>
             </Label>
             <div className="relative">
               <User className="size-4 text-muted-foreground/70 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -110,7 +109,7 @@ export function LinkChildModal({ isOpen, onClose }) {
                 required
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="Ví dụ: CB24002"
+                placeholder={t('parent.linkModal.studentCodePlaceholder', 'Ví dụ: CB24002')}
                 className="h-9 pl-9 pr-3 text-[13px] rounded-none border-border/80 bg-background focus-visible:ring-1 focus-visible:ring-[#1447e6] focus-visible:border-[#1447e6] font-mono"
                 disabled={isSubmitting}
                 autoFocus
@@ -120,7 +119,7 @@ export function LinkChildModal({ isOpen, onClose }) {
 
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-foreground">
-              Mật khẩu tài khoản <span className="text-destructive">*</span>
+              {t('parent.linkModal.passwordLabel', 'Mật khẩu tài khoản')} <span className="text-destructive">*</span>
             </Label>
             <div className="relative">
               <KeyRound className="size-4 text-muted-foreground/70 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -129,7 +128,7 @@ export function LinkChildModal({ isOpen, onClose }) {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Nhập mật khẩu"
+                placeholder={t('parent.linkModal.passwordPlaceholder', 'Nhập mật khẩu')}
                 className="h-9 pl-9 pr-9 text-[13px] rounded-none border-border/80 bg-background focus-visible:ring-1 focus-visible:ring-[#1447e6] focus-visible:border-[#1447e6]"
                 disabled={isSubmitting}
               />
@@ -138,7 +137,7 @@ export function LinkChildModal({ isOpen, onClose }) {
                 tabIndex={-1}
                 onClick={() => setShowPassword((prev) => !prev)}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/70 hover:text-foreground transition-colors p-1 cursor-pointer"
-                aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                aria-label={showPassword ? t('auth.hidePassword', 'Ẩn mật khẩu') : t('auth.showPassword', 'Hiện mật khẩu')}
               >
                 {showPassword ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
               </button>
@@ -154,7 +153,7 @@ export function LinkChildModal({ isOpen, onClose }) {
               disabled={isSubmitting}
               className="h-9 px-5 rounded-none border border-border bg-background hover:bg-muted text-foreground text-[13px] font-medium shadow-none cursor-pointer"
             >
-              Hủy
+              {t('common.cancel', 'Hủy')}
             </Button>
             <Button
               type="submit"
@@ -164,10 +163,10 @@ export function LinkChildModal({ isOpen, onClose }) {
               {isSubmitting ? (
                 <>
                   <Loader2 className="size-3.5 animate-spin" />
-                  <span>Đang liên kết...</span>
+                  <span>{t('parent.linkModal.linking', 'Đang liên kết...')}</span>
                 </>
               ) : (
-                'Xác nhận liên kết'
+                t('parent.linkModal.submitBtn', 'Xác nhận liên kết')
               )}
             </Button>
           </DialogFooter>
