@@ -108,6 +108,111 @@ export const getScheduledStatusLabel = (status, t = (k, def) => def) => {
   }
 };
 
+export function getSlotMakeupBadge(slot, day, slotDef = null, t = (k, def) => def) {
+  // Case 1: Slot nằm trong ngày nghỉ bị khóa (ngày gốc có lịch dạy được dời đi)
+  if (day?.isLocked) {
+    const makeupDate = day?.holiday?.makeupDate || day?.makeupDate;
+    if (makeupDate) {
+      const parts = makeupDate.split('-');
+      const d = parts[2];
+      const m = parts[1];
+      const y = parts[0];
+      let makeupDayName = 'T7';
+      if (y && m && d) {
+        const dt = new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10));
+        const dows = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+        makeupDayName = dows[dt.getDay()] || 'T7';
+      }
+      const routineName = slotDef?.name ? t(`routineSlots.${slotDef.key}.name`, slotDef.name) : (slot?.routineSlotName || '');
+      const dayLabel = makeupDayName === 'T7' ? t('days.T7.name', 'Thứ Bảy') : t(`days.${makeupDayName}.name`, makeupDayName);
+      return {
+        type: 'MOVED_OUT',
+        label: t('planning.movedToDay', 'Dời sang {{day}} ({{date}})', { day: makeupDayName, date: `${d}/${m}` }),
+        tooltip: routineName
+          ? t('planning.movedToDayTooltip', 'Lịch dạy ô "{{routineName}}" được chuyển sang {{day}} ({{date}}) theo lịch dạy bù của Ban Giám Hiệu ({{holiday}})', {
+              routineName,
+              day: dayLabel,
+              date: `${d}/${m}`,
+              holiday: day.holiday?.name || t('planning.holidayConflict', 'Lịch nghỉ'),
+            })
+          : t('planning.movedToDayGeneralTooltip', 'Lịch dạy này được chuyển sang {{day}} ({{date}}) theo lịch dạy bù của Ban Giám Hiệu ({{holiday}})', {
+              day: dayLabel,
+              date: `${d}/${m}`,
+              holiday: day.holiday?.name || t('planning.holidayConflict', 'Lịch nghỉ'),
+            }),
+        badgeClass: 'bg-blue-600 text-white',
+        containerClass: '',
+      };
+    }
+    return {
+      type: 'HOLIDAY_CONFLICT',
+      label: t('planning.holidayConflict', 'Trùng lịch nghỉ'),
+      tooltip: t('planning.holidayConflictTooltip', 'Trùng lịch nghỉ "{{holiday}}" do Ban Giám Hiệu sắp xếp', {
+        holiday: day.holiday?.name || day.lockReason || t('planning.schoolRegulation', 'Trường quy định'),
+      }),
+      badgeClass: 'bg-amber-600 text-white',
+      containerClass: '',
+    };
+  }
+
+  // Case 2: Slot nằm trong ngày dạy bù (ngày đích nhận hoạt động) hoặc slot có ghi chú dạy bù
+  const notes = slot?.notes || '';
+  const notesMatch = notes.match(/\[Dạy bù ngày (.*?)\]/);
+  if (notesMatch || day?.isSaturdayMakeup) {
+    let originDateText = '';
+    if (notesMatch) {
+      originDateText = notesMatch[1]; // ví dụ: "18/11"
+    } else if (day?.makeupHoliday?.startDate) {
+      const parts = day.makeupHoliday.startDate.split('-');
+      originDateText = `${parts[2]}/${parts[1]}`;
+    }
+
+    let originDayName = '';
+    if (originDateText) {
+      const [dStr, mStr] = originDateText.split('/');
+      const year = day?.fullDate ? parseInt(day.fullDate.slice(0, 4), 10) : new Date().getFullYear();
+      if (dStr && mStr) {
+        const dt = new Date(year, parseInt(mStr, 10) - 1, parseInt(dStr, 10));
+        const dows = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+        originDayName = dows[dt.getDay()] || '';
+      }
+    } else if (day?.makeupHoliday?.startDate) {
+      const dt = new Date(day.makeupHoliday.startDate);
+      const dows = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+      originDayName = dows[dt.getUTCDay()] || '';
+    }
+
+    const targetLabel = originDayName
+      ? t('planning.makeupFor', 'Bù cho {{day}} ({{date}})', { day: originDayName, date: originDateText })
+      : originDateText
+        ? t('planning.makeupForDate', 'Bù cho {{date}}', { date: originDateText })
+        : t('planning.makeup', 'Dạy bù');
+
+    const originDayFull = originDayName ? t(`days.${originDayName}.name`, originDayName) : '';
+
+    const routineName = slotDef?.name ? t(`routineSlots.${slotDef.key}.name`, slotDef.name) : (slot?.routineSlotName || '');
+
+    return {
+      type: 'MOVED_IN',
+      label: targetLabel,
+      tooltip: routineName
+        ? t('planning.makeupSlotTooltip', 'Ô "{{routineName}}" dạy bù cho {{day}}{{date}} theo lịch sắp xếp của Ban Giám Hiệu', {
+            routineName,
+            day: originDayFull ? `${originDayFull}, ` : '',
+            date: originDateText,
+          })
+        : t('planning.makeupGeneralTooltip', 'Hoạt động dạy bù cho {{day}}{{date}} theo lịch sắp xếp của Ban Giám Hiệu', {
+            day: originDayFull ? `${originDayFull}, ` : '',
+            date: originDateText,
+          }),
+      badgeClass: 'bg-emerald-600 text-white',
+      containerClass: '',
+    };
+  }
+
+  return null;
+}
+
 export function TeacherTimetableGrid({
   title,
   dateRange = '28/09/2026 – 04/10/2026',
@@ -327,13 +432,31 @@ export function TeacherTimetableGrid({
                 let statusBadge = null;
                 if (mode === 'daily') {
                   if (day.isLocked) {
-                    const lockText = (day.isHolidayLocked || day.holiday || day.lockLabel === 'Ngày nghỉ')
-                      ? t('daily.badgeHoliday', 'Ngày nghỉ')
-                      : (day.lockLabel && day.lockLabel.length <= 15 ? day.lockLabel : t('daily.badgeHoliday', 'Ngày nghỉ'));
-                    statusBadge = {
-                      label: lockText,
-                      className: 'bg-muted/75 text-muted-foreground border border-border/70 font-normal',
-                    };
+                    const makeupDate = day?.holiday?.makeupDate || day?.makeupDate;
+                    if (makeupDate) {
+                      const parts = makeupDate.split('-');
+                      const d = parts[2];
+                      const m = parts[1];
+                      const y = parts[0];
+                      let makeupDayName = 'T7';
+                      if (y && m && d) {
+                        const dt = new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10));
+                        const dows = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+                        makeupDayName = dows[dt.getDay()] || 'T7';
+                      }
+                      statusBadge = {
+                        label: `Dời sang ${makeupDayName} (${d}/${m})`,
+                        className: 'bg-blue-50 text-[#1447e6] border border-blue-200/90 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 font-semibold',
+                      };
+                    } else {
+                      const lockText = (day.isHolidayLocked || day.holiday || day.lockLabel === 'Ngày nghỉ')
+                        ? t('daily.badgeHoliday', 'Ngày nghỉ')
+                        : (day.lockLabel && day.lockLabel.length <= 15 ? day.lockLabel : t('daily.badgeHoliday', 'Ngày nghỉ'));
+                      statusBadge = {
+                        label: lockText,
+                        className: 'bg-muted/75 text-muted-foreground border border-border/70 font-normal',
+                      };
+                    }
                   } else if (isDismissalDone) {
                     statusBadge = {
                       label: t('daily.badgeDismissalDoneShort', 'Đã đón'),
@@ -348,6 +471,20 @@ export function TeacherTimetableGrid({
                     statusBadge = {
                       label: t('daily.badgeToday', 'Hôm nay'),
                       className: 'bg-blue-50 text-[#1447e6] border border-blue-200/90 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 font-semibold',
+                    };
+                  } else if (day.isSaturdayMakeup) {
+                    let originText = '';
+                    if (day?.makeupHoliday?.startDate) {
+                      const parts = day.makeupHoliday.startDate.split('-');
+                      const dt = new Date(day.makeupHoliday.startDate);
+                      const dows = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+                      const originDayName = dows[dt.getUTCDay()] || '';
+                      originText = originDayName ? `${originDayName} (${parts[2]}/${parts[1]})` : `${parts[2]}/${parts[1]}`;
+                    }
+                    const label = originText ? `Bù cho ${originText}` : t('daily.badgeMakeup', 'Dạy bù');
+                    statusBadge = {
+                      label,
+                      className: 'bg-emerald-50 text-emerald-700 border border-emerald-200/90 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60 font-semibold',
                     };
                   } else {
                     statusBadge = {
@@ -373,9 +510,27 @@ export function TeacherTimetableGrid({
                     )}
                     title={
                       day.isLocked
-                        ? (day.lockReason ? `${day.name} · ${day.lockReason} (Đã khóa dạy)` : `${day.name} · Đã khóa`)
+                        ? (day.lockReason
+                            ? t('planning.lockedReason', '{{name}} · {{reason}} (Đã khóa dạy)', {
+                                name: t(`days.${day.key}.name`, day.name || day.shortName),
+                                reason: day.lockReason,
+                              })
+                            : t('planning.lockedOnly', '{{name}} · Đã khóa', {
+                                name: t(`days.${day.key}.name`, day.name || day.shortName),
+                              }))
                         : isClickable
-                          ? `Chọn ${day.name} để điểm danh, sức khoẻ hoặc đón trẻ (${isDismissalDone ? 'Đã đón trẻ' : isAttendanceDone ? 'Đã điểm danh' : day.isToday ? 'Hôm nay (Chưa điểm danh)' : isFuture ? 'Chưa đến ngày' : 'Chưa bắt đầu'})`
+                          ? t('planning.dayActionTooltip', 'Chọn {{name}} để điểm danh, sức khoẻ hoặc đón trẻ ({{status}})', {
+                              name: t(`days.${day.key}.name`, day.name || day.shortName),
+                              status: isDismissalDone
+                                ? t('daily.badgeDismissalDone', 'Đã đón trẻ')
+                                : isAttendanceDone
+                                  ? t('daily.badgeAttendanceDone', 'Đã điểm danh')
+                                  : day.isToday
+                                    ? t('daily.todayNotAttended', 'Hôm nay (Chưa điểm danh)')
+                                    : isFuture
+                                      ? t('daily.futureDay', 'Chưa đến ngày')
+                                      : t('daily.notStarted', 'Chưa bắt đầu'),
+                            })
                           : undefined
                     }
                   >
@@ -423,46 +578,87 @@ export function TeacherTimetableGrid({
                       ) : mode === 'planning' ? (
                         <div className="h-5 min-h-[20px] flex items-center justify-center mt-1 w-full px-1">
                           {(() => {
-                            const dayActsCount = (slots || []).filter(
+                            const dayActsCount = day.isLocked ? 0 : (slots || []).filter(
                               (s) => (s.day === day.key || s.dayOfWeek === day.dayOfWeek) && (s.activityId || s.title)
                             ).length;
                             if (day.isLocked) {
+                              const makeupDate = day?.holiday?.makeupDate || day?.makeupDate;
+                              if (makeupDate) {
+                                const parts = makeupDate.split('-');
+                                const d = parts[2];
+                                const m = parts[1];
+                                const y = parts[0];
+                                let makeupDayName = 'T7';
+                                if (y && m && d) {
+                                  const dt = new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10));
+                                  const dows = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+                                  makeupDayName = dows[dt.getDay()] || 'T7';
+                                }
+                                const dayNameStr = makeupDayName === 'T7' ? t('days.T7.name', 'Thứ Bảy') : t(`days.${makeupDayName}.name`, makeupDayName);
+                                return (
+                                  <span
+                                    title={t('planning.makeupRescheduledInfo', 'Lịch dạy đã được dời sang {{day}} ({{date}})', { day: dayNameStr, date: `${d}/${m}` })}
+                                    className="text-[10px] px-1.5 py-0.5 border leading-none bg-blue-50 text-[#1447e6] border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800 font-semibold"
+                                  >
+                                    {t('planning.movedToDay', 'Dời sang {{day}} ({{date}})', { day: makeupDayName, date: `${d}/${m}` })}
+                                  </span>
+                                );
+                              }
                               return (
                                 <span className="text-[10px] px-1.5 py-0.5 border leading-none bg-muted/60 text-muted-foreground/70 border-border/60">
-                                  Nghỉ
+                                  {day.lockLabel || t('daily.badgeHoliday', 'Ngày nghỉ')}
                                 </span>
                               );
                             }
                             if (day.key === 'CN') {
                               return dayActsCount > 0 ? (
-                                <span title="Không được xếp lịch học vào Chủ nhật" className="text-[10px] px-1.5 py-0.5 border leading-none bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800">
-                                  CN không học
+                                <span title={t('planning.sundayNoClassesTooltip', 'Không được xếp lịch học vào Chủ nhật')} className="text-[10px] px-1.5 py-0.5 border leading-none bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800">
+                                  {t('planning.sundayNoClasses', 'CN không học')}
                                 </span>
                               ) : null;
+                            }
+                            if (day.isSaturdayMakeup) {
+                              let originText = '';
+                              if (day?.makeupHoliday?.startDate) {
+                                const parts = day.makeupHoliday.startDate.split('-');
+                                const dt = new Date(day.makeupHoliday.startDate);
+                                const dows = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+                                const originDayName = dows[dt.getUTCDay()] || '';
+                                originText = originDayName ? `${t(`days.${originDayName}.short`, originDayName)} (${parts[2]}/${parts[1]})` : `${parts[2]}/${parts[1]}`;
+                              }
+                              const label = originText ? t('planning.makeupForDate', 'Bù cho {{date}}', { date: originText }) : t('planning.makeup', 'Dạy bù');
+                              return (
+                                <span
+                                  title={t('planning.saturdayMakeupTooltip', 'Thứ Bảy dạy bù theo kế hoạch ({{count}} hoạt động)', { count: dayActsCount })}
+                                  className="text-[10px] px-1.5 py-0.5 border leading-none bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800 font-semibold"
+                                >
+                                  {label}
+                                </span>
+                              );
                             }
                             if (dayActsCount === 0) {
                               return (
                                 <span className="text-[10px] px-1.5 py-0.5 leading-none text-muted-foreground/40 select-none">
-                                  0 HĐ
+                                  0 {t('planning.activityCountSuffix', 'HĐ')}
                                 </span>
                               );
                             }
                             if (dayActsCount < 3) {
                               return (
                                 <span
-                                  title="Theo quy định của nhà trường, mỗi ngày dạy học cần có tối thiểu 3 hoạt động giáo dục"
+                                  title={t('planning.activitiesQuotaWarning', 'Theo quy định của nhà trường, mỗi ngày dạy học cần có tối thiểu 3 hoạt động giáo dục')}
                                   className="text-[10px] px-1.5 py-0.5 border leading-none shadow-2xs bg-amber-50 text-amber-700 border-amber-200/90 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60 font-medium"
                                 >
-                                  {dayActsCount}/3 HĐ
+                                  {dayActsCount}/3 {t('planning.activityCountSuffix', 'HĐ')}
                                 </span>
                               );
                             }
                             return (
                               <span
-                                title="Đạt định mức tối thiểu (min 3 – max 7 HĐ)"
+                                title={t('planning.activitiesQuotaMet', 'Đạt định mức tối thiểu (min 3 – max 7 HĐ)')}
                                 className="text-[10px] px-1.5 py-0.5 border leading-none shadow-2xs bg-emerald-50 text-emerald-700 border-emerald-200/90 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60 font-medium"
                               >
-                                {dayActsCount} HĐ
+                                {dayActsCount} {t('planning.activityCountSuffix', 'HĐ')}
                               </span>
                             );
                           })()}
@@ -692,6 +888,7 @@ export function TeacherTimetableGrid({
                                 isSameWeek &&
                                 (clipboardSlot.id ? itemSlot.id === clipboardSlot.id : (day.key === clipboardSlot.day && slotDef.key === clipboardRoutineKey))
                               );
+                              const makeupBadge = getSlotMakeupBadge(itemSlot, day, slotDef, t);
 
                               return (
                                 <div
@@ -727,14 +924,19 @@ export function TeacherTimetableGrid({
                                     if (onSelectSlot) onSelectSlot(itemSlot, day);
                                   }}
                                   title={
-                                    mode === 'planning'
-                                      ? `${itemSlot.title || itemSlot.shortTitle}${itemSlot.slotCreatorName || itemSlot.creatorName ? ` (Xếp bởi: ${itemSlot.slotCreatorName || itemSlot.creatorName})` : ''}`
-                                      : `${itemSlot.title || itemSlot.shortTitle} · ${getScheduledStatusLabel(itemSlot.status, t)}`
+                                    makeupBadge?.tooltip
+                                      ? `${makeupBadge.tooltip} · ${itemSlot.title || itemSlot.shortTitle}`
+                                      : mode === 'planning'
+                                        ? `${itemSlot.title || itemSlot.shortTitle}${itemSlot.slotCreatorName || itemSlot.creatorName ? ` (${t('planning.scheduledBy', 'Xếp bởi: {{name}}', { name: itemSlot.slotCreatorName || itemSlot.creatorName })})` : ''}`
+                                        : `${itemSlot.title || itemSlot.shortTitle} · ${getScheduledStatusLabel(itemSlot.status, t)}`
                                   }
                                   className={cn(
-                                    'flex-1 p-1.5 flex flex-col justify-center items-center text-center cursor-pointer rounded-none transition-all group border min-h-[44px] bg-card relative',
-                                    !readOnly && mode === 'planning' && 'cursor-grab active:cursor-grabbing hover:border-foreground/50',
-                                    readOnly && 'hover:border-foreground/50',
+                                    'flex-1 p-1.5 flex flex-col justify-center items-center text-center rounded-none transition-all group border min-h-[44px] relative',
+                                    day.isLocked
+                                      ? 'opacity-25 grayscale border-dashed border-border/40 bg-muted/20 select-none cursor-default'
+                                      : 'bg-card border-border/80 hover:border-foreground/30 hover:shadow-2xs cursor-pointer',
+                                    !readOnly && mode === 'planning' && !day.isLocked && 'cursor-grab active:cursor-grabbing hover:border-foreground/50',
+                                    readOnly && !day.isLocked && 'hover:border-foreground/50',
                                     isBeingDragged && 'opacity-30 border-dashed border-[#1447e6]',
                                     isBeingCopied
                                       ? 'border-2 border-dashed border-primary bg-primary/[0.06] shadow-xs'
@@ -744,8 +946,8 @@ export function TeacherTimetableGrid({
                                           ? 'border-foreground/70 ring-1 ring-foreground/20 shadow-xs'
                                           : isTodayCell
                                             ? 'border-blue-200/90 dark:border-blue-800/70 bg-card/95 hover:border-[#1447e6]/60 hover:shadow-2xs'
-                                            : 'border-border/80 hover:border-foreground/30 hover:shadow-2xs',
-                                    mode !== 'planning' && getScheduledStatusBorder(itemSlot.status)
+                                            : '',
+                                    mode !== 'planning' && !day.isLocked && getScheduledStatusBorder(itemSlot.status)
                                   )}
                                 >
                                   {/* Badge ô đang sao chép */}
@@ -757,7 +959,7 @@ export function TeacherTimetableGrid({
                                   )}
 
                                   <div className="flex-1 flex flex-col items-center justify-center text-center w-full px-1">
-                                    <span className="font-normal text-foreground text-[11.5px] line-clamp-2 leading-tight text-center">
+                                    <span className={cn("font-normal text-[11.5px] line-clamp-2 leading-tight text-center", day.isLocked ? "text-muted-foreground" : "text-foreground")}>
                                       {itemSlot.title || itemSlot.shortTitle}
                                     </span>
                                   </div>
@@ -775,6 +977,7 @@ export function TeacherTimetableGrid({
                               isSameWeek &&
                               (clipboardSlot.id ? slot.id === clipboardSlot.id : (day.key === clipboardSlot.day && slotDef.key === clipboardRoutineKey))
                             );
+                            const makeupBadge = getSlotMakeupBadge(slot, day, slotDef, t);
 
                             return (
                               <div
@@ -809,14 +1012,19 @@ export function TeacherTimetableGrid({
                                   if (onSelectSlot) onSelectSlot(slot, day);
                                 }}
                                 title={
-                                  mode === 'planning'
-                                    ? `${slot.title || slot.shortTitle}${slot.slotCreatorName || slot.creatorName ? ` (Xếp bởi: ${slot.slotCreatorName || slot.creatorName})` : ''}`
-                                    : `${slot.title || slot.shortTitle} · ${getScheduledStatusLabel(slot.status, t)}`
+                                  makeupBadge?.tooltip
+                                    ? `${makeupBadge?.tooltip} · ${slot.title || slot.shortTitle}`
+                                    : mode === 'planning'
+                                      ? `${slot.title || slot.shortTitle}${slot.slotCreatorName || slot.creatorName ? ` (${t('planning.scheduledBy', 'Xếp bởi: {{name}}', { name: slot.slotCreatorName || slot.creatorName })})` : ''}`
+                                      : `${slot.title || slot.shortTitle} · ${getScheduledStatusLabel(slot.status, t)}`
                                 }
                                 className={cn(
-                                  'h-full p-2.5 flex flex-col justify-center items-center text-center cursor-pointer rounded-none transition-all group border bg-card relative',
-                                  !readOnly && mode === 'planning' && 'cursor-grab active:cursor-grabbing hover:border-foreground/50',
-                                  readOnly && 'hover:border-foreground/50',
+                                  'h-full p-2.5 flex flex-col justify-center items-center text-center rounded-none transition-all group border relative',
+                                  day.isLocked
+                                    ? 'opacity-25 grayscale border-dashed border-border/40 bg-muted/20 select-none cursor-default'
+                                    : 'bg-card border-border/80 hover:border-foreground/30 hover:shadow-2xs cursor-pointer',
+                                  !readOnly && mode === 'planning' && !day.isLocked && 'cursor-grab active:cursor-grabbing hover:border-foreground/50',
+                                  readOnly && !day.isLocked && 'hover:border-foreground/50',
                                   isBeingDragged && 'opacity-30 border-dashed border-[#1447e6]',
                                   isBeingCopied
                                     ? 'border-2 border-dashed border-primary bg-primary/[0.06] shadow-xs'
@@ -826,8 +1034,8 @@ export function TeacherTimetableGrid({
                                         ? 'border-foreground/70 ring-1 ring-foreground/20 shadow-xs'
                                         : isTodayCell
                                           ? 'border-blue-200/90 dark:border-blue-800/70 bg-card/95 hover:border-[#1447e6]/60 hover:shadow-2xs'
-                                          : 'border-border/80 hover:border-foreground/30 hover:shadow-2xs',
-                                  mode !== 'planning' && getScheduledStatusBorder(slot.status)
+                                          : '',
+                                  mode !== 'planning' && !day.isLocked && getScheduledStatusBorder(slot.status)
                                 )}
                               >
                                 {/* Badge thể hiện ô đang sao chép */}
@@ -839,7 +1047,7 @@ export function TeacherTimetableGrid({
                                 )}
 
                                 <div className="flex-1 flex flex-col items-center justify-center text-center w-full px-1">
-                                  <span className="font-normal text-foreground text-[12.5px] line-clamp-3 leading-snug text-center">
+                                  <span className={cn("font-normal text-[12.5px] line-clamp-3 leading-snug text-center", day.isLocked ? "text-muted-foreground" : "text-foreground")}>
                                     {slot.title || slot.shortTitle}
                                   </span>
                                 </div>

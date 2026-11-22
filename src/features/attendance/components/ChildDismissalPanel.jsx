@@ -16,6 +16,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { confirmDialog } from '@/components/ui/confirm-dialog';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -391,7 +392,9 @@ export function ChildDismissalPanel({
       hour12: false,
     });
     const targetDateStr = date || new Date().toISOString().slice(0, 10);
-    const targetTimeIso = now.toISOString();
+    const targetTimeIso = targetDateStr === new Date().toISOString().slice(0, 10)
+      ? now.toISOString()
+      : `${targetDateStr}T${currentTime}:00.000Z`;
 
     const pName =
       person.name || (person.relationship ? `${person.relationship} bé` : 'Phụ huynh');
@@ -786,7 +789,9 @@ export function ChildDismissalPanel({
         minute: '2-digit',
         hour12: false,
       });
-      const targetTimeIso = now.toISOString();
+      const targetTimeIso = targetDateStr === new Date().toISOString().slice(0, 10)
+        ? now.toISOString()
+        : `${targetDateStr}T${currentTime}:00.000Z`;
 
       const presentStudents = students.filter((s) => s.isPresent);
       if (presentStudents.length === 0) {
@@ -888,7 +893,16 @@ export function ChildDismissalPanel({
   // Reset / Clear all dismissals for this date
   const handleConfirmResetAll = async () => {
     if (dismissedCount === 0 || isSaving || isCleaning) return;
-    if (!window.confirm(isVi ? `Bạn có chắc chắn muốn xóa toàn bộ thông tin đón trẻ của ngày ${formattedDate}?` : `Clear all dismissals for ${formattedDate}?`)) return;
+    const isConfirmed = await confirmDialog({
+      title: isVi ? 'Xác nhận xóa thông tin đón trẻ' : 'Reset dismissals',
+      description: isVi
+        ? `Bạn có chắc chắn muốn xóa toàn bộ thông tin đón trẻ của ngày ${formattedDate}? Thao tác này không thể hoàn tác.`
+        : `Clear all dismissals for ${formattedDate}? This cannot be undone.`,
+      confirmText: isVi ? 'Xóa' : 'Reset',
+      cancelText: isVi ? 'Hủy' : 'Cancel',
+      variant: 'destructive',
+    });
+    if (!isConfirmed) return;
 
     setIsCleaning(true);
     try {

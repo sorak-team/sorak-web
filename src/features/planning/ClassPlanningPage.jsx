@@ -10,6 +10,7 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { Clock01Icon, AlertCircleIcon } from '@hugeicons/core-free-icons';
 
 import { useClassesStore } from '@/features/classes';
+import { useAcademicYearStore } from '@/features/academic-years';
 import { NotFoundPage } from '@/features/error';
 import { cn } from '@/shared/lib/utils';
 
@@ -27,6 +28,12 @@ export function ClassPlanningPage() {
 
   const [themes, setThemes] = useState([]);
   const [planStatus, setPlanStatus] = useState(null);
+
+  const academicYears = useAcademicYearStore((state) => state.academicYears);
+  const selectedYearId = useAcademicYearStore((state) => state.selectedYearId);
+  const selectedYear = academicYears.find((y) => String(y.id) === String(selectedYearId)) || academicYears[0];
+  const isSchoolYearCompleted = selectedYear?.status === 'COMPLETED' || selectedYear?.status === 'ENDED' || currentClass?.schoolYear?.status === 'COMPLETED' || currentClass?.schoolYear?.status === 'ENDED';
+  const isEffectiveReadOnly = isSchoolYearCompleted || Boolean(planStatus?.isReadOnly);
 
   // Load published themes for this class once
   useEffect(() => {
@@ -112,11 +119,12 @@ export function ClassPlanningPage() {
         <PlanSubmissionTab
           classId={classId}
           currentClass={currentClass}
+          isReadOnly={isEffectiveReadOnly}
         />
       ) : activeTab === 'allocation' ? (
         <TargetAllocationTab
           classId={classId}
-          isReadOnly={planStatus?.isReadOnly || false}
+          isReadOnly={isEffectiveReadOnly}
           selectedThemeId={urlThemeId}
           onThemeChange={handleThemeChange}
           planStatus={planStatus}
@@ -124,7 +132,7 @@ export function ClassPlanningPage() {
       ) : activeTab === 'timetable' ? (
         <WeeklyTimetableTab
           classId={classId}
-          isReadOnly={planStatus?.isReadOnly || false}
+          isReadOnly={isEffectiveReadOnly}
           selectedThemeId={urlThemeId}
           onThemeChange={handleThemeChange}
           planStatus={planStatus}
@@ -133,7 +141,7 @@ export function ClassPlanningPage() {
       ) : (
         <EducationalActivitiesTab
           classId={classId}
-          isReadOnly={false}
+          isReadOnly={isEffectiveReadOnly}
           selectedThemeId={urlThemeId}
           onThemeChange={handleThemeChange}
           planStatus={planStatus}

@@ -23,6 +23,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { confirmDialog } from '@/components/ui/confirm-dialog';
 import { cn } from '@/shared/lib/utils';
 import { uploadApi } from '@/shared/api/upload.api';
 import { getStudentAvatarUrl } from '@/features/students/students.store';
@@ -488,7 +489,14 @@ export function PickupAuthorizationsModal({
     const confirmMessage = isVi
       ? `Bạn có chắc chắn muốn duyệt cho ${auth.relationship} (${auth.pickupPersonName}) đón bé ${auth.student.name}?`
       : `Approve ${auth.pickupPersonName} to pick up ${auth.student.name}?`;
-    if (!window.confirm(confirmMessage)) return;
+    const isConfirmed = await confirmDialog({
+      title: isVi ? 'Xác nhận duyệt ủy quyền đón trẻ' : 'Approve pickup authorization',
+      description: confirmMessage,
+      confirmText: isVi ? 'Duyệt' : 'Approve',
+      cancelText: isVi ? 'Hủy' : 'Cancel',
+      variant: 'default',
+    });
+    if (!isConfirmed) return;
 
     setProcessingId(auth.id);
     try {

@@ -11,6 +11,14 @@ import {
 } from '@hugeicons/core-free-icons';
 import { cn } from '@/shared/lib/utils';
 
+export const getDomainSections = (t) => [
+  { domain: 'PHYSICAL', code: '1.', label: t('domains.physicalTitle', 'Phát triển thể chất') },
+  { domain: 'COGNITIVE', code: '2.', label: t('domains.cognitiveTitle', 'Phát triển nhận thức') },
+  { domain: 'LANGUAGE', code: '3.', label: t('domains.languageTitle', 'Phát triển ngôn ngữ') },
+  { domain: 'SOCIO_EMOTIONAL', code: '4.', label: t('domains.socialEmotionalTitle', 'Phát triển tình cảm - kỹ năng xã hội') },
+  { domain: 'AESTHETIC', code: '5.', label: t('domains.aestheticTitle', 'Phát triển thẩm mỹ') },
+];
+
 export const DOMAIN_SECTIONS = [
   { domain: 'PHYSICAL', code: '1.', label: 'Phát triển thể chất' },
   { domain: 'COGNITIVE', code: '2.', label: 'Phát triển nhận thức' },
@@ -52,7 +60,7 @@ export const formatGoalCode = (code) => {
   return raw;
 };
 
-const getActivityUsage = (act, activeThemeForDate) => {
+const getActivityUsage = (act, activeThemeForDate, t) => {
   const slots = act.scheduledSlots && act.scheduledSlots.length > 0
     ? act.scheduledSlots
     : act.scheduleInfo
@@ -97,12 +105,12 @@ const getActivityUsage = (act, activeThemeForDate) => {
       let label = '';
       if (sThCode) {
         const cleanCode = sThCode.replace(/\D/g, '').padStart(2, '0');
-        label = `Chủ đề ${cleanCode}`;
+        label = t ? t('planning.themePrefix', { index: cleanCode, defaultValue: `Chủ đề ${cleanCode}` }) : `Chủ đề ${cleanCode}`;
       } else if (s.themeName) {
         const match = s.themeName.match(/Chủ đề\s*\d+/i);
-        label = match ? match[0].replace(/c/i, 'C') : s.themeName;
+        label = match ? (t ? t('planning.themePrefix', { index: match[0].replace(/\D/g, ''), defaultValue: match[0] }) : match[0]) : s.themeName;
       } else {
-        label = 'Chủ đề khác';
+        label = t ? t('planning.otherThemeLabel', 'Chủ đề khác') : 'Chủ đề khác';
       }
 
       if (!otherThemesMap.has(label)) {
@@ -141,6 +149,7 @@ export function HierarchicalActivityPickerModal({
   subThemeName = null,
 }) {
   const { t } = useTranslation();
+  const DOMAIN_SECTIONS = useMemo(() => getDomainSections(t), [t]);
 
   const targetSlotKey = useMemo(() => {
     if (!targetCell) return null;
@@ -410,14 +419,14 @@ export function HierarchicalActivityPickerModal({
 
   const currentViewTitle = useMemo(() => {
     if (searchQuery.trim()) {
-      return `Kết quả tìm kiếm cho: "${searchQuery}"`;
+      return t('planning.searchResultFor', { query: searchQuery, defaultValue: `Kết quả tìm kiếm cho: "${searchQuery}"` });
     }
     if (selectedDomain === 'ALL') {
-      return 'Tất cả lĩnh vực';
+      return t('planning.allDomains', 'Tất cả');
     }
     const currentDomainDef = DOMAIN_SECTIONS.find((d) => d.domain === selectedDomain);
     return currentDomainDef ? `${currentDomainDef.code} ${currentDomainDef.label}` : selectedDomain;
-  }, [selectedDomain, searchQuery]);
+  }, [selectedDomain, searchQuery, t, DOMAIN_SECTIONS]);
 
   if (!isOpen || !targetCell) return null;
 
@@ -438,7 +447,7 @@ export function HierarchicalActivityPickerModal({
           <div className="space-y-1 min-w-0 flex-1">
             {/* Dòng 1: Tiêu đề chính độc lập, trang trọng */}
             <h3 className="text-[15px] font-semibold text-foreground tracking-tight">
-              Chọn hoạt động giáo dục
+              {t('planning.pickerModalTitle', 'Chọn hoạt động giáo dục')}
             </h3>
 
             {/* Dòng 2: Toàn bộ thông tin ngữ cảnh thời gian & chủ đề liền mạch, khoa học */}
@@ -460,7 +469,7 @@ export function HierarchicalActivityPickerModal({
                   <span className="text-muted-foreground/40 select-none">·</span>
                   {activeThemeForDate && (
                     <span className="font-medium text-foreground/85">
-                      Chủ đề: {activeThemeForDate.themeName}
+                      {t('planning.themeLabelColon', 'Chủ đề:')} {activeThemeForDate.themeName}
                     </span>
                   )}
                   {activeThemeForDate && cleanSubThemeName && (
@@ -480,7 +489,7 @@ export function HierarchicalActivityPickerModal({
             type="button"
             onClick={onClose}
             className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer rounded-none shrink-0 -mr-1"
-            title="Đóng modal"
+            title={t('planning.closeModalTitle', 'Đóng modal')}
           >
             <HugeiconsIcon icon={Cancel01Icon} size={18} />
           </button>
@@ -492,7 +501,7 @@ export function HierarchicalActivityPickerModal({
           <div className="w-[260px] sm:w-[285px] shrink-0 border-r border-border bg-muted/15 dark:bg-muted/10 flex flex-col justify-between overflow-hidden">
             {/* Header Sidebar */}
             <div className="px-3.5 py-2.5 border-b border-border flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-muted-foreground shrink-0 bg-muted/20">
-              <span>Lĩnh vực phát triển</span>
+              <span>{t('planning.devDomainsSidebar', 'Lĩnh vực phát triển')}</span>
               <button
                 type="button"
                 onClick={() => setSelectedDomain('ALL')}
@@ -503,7 +512,7 @@ export function HierarchicalActivityPickerModal({
                     : 'border-transparent text-muted-foreground hover:text-foreground hover:underline'
                 )}
               >
-                Tất cả
+                {t('planning.allDomains', 'Tất cả')}
               </button>
             </div>
 
@@ -558,7 +567,7 @@ export function HierarchicalActivityPickerModal({
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Tìm kiếm nhanh..."
+                  placeholder={t('planning.quickSearchPlaceholder', 'Tìm kiếm nhanh...')}
                   className="w-full h-7 pl-8 pr-2.5 bg-background border border-border text-[12px] rounded-none outline-none focus:border-foreground/50 transition-colors"
                 />
               </div>
@@ -570,10 +579,10 @@ export function HierarchicalActivityPickerModal({
                 <div className="py-16 px-4 text-center flex flex-col items-center justify-center gap-2 text-muted-foreground">
                   <HugeiconsIcon icon={BookOpen01Icon} size={28} className="opacity-30 mb-1" />
                   <p className="text-[13px] font-medium text-foreground">
-                    Không tìm thấy hoạt động nào phù hợp
+                    {t('planning.noMatchingActivity', 'Không tìm thấy hoạt động nào phù hợp')}
                   </p>
                   <p className="text-[12px] max-w-md text-muted-foreground leading-relaxed">
-                    Không có hoạt động giáo dục nào thuộc điều kiện lọc hiện tại. Thử chọn <strong>Tất cả</strong> hoặc xóa từ khóa tìm kiếm.
+                    {t('planning.noActivityInFilterDesc', 'Không có hoạt động giáo dục nào thuộc điều kiện lọc hiện tại. Thử chọn Tất cả hoặc xóa từ khóa tìm kiếm.')}
                   </p>
                 </div>
               ) : (
@@ -590,7 +599,7 @@ export function HierarchicalActivityPickerModal({
                       {selectedDomain === 'ALL' && (
                         <div
                           onClick={() => toggleDomainCollapse(dg.domain)}
-                          title={isCollapsed ? 'Nhấp để mở rộng' : 'Nhấp để thu gọn'}
+                          title={isCollapsed ? t('planning.clickToExpand', 'Nhấp để mở rộng') : t('planning.clickToCollapse', 'Nhấp để thu gọn')}
                           className="flex items-center justify-between pt-2 pb-1.5 border-b border-border/70 cursor-pointer hover:bg-muted/30 px-1 -mx-1 transition-colors group select-none"
                         >
                           <div className="flex items-center gap-2 min-w-0">
@@ -606,7 +615,7 @@ export function HierarchicalActivityPickerModal({
                               {dg.code} {dg.label}
                             </span>
                             <span className="text-[11px] font-normal text-muted-foreground/80 shrink-0">
-                              ({totalActsInDomain} hoạt động)
+                              {t('planning.totalActsInDomain', { count: totalActsInDomain, defaultValue: `(${totalActsInDomain} hoạt động)` })}
                             </span>
                           </div>
                         </div>
@@ -625,7 +634,7 @@ export function HierarchicalActivityPickerModal({
                                   </span>
                                 )}
                                 <span className="font-medium text-[13px] text-foreground/90 truncate flex-1 min-w-0" title={goalGroup.goalTitle}>
-                                  {goalGroup.goalTitle || 'Mục tiêu giáo dục'}
+                                  {goalGroup.goalTitle || t('planning.educationalObjectiveGroup', 'Mục tiêu giáo dục')}
                                 </span>
                               </div>
 
@@ -633,7 +642,7 @@ export function HierarchicalActivityPickerModal({
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                                 {goalGroup.activities.map((act) => {
                                   const isCurrent = currentActivityId === act.id;
-                                  const usage = getActivityUsage(act, activeThemeForDate);
+                                  const usage = getActivityUsage(act, activeThemeForDate, t);
 
                                   return (
                                     <div
@@ -642,7 +651,7 @@ export function HierarchicalActivityPickerModal({
                                         onSelectActivity(act, day.key, slotDef.key, day.date);
                                         onClose();
                                       }}
-                                      title={act.objective ? `Mục tiêu: ${act.objective}` : act.title}
+                                      title={act.objective ? `${t('planning.educationalObjectiveGroup', 'Mục tiêu giáo dục')}: ${act.objective}` : act.title}
                                       className={cn(
                                         'p-3 rounded-none bg-card border border-border/80 hover:border-primary/50 hover:shadow-xs transition-all flex flex-col justify-between gap-2.5 group cursor-pointer select-none',
                                         isCurrent && 'bg-primary/5 border-primary/50 ring-1 ring-primary/20'
@@ -653,7 +662,7 @@ export function HierarchicalActivityPickerModal({
                                         {/* Hiển thị tên chủ đề trên từng hoạt động để giáo viên nhận biết trước khi chọn */}
                                         <div className="flex items-center gap-1.5">
                                           <span className="text-[10.5px] font-medium px-1.5 py-0.5 bg-muted/80 text-muted-foreground border border-border/70 rounded-none truncate max-w-full">
-                                            {act.themeName || activeThemeForDate?.themeName || 'Chủ đề giáo dục'}
+                                            {act.themeName || activeThemeForDate?.themeName || t('planning.themeEducLabel', 'Chủ đề giáo dục')}
                                           </span>
                                         </div>
 
@@ -664,9 +673,9 @@ export function HierarchicalActivityPickerModal({
                                         {act.contentTitle && (
                                           <div
                                             className="text-[11.5px] text-muted-foreground flex items-center gap-1.5 leading-normal"
-                                            title={`Nội dung giáo dục: ${act.contentTitle}`}
+                                            title={`${t('planning.eduContentPrefix', 'Nội dung:')} ${act.contentTitle}`}
                                           >
-                                            <span className="text-muted-foreground/60 font-medium shrink-0">Nội dung:</span>
+                                            <span className="text-muted-foreground/60 font-medium shrink-0">{t('planning.eduContentPrefix', 'Nội dung:')}</span>
                                             <span className="truncate text-foreground/75 font-normal">{act.contentTitle}</span>
                                           </div>
                                         )}
@@ -678,15 +687,23 @@ export function HierarchicalActivityPickerModal({
                                           {usage.currentTheme.count > 0 ? (
                                             <span
                                               className="font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 truncate text-[11px]"
-                                              title={`Các ngày đã xếp trong chủ đề này (${usage.currentTheme.count} lần): ${usage.currentTheme.dates.join(', ')}`}
+                                              title={t('planning.scheduledDatesThisThemeTooltip', {
+                                                count: usage.currentTheme.count,
+                                                dates: usage.currentTheme.dates.join(', '),
+                                                defaultValue: `Các ngày đã xếp trong chủ đề này (${usage.currentTheme.count} lần): ${usage.currentTheme.dates.join(', ')}`,
+                                              })}
                                             >
-                                              <span className="shrink-0">Chủ đề này</span>
+                                              <span className="shrink-0">{t('planning.currentThemeScheduleCount', 'Chủ đề này')}</span>
                                               <span className="text-muted-foreground/40 font-light select-none shrink-0">·</span>
                                               <span className="truncate">
                                                 {usage.currentTheme.dates.length <= 2 ? (
-                                                  `Đã xếp ${usage.currentTheme.dates.join(', ')}${usage.currentTheme.count > usage.currentTheme.dates.length ? ` (${usage.currentTheme.count} lần)` : ''}`
+                                                  t('planning.scheduledOnce', { dates: usage.currentTheme.dates.join(', '), defaultValue: `Đã xếp ${usage.currentTheme.dates.join(', ')}` })
                                                 ) : (
-                                                  `Đã xếp ${usage.currentTheme.count} lần (${usage.currentTheme.dates.slice(0, 2).join(', ')} +${usage.currentTheme.dates.length - 2})`
+                                                  t('planning.scheduledMultiple', {
+                                                    count: usage.currentTheme.count,
+                                                    dates: `${usage.currentTheme.dates.slice(0, 2).join(', ')} +${usage.currentTheme.dates.length - 2}`,
+                                                    defaultValue: `Đã xếp ${usage.currentTheme.count} lần (${usage.currentTheme.dates.slice(0, 2).join(', ')} +${usage.currentTheme.dates.length - 2})`,
+                                                  })
                                                 )}
                                               </span>
                                             </span>
@@ -697,10 +714,12 @@ export function HierarchicalActivityPickerModal({
                                             >
                                               <span className="font-medium text-foreground/80 shrink-0">{usage.otherThemes[0].label}</span>
                                               <span className="text-muted-foreground/40 font-light select-none shrink-0">·</span>
-                                              <span className="truncate">Đã xếp {usage.otherThemes[0].count} lần</span>
+                                              <span className="truncate">
+                                                {t('planning.scheduledInOtherTheme', { count: usage.otherThemes[0].count, defaultValue: `Đã xếp ${usage.otherThemes[0].count} lần` })}
+                                              </span>
                                             </span>
                                           ) : (
-                                            <span className="text-muted-foreground/50 font-normal">Chưa xếp lịch</span>
+                                            <span className="text-muted-foreground/50 font-normal">{t('planning.notScheduledYetAct', 'Chưa xếp lịch')}</span>
                                           )}
                                         </div>
 
@@ -708,11 +727,11 @@ export function HierarchicalActivityPickerModal({
                                           {isCurrent ? (
                                             <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-none">
                                               <HugeiconsIcon icon={CheckmarkCircle01Icon} size={12} />
-                                              <span>Đang chọn</span>
+                                              <span>{t('planning.selectingAct', 'Đang chọn')}</span>
                                             </span>
                                           ) : (
                                             <span className="text-primary font-medium text-[11.5px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
-                                              <span>Chọn</span>
+                                              <span>{t('planning.selectActBtn', 'Chọn')}</span>
                                               <HugeiconsIcon icon={ArrowRight01Icon} size={12} />
                                             </span>
                                           )}

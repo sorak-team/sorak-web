@@ -30,30 +30,29 @@ import { ThemePlanReviewDrawer } from './components/ThemePlanReviewDrawer';
 
 // Age Groups for Filter Dropdown
 const AGE_GROUPS = [
-  { key: 'ALL', label: 'Tất cả các khối' },
-  { key: 'NHA_TRE', label: 'Khối Nhà trẻ' },
-  { key: 'MAM', label: 'Khối Mầm' },
-  { key: 'CHOI', label: 'Khối Chồi' },
-  { key: 'LA', label: 'Khối Lá' },
+  { key: 'ALL', labelKey: 'planning.gradeAll', defaultLabel: 'Tất cả các khối' },
+  { key: 'NHA_TRE', labelKey: 'classes.gradeNhaTre', defaultLabel: 'Khối Nhà trẻ' },
+  { key: 'MAM', labelKey: 'classes.gradeMam', defaultLabel: 'Khối Mầm' },
+  { key: 'CHOI', labelKey: 'classes.gradeChoi', defaultLabel: 'Khối Chồi' },
+  { key: 'LA', labelKey: 'classes.gradeLa', defaultLabel: 'Khối Lá' },
 ];
 
-// Statuses for Filter Dropdown
+// Statuses for Filter Dropdown (Role BGH duyệt kế hoạch không lọc bản nháp)
 const STATUS_OPTIONS = [
-  { key: 'ALL', label: 'Tất cả trạng thái' },
-  { key: 'PENDING_APPROVAL', label: 'Chờ duyệt' },
-  { key: 'USED', label: 'Đã phê duyệt' },
-  { key: 'REJECTED', label: 'Cần sửa lại' },
-  { key: 'DRAFT', label: 'Bản nháp' },
+  { key: 'ALL', labelKey: 'planning.statusAll', defaultLabel: 'Tất cả trạng thái' },
+  { key: 'PENDING_APPROVAL', labelKey: 'common.pending', defaultLabel: 'Chờ duyệt' },
+  { key: 'USED', labelKey: 'common.approved', defaultLabel: 'Đã phê duyệt' },
+  { key: 'REJECTED', labelKey: 'planning.statusNeedsRevisionShort', defaultLabel: 'Cần sửa lại' },
 ];
 
-const SCOPE_LABELS = {
-  COUNT_2: '2 chủ đề',
-  COUNT_3: '3 chủ đề',
-  COUNT_4: '4 chủ đề',
-  SEMESTER_1: 'Học kỳ 1',
-  SEMESTER_2: 'Học kỳ 2',
-  FULL_YEAR: 'Cả năm học',
-};
+const getScopeLabels = (t) => ({
+  COUNT_2: t('planning.scope2Themes', '2 chủ đề'),
+  COUNT_3: t('planning.scope3ThemesFocus', '3 chủ đề (Trọng tâm)'),
+  COUNT_4: t('planning.scope4Themes', '4 chủ đề'),
+  SEMESTER_1: t('planning.scopeSem1', 'Học kỳ 1 (Chủ đề 1 – 5)'),
+  SEMESTER_2: t('planning.scopeSem2', 'Học kỳ 2 (Chủ đề 6 – 10)'),
+  FULL_YEAR: t('planning.scopeFullYear', 'Cả năm học (Tất cả Chủ đề)'),
+});
 
 // Format short date helper (dd/mm)
 function formatDateShort(dateStr) {
@@ -92,6 +91,7 @@ function findActiveThemeIndex(cols) {
 
 export function ThemePlanReviewListPage() {
   const { t } = useTranslation();
+  const SCOPE_LABELS = useMemo(() => getScopeLabels(t), [t]);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const user = useAuthStore((state) => state.user);
@@ -133,11 +133,11 @@ export function ThemePlanReviewListPage() {
       }
     } catch (err) {
       console.error('Error fetching review plans matrix:', err);
-      toast.error('Không thể tải dữ liệu duyệt kế hoạch.');
+      toast.error(t('planning.loadReviewError', 'Không thể tải dữ liệu duyệt kế hoạch.'));
     } finally {
       setIsLoading(false);
     }
-  }, [selectedYearId]);
+  }, [selectedYearId, t]);
 
   useEffect(() => {
     fetchData();
@@ -162,7 +162,7 @@ export function ThemePlanReviewListPage() {
       const rawCols = groupThemes.map((th, idx) => ({
         idx,
         id: th.id,
-        title: `Chủ đề ${idx + 1}`,
+        title: t('planning.themePrefix', { index: idx + 1, defaultValue: `Chủ đề ${idx + 1}` }),
         themeName: th.name,
         startDate: th.startDate,
         endDate: th.endDate,
@@ -285,6 +285,28 @@ export function ThemePlanReviewListPage() {
     setIsDrawerOpen(true);
   };
 
+  // Auto open drawer when navigated from notification with classId and themeId params
+  useEffect(() => {
+    const targetClassId = searchParams.get('classId');
+    const targetThemeId = searchParams.get('themeId');
+    if (targetClassId && matrixData.groups?.length > 0 && !isDrawerOpen) {
+      for (const g of matrixData.groups) {
+        const cls = g.classes.find(
+          (c) => String(c.id) === String(targetClassId) || c.publicId === targetClassId
+        );
+        if (cls) {
+          const th = targetThemeId
+            ? g.themes.find((t) => String(t.id) === String(targetThemeId) || t.publicId === targetThemeId)
+            : g.themes[0];
+          if (th) {
+            handleOpenDrawer(cls, th);
+            break;
+          }
+        }
+      }
+    }
+  }, [searchParams, matrixData.groups]);
+
   // Sequential Navigation: Previous Class
   const handlePrevClass = () => {
     if (!selectedDrawerData || selectedDrawerData.classIndex <= 0) return;
@@ -333,10 +355,10 @@ export function ThemePlanReviewListPage() {
         {/* Title and Subtitle - No badge next to title */}
         <div className="flex flex-col gap-1">
           <h1 className="text-[26px] font-semibold text-foreground tracking-tight">
-            Duyệt kế hoạch
+            {t('planning.reviewPlanTitle', 'Duyệt kế hoạch')}
           </h1>
           <p className="text-[12px] text-muted-foreground font-normal">
-            Thẩm định, đối chiếu mục tiêu và phê duyệt kế hoạch giáo dục theo chủ đề của các lớp
+            {t('planning.reviewPlanSubtitle', 'Thẩm định, đối chiếu mục tiêu và phê duyệt kế hoạch giáo dục theo chủ đề của các lớp')}
           </p>
         </div>
 
@@ -353,7 +375,7 @@ export function ThemePlanReviewListPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm kiếm lớp học, giáo viên..."
+              placeholder={t('planning.searchClassTeacherPlaceholder', 'Tìm kiếm lớp học, giáo viên...')}
               className="h-8 pl-8 pr-2.5 text-[13px] bg-background border-border rounded-none shadow-none focus-visible:ring-1 focus-visible:ring-ring"
             />
           </div>
@@ -365,9 +387,9 @@ export function ThemePlanReviewListPage() {
                 type="button"
                 className="h-8 px-2.5 bg-background border border-border text-[13px] font-medium text-foreground hover:bg-muted/50 rounded-none flex items-center justify-center gap-1.5 transition-colors cursor-pointer select-none"
                 data-name="Scope Dropdown"
-                title="Phạm vi chủ đề hiển thị"
+                title={t('planning.scopeFilterTitle', 'Phạm vi chủ đề hiển thị')}
               >
-                <span>{SCOPE_LABELS[viewScope] || '3 chủ đề'}</span>
+                <span>{SCOPE_LABELS[viewScope] || t('planning.scope3ThemesFocus', '3 chủ đề (Trọng tâm)')}</span>
                 <HugeiconsIcon icon={ArrowDown01Icon} size={14} className="text-muted-foreground shrink-0" />
               </button>
             </DropdownMenuTrigger>
@@ -377,13 +399,13 @@ export function ThemePlanReviewListPage() {
             >
               {/* Nhóm 1: Theo số lượng */}
               <DropdownMenuLabel className="px-2 py-1 text-[12px] font-medium text-muted-foreground">
-                Số lượng chủ đề
+                {t('planning.scopeByCount', 'Số lượng chủ đề')}
               </DropdownMenuLabel>
               <DropdownMenuItem
                 onClick={() => setViewScope('COUNT_2')}
                 className="flex items-center justify-between h-8 px-2 text-[13px] cursor-pointer rounded-none hover:bg-muted/60"
               >
-                <span>2 chủ đề</span>
+                <span>{t('planning.scope2Themes', '2 chủ đề')}</span>
                 {viewScope === 'COUNT_2' && (
                   <HugeiconsIcon icon={CheckmarkSquare02Icon} size={14} className="text-primary shrink-0" />
                 )}
@@ -392,7 +414,7 @@ export function ThemePlanReviewListPage() {
                 onClick={() => setViewScope('COUNT_3')}
                 className="flex items-center justify-between h-8 px-2 text-[13px] cursor-pointer rounded-none hover:bg-muted/60"
               >
-                <span>3 chủ đề (Trọng tâm)</span>
+                <span>{t('planning.scope3ThemesFocus', '3 chủ đề (Trọng tâm)')}</span>
                 {viewScope === 'COUNT_3' && (
                   <HugeiconsIcon icon={CheckmarkSquare02Icon} size={14} className="text-primary shrink-0" />
                 )}
@@ -401,7 +423,7 @@ export function ThemePlanReviewListPage() {
                 onClick={() => setViewScope('COUNT_4')}
                 className="flex items-center justify-between h-8 px-2 text-[13px] cursor-pointer rounded-none hover:bg-muted/60"
               >
-                <span>4 chủ đề</span>
+                <span>{t('planning.scope4Themes', '4 chủ đề')}</span>
                 {viewScope === 'COUNT_4' && (
                   <HugeiconsIcon icon={CheckmarkSquare02Icon} size={14} className="text-primary shrink-0" />
                 )}
@@ -411,13 +433,13 @@ export function ThemePlanReviewListPage() {
 
               {/* Nhóm 2: Theo kỳ học */}
               <DropdownMenuLabel className="px-2 py-1 text-[12px] font-medium text-muted-foreground">
-                Theo kỳ học
+                {t('planning.scopeBySemester', 'Theo kỳ học')}
               </DropdownMenuLabel>
               <DropdownMenuItem
                 onClick={() => setViewScope('SEMESTER_1')}
                 className="flex items-center justify-between h-8 px-2 text-[13px] cursor-pointer rounded-none hover:bg-muted/60"
               >
-                <span>Học kỳ 1 (Chủ đề 1 – 5)</span>
+                <span>{t('planning.scopeSem1', 'Học kỳ 1 (Chủ đề 1 – 5)')}</span>
                 {viewScope === 'SEMESTER_1' && (
                   <HugeiconsIcon icon={CheckmarkSquare02Icon} size={14} className="text-primary shrink-0" />
                 )}
@@ -426,7 +448,7 @@ export function ThemePlanReviewListPage() {
                 onClick={() => setViewScope('SEMESTER_2')}
                 className="flex items-center justify-between h-8 px-2 text-[13px] cursor-pointer rounded-none hover:bg-muted/60"
               >
-                <span>Học kỳ 2 (Chủ đề 6 – 10)</span>
+                <span>{t('planning.scopeSem2', 'Học kỳ 2 (Chủ đề 6 – 10)')}</span>
                 {viewScope === 'SEMESTER_2' && (
                   <HugeiconsIcon icon={CheckmarkSquare02Icon} size={14} className="text-primary shrink-0" />
                 )}
@@ -435,7 +457,7 @@ export function ThemePlanReviewListPage() {
                 onClick={() => setViewScope('FULL_YEAR')}
                 className="flex items-center justify-between h-8 px-2 text-[13px] cursor-pointer rounded-none hover:bg-muted/60"
               >
-                <span>Cả năm học (Tất cả Chủ đề)</span>
+                <span>{t('planning.scopeFullYear', 'Cả năm học (Tất cả Chủ đề)')}</span>
                 {viewScope === 'FULL_YEAR' && (
                   <HugeiconsIcon icon={CheckmarkSquare02Icon} size={14} className="text-primary shrink-0" />
                 )}
@@ -452,7 +474,7 @@ export function ThemePlanReviewListPage() {
                   'size-8 bg-background border border-border text-foreground hover:bg-muted/50 rounded-none flex items-center justify-center transition-colors cursor-pointer select-none',
                   isFiltered && 'border-primary text-primary bg-primary/5',
                 )}
-                title="Lọc"
+                title={t('planning.filterTooltip', 'Lọc')}
                 data-name="Filter · Plan Reviews"
               >
                 <HugeiconsIcon icon={FilterHorizontalIcon} size={16} />
@@ -464,7 +486,7 @@ export function ThemePlanReviewListPage() {
             >
               {/* Section 1: Khối lớp */}
               <DropdownMenuLabel className="px-2 py-1 text-[12px] font-medium text-muted-foreground">
-                Khối lớp
+                {t('planning.gradeSection', 'Khối lớp')}
               </DropdownMenuLabel>
               {AGE_GROUPS.map((item) => (
                 <DropdownMenuItem
@@ -472,7 +494,7 @@ export function ThemePlanReviewListPage() {
                   onClick={() => setSelectedAgeGroup(item.key)}
                   className="flex items-center justify-between h-8 px-2 text-[13px] cursor-pointer rounded-none hover:bg-muted/60"
                 >
-                  <span>{item.label}</span>
+                  <span>{t(item.labelKey, item.defaultLabel)}</span>
                   {selectedAgeGroup === item.key && (
                     <HugeiconsIcon
                       icon={CheckmarkSquare02Icon}
@@ -487,7 +509,7 @@ export function ThemePlanReviewListPage() {
 
               {/* Section 2: Trạng thái kế hoạch */}
               <DropdownMenuLabel className="px-2 py-1 text-[12px] font-medium text-muted-foreground">
-                Trạng thái kế hoạch
+                {t('planning.planStatusSection', 'Trạng thái kế hoạch')}
               </DropdownMenuLabel>
               {STATUS_OPTIONS.map((item) => (
                 <DropdownMenuItem
@@ -495,7 +517,7 @@ export function ThemePlanReviewListPage() {
                   onClick={() => setStatusFilter(item.key)}
                   className="flex items-center justify-between h-8 px-2 text-[13px] cursor-pointer rounded-none hover:bg-muted/60"
                 >
-                  <span>{item.label}</span>
+                  <span>{t(item.labelKey, item.defaultLabel)}</span>
                   {statusFilter === item.key && (
                     <HugeiconsIcon
                       icon={CheckmarkSquare02Icon}
@@ -513,7 +535,7 @@ export function ThemePlanReviewListPage() {
             type="button"
             onClick={fetchData}
             className="size-8 bg-background border border-border text-foreground hover:bg-muted/50 rounded-none flex items-center justify-center transition-colors cursor-pointer select-none"
-            title="Làm mới dữ liệu"
+            title={t('planning.refreshTooltip', 'Làm mới dữ liệu')}
             data-name="Button · Refresh"
           >
             <HugeiconsIcon icon={RefreshIcon} size={15} className={cn(isLoading && 'animate-spin')} />
@@ -524,11 +546,11 @@ export function ThemePlanReviewListPage() {
       {/* 2. TABLE CONTENT - STACKED GRADE MATRICES */}
       {isLoading ? (
         <div className="w-full border border-border bg-card p-12 text-center text-muted-foreground rounded-none">
-          <p className="text-[13px]">Đang tải ma trận kế hoạch giáo dục...</p>
+          <p className="text-[13px]">{t('planning.loadingMatrix', 'Đang tải ma trận kế hoạch giáo dục...')}</p>
         </div>
       ) : filteredGroups.length === 0 ? (
         <div className="w-full border border-border bg-card p-12 text-center text-muted-foreground rounded-none">
-          <p className="text-[13px]">Không có kế hoạch nào phù hợp với bộ lọc hiện tại.</p>
+          <p className="text-[13px]">{t('planning.emptyFilteredPlans', 'Không có kế hoạch nào phù hợp với bộ lọc hiện tại.')}</p>
         </div>
       ) : (
         <div className="space-y-6">
@@ -540,10 +562,17 @@ export function ThemePlanReviewListPage() {
                 {/* Khối Header Bar */}
                 <div className="flex items-center gap-2 px-1">
                   <span className="font-semibold text-[13.5px] text-foreground uppercase tracking-wide">
-                    {group.label}
+                    {group.key === 'NHA_TRE' ? t('classes.gradeNhaTre', group.label) :
+                     group.key === 'MAM' ? t('classes.gradeMam', group.label) :
+                     group.key === 'CHOI' ? t('classes.gradeChoi', group.label) :
+                     group.key === 'LA' ? t('classes.gradeLa', group.label) : group.label}
                   </span>
                   <span className="text-[12px] text-muted-foreground">
-                    ({group.classes.length} lớp · {group.themes?.length || 0} chủ đề)
+                    {t('planning.classesAndThemesCount', {
+                      classCount: group.classes.length,
+                      themeCount: group.themes?.length || 0,
+                      defaultValue: `(${group.classes.length} lớp · ${group.themes?.length || 0} chủ đề)`,
+                    })}
                   </span>
                 </div>
 
@@ -553,7 +582,7 @@ export function ThemePlanReviewListPage() {
                     <thead>
                       <tr className="border-b border-border bg-muted/30 text-[12.5px] font-medium text-foreground">
                         <th className="py-2.5 px-3 w-[320px] min-w-[320px] max-w-[320px] font-medium sticky left-0 bg-background/95 backdrop-blur-xs z-10 border-r border-border/60">
-                          Lớp học
+                          {t('planning.colClass', 'Lớp học')}
                         </th>
                         {groupCols.map((col) => (
                           <th
@@ -576,7 +605,7 @@ export function ThemePlanReviewListPage() {
                               className="font-semibold text-[13px] text-foreground tracking-tight truncate max-w-[200px] mx-auto mt-0.5"
                               title={
                                 col.themeName
-                                  ? `${col.title}: ${col.themeName}${col.isCurrent ? ' (Chủ đề hiện tại)' : ''}`
+                                  ? `${col.title}: ${col.themeName}${col.isCurrent ? t('planning.currentThemeTag', ' (Chủ đề hiện tại)') : ''}`
                                   : col.title
                               }
                             >
@@ -609,7 +638,7 @@ export function ThemePlanReviewListPage() {
                                 >
                                   {cls.teachers?.length > 0
                                     ? cls.teachers.join(', ')
-                                    : 'Chưa phân công'}
+                                    : t('planning.unassignedTeacher', 'Chưa phân công')}
                                 </span>
                               </div>
                             </div>
@@ -634,13 +663,13 @@ export function ThemePlanReviewListPage() {
                                   theme && plan
                                     ? `${cls.name} · ${theme.name} · ${
                                         plan.status === 'USED'
-                                          ? 'Đã phê duyệt'
+                                          ? t('common.approved', 'Đã phê duyệt')
                                           : plan.status === 'PENDING_APPROVAL'
-                                          ? 'Chờ duyệt'
+                                          ? t('common.pending', 'Chờ duyệt')
                                           : plan.status === 'REJECTED'
-                                          ? 'Yêu cầu sửa'
-                                          : 'Bản nháp'
-                                      }. Bấm để thẩm định toàn cảnh.`
+                                          ? t('planning.statusNeedsRevision', 'Yêu cầu sửa')
+                                          : t('planning.statusDraft', 'Bản nháp')
+                                      }. ${t('planning.clickToReview', 'Bấm để thẩm định toàn cảnh.')}`
                                     : undefined
                                 }
                               >
@@ -650,19 +679,19 @@ export function ThemePlanReviewListPage() {
                                   <div className="flex items-center justify-center">
                                     {plan.status === 'USED' ? (
                                       <span className="inline-flex items-center justify-center px-2.5 py-1 text-[11px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-none hover:bg-emerald-100 transition-colors">
-                                        Đã phê duyệt
+                                        {t('common.approved', 'Đã phê duyệt')}
                                       </span>
                                     ) : plan.status === 'PENDING_APPROVAL' ? (
                                       <span className="inline-flex items-center justify-center px-2.5 py-1 text-[11px] font-medium bg-blue-50 text-blue-800 border border-blue-300 rounded-none hover:bg-blue-100 transition-colors">
-                                        Chờ duyệt
+                                        {t('common.pending', 'Chờ duyệt')}
                                       </span>
                                     ) : plan.status === 'REJECTED' ? (
                                       <span className="inline-flex items-center justify-center px-2.5 py-1 text-[11px] font-medium bg-rose-50 text-rose-800 border border-rose-300 rounded-none hover:bg-rose-100 transition-colors">
-                                        Yêu cầu sửa
+                                        {t('planning.statusNeedsRevision', 'Yêu cầu sửa')}
                                       </span>
                                     ) : (
                                       <span className="inline-flex items-center justify-center px-2.5 py-1 text-[11px] font-medium bg-muted text-muted-foreground border border-border rounded-none hover:bg-muted/80 transition-colors">
-                                        Bản nháp
+                                        {t('planning.statusDraft', 'Bản nháp')}
                                       </span>
                                     )}
                                   </div>
@@ -691,7 +720,11 @@ export function ThemePlanReviewListPage() {
         onNextClass={handleNextClass}
         hasPrevClass={selectedDrawerData?.classIndex > 0}
         hasNextClass={selectedDrawerData?.classIndex < allActiveClasses.length - 1}
-        classIndexText={`Lớp ${ (selectedDrawerData?.classIndex ?? 0) + 1 } / ${allActiveClasses.length}`}
+        classIndexText={t('planning.classIndexText', {
+          current: (selectedDrawerData?.classIndex ?? 0) + 1,
+          total: allActiveClasses.length,
+          defaultValue: `Lớp ${(selectedDrawerData?.classIndex ?? 0) + 1} / ${allActiveClasses.length}`,
+        })}
         onPlanStatusUpdated={fetchData}
       />
     </div>
