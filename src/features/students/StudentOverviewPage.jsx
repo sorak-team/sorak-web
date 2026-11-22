@@ -32,47 +32,47 @@ function formatDateDisplay(val) {
   return `${day}/${month}/${year}`;
 }
 
-function formatRoomNumber(room) {
+function formatRoomNumber(room, t) {
   if (!room) return '—';
   const str = String(room).trim();
   if (/^phòng/i.test(str)) return str;
-  return `Phòng ${str}`;
+  return t ? t('student.roomPrefix', 'Phòng {{room}}', { room: str }) : `Phòng ${str}`;
 }
 
-function getAgeGroupLabel(ageGroup) {
+function getAgeGroupLabel(ageGroup, t) {
   switch ((ageGroup || '').toUpperCase()) {
     case 'NHA_TRE':
-      return 'Khối Nhà trẻ';
+      return t ? t('classes.grades.nhaTre', 'Khối Nhà trẻ') : 'Khối Nhà trẻ';
     case 'MAM':
-      return 'Khối Mầm';
+      return t ? t('classes.grades.mam', 'Khối Mầm') : 'Khối Mầm';
     case 'CHOI':
-      return 'Khối Chồi';
+      return t ? t('classes.grades.choi', 'Khối Chồi') : 'Khối Chồi';
     case 'LA':
-      return 'Khối Lá';
+      return t ? t('classes.grades.la', 'Khối Lá') : 'Khối Lá';
     default:
       return ageGroup || '';
   }
 }
 
-function formatEnrollmentStatus(status) {
+function formatEnrollmentStatus(status, t) {
   if (!status) return '';
   switch (String(status).toUpperCase()) {
     case 'ENROLLED':
     case 'STUDYING':
-      return 'Đang học';
+      return t ? t('student.statusStudying', 'Đang học') : 'Đang học';
     case 'COMPLETED':
-      return 'Hoàn thành';
+      return t ? t('student.statusCompleted', 'Hoàn thành') : 'Hoàn thành';
     case 'TRANSFERRED_CLASS':
-      return 'Chuyển lớp';
+      return t ? t('student.statusTransferredClass', 'Chuyển lớp') : 'Chuyển lớp';
     case 'TRANSFERRED_SCHOOL':
     case 'TRANSFERRED':
-      return 'Chuyển trường';
+      return t ? t('student.statusTransferred', 'Chuyển trường') : 'Chuyển trường';
     case 'RESERVED':
-      return 'Bảo lưu';
+      return t ? t('student.statusReserved', 'Bảo lưu') : 'Bảo lưu';
     case 'DROPPED_OUT':
-      return 'Thôi học';
+      return t ? t('student.statusDroppedOut', 'Thôi học') : 'Thôi học';
     case 'GRADUATED':
-      return 'Tốt nghiệp';
+      return t ? t('student.statusGraduated', 'Tốt nghiệp') : 'Tốt nghiệp';
     default:
       return status;
   }
@@ -223,7 +223,7 @@ export function StudentOverviewPage() {
     if (!file) return;
 
     if (file.size > 2 * 1024 * 1024) {
-      toast.error('Kích thước ảnh tối đa là 2MB');
+      toast.error(t('teacher.avatarMaxSize', 'Kích thước ảnh tối đa là 2MB'));
       return;
     }
 
@@ -237,7 +237,7 @@ export function StudentOverviewPage() {
       }
     } catch (err) {
       console.error('Avatar upload failed:', err);
-      toast.error(err.response?.data?.message || err.message || 'Tải ảnh thất bại');
+      toast.error(err.response?.data?.message || err.message || t('teacher.avatarUploadFailed', 'Tải ảnh thất bại'));
     } finally {
       setIsUploadingAvatar(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -252,7 +252,7 @@ export function StudentOverviewPage() {
       reloadDetail();
     } catch (err) {
       console.error('Reset avatar failed:', err);
-      toast.error('Đặt lại ảnh thất bại');
+      toast.error(t('teacher.avatarResetFailed', 'Đặt lại ảnh thất bại'));
     }
   };
 
@@ -342,7 +342,7 @@ export function StudentOverviewPage() {
               'size-8 rounded-none border border-border bg-background hover:bg-muted text-foreground cursor-pointer',
               student.status === 'graduated' && 'opacity-40 cursor-not-allowed hover:bg-background'
             )}
-            title={student.status === 'graduated' ? 'Học sinh đã tốt nghiệp, không thể chỉnh sửa' : t('common.edit', 'Chỉnh sửa')}
+            title={student.status === 'graduated' ? t('student.graduatedCannotEdit', 'Học sinh đã tốt nghiệp, không thể chỉnh sửa') : t('common.edit', 'Chỉnh sửa')}
           >
             <HugeiconsIcon icon={PencilEdit02Icon} size={15} />
           </Button>
@@ -371,72 +371,72 @@ export function StudentOverviewPage() {
           <div className="border border-border bg-card rounded-none overflow-hidden shadow-xs">
             <div className="p-4 border-b border-border bg-muted/20">
               <h2 className="text-[14px] font-semibold text-foreground">
-                Thông tin cá nhân
+                {t('student.personalInfo', 'Thông tin cá nhân')}
               </h2>
               <p className="text-[12px] text-muted-foreground font-normal">
-                Lý lịch cơ bản của học sinh
+                {t('student.personalInfoSub', 'Lý lịch cơ bản của học sinh')}
               </p>
             </div>
 
             <div className="divide-y divide-border/60">
               <div className="flex items-center justify-between p-4 h-[50px]">
-                <span className="text-[14px] text-muted-foreground font-normal">Mã học sinh</span>
+                <span className="text-[14px] text-muted-foreground font-normal">{t('student.code', 'Mã học sinh')}</span>
                 <span className="text-[14px] font-semibold text-foreground font-mono">
                   {student.studentCode || '—'}
                 </span>
               </div>
 
               <div className="flex items-center justify-between p-4 h-[50px]">
-                <span className="text-[14px] text-muted-foreground font-normal">Họ và tên</span>
+                <span className="text-[14px] text-muted-foreground font-normal">{t('student.fullName', 'Họ và tên')}</span>
                 <span className="text-[14px] font-semibold text-foreground">
                   {student.fullName}
                 </span>
               </div>
 
               <div className="flex items-center justify-between p-4 h-[50px]">
-                <span className="text-[14px] text-muted-foreground font-normal">Ngày sinh</span>
+                <span className="text-[14px] text-muted-foreground font-normal">{t('student.dob', 'Ngày sinh')}</span>
                 <span className="text-[14px] font-medium text-foreground">
                   {formatDateDisplay(student.dateOfBirth || student.dob)}
                 </span>
               </div>
 
               <div className="flex items-center justify-between p-4 h-[50px]">
-                <span className="text-[14px] text-muted-foreground font-normal">Giới tính</span>
+                <span className="text-[14px] text-muted-foreground font-normal">{t('student.gender', 'Giới tính')}</span>
                 <span className="text-[14px] font-medium text-foreground">
                   {student.gender || '—'}
                 </span>
               </div>
 
               <div className="flex items-center justify-between p-4 h-[50px]">
-                <span className="text-[14px] text-muted-foreground font-normal">Dân tộc</span>
+                <span className="text-[14px] text-muted-foreground font-normal">{t('student.ethnic', 'Dân tộc')}</span>
                 <span className="text-[14px] font-medium text-foreground">
                   {student.ethnic || 'Kinh'}
                 </span>
               </div>
 
               <div className="flex items-center justify-between p-4 h-[50px]">
-                <span className="text-[14px] text-muted-foreground font-normal">Quốc tịch</span>
+                <span className="text-[14px] text-muted-foreground font-normal">{t('student.nationality', 'Quốc tịch')}</span>
                 <span className="text-[14px] font-medium text-foreground">
                   {student.nationality || 'Việt Nam'}
                 </span>
               </div>
 
               <div className="flex items-center justify-between p-4 min-h-[50px]">
-                <span className="text-[14px] text-muted-foreground font-normal shrink-0 pr-4">Nơi sinh</span>
+                <span className="text-[14px] text-muted-foreground font-normal shrink-0 pr-4">{t('student.birthPlace', 'Nơi sinh')}</span>
                 <span className="text-[14px] font-medium text-foreground text-right">
                   {student.placeOfBirth || '—'}
                 </span>
               </div>
 
               <div className="flex items-center justify-between p-4 min-h-[50px]">
-                <span className="text-[14px] text-muted-foreground font-normal shrink-0 pr-4">Thường trú</span>
+                <span className="text-[14px] text-muted-foreground font-normal shrink-0 pr-4">{t('student.permanentResidence', 'Thường trú')}</span>
                 <span className="text-[14px] font-medium text-foreground text-right">
                   {student.permanentResidence || '—'}
                 </span>
               </div>
 
               <div className="flex items-center justify-between p-4 min-h-[50px]">
-                <span className="text-[14px] text-muted-foreground font-normal shrink-0 pr-4">Tạm trú</span>
+                <span className="text-[14px] text-muted-foreground font-normal shrink-0 pr-4">{t('student.currentResidence', 'Tạm trú')}</span>
                 <span className="text-[14px] font-medium text-foreground text-right">
                   {student.currentResidence || '—'}
                 </span>
@@ -448,38 +448,38 @@ export function StudentOverviewPage() {
           <div className="border border-border bg-card rounded-none overflow-hidden shadow-xs">
             <div className="p-4 border-b border-border bg-muted/20">
               <h2 className="text-[14px] font-semibold text-foreground">
-                Sức khỏe & Ghi chú
+                {t('student.healthNotes', 'Sức khỏe & Ghi chú')}
               </h2>
               <p className="text-[12px] text-muted-foreground font-normal">
-                Lưu ý dị ứng, bệnh lý và ghi chú của giáo viên
+                {t('student.healthNotesSub', 'Lưu ý dị ứng, bệnh lý và ghi chú của giáo viên')}
               </p>
             </div>
 
             <div className="divide-y divide-border/60">
               <div className="p-4">
                 <span className="text-[12px] text-muted-foreground block font-medium">
-                  Dị ứng thức ăn / thuốc
+                  {t('student.allergies', 'Dị ứng thức ăn / thuốc')}
                 </span>
                 <p className="text-[14px] text-foreground font-semibold mt-1">
-                  {student.allergyNotes || 'Không ghi nhận dị ứng.'}
+                  {student.allergyNotes || t('student.noAllergies', 'Không ghi nhận dị ứng.')}
                 </p>
               </div>
 
               <div className="p-4">
                 <span className="text-[12px] text-muted-foreground block font-medium">
-                  Tiền sử bệnh lý
+                  {t('student.medicalHistory', 'Tiền sử bệnh lý')}
                 </span>
                 <p className="text-[14px] text-foreground font-semibold mt-1">
-                  {student.medicalNotes || 'Không ghi nhận bệnh lý đặc biệt.'}
+                  {student.medicalNotes || t('student.noMedicalHistory', 'Không ghi nhận bệnh lý đặc biệt.')}
                 </p>
               </div>
 
               <div className="p-4">
                 <span className="text-[12px] text-muted-foreground block font-medium">
-                  Trường mầm non trước đây
+                  {t('student.previousSchoolTitle', 'Trường mầm non trước đây')}
                 </span>
                 <p className="text-[14px] text-foreground font-semibold mt-1">
-                  {student.previousSchool || 'Chưa có thông tin trường cũ.'}
+                  {student.previousSchool || t('student.noPreviousSchool', 'Chưa có thông tin trường cũ.')}
                 </p>
               </div>
             </div>
@@ -493,14 +493,14 @@ export function StudentOverviewPage() {
             <div className="p-4 border-b border-border bg-muted/20 flex items-center justify-between">
               <div>
                 <h2 className="text-[14px] font-semibold text-foreground">
-                  Phụ huynh & Người giám hộ
+                  {t('student.parentsGuardians', 'Phụ huynh & Người giám hộ')}
                 </h2>
                 <p className="text-[12px] text-muted-foreground font-normal">
-                  Thông tin liên lạc khẩn cấp và bảo mật bàn giao trẻ
+                  {t('student.parentsGuardiansSub', 'Thông tin liên lạc khẩn cấp và bảo mật bàn giao trẻ')}
                 </p>
               </div>
               <span className="text-[12px] font-normal text-muted-foreground">
-                {student.parents?.length || 0} người
+                {t('student.peopleCount', '{{count}} người', { count: student.parents?.length || 0 })}
               </span>
             </div>
 
@@ -515,7 +515,7 @@ export function StudentOverviewPage() {
                         </strong>
                       </span>
                       <span className="text-[13px] text-muted-foreground flex items-center gap-2 flex-wrap">
-                        <span>SĐT: <span className="font-semibold text-foreground font-mono">{p.phone || '—'}</span></span>
+                        <span>{t('student.phone', 'SĐT')}: <span className="font-semibold text-foreground font-mono">{p.phone || '—'}</span></span>
                         {p.citizenId && (
                           <span>• CCCD: <span className="font-semibold text-foreground font-mono">{p.citizenId}</span></span>
                         )}
@@ -525,7 +525,7 @@ export function StudentOverviewPage() {
                 ))
               ) : (
                 <div className="p-4 text-[13px] text-muted-foreground italic">
-                  Chưa có thông tin phụ huynh
+                  {t('student.noParents', 'Chưa có thông tin phụ huynh')}
                 </div>
               )}
             </div>
@@ -536,21 +536,21 @@ export function StudentOverviewPage() {
             <div className="p-4 border-b border-border bg-muted/20 flex items-center justify-between">
               <div>
                 <h2 className="text-[14px] font-semibold text-foreground">
-                  Lớp học
+                  {t('student.academicHistory', 'Lớp học')}
                 </h2>
                 <p className="text-[12px] text-muted-foreground font-normal">
-                  Phân lớp theo niên khóa
+                  {t('student.academicHistorySub', 'Phân lớp theo niên khóa')}
                 </p>
               </div>
               <span className="text-[12px] font-normal text-muted-foreground">
-                {enrollments.length} lớp
+                {t('student.classesCount', '{{count}} lớp', { count: enrollments.length })}
               </span>
             </div>
 
             <div className="divide-y divide-border/60">
               {/* Ngày nhập học */}
               <div className="flex items-center justify-between p-4 h-[50px]">
-                <span className="text-[14px] text-muted-foreground font-normal">Ngày nhập học</span>
+                <span className="text-[14px] text-muted-foreground font-normal">{t('student.joinDate', 'Ngày nhập học')}</span>
                 <span className="text-[14px] font-medium text-foreground">
                   {formatDateDisplay(student.enrollmentDate || student.joinDate)}
                 </span>
@@ -559,7 +559,7 @@ export function StudentOverviewPage() {
               {/* Danh sách phân lớp trực tiếp từ bảng student_enrollments */}
               {enrollments.length > 0 ? (
                 enrollments.map((enr, idx) => {
-                  const statusText = formatEnrollmentStatus(enr.status);
+                  const statusText = formatEnrollmentStatus(enr.status, t);
                   const isStudying = ['ENROLLED', 'STUDYING'].includes(String(enr.status).toUpperCase());
 
                   return (
@@ -567,7 +567,7 @@ export function StudentOverviewPage() {
                       <div className="flex flex-col gap-0.5 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <strong className="font-semibold text-foreground text-[14px]">
-                            {enr.className || 'Chưa phân lớp'}
+                            {enr.className || t('student.notAssigned', 'Chưa phân lớp')}
                           </strong>
                           {statusText && (
                             <span
@@ -588,15 +588,15 @@ export function StudentOverviewPage() {
                           )}
                           {enr.ageGroup && (
                             <span className="text-[13px] text-muted-foreground">
-                              · {getAgeGroupLabel(enr.ageGroup)}
+                              · {getAgeGroupLabel(enr.ageGroup, t)}
                             </span>
                           )}
                         </div>
                         <span className="text-[13px] text-muted-foreground">
-                          {enr.roomNumber ? `${formatRoomNumber(enr.roomNumber)} · ` : ''}
+                          {enr.roomNumber ? `${formatRoomNumber(enr.roomNumber, t)} · ` : ''}
                           {enr.leftAt
                             ? `${formatDateDisplay(enr.enrolledAt)} – ${formatDateDisplay(enr.leftAt)}`
-                            : `Ngày vào lớp: ${formatDateDisplay(enr.enrolledAt)}`}
+                            : t('student.enrolledAtPrefix', 'Ngày vào lớp: {{date}}', { date: formatDateDisplay(enr.enrolledAt) })}
                           {enr.leaveReason ? ` · ${enr.leaveReason}` : ''}
                         </span>
                       </div>
@@ -605,10 +605,10 @@ export function StudentOverviewPage() {
                         <Link
                           to={`/classes/${enr.classId}/students/${student.id}`}
                           className="inline-flex items-center gap-1.5 h-7 px-2.5 text-[12px] font-medium border border-border bg-background hover:bg-muted text-foreground transition-colors rounded-none shrink-0"
-                          title={`Xem báo cáo học sinh tại lớp ${enr.className || ''}`}
+                          title={t('student.viewReportTitle', 'Xem báo cáo học sinh tại lớp {{className}}', { className: enr.className || '' })}
                         >
                           <HugeiconsIcon icon={DashboardSquare01Icon} size={13} className="text-muted-foreground" />
-                          <span>Xem báo cáo</span>
+                          <span>{t('student.viewReport', 'Xem báo cáo')}</span>
                         </Link>
                       )}
                     </div>
@@ -616,7 +616,7 @@ export function StudentOverviewPage() {
                 })
               ) : (
                 <div className="p-4 text-[13px] text-muted-foreground italic">
-                  Chưa có thông tin phân lớp
+                  {t('student.noClassEnrollmentInfo', 'Chưa có thông tin phân lớp')}
                 </div>
               )}
             </div>

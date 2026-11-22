@@ -68,7 +68,7 @@ export function StudentsPage() {
 
   const handleExportExcel = async () => {
     if (filteredStudents.length === 0) {
-      toast.warning('Không có dữ liệu học sinh phù hợp để xuất file Excel.');
+      toast.warning(t('student.toastNoDataExport', 'Không có dữ liệu học sinh phù hợp để xuất file Excel.'));
       return;
     }
 
@@ -83,9 +83,9 @@ export function StudentsPage() {
       });
       const filename = `Danh_Sach_Hoc_Sinh_${new Date().toISOString().slice(0, 10)}.xlsx`;
       downloadBlob(blob, filename);
-      toast.success('Đã xuất danh sách học sinh ra file Excel thành công.');
+      toast.success(t('student.toastExportSuccess', 'Đã xuất danh sách học sinh ra file Excel thành công.'));
     } catch (err) {
-      toast.error('Không thể xuất file Excel. Vui lòng thử lại sau.');
+      toast.error(t('student.toastExportError', 'Không thể xuất file Excel. Vui lòng thử lại sau.'));
     } finally {
       setIsExporting(false);
     }
@@ -290,8 +290,8 @@ export function StudentsPage() {
       <ExcelImportModal
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
-        title="Nhập danh sách học sinh từ Excel"
-        description="Tải file mẫu, điền thông tin học sinh và phụ huynh để nhập hàng loạt vào trường."
+        title={t('student.importTitle', 'Nhập danh sách học sinh từ Excel')}
+        description={t('student.importDesc', 'Tải file mẫu, điền thông tin học sinh và phụ huynh để nhập hàng loạt vào trường.')}
         templateFileName="Mau_Nhap_Hoc_Sinh_Sorak.xlsx"
         onDownloadTemplate={studentsApi.getImportTemplate}
         onPreview={studentsApi.previewImport}

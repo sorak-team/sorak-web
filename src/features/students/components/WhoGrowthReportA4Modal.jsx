@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { PrinterIcon, Download01Icon, Cancel01Icon } from '@hugeicons/core-free-icons';
@@ -17,6 +18,7 @@ export function WhoGrowthReportA4Modal({
   heightSvgRef,
   weightSvgRef,
 }) {
+  const { t } = useTranslation();
   const [isExporting, setIsExporting] = React.useState(false);
 
   const fullName = student?.fullName || 'Học sinh';
@@ -35,12 +37,12 @@ export function WhoGrowthReportA4Modal({
 
   const handleExportPng = async () => {
     if (!heightSvgRef?.current || !weightSvgRef?.current) {
-      toast.error('Chưa tải xong biểu đồ để xuất ảnh');
+      toast.error(t('studentReport.exportPngChartNotReady', 'Chưa tải xong biểu đồ để xuất ảnh'));
       return;
     }
     try {
       setIsExporting(true);
-      toast.loading('Đang khởi tạo phiếu thể lực A4 độ nét cao...', { id: 'export-a4' });
+      toast.loading(t('studentReport.exportPngInit', 'Đang khởi tạo phiếu thể lực A4 độ nét cao...'), { id: 'export-a4' });
       await exportA4GrowthReportPng({
         student,
         healthData,
@@ -49,10 +51,10 @@ export function WhoGrowthReportA4Modal({
         heightSvgElement: heightSvgRef.current,
         weightSvgElement: weightSvgRef.current,
       });
-      toast.success('Đã xuất file ảnh phiếu thể lực A4 thành công!', { id: 'export-a4' });
+      toast.success(t('studentReport.exportPngSuccess', 'Đã xuất file ảnh phiếu thể lực A4 thành công!'), { id: 'export-a4' });
     } catch (err) {
       console.error('Error exporting A4 PNG:', err);
-      toast.error(`Không thể xuất ảnh: ${err.message || 'Lỗi xử lý'}`, { id: 'export-a4' });
+      toast.error(t('studentReport.exportPngError', 'Không thể xuất ảnh: {{error}}', { error: err.message || 'Lỗi xử lý' }), { id: 'export-a4' });
     } finally {
       setIsExporting(false);
     }
@@ -108,13 +110,17 @@ export function WhoGrowthReportA4Modal({
         <div className="px-5 py-3 border-b border-border bg-card flex items-center justify-between gap-3 shrink-0">
           <div>
             <DialogTitle className="text-[14px] font-semibold text-foreground flex items-center gap-2">
-              <span>Xem trước Phiếu Theo Dõi Thể Lực Trẻ Em (Chuẩn WHO)</span>
+              <span>{t('studentReport.a4PreviewTitle', 'Xem trước Phiếu Theo Dõi Thể Lực Trẻ Em (Chuẩn WHO)')}</span>
               <span className="px-2 py-0.5 text-[10.5px] font-mono font-medium bg-primary/10 text-primary border border-primary/20">
-                Tối ưu khổ A4 Landscape
+                {t('studentReport.a4LandscapeNotice', 'Tối ưu khổ A4 Landscape')}
               </span>
             </DialogTitle>
             <p className="text-[11.5px] text-muted-foreground mt-0.5">
-              Học sinh: <strong className="text-foreground">{fullName}</strong> · Mã: {studentCode} · Lớp: {className}
+              {t('studentReport.a4StudentMeta', 'Học sinh: {{name}} · Mã: {{code}} · Lớp: {{className}}', {
+                name: fullName,
+                code: studentCode,
+                className,
+              })}
             </p>
           </div>
 
@@ -123,10 +129,10 @@ export function WhoGrowthReportA4Modal({
               type="button"
               onClick={handlePrint}
               className="h-8 px-3 inline-flex items-center gap-1.5 text-[12px] font-medium border border-border bg-background hover:bg-muted text-foreground transition-colors cursor-pointer select-none"
-              title="Mở hộp thoại in trình duyệt hoặc lưu dạng tệp PDF"
+              title={t('studentReport.printTooltip', 'Mở hộp thoại in trình duyệt hoặc lưu dạng tệp PDF')}
             >
               <HugeiconsIcon icon={PrinterIcon} size={14} className="text-muted-foreground" />
-              <span>In phiếu / Lưu PDF (A4)</span>
+              <span>{t('studentReport.btnPrintA4', 'In phiếu / Lưu PDF (A4)')}</span>
             </button>
 
             <button
@@ -134,17 +140,17 @@ export function WhoGrowthReportA4Modal({
               onClick={handleExportPng}
               disabled={isExporting}
               className="h-8 px-3 inline-flex items-center gap-1.5 text-[12px] font-medium bg-primary hover:bg-primary/90 text-primary-foreground transition-colors cursor-pointer select-none disabled:opacity-50"
-              title="Tải toàn bộ phiếu dạng ảnh PNG độ phân giải cao"
+              title={t('studentReport.exportPngTooltip', 'Tải toàn bộ phiếu dạng ảnh PNG độ phân giải cao')}
             >
               <HugeiconsIcon icon={Download01Icon} size={14} />
-              <span>{isExporting ? 'Đang xuất PNG...' : 'Xuất ảnh A4 (PNG)'}</span>
+              <span>{isExporting ? t('studentReport.exportingPng', 'Đang xuất PNG...') : t('studentReport.btnExportPng', 'Xuất ảnh A4 (PNG)')}</span>
             </button>
 
             <button
               type="button"
               onClick={onClose}
               className="size-8 inline-flex items-center justify-center border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer ml-1"
-              title="Đóng cửa sổ xem trước"
+              title={t('studentReport.btnClosePreview', 'Đóng cửa sổ xem trước')}
             >
               <HugeiconsIcon icon={Cancel01Icon} size={15} />
             </button>
