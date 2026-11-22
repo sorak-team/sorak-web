@@ -70,6 +70,9 @@ export function TransfersManagementPage() {
     () => academicYears.find((y) => String(y.id) === String(selectedYearId)) || academicYears[0],
     [academicYears, selectedYearId],
   );
+  const isSchoolYearCompleted = useMemo(() => {
+    return selectedYear?.status === 'COMPLETED' || selectedYear?.status === 'ENDED';
+  }, [selectedYear]);
 
   const [data, setData] = useState({
     items: [],
@@ -187,11 +190,11 @@ export function TransfersManagementPage() {
       }
     } catch (err) {
       console.error('Error loading transfer requests:', err);
-      toast.error('Không thể tải danh sách yêu cầu chuyển lớp.');
+      toast.error(t('transfers.loadListFailed', 'Không thể tải danh sách yêu cầu chuyển lớp.'));
     } finally {
       setIsLoading(false);
     }
-  }, [selectedYear?.id]);
+  }, [selectedYear?.id, t]);
 
   useEffect(() => {
     loadData();
@@ -270,7 +273,7 @@ export function TransfersManagementPage() {
       setIsStudentComboboxOpen(false);
     } catch (err) {
       console.error('Failed to load students/classes for transfer drawer:', err);
-      toast.error('Không thể tải danh sách học sinh và lớp học');
+      toast.error(t('transfers.loadOptionsFailed', 'Không thể tải danh sách học sinh và lớp học'));
     } finally {
       setIsLoadingFormOptions(false);
     }
@@ -363,17 +366,17 @@ export function TransfersManagementPage() {
   const handleCreateTransferSubmit = async (e) => {
     e.preventDefault();
     if (!formStudentId) {
-      toast.error('Vui lòng chọn học sinh cần chuyển lớp');
+      toast.error(t('transfers.selectStudentRequired', 'Vui lòng chọn học sinh cần chuyển lớp'));
       return;
     }
     if (!formToClassId) {
-      toast.error('Vui lòng chọn lớp học chuyển đến');
+      toast.error(t('transfers.selectToClassRequired', 'Vui lòng chọn lớp học chuyển đến'));
       return;
     }
 
     const effectiveDateIso = toIsoDateString(formTransferDate);
     if (!effectiveDateIso || !/^\d{4}-\d{2}-\d{2}$/.test(effectiveDateIso)) {
-      toast.error('Ngày hiệu lực không hợp lệ. Vui lòng nhập theo định dạng dd/mm/yyyy');
+      toast.error(t('transfers.invalidTransferDate', 'Ngày hiệu lực không hợp lệ. Vui lòng nhập theo định dạng dd/mm/yyyy'));
       return;
     }
 
@@ -389,19 +392,23 @@ export function TransfersManagementPage() {
         fromClassId: currentClassId,
         toClassId: formToClassId,
         transferDate: effectiveDateIso,
-        reason: formReason.trim() || 'Chuyển theo nguyện vọng phụ huynh',
+        reason: formReason.trim() || t('transfers.defaultParentWishReason', 'Chuyển theo nguyện vọng phụ huynh'),
         autoApprove: isAutoApproveActive,
       });
 
       if (isAutoApproveActive) {
         toast.success(
-          `BGH đã điều chuyển học sinh ${selectedStudent?.fullName || ''} sang lớp mới thành công!`,
+          t('transfers.transferSuccessBghDirect', 'BGH đã điều chuyển học sinh {{name}} sang lớp mới thành công!', {
+            name: selectedStudent?.fullName || '',
+          }),
         );
       } else {
         toast.success(
           isTeacher
-            ? `Đã gửi yêu cầu chuyển lớp cho học sinh ${selectedStudent?.fullName || ''} thành công (chờ BGH xét duyệt)!`
-            : `Đã tạo yêu cầu chuyển lớp cho học sinh ${selectedStudent?.fullName || ''} thành công!`,
+            ? t('transfers.transferSuccessPending', 'Đã gửi yêu cầu chuyển lớp cho học sinh {{name}} thành công (chờ BGH xét duyệt)!', {
+                name: selectedStudent?.fullName || '',
+              })
+            : t('transfers.createSuccess', 'Đã tạo yêu cầu chuyển lớp thành công!'),
         );
       }
       setIsCreateDrawerOpen(false);
@@ -409,7 +416,7 @@ export function TransfersManagementPage() {
       setFormToClassId('');
       loadData();
     } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Lỗi khi tạo yêu cầu chuyển lớp';
+      const msg = err.response?.data?.message || err.message || t('transfers.createTransferFailed', 'Lỗi khi tạo yêu cầu chuyển lớp');
       toast.error(msg);
     } finally {
       setIsSubmittingCreate(false);
@@ -422,10 +429,10 @@ export function TransfersManagementPage() {
       await classesApi.updateGlobalTransferStatus(transfer.id, {
         status: 'APPROVED',
       });
-      toast.success(`Đã phê duyệt yêu cầu chuyển lớp của học sinh ${transfer.studentName}!`);
+      toast.success(t('transfers.approveSuccessWithName', 'Đã phê duyệt yêu cầu chuyển lớp của học sinh {{name}}!', { name: transfer.studentName }));
       loadData();
     } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Lỗi khi phê duyệt';
+      const msg = err.response?.data?.message || err.message || t('transfers.approveFailed', 'Lỗi khi phê duyệt');
       toast.error(msg);
     } finally {
       setIsUpdatingStatus(false);
@@ -439,12 +446,12 @@ export function TransfersManagementPage() {
       await classesApi.rejectTransfer(transferToReject.id, {
         rejectedReason: rejectReason.trim(),
       });
-      toast.success(`Đã từ chối yêu cầu chuyển lớp của học sinh ${transferToReject.studentName}.`);
+      toast.success(t('transfers.rejectSuccessWithName', 'Đã từ chối yêu cầu chuyển lớp của học sinh {{name}}.', { name: transferToReject.studentName }));
       setTransferToReject(null);
       setRejectReason('');
       loadData();
     } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Lỗi khi từ chối';
+      const msg = err.response?.data?.message || err.message || t('transfers.rejectFailed', 'Lỗi khi từ chối');
       toast.error(msg);
     } finally {
       setIsUpdatingStatus(false);
@@ -456,11 +463,11 @@ export function TransfersManagementPage() {
     try {
       setIsUpdatingStatus(true);
       await classesApi.cancelTransfer(transferToCancel.id);
-      toast.success(`Đã hủy yêu cầu chuyển lớp của học sinh ${transferToCancel.studentName}.`);
+      toast.success(t('transfers.cancelSuccessWithName', 'Đã hủy yêu cầu chuyển lớp của học sinh {{name}}.', { name: transferToCancel.studentName }));
       setTransferToCancel(null);
       loadData();
     } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Lỗi khi hủy yêu cầu';
+      const msg = err.response?.data?.message || err.message || t('transfers.cancelFailed', 'Lỗi khi hủy yêu cầu');
       toast.error(msg);
     } finally {
       setIsUpdatingStatus(false);
@@ -668,16 +675,18 @@ export function TransfersManagementPage() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Add Transfer Button matching Teacher Add Button */}
-          <Button
-            type="button"
-            onClick={handleOpenCreateDrawer}
-            className="h-8 px-3 text-[13px] font-medium bg-[#1447e6] hover:bg-[#1447e6]/90 text-white rounded-none shadow-none cursor-pointer flex items-center gap-1.5"
-            data-name="Button · Thêm yêu cầu"
-          >
-            <HugeiconsIcon icon={Add01Icon} size={15} />
-            <span>{t('transfers.addRequest', 'Thêm yêu cầu')}</span>
-          </Button>
+          {/* Add Transfer Button matching Teacher Add Button (hidden when school year completed) */}
+          {!isSchoolYearCompleted && (
+            <Button
+              type="button"
+              onClick={handleOpenCreateDrawer}
+              className="h-8 px-3 text-[13px] font-medium bg-[#1447e6] hover:bg-[#1447e6]/90 text-white rounded-none shadow-none cursor-pointer flex items-center gap-1.5"
+              data-name="Button · Thêm yêu cầu"
+            >
+              <HugeiconsIcon icon={Add01Icon} size={15} />
+              <span>{t('transfers.addRequest', 'Thêm yêu cầu')}</span>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -905,7 +914,7 @@ export function TransfersManagementPage() {
                               <span>{t('transfers.viewDetail', 'Xem chi tiết')}</span>
                             </DropdownMenuItem>
 
-                            {transfer.status === 'PENDING' && (
+                            {transfer.status === 'PENDING' && !isSchoolYearCompleted && (
                               <>
                                 <DropdownMenuSeparator className="my-1 border-t border-border" />
                                 {!isTeacher ? (
@@ -965,7 +974,7 @@ export function TransfersManagementPage() {
         currentPage={currentPage}
         totalItems={filteredItems.length}
         onPageChange={setCurrentPage}
-        itemLabel="yêu cầu"
+        itemLabel={t('transfers.itemLabelRequests', 'yêu cầu')}
       />
 
       {/* CREATE TRANSFER REQUEST DRAWER (BGH PRIVILEGE) */}
@@ -986,12 +995,12 @@ export function TransfersManagementPage() {
             <div className="flex items-start justify-between px-7 pt-6 pb-5 border-b border-border shrink-0 bg-card">
               <div className="flex flex-col gap-1.5">
                 <h2 className="text-[19px] font-semibold text-foreground tracking-tight">
-                  Tạo yêu cầu chuyển lớp
+                  {t('transfers.createDrawerTitleTeacher', 'Tạo yêu cầu chuyển lớp')}
                 </h2>
                 <p className="text-[12.5px] text-muted-foreground font-normal leading-relaxed">
                   {isTeacher
-                    ? 'Khởi tạo đề xuất chuyển học sinh sang lớp mới để Ban Giám Hiệu xét duyệt'
-                    : 'Điều phối và chuyển học sinh giữa các lớp học trong năm học hiện tại'}
+                    ? t('transfers.createDrawerSubTeacher', 'Khởi tạo đề xuất chuyển học sinh sang lớp mới để Ban Giám Hiệu xét duyệt')
+                    : t('transfers.createDrawerSubBgh', 'Điều phối và chuyển học sinh giữa các lớp học trong năm học hiện tại')}
                 </p>
               </div>
               <button
@@ -1007,7 +1016,7 @@ export function TransfersManagementPage() {
             {isLoadingFormOptions ? (
               <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-muted-foreground text-[13px]">
                 <div className="size-6 border-2 border-primary border-t-transparent animate-spin rounded-full" />
-                <span>Đang tải danh sách học sinh và lớp học...</span>
+                <span>{t('transfers.loadingOptions', 'Đang tải danh sách học sinh và lớp học...')}</span>
               </div>
             ) : (
               <form onSubmit={handleCreateTransferSubmit} className="flex-1 flex flex-col min-h-0">
@@ -1015,7 +1024,7 @@ export function TransfersManagementPage() {
                   {/* Field 1: Chọn học sinh chuyển lớp */}
                   <div className="space-y-2">
                     <Label htmlFor="studentSelect" className="text-[12.5px] font-medium text-foreground">
-                      Học sinh chuyển lớp <span className="text-destructive">*</span>
+                      {t('transfers.studentToTransferLabel', 'Học sinh chuyển lớp')} <span className="text-destructive">*</span>
                     </Label>
 
                     {/* BGH Only: Filter by Class */}
@@ -1030,7 +1039,7 @@ export function TransfersManagementPage() {
                           }}
                           className="w-full h-9 px-3 bg-background border border-border rounded-none text-[12.5px] text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer mb-2"
                         >
-                          <option value="ALL">Tất cả các lớp ({availableStudents.length} học sinh)</option>
+                          <option value="ALL">{t('transfers.allClassesWithCount', 'Tất cả các lớp ({{count}} học sinh)', { count: availableStudents.length })}</option>
                           {availableClasses.map((c) => (
                             <option key={c.id || c.class_id} value={c.id || c.class_id}>
                               {c.name} {c.room ? `(${c.room})` : ''}
@@ -1054,8 +1063,8 @@ export function TransfersManagementPage() {
                     >
                       <option value="">
                         {isTeacher
-                          ? `-- Chọn học sinh lớp ${teacherClass?.name || ''} (${availableStudents.length} học sinh) --`
-                          : `-- Chọn học sinh cần chuyển (${filteredAvailableStudents.length} học sinh) --`}
+                          ? t('transfers.selectStudentClassPrompt', '-- Chọn học sinh lớp {{className}} ({{count}} học sinh) --', { className: teacherClass?.name || '', count: availableStudents.length })
+                          : t('transfers.selectStudentPrompt', '-- Chọn học sinh cần chuyển ({{count}} học sinh) --', { count: filteredAvailableStudents.length })}
                       </option>
                       {filteredAvailableStudents.map((s) => {
                         const sId = String(s.id || s.student_id);
@@ -1065,7 +1074,7 @@ export function TransfersManagementPage() {
                           pendingStudentIds.has(String(s.student_code || ''));
                         return (
                           <option key={sId} value={sId} disabled={hasPending}>
-                            {s.studentCode || s.student_code} · {s.fullName || s.full_name} {s.currentClass?.className ? `(${s.currentClass.className})` : ''} {hasPending ? '— [Đang chờ duyệt]' : ''}
+                            {s.studentCode || s.student_code} · {s.fullName || s.full_name} {s.currentClass?.className ? `(${s.currentClass.className})` : ''} {hasPending ? t('transfers.pendingApprovalFlag', '— [Đang chờ duyệt]') : ''}
                           </option>
                         );
                       })}
@@ -1101,8 +1110,12 @@ export function TransfersManagementPage() {
                               </span>
                             </div>
                             <span className="text-[12px] text-muted-foreground truncate font-normal">
-                              Lớp hiện tại: {selectedStudent.currentClass?.className || teacherClass?.name || 'Chưa phân lớp'}
-                              {selectedStudent.gender && ` · Giới tính: ${selectedStudent.gender === 'FEMALE' ? 'Nữ' : 'Nam'}`}
+                              {t('transfers.currentClassDetail', 'Lớp hiện tại: {{className}}', {
+                                className: selectedStudent.currentClass?.className || teacherClass?.name || t('classes.unassigned', 'Chưa phân lớp'),
+                              })}
+                              {selectedStudent.gender && t('transfers.genderDetail', ' · Giới tính: {{gender}}', {
+                                gender: selectedStudent.gender === 'FEMALE' ? t('transfers.genderFemale', 'Nữ') : t('transfers.genderMale', 'Nam'),
+                              })}
                             </span>
                           </div>
                         </div>
@@ -1114,9 +1127,9 @@ export function TransfersManagementPage() {
                             setFormToClassId('');
                           }}
                           className="text-[12px] text-muted-foreground hover:text-destructive cursor-pointer px-2 py-1 shrink-0 font-normal hover:underline"
-                          title="Bỏ chọn học sinh"
+                          title={t('transfers.unselectStudentTooltip', 'Bỏ chọn học sinh')}
                         >
-                          Bỏ chọn
+                          {t('transfers.unselectStudent', 'Bỏ chọn')}
                         </button>
                       </div>
                     )}
@@ -1125,7 +1138,7 @@ export function TransfersManagementPage() {
                   {/* Field 2: Lớp chuyển đến */}
                   <div className="space-y-2">
                     <Label htmlFor="toClass" className="text-[12.5px] font-medium text-foreground">
-                      Lớp chuyển đến <span className="text-destructive">*</span>
+                      {t('transfers.toClassCol', 'Lớp chuyển đến')} <span className="text-destructive">*</span>
                     </Label>
                     <select
                       id="toClass"
@@ -1134,10 +1147,15 @@ export function TransfersManagementPage() {
                       className="w-full h-10 px-3.5 bg-background border border-border rounded-none text-[13.5px] text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer"
                       required
                     >
-                      <option value="">-- Chọn lớp học tiếp nhận --</option>
+                      <option value="">{t('transfers.targetClassSelectPrompt', '-- Chọn lớp học tiếp nhận --')}</option>
                       {filteredTargetClasses.map((c) => (
                         <option key={c.id || c.class_id} value={c.id || c.class_id}>
-                          {c.name} {c.room ? `(${c.room})` : ''} · {c.studentCount || 0}/{c.capacity || 25} học sinh
+                          {t('transfers.classCapacityFormat', '{{name}} {{room}} · {{count}}/{{capacity}} học sinh', {
+                            name: c.name,
+                            room: c.room ? `(${c.room})` : '',
+                            count: c.studentCount || 0,
+                            capacity: c.capacity || 25,
+                          })}
                         </option>
                       ))}
                     </select>
@@ -1146,7 +1164,7 @@ export function TransfersManagementPage() {
                   {/* Field 3: Ngày hiệu lực chuyển lớp (dd/mm/yyyy) */}
                   <div className="space-y-2">
                     <Label htmlFor="transferDate" className="text-[12.5px] font-medium text-foreground">
-                      Ngày hiệu lực chuyển lớp <span className="text-destructive">*</span>
+                      {t('transfers.effectiveDateCol', 'Ngày hiệu lực chuyển lớp')} <span className="text-destructive">*</span>
                     </Label>
                     <div className="relative">
                       <Input
@@ -1174,7 +1192,7 @@ export function TransfersManagementPage() {
                             }
                           }}
                           className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                          title="Chọn ngày từ lịch"
+                          title={t('transfers.selectDateFromCalendar', 'Chọn ngày từ lịch')}
                         />
                       </div>
                     </div>
@@ -1183,13 +1201,13 @@ export function TransfersManagementPage() {
                   {/* Field 4: Lý do chuyển lớp */}
                   <div className="space-y-2">
                     <Label htmlFor="transferReason" className="text-[12.5px] font-medium text-foreground">
-                      Lý do chuyển lớp <span className="text-destructive">*</span>
+                      {t('transfers.transferReasonPrompt', 'Lý do chuyển lớp')} <span className="text-destructive">*</span>
                     </Label>
                     <textarea
                       id="transferReason"
                       value={formReason}
                       onChange={(e) => setFormReason(e.target.value)}
-                      placeholder="Nhập lý do chuyển lớp (VD: Nguyện vọng phụ huynh, sắp xếp sĩ số phòng học, chuyển theo độ tuổi...)"
+                      placeholder={t('transfers.transferReasonInputPlaceholder', 'Nhập lý do chuyển lớp (VD: Nguyện vọng phụ huynh, sắp xếp sĩ số phòng học, chuyển theo độ tuổi...)')}
                       rows={4}
                       className="w-full min-h-[110px] p-3 text-[13.5px] bg-background border border-border rounded-none outline-none focus:border-primary resize-none text-foreground placeholder:text-muted-foreground/60 leading-relaxed"
                       required
@@ -1208,12 +1226,12 @@ export function TransfersManagementPage() {
                       />
                       <label htmlFor="autoApproveToggle" className="cursor-pointer select-none text-[12.5px]">
                         <span className="font-semibold text-foreground block">
-                          Phê duyệt & Điều chuyển ngay vào lớp mới
+                          {t('transfers.autoApproveCheckbox', 'Phê duyệt & Điều chuyển ngay vào lớp mới')}
                         </span>
                         <span className="text-muted-foreground text-[12px] block mt-1 leading-relaxed">
                           {formAutoApprove
-                            ? 'Học sinh sẽ được chuyển lớp ngay lập tức và lưu ở trạng thái Đã duyệt.'
-                            : 'Yêu cầu sẽ được tạo ở trạng thái Chờ duyệt.'}
+                            ? t('transfers.autoApproveSubBgh', 'Học sinh sẽ được chuyển lớp ngay lập tức và lưu ở trạng thái Đã duyệt.')
+                            : t('transfers.autoApproveSubTeacher', 'Yêu cầu sẽ được tạo ở trạng thái Chờ duyệt.')}
                         </span>
                       </label>
                     </div>
@@ -1229,7 +1247,7 @@ export function TransfersManagementPage() {
                     onClick={() => setIsCreateDrawerOpen(false)}
                     className="h-8 px-4 text-[13px] rounded-none border-border cursor-pointer shadow-none"
                   >
-                    Hủy
+                    {t('common.cancel', 'Hủy')}
                   </Button>
                   <Button
                     type="submit"
@@ -1237,12 +1255,12 @@ export function TransfersManagementPage() {
                     className="h-8 px-4 text-[13px] rounded-none bg-[#1447e6] hover:bg-[#1447e6]/90 text-white cursor-pointer font-medium shadow-none disabled:opacity-40"
                   >
                     {isSubmittingCreate
-                      ? 'Đang gửi...'
+                      ? t('transfers.btnSending', 'Đang gửi...')
                       : isTeacher
-                        ? 'Gửi yêu cầu chuyển lớp'
+                        ? t('transfers.btnSubmitTransferTeacher', 'Gửi yêu cầu chuyển lớp')
                         : formAutoApprove
-                          ? 'Phê duyệt & Điều chuyển ngay'
-                          : 'Tạo yêu cầu (Chờ duyệt)'}
+                          ? t('transfers.btnSubmitTransferDirect', 'Phê duyệt & Điều chuyển ngay')
+                          : t('transfers.btnSubmitTransferPending', 'Tạo yêu cầu (Chờ duyệt)')}
                   </Button>
                 </div>
               </form>

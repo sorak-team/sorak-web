@@ -81,7 +81,7 @@ export function TransferDetailPage() {
       }
     } catch (err) {
       console.error('Error loading transfer details:', err);
-      const msg = err.response?.data?.message || 'Không tìm thấy thông tin yêu cầu chuyển lớp.';
+      const msg = err.response?.data?.message || t('transfers.notFoundTransfer', 'Không tìm thấy thông tin yêu cầu chuyển lớp.');
       toast.error(msg);
       if (err.response?.status === 403) {
         navigate('/transfers', { replace: true });
@@ -89,7 +89,7 @@ export function TransferDetailPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [id, navigate]);
+  }, [id, navigate, t]);
 
   useEffect(() => {
     loadTransfer();
@@ -103,10 +103,10 @@ export function TransferDetailPage() {
       await classesApi.updateGlobalTransferStatus(transfer.id, {
         status: 'APPROVED',
       });
-      toast.success(`Đã phê duyệt yêu cầu chuyển lớp của học sinh ${transfer.studentName}!`);
+      toast.success(t('transfers.approveSuccessWithName', 'Đã phê duyệt yêu cầu chuyển lớp của học sinh {{name}}!', { name: transfer.studentName }));
       loadTransfer();
     } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Lỗi khi phê duyệt';
+      const msg = err.response?.data?.message || err.message || t('transfers.approveFailed', 'Lỗi khi phê duyệt');
       toast.error(msg);
     } finally {
       setIsUpdatingStatus(false);
@@ -121,12 +121,12 @@ export function TransferDetailPage() {
       await classesApi.rejectTransfer(transfer.id, {
         rejectedReason: rejectReason.trim(),
       });
-      toast.success(`Đã từ chối yêu cầu chuyển lớp của học sinh ${transfer.studentName}.`);
+      toast.success(t('transfers.rejectSuccessWithName', 'Đã từ chối yêu cầu chuyển lớp của học sinh {{name}}.', { name: transfer.studentName }));
       setIsRejectModalOpen(false);
       setRejectReason('');
       loadTransfer();
     } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Lỗi khi từ chối';
+      const msg = err.response?.data?.message || err.message || t('transfers.rejectFailed', 'Lỗi khi từ chối');
       toast.error(msg);
     } finally {
       setIsUpdatingStatus(false);
@@ -139,11 +139,11 @@ export function TransferDetailPage() {
     try {
       setIsUpdatingStatus(true);
       await classesApi.cancelTransfer(transfer.id);
-      toast.success(`Đã hủy yêu cầu chuyển lớp của học sinh ${transfer.studentName}.`);
+      toast.success(t('transfers.cancelSuccessWithName', 'Đã hủy yêu cầu chuyển lớp của học sinh {{name}}.', { name: transfer.studentName }));
       setIsCancelDialogOpen(false);
       loadTransfer();
     } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Lỗi khi hủy yêu cầu';
+      const msg = err.response?.data?.message || err.message || t('transfers.cancelFailed', 'Lỗi khi hủy yêu cầu');
       toast.error(msg);
     } finally {
       setIsUpdatingStatus(false);
@@ -336,10 +336,10 @@ export function TransferDetailPage() {
         >
           <div className="p-4 border-b border-border bg-muted/20">
             <h2 className="text-[14px] font-semibold text-foreground">
-              Lộ trình chuyển lớp
+              {t('transfers.routeCardTitle', 'Lộ trình chuyển lớp')}
             </h2>
             <p className="text-[12px] text-muted-foreground font-normal">
-              Thông tin điều chuyển giữa các lớp học trong niên khóa
+              {t('transfers.routeCardSub', 'Thông tin điều chuyển giữa các lớp học trong niên khóa')}
             </p>
           </div>
 
@@ -347,7 +347,7 @@ export function TransferDetailPage() {
             {/* Lớp hiện tại */}
             <div className="flex items-center justify-between p-4 h-[52px]">
               <span className="text-[14px] text-foreground/80 font-normal">
-                Lớp học hiện tại
+                {t('transfers.currentClassCol', 'Lớp học hiện tại')}
               </span>
               <span className="text-[14px] text-foreground font-medium">
                 {transfer.fromClassName}
@@ -359,7 +359,7 @@ export function TransferDetailPage() {
             {transfer.fromClassAgeGroup && (
               <div className="flex items-center justify-between p-4 h-[52px]">
                 <span className="text-[14px] text-foreground/80 font-normal">
-                  Khối tuổi lớp cũ
+                  {t('transfers.oldClassGrade', 'Khối tuổi lớp cũ')}
                 </span>
                 <span className="text-[14px] text-foreground font-normal">
                   {getAgeGroupLabel(transfer.fromClassAgeGroup)}
@@ -370,7 +370,7 @@ export function TransferDetailPage() {
             {/* Lớp chuyển đến */}
             <div className="flex items-center justify-between p-4 h-[52px]">
               <span className="text-[14px] text-foreground/80 font-normal">
-                Lớp chuyển đến
+                {t('transfers.toClassCol', 'Lớp chuyển đến')}
               </span>
               <span className="text-[14px] text-foreground font-semibold">
                 {transfer.toClassName}
@@ -382,7 +382,7 @@ export function TransferDetailPage() {
             {transfer.toClassAgeGroup && (
               <div className="flex items-center justify-between p-4 h-[52px]">
                 <span className="text-[14px] text-foreground/80 font-normal">
-                  Khối tuổi lớp mới
+                  {t('transfers.newClassGrade', 'Khối tuổi lớp mới')}
                 </span>
                 <span className="text-[14px] text-foreground font-normal">
                   {getAgeGroupLabel(transfer.toClassAgeGroup)}
@@ -393,17 +393,17 @@ export function TransferDetailPage() {
             {/* Niên khóa */}
             <div className="flex items-center justify-between p-4 h-[52px]">
               <span className="text-[14px] text-foreground/80 font-normal">
-                Niên khóa
+                {t('transfers.academicYearLabel', 'Niên khóa')}
               </span>
               <span className="text-[14px] text-foreground font-normal">
-                {transfer.fromClassSchoolYear || transfer.toClassSchoolYear || 'Năm học hiện tại'}
+                {transfer.fromClassSchoolYear || transfer.toClassSchoolYear || t('transfers.currentYearFallback', 'Năm học hiện tại')}
               </span>
             </div>
 
             {/* Ngày hiệu lực */}
             <div className="flex items-center justify-between p-4 h-[52px]">
               <span className="text-[14px] text-foreground/80 font-normal">
-                Ngày hiệu lực chuyển lớp
+                {t('transfers.effectiveDateLabel', 'Ngày hiệu lực chuyển lớp')}
               </span>
               <span className="inline-flex items-center justify-center px-2.5 py-0.5 text-[12px] font-mono font-medium bg-muted text-foreground rounded-none">
                 {transferDateFormatted}
@@ -413,17 +413,17 @@ export function TransferDetailPage() {
             {/* Người tạo yêu cầu */}
             <div className="flex items-center justify-between p-4 h-[52px]">
               <span className="text-[14px] text-foreground/80 font-normal">
-                Người tạo yêu cầu
+                {t('transfers.creatorLabel', 'Người tạo yêu cầu')}
               </span>
               <span className="text-[14px] text-foreground font-medium">
-                {transfer.createdByName || 'Giáo viên'}
+                {transfer.createdByName || t('account.roleTeacher', 'Giáo viên')}
               </span>
             </div>
 
             {/* Thời gian gửi yêu cầu */}
             <div className="flex items-center justify-between p-4 h-[52px]">
               <span className="text-[14px] text-foreground/80 font-normal">
-                Thời gian gửi yêu cầu
+                {t('transfers.requestTimeLabel', 'Thời gian gửi yêu cầu')}
               </span>
               <span className="text-[13px] text-muted-foreground font-normal">
                 {createdDateFormatted}
@@ -434,7 +434,7 @@ export function TransferDetailPage() {
             {transfer.approvedByName && (
               <div className="flex items-center justify-between p-4 h-[52px]">
                 <span className="text-[14px] text-foreground/80 font-normal">
-                  Người xử lý
+                  {t('transfers.processorLabel', 'Người xử lý')}
                 </span>
                 <span className="text-[14px] text-foreground font-medium">
                   {transfer.approvedByName}
@@ -446,7 +446,7 @@ export function TransferDetailPage() {
             {approvedDateFormatted && (
               <div className="flex items-center justify-between p-4 h-[52px]">
                 <span className="text-[14px] text-foreground/80 font-normal">
-                  Thời gian xử lý
+                  {t('transfers.processedTimeLabel', 'Thời gian xử lý')}
                 </span>
                 <span className="text-[13px] text-muted-foreground font-normal">
                   {approvedDateFormatted}
@@ -458,7 +458,7 @@ export function TransferDetailPage() {
             {cancelledDateFormatted && (
               <div className="flex items-center justify-between p-4 h-[52px]">
                 <span className="text-[14px] text-foreground/80 font-normal">
-                  Thời gian hủy
+                  {t('transfers.cancelledTimeLabel', 'Thời gian hủy')}
                 </span>
                 <span className="text-[13px] text-muted-foreground font-normal">
                   {cancelledDateFormatted}
@@ -475,10 +475,10 @@ export function TransferDetailPage() {
         >
           <div className="p-4 border-b border-border bg-muted/20">
             <h2 className="text-[14px] font-semibold text-foreground">
-              Hồ sơ học sinh & Liên hệ
+              {t('transfers.profileContactTitle', 'Hồ sơ học sinh & Liên hệ')}
             </h2>
             <p className="text-[12px] text-muted-foreground font-normal">
-              Thông tin nhân khẩu học và phụ huynh học sinh
+              {t('transfers.profileContactSub', 'Thông tin nhân khẩu học và phụ huynh học sinh')}
             </p>
           </div>
 
@@ -486,7 +486,7 @@ export function TransferDetailPage() {
             {/* Họ và tên */}
             <div className="flex items-center justify-between p-4 h-[52px]">
               <span className="text-[14px] text-foreground/80 font-normal">
-                Họ tên học sinh
+                {t('transfers.studentFullNameLabel', 'Họ tên học sinh')}
               </span>
               <span className="text-[14px] text-foreground font-medium">
                 {transfer.studentName}
@@ -496,7 +496,7 @@ export function TransferDetailPage() {
             {/* Mã học sinh */}
             <div className="flex items-center justify-between p-4 h-[52px]">
               <span className="text-[14px] text-foreground/80 font-normal">
-                Mã học sinh
+                {t('transfers.studentCodeLabel', 'Mã học sinh')}
               </span>
               <span className="inline-flex items-center justify-center px-2.5 py-0.5 text-[12px] font-mono font-medium bg-muted text-foreground rounded-none">
                 {transfer.studentCode || '—'}
@@ -506,7 +506,7 @@ export function TransferDetailPage() {
             {/* Ngày sinh */}
             <div className="flex items-center justify-between p-4 h-[52px]">
               <span className="text-[14px] text-foreground/80 font-normal">
-                Ngày sinh
+                {t('transfers.dobLabel', 'Ngày sinh')}
               </span>
               <span className="text-[14px] text-foreground font-normal">
                 {transfer.studentDob
@@ -518,7 +518,7 @@ export function TransferDetailPage() {
             {/* Giới tính */}
             <div className="flex items-center justify-between p-4 h-[52px]">
               <span className="text-[14px] text-foreground/80 font-normal">
-                Giới tính
+                {t('transfers.genderLabel', 'Giới tính')}
               </span>
               <span className="text-[14px] text-foreground font-normal">
                 {getGenderLabel(transfer.studentGender)}
@@ -528,7 +528,7 @@ export function TransferDetailPage() {
             {/* Phụ huynh */}
             <div className="flex items-center justify-between p-4 h-[52px]">
               <span className="text-[14px] text-foreground/80 font-normal">
-                Phụ huynh liên hệ
+                {t('transfers.contactParentLabel', 'Phụ huynh liên hệ')}
               </span>
               <span className="text-[14px] text-foreground font-medium">
                 {transfer.parentName || '—'}
@@ -538,7 +538,7 @@ export function TransferDetailPage() {
             {/* SĐT phụ huynh */}
             <div className="flex items-center justify-between p-4 h-[52px]">
               <span className="text-[14px] text-foreground/80 font-normal">
-                Số điện thoại
+                {t('transfers.parentPhoneLabel', 'Số điện thoại')}
               </span>
               <span className="inline-flex items-center justify-center px-2.5 py-0.5 text-[12px] font-mono font-medium bg-muted text-foreground rounded-none">
                 {transfer.parentPhone || '—'}
@@ -548,10 +548,10 @@ export function TransferDetailPage() {
             {/* Mối quan hệ */}
             <div className="flex items-center justify-between p-4 h-[52px]">
               <span className="text-[14px] text-foreground/80 font-normal">
-                Mối quan hệ
+                {t('transfers.relationshipLabel', 'Mối quan hệ')}
               </span>
               <span className="text-[14px] text-foreground font-normal">
-                {transfer.parentRelationship || 'Phụ huynh'}
+                {transfer.parentRelationship || t('account.roleParent', 'Phụ huynh')}
               </span>
             </div>
 
@@ -559,13 +559,13 @@ export function TransferDetailPage() {
             {transfer.studentId && (
               <div className="p-4 h-[52px] flex items-center justify-between bg-muted/10">
                 <span className="text-[13px] text-muted-foreground font-normal">
-                  Hồ sơ học tập đầy đủ
+                  {t('transfers.fullAcademicRecord', 'Hồ sơ học tập đầy đủ')}
                 </span>
                 <Link
                   to={`/students/${transfer.studentId}`}
                   className="inline-flex items-center gap-1 text-[13px] font-medium text-[#1447e6] hover:underline"
                 >
-                  <span>Xem hồ sơ học sinh</span>
+                  <span>{t('transfers.viewStudentProfile', 'Xem hồ sơ học sinh')}</span>
                   <HugeiconsIcon icon={ArrowRight01Icon} size={14} />
                 </Link>
               </div>
@@ -581,20 +581,20 @@ export function TransferDetailPage() {
       >
         <div className="p-4 border-b border-border bg-muted/20">
           <h2 className="text-[14px] font-semibold text-foreground">
-            Nội dung đề xuất & Kết quả thẩm định
+            {t('transfers.contentAndAppraisalTitle', 'Nội dung đề xuất & Kết quả thẩm định')}
           </h2>
           <p className="text-[12px] text-muted-foreground font-normal">
-            Nguyện vọng chuyển lớp và ý kiến thẩm định từ Ban Giám Hiệu
+            {t('transfers.contentAndAppraisalSub', 'Nguyện vọng chuyển lớp và ý kiến thẩm định từ Ban Giám Hiệu')}
           </p>
         </div>
 
         <div className="p-5 space-y-4">
           <div>
             <span className="text-[12px] font-medium text-muted-foreground block mb-1.5 uppercase tracking-wider">
-              Lý do xin chuyển lớp:
+              {t('transfers.transferReasonLabel', 'Lý do xin chuyển lớp:')}
             </span>
             <div className="p-3.5 border border-border bg-muted/15 text-[13.5px] text-foreground leading-relaxed">
-              {transfer.reason || 'Không có lý do cụ thể'}
+              {transfer.reason || t('transfers.noSpecificReason', 'Không có lý do cụ thể')}
             </div>
           </div>
 
@@ -602,7 +602,7 @@ export function TransferDetailPage() {
           {transfer.status === 'REJECTED' && transfer.rejectedReason && (
             <div>
               <span className="text-[12px] font-medium text-destructive block mb-1.5 uppercase tracking-wider">
-                Lý do từ chối từ Ban Giám Hiệu:
+                {t('transfers.rejectReasonFromBgh', 'Lý do từ chối từ Ban Giám Hiệu:')}
               </span>
               <div className="p-3.5 border border-destructive/30 bg-destructive/5 text-[13.5px] text-destructive leading-relaxed">
                 {transfer.rejectedReason}
@@ -614,10 +614,10 @@ export function TransferDetailPage() {
           {transfer.status === 'APPROVED' && (
             <div className="p-3.5 border border-border bg-muted/20 flex items-center justify-between text-[13px]">
               <span className="text-foreground">
-                Học sinh đã được chuyển chính thức sang lớp <strong>{transfer.toClassName}</strong>.
+                {t('transfers.transferCompletedNotice', 'Học sinh đã được chuyển chính thức sang lớp {{className}}.', { className: transfer.toClassName })}
               </span>
               <span className="text-muted-foreground font-mono text-[12px]">
-                {approvedDateFormatted ? `Ngày duyệt: ${approvedDateFormatted}` : ''}
+                {approvedDateFormatted ? t('transfers.approvedDateLabel', 'Ngày duyệt: {{date}}', { date: approvedDateFormatted }) : ''}
               </span>
             </div>
           )}
@@ -626,10 +626,10 @@ export function TransferDetailPage() {
           {transfer.status === 'CANCELLED' && (
             <div className="p-3.5 border border-border bg-muted/20 flex items-center justify-between text-[13px]">
               <span className="text-muted-foreground">
-                Yêu cầu chuyển lớp này đã được giáo viên hủy bỏ.
+                {t('transfers.transferCancelledNotice', 'Yêu cầu chuyển lớp này đã được giáo viên hủy bỏ.')}
               </span>
               <span className="text-muted-foreground font-mono text-[12px]">
-                {cancelledDateFormatted ? `Ngày hủy: ${cancelledDateFormatted}` : ''}
+                {cancelledDateFormatted ? t('transfers.cancelledDateLabel', 'Ngày hủy: {{date}}', { date: cancelledDateFormatted }) : ''}
               </span>
             </div>
           )}
@@ -642,22 +642,24 @@ export function TransferDetailPage() {
           <div className="w-full max-w-[440px] border border-border bg-card p-5 rounded-none shadow-xl flex flex-col gap-4 select-none">
             <div className="flex flex-col gap-1">
               <h3 className="text-[16px] font-semibold text-foreground">
-                Từ chối yêu cầu chuyển lớp
+                {t('transfers.confirmRejectDialogTitle', 'Từ chối yêu cầu chuyển lớp')}
               </h3>
               <p className="text-[13px] text-muted-foreground">
-                Xác nhận từ chối yêu cầu chuyển lớp của học sinh{' '}
-                <strong>{transfer.studentName}</strong> (Mã HS: {transfer.studentCode})
+                {t('transfers.confirmRejectDialogDesc', 'Xác nhận từ chối yêu cầu chuyển lớp của học sinh {{name}} (Mã HS: {{code}})', {
+                  name: transfer.studentName,
+                  code: transfer.studentCode,
+                })}
               </p>
             </div>
 
             <div className="space-y-1.5">
               <label className="text-[12px] font-medium text-foreground">
-                Lý do từ chối <span className="text-destructive">*</span>
+                {t('transfers.rejectReasonRequired', 'Lý do từ chối')} <span className="text-destructive">*</span>
               </label>
               <textarea
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="Nhập lý do từ chối (VD: Lớp tiếp nhận đã đủ sĩ số, không đúng độ tuổi...)"
+                placeholder={t('transfers.rejectReasonRequiredPlaceholder', 'Nhập lý do từ chối (VD: Lớp tiếp nhận đã đủ sĩ số, không đúng độ tuổi...)')}
                 rows={3}
                 className="w-full p-2.5 text-[13px] bg-background border border-border rounded-none outline-none focus:border-primary resize-none text-foreground"
               />
@@ -674,7 +676,7 @@ export function TransferDetailPage() {
                 }}
                 className="h-8 px-4 rounded-none border-border text-[13px] font-normal shadow-none cursor-pointer"
               >
-                Hủy
+                {t('common.cancel', 'Hủy')}
               </Button>
               <Button
                 type="button"
@@ -682,7 +684,7 @@ export function TransferDetailPage() {
                 onClick={handleConfirmReject}
                 className="h-8 px-4 rounded-none bg-destructive hover:bg-destructive/90 text-white text-[13px] font-medium shadow-none cursor-pointer disabled:opacity-40"
               >
-                {isUpdatingStatus ? 'Đang lưu...' : 'Xác nhận từ chối'}
+                {isUpdatingStatus ? t('common.saving', 'Đang lưu...') : t('transfers.btnConfirmReject', 'Xác nhận từ chối')}
               </Button>
             </div>
           </div>
@@ -695,11 +697,13 @@ export function TransferDetailPage() {
           <div className="w-full max-w-[440px] border border-border bg-card p-5 rounded-none shadow-xl flex flex-col gap-4 select-none">
             <div className="flex flex-col gap-1">
               <h3 className="text-[16px] font-semibold text-foreground">
-                Hủy yêu cầu chuyển lớp
+                {t('transfers.confirmCancelDialogTitle', 'Hủy yêu cầu chuyển lớp')}
               </h3>
               <p className="text-[13px] text-muted-foreground">
-                Bạn có chắc chắn muốn hủy yêu cầu chuyển lớp của học sinh{' '}
-                <strong>{transfer.studentName}</strong> (Mã HS: {transfer.studentCode}) không? Sau khi hủy, yêu cầu sẽ không được gửi tới Ban Giám Hiệu.
+                {t('transfers.confirmCancelDialogDesc', 'Bạn có chắc chắn muốn hủy yêu cầu chuyển lớp của học sinh {{name}} (Mã HS: {{code}}) không? Sau khi hủy, yêu cầu sẽ không được gửi tới Ban Giám Hiệu.', {
+                  name: transfer.studentName,
+                  code: transfer.studentCode,
+                })}
               </p>
             </div>
 
@@ -711,7 +715,7 @@ export function TransferDetailPage() {
                 onClick={() => setIsCancelDialogOpen(false)}
                 className="h-8 px-4 rounded-none border-border text-[13px] font-normal shadow-none cursor-pointer"
               >
-                Đóng
+                {t('common.close', 'Đóng')}
               </Button>
               <Button
                 type="button"
@@ -719,7 +723,7 @@ export function TransferDetailPage() {
                 onClick={handleConfirmCancel}
                 className="h-8 px-4 rounded-none bg-destructive hover:bg-destructive/90 text-white text-[13px] font-medium shadow-none cursor-pointer disabled:opacity-40"
               >
-                {isUpdatingStatus ? 'Đang hủy...' : 'Xác nhận hủy'}
+                {isUpdatingStatus ? t('common.cancelling', 'Đang hủy...') : t('transfers.btnConfirmCancel', 'Xác nhận hủy')}
               </Button>
             </div>
           </div>

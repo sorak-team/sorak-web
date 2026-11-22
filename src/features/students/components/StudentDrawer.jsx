@@ -353,7 +353,7 @@ export function StudentDrawer({
   // Dynamic Parent Handlers
   const handleAddParent = () => {
     if (parents.length >= 2) {
-      toast.error('Mỗi học sinh chỉ có tối đa 2 phụ huynh/người giám hộ.');
+      toast.error(t('student.maxGuardiansError', 'Mỗi học sinh chỉ có tối đa 2 phụ huynh/người giám hộ.'));
       return;
     }
     setParents((prev) => [
@@ -370,7 +370,7 @@ export function StudentDrawer({
 
   const handleRemoveParent = (indexToRemove) => {
     if (parents.length <= 1) {
-      toast.error('Mỗi học sinh phải có tối thiểu 1 phụ huynh/người giám hộ.');
+      toast.error(t('student.minGuardiansError', 'Mỗi học sinh phải có tối thiểu 1 phụ huynh/người giám hộ.'));
       return;
     }
     setParents((prev) => prev.filter((_, idx) => idx !== indexToRemove));
@@ -387,27 +387,27 @@ export function StudentDrawer({
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isTeacher && drawerMode === 'edit' && activeTab !== 'health') {
-      toast.error('Giáo viên không có quyền chỉnh sửa hồ sơ học sinh hoặc thông tin phụ huynh.');
+      toast.error(t('student.teacherNoEditPermission', 'Giáo viên không có quyền chỉnh sửa hồ sơ học sinh hoặc thông tin phụ huynh.'));
       return;
     }
     if (isStudentGraduated) {
-      toast.error('Học sinh đã tốt nghiệp, không thể chỉnh sửa thông tin hồ sơ.');
+      toast.error(t('student.graduatedNoEdit', 'Học sinh đã tốt nghiệp, không thể chỉnh sửa thông tin hồ sơ.'));
       return;
     }
     if (!fullName.trim()) {
-      toast.error('Vui lòng nhập họ và tên học sinh');
+      toast.error(t('student.nameRequired', 'Vui lòng nhập họ và tên học sinh'));
       setActiveTab('basic');
       return;
     }
     if (hasConsecutiveSpaces(fullName)) {
-      toast.error('Họ tên không được chứa nhiều khoảng trắng liên tiếp.');
+      toast.error(t('student.nameConsecutiveSpaces', 'Họ tên không được chứa nhiều khoảng trắng liên tiếp.'));
       setActiveTab('basic');
       return;
     }
 
     if (dob && dob.trim()) {
       if (isDobInFuture(dob)) {
-        toast.error('Ngày sinh không được lớn hơn ngày hiện tại.');
+        toast.error(t('student.dobFutureError', 'Ngày sinh không được lớn hơn ngày hiện tại.'));
         setActiveTab('basic');
         return;
       }
@@ -419,7 +419,7 @@ export function StudentDrawer({
         yr = new Date(dob).getFullYear();
       }
       if (yr && !isNaN(yr) && yr < 2000) {
-        toast.error('Năm sinh học sinh phải từ năm 2000 trở đi');
+        toast.error(t('student.dobMinYearError', 'Năm sinh học sinh phải từ năm 2000 trở đi'));
         setActiveTab('basic');
         return;
       }
@@ -434,19 +434,19 @@ export function StudentDrawer({
         yr = new Date(joinDate).getFullYear();
       }
       if (yr && !isNaN(yr) && yr < 2000) {
-        toast.error('Ngày nhập học tối thiểu phải từ năm 2000');
+        toast.error(t('student.joinDateMinYearError', 'Ngày nhập học tối thiểu phải từ năm 2000'));
         setActiveTab('basic');
         return;
       }
     }
 
     if (!parents || parents.length === 0) {
-      toast.error('Vui lòng bổ sung ít nhất một phụ huynh/người giám hộ trước khi tạo học sinh.');
+      toast.error(t('student.requireAtLeastOneParent', 'Vui lòng bổ sung ít nhất một phụ huynh/người giám hộ trước khi tạo học sinh.'));
       setActiveTab('parents');
       return;
     }
     if (parents.length > 2) {
-      toast.error('Mỗi học sinh chỉ có tối đa 2 phụ huynh/người giám hộ.');
+      toast.error(t('student.maxGuardiansError', 'Mỗi học sinh chỉ có tối đa 2 phụ huynh/người giám hộ.'));
       setActiveTab('parents');
       return;
     }
@@ -460,27 +460,27 @@ export function StudentDrawer({
       const pCccd = (p.citizenId || '').trim();
 
       if (!pName) {
-        toast.error(`Vui lòng nhập họ và tên cho Phụ huynh #${i + 1}`);
+        toast.error(t('student.parentNameRequiredIndex', 'Vui lòng nhập họ và tên cho Phụ huynh #{{index}}', { index: i + 1 }));
         setActiveTab('parents');
         return;
       }
       if (!pRel) {
-        toast.error(`Vui lòng nhập mối quan hệ cho Phụ huynh #${i + 1}`);
+        toast.error(t('student.parentRelRequiredIndex', 'Vui lòng nhập mối quan hệ cho Phụ huynh #{{index}}', { index: i + 1 }));
         setActiveTab('parents');
         return;
       }
       if (!pPhone || !/^[0-9]{9,15}$/.test(pPhone)) {
-        toast.error(`Số điện thoại Phụ huynh #${i + 1} phải từ 9 đến 15 chữ số`);
+        toast.error(t('student.parentPhoneFormatIndex', 'Số điện thoại Phụ huynh #{{index}} phải từ 9 đến 15 chữ số', { index: i + 1 }));
         setActiveTab('parents');
         return;
       }
       if (!pCccd) {
-        toast.error(`Vui lòng nhập số CCCD/định danh cho Phụ huynh #${i + 1}`);
+        toast.error(t('student.parentCitizenIdRequiredIndex', 'Vui lòng nhập số CCCD/định danh cho Phụ huynh #{{index}}', { index: i + 1 }));
         setActiveTab('parents');
         return;
       }
       if (!/^[0-9]{12}$/.test(pCccd)) {
-        toast.error(`Số CCCD/định danh Phụ huynh #${i + 1} phải gồm đúng 12 chữ số.`);
+        toast.error(t('student.parentCitizenIdFormatIndex', 'Số CCCD/định danh Phụ huynh #{{index}} phải gồm đúng 12 chữ số.', { index: i + 1 }));
         setActiveTab('parents');
         return;
       }
@@ -499,7 +499,7 @@ export function StudentDrawer({
     const cccds = validParents.map((p) => p.citizenId).filter(Boolean);
     const duplicateCccd = cccds.find((cid, idx) => cccds.indexOf(cid) !== idx);
     if (duplicateCccd) {
-      toast.error(`Số CCCD '${duplicateCccd}' bị trùng giữa các phụ huynh`);
+      toast.error(t('student.parentCitizenIdDuplicate', "Số CCCD '{{id}}' bị trùng giữa các phụ huynh", { id: duplicateCccd }));
       setActiveTab('parents');
       return;
     }
@@ -551,13 +551,13 @@ export function StudentDrawer({
         if (onSuccess) {
           await onSuccess();
         }
-        toast.success('Đã cập nhật hồ sơ học sinh thành công');
+        toast.success(t('student.toastUpdated', 'Đã cập nhật hồ sơ học sinh thành công'));
       } else {
         await createStudent(payload);
         if (onSuccess) {
           await onSuccess();
         }
-        toast.success('Đã thêm hồ sơ học sinh mới thành công');
+        toast.success(t('student.toastCreated', 'Đã thêm hồ sơ học sinh mới thành công'));
       }
     } catch (err) {
       console.error('Save student failed:', err);
@@ -568,15 +568,15 @@ export function StudentDrawer({
         String(err.message || '').includes('phiên khác');
 
       const errorMsg = isConflict
-        ? 'Dữ liệu đã được cập nhật trong một phiên khác. Thay đổi của bạn chưa được lưu. Vui lòng tải lại dữ liệu mới nhất và thực hiện lại.'
+        ? t('student.conflictDesc', 'Dữ liệu đã được cập nhật trong một phiên khác. Thay đổi của bạn chưa được lưu. Vui lòng tải lại dữ liệu mới nhất và thực hiện lại.')
         : err.response?.data?.message ||
           err.response?.data?.error ||
           err.message ||
-          'Lưu hồ sơ học sinh thất bại';
+          t('student.saveFailed', 'Lưu hồ sơ học sinh thất bại');
 
       if (isConflict) {
         setConcurrencyConflict(true);
-        toast.error('Xung đột dữ liệu', {
+        toast.error(t('student.conflictTitle', 'Xung đột dữ liệu'), {
           description: errorMsg,
           duration: 8000,
         });
@@ -629,28 +629,28 @@ export function StudentDrawer({
         }
       }
       setConcurrencyConflict(false);
-      toast.success('Đã tải lại dữ liệu mới nhất của học sinh');
+      toast.success(t('student.reloadDataSuccess', 'Đã tải lại dữ liệu mới nhất của học sinh'));
     } catch (fetchErr) {
-      toast.error('Không thể tải lại dữ liệu mới nhất');
+      toast.error(t('student.reloadDataFailed', 'Không thể tải lại dữ liệu mới nhất'));
     }
   };
 
   const handleNextTab = () => {
     if (activeTab === 'basic') {
       if (!fullName.trim()) {
-        toast.error('Vui lòng nhập họ và tên học sinh');
+        toast.error(t('student.nameRequired', 'Vui lòng nhập họ và tên học sinh'));
         return;
       }
       if (hasConsecutiveSpaces(fullName)) {
-        toast.error('Họ tên không được chứa nhiều khoảng trắng liên tiếp.');
+        toast.error(t('student.nameConsecutiveSpaces', 'Họ tên không được chứa nhiều khoảng trắng liên tiếp.'));
         return;
       }
       if (!dob || !dob.trim()) {
-        toast.error('Vui lòng nhập ngày sinh của học sinh');
+        toast.error(t('student.dobRequired', 'Vui lòng nhập ngày sinh của học sinh'));
         return;
       }
       if (isDobInFuture(dob)) {
-        toast.error('Ngày sinh không được lớn hơn ngày hiện tại.');
+        toast.error(t('student.dobFutureError', 'Ngày sinh không được lớn hơn ngày hiện tại.'));
         return;
       }
       let yr;
@@ -661,7 +661,7 @@ export function StudentDrawer({
         yr = new Date(dob).getFullYear();
       }
       if (yr && !isNaN(yr) && yr < 2000) {
-        toast.error('Năm sinh học sinh phải từ năm 2000 trở đi');
+        toast.error(t('student.dobMinYearError', 'Năm sinh học sinh phải từ năm 2000 trở đi'));
         return;
       }
       setActiveTab('parents');
@@ -703,8 +703,8 @@ export function StudentDrawer({
             </div>
             <p className="text-[12px] text-muted-foreground font-normal">
               {drawerMode === 'edit'
-                ? `Cập nhật thông tin bé ${currentStudent?.fullName || ''}`
-                : 'Tạo hồ sơ học sinh, người giám hộ và ghi chú chăm sóc'}
+                ? t('student.editSubtitle', 'Cập nhật thông tin bé {{name}}', { name: currentStudent?.fullName || '' })
+                : t('student.createSubtitle', 'Tạo hồ sơ học sinh, người giám hộ và ghi chú chăm sóc')}
             </p>
           </div>
 
@@ -719,9 +719,9 @@ export function StudentDrawer({
 
         {concurrencyConflict && (
           <div className="mx-6 my-2.5 p-3.5 bg-destructive/10 border border-destructive/30 text-destructive text-[12.5px] flex flex-col gap-2">
-            <span className="font-semibold">Xung đột phiên chỉnh sửa dữ liệu</span>
+            <span className="font-semibold">{t('student.conflictTitle', 'Xung đột phiên chỉnh sửa dữ liệu')}</span>
             <p className="text-[12px] text-destructive/90 leading-relaxed">
-              Dữ liệu đã được cập nhật trong một phiên khác. Thay đổi của bạn chưa được lưu. Vui lòng tải lại dữ liệu mới nhất và thực hiện lại.
+              {t('student.conflictDesc', 'Dữ liệu đã được cập nhật trong một phiên khác. Thay đổi của bạn chưa được lưu. Vui lòng tải lại dữ liệu mới nhất và thực hiện lại.')}
             </p>
             <div className="flex justify-end pt-1">
               <Button
@@ -730,7 +730,7 @@ export function StudentDrawer({
                 onClick={handleReloadLatestData}
                 className="h-7 px-3 text-[12px] border-destructive/40 text-destructive hover:bg-destructive/10 cursor-pointer"
               >
-                Tải lại dữ liệu
+                {t('student.reloadData', 'Tải lại dữ liệu')}
               </Button>
             </div>
           </div>
@@ -738,7 +738,7 @@ export function StudentDrawer({
 
         {isStudentGraduated && (
           <div className="mx-6 my-2.5 px-3.5 py-2 bg-purple-500/10 border border-purple-500/30 text-purple-800 dark:text-purple-300 text-[12px] flex items-center gap-2">
-            <span>Học sinh đã tốt nghiệp ra trường. Không thể chỉnh sửa thông tin hồ sơ hoặc trạng thái.</span>
+            <span>{t('student.graduatedNoticeBanner', 'Học sinh đã tốt nghiệp ra trường. Không thể chỉnh sửa thông tin hồ sơ hoặc trạng thái.')}</span>
           </div>
         )}
 
@@ -754,7 +754,7 @@ export function StudentDrawer({
                 : 'border-transparent text-muted-foreground hover:text-foreground'
             )}
           >
-            1. Thông tin học sinh
+            {t('student.tabStudentInfo', '1. Thông tin học sinh')}
           </button>
           <button
             type="button"
@@ -766,7 +766,7 @@ export function StudentDrawer({
                 : 'border-transparent text-muted-foreground hover:text-foreground'
             )}
           >
-            2. Phụ huynh & Giám hộ
+            {t('student.tabParents', '2. Phụ huynh & Giám hộ')}
           </button>
           <button
             type="button"
@@ -778,7 +778,7 @@ export function StudentDrawer({
                 : 'border-transparent text-muted-foreground hover:text-foreground'
             )}
           >
-            3. Sức khỏe & Ghi chú
+            {t('student.tabHealth', '3. Sức khỏe & Ghi chú')}
           </button>
         </div>
 
@@ -791,17 +791,17 @@ export function StudentDrawer({
               <div className="border border-border bg-card rounded-none overflow-hidden">
                 <div className="p-4 border-b border-border bg-muted/20">
                   <h3 className="text-[14px] font-semibold text-foreground">
-                    Thông tin nhận diện
+                    {t('student.idInfoTitle', 'Thông tin nhận diện')}
                   </h3>
                   <p className="text-[12px] text-muted-foreground font-normal">
-                    Họ tên, ngày sinh, giới tính và xuất thân
+                    {t('student.idInfoSub', 'Họ tên, ngày sinh, giới tính và xuất thân')}
                   </p>
                 </div>
 
                 <div className="p-4 space-y-4">
                   <div className="space-y-1.5">
                     <Label className="text-[12px] font-medium text-foreground">
-                      Họ và tên học sinh <span className="text-destructive">*</span>
+                      {t('student.studentNameLabel', 'Họ và tên học sinh')} <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       value={fullName}
@@ -815,7 +815,7 @@ export function StudentDrawer({
                     />
                     {hasConsecutiveSpaces(fullName) && (
                       <p className="text-[11px] text-destructive mt-1 font-medium">
-                        Họ tên không được chứa nhiều khoảng trắng liên tiếp.
+                        {t('student.nameConsecutiveSpaces', 'Họ tên không được chứa nhiều khoảng trắng liên tiếp.')}
                       </p>
                     )}
                   </div>
@@ -823,7 +823,7 @@ export function StudentDrawer({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <Label className="text-[12px] font-medium text-foreground">
-                        Ngày sinh (DD/MM/YYYY) <span className="text-destructive">*</span>
+                        {t('student.dobLabel', 'Ngày sinh (DD/MM/YYYY)')} <span className="text-destructive">*</span>
                       </Label>
                       <Input
                         value={dob}
@@ -837,22 +837,22 @@ export function StudentDrawer({
                       />
                       {isDobInFuture(dob) && (
                         <p className="text-[11px] text-destructive mt-1 font-medium">
-                          Ngày sinh không được lớn hơn ngày hiện tại.
+                          {t('student.dobFutureError', 'Ngày sinh không được lớn hơn ngày hiện tại.')}
                         </p>
                       )}
                     </div>
 
                     <div className="space-y-1.5">
                       <Label className="text-[12px] font-medium text-foreground">
-                        Giới tính
+                        {t('student.gender', 'Giới tính')}
                       </Label>
                       <select
                         value={gender}
                         onChange={(e) => setGender(e.target.value)}
                         className="w-full h-9 px-3 bg-background border border-border rounded-none text-[13px] text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer"
                       >
-                        <option value="Nam">Nam (Bé trai)</option>
-                        <option value="Nữ">Nữ (Bé gái)</option>
+                        <option value="Nam">{t('student.boyLabel', 'Nam (Bé trai)')}</option>
+                        <option value="Nữ">{t('student.girlLabel', 'Nữ (Bé gái)')}</option>
                       </select>
                     </div>
                   </div>
@@ -860,7 +860,7 @@ export function StudentDrawer({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <Label className="text-[12px] font-medium text-foreground">
-                        Dân tộc
+                        {t('student.ethnic', 'Dân tộc')}
                       </Label>
                       <Input
                         value={ethnic}
@@ -872,7 +872,7 @@ export function StudentDrawer({
 
                     <div className="space-y-1.5">
                       <Label className="text-[12px] font-medium text-foreground">
-                        Quốc tịch
+                        {t('student.nationality', 'Quốc tịch')}
                       </Label>
                       <Input
                         value={nationality}
@@ -889,10 +889,10 @@ export function StudentDrawer({
               <div className="border border-border bg-card rounded-none overflow-hidden">
                 <div className="p-4 border-b border-border bg-muted/20">
                   <h3 className="text-[14px] font-semibold text-foreground">
-                    Phân lớp & Trạng thái học tập
+                    {t('student.classAcademicTitle', 'Phân lớp & Trạng thái học tập')}
                   </h3>
                   <p className="text-[12px] text-muted-foreground font-normal">
-                    Lớp đang theo học và trạng thái học vụ
+                    {t('student.classAcademicSub', 'Lớp đang theo học và trạng thái học vụ')}
                   </p>
                 </div>
 
@@ -900,7 +900,7 @@ export function StudentDrawer({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <Label className="text-[12px] font-medium text-foreground">
-                        Lớp học
+                        {t('student.colClass', 'Lớp học')}
                       </Label>
                       {drawerMode === 'edit' ? (
                         <div>
@@ -912,27 +912,27 @@ export function StudentDrawer({
                                 ? `${selectedClass.name}${selectedClass.room ? ` (${selectedClass.room})` : ''}`
                                 : currentStudent?.currentClass?.className
                                   ? `${currentStudent.currentClass.className}${currentStudent.currentClass.roomNumber ? ` (${currentStudent.currentClass.roomNumber})` : ''}`
-                                  : 'Chưa phân lớp';
+                                  : t('student.notAssigned', 'Chưa phân lớp');
                             })()}
                             disabled
                             readOnly
                             className="h-9 text-[13px] rounded-none border-border bg-muted/50 cursor-not-allowed text-muted-foreground opacity-90 select-none pointer-events-none"
                           />
                           <p className="text-[11px] text-muted-foreground mt-1">
-                            Trường Lớp học chỉ hiển thị lớp hiện tại, không cho chọn lớp khác hoặc chọn &quot;Chưa phân lớp&quot;. Việc phân lớp phải thực hiện qua chức năng Phân lớp học sinh; việc đổi lớp phải qua chức năng Chuyển lớp.
+                            {t('student.classFieldNotice', 'Trường Lớp học chỉ hiển thị lớp hiện tại, không cho chọn lớp khác hoặc chọn "Chưa phân lớp". Việc phân lớp phải thực hiện qua chức năng Phân lớp học sinh; việc đổi lớp phải qua chức năng Chuyển lớp.')}
                           </p>
                         </div>
                       ) : (
                         <div>
                           <Input
                             type="text"
-                            value="Chưa phân lớp"
+                            value={t('student.notAssigned', 'Chưa phân lớp')}
                             disabled
                             readOnly
                             className="h-9 text-[13px] rounded-none border-border bg-muted/50 cursor-not-allowed text-muted-foreground opacity-90 select-none pointer-events-none"
                           />
                           <p className="text-[11px] text-muted-foreground mt-1">
-                            Sau khi tạo hồ sơ, vui lòng sử dụng chức năng Phân lớp học sinh để xếp lớp.
+                            {t('student.classAssignHint', 'Sau khi tạo hồ sơ, vui lòng sử dụng chức năng Phân lớp học sinh để xếp lớp.')}
                           </p>
                         </div>
                       )}
@@ -940,7 +940,7 @@ export function StudentDrawer({
 
                     <div className="space-y-1.5">
                       <Label className="text-[12px] font-medium text-foreground">
-                        Trạng thái học vụ
+                        {t('student.academicStatus', 'Trạng thái học vụ')}
                       </Label>
                       {isInClassContext ? (
                         <Input
@@ -956,7 +956,7 @@ export function StudentDrawer({
                             const val = e.target.value;
                             if (val === 'graduated') {
                               toast.warning(
-                                'Trạng thái Đã tốt nghiệp chỉ được cập nhật thông qua quy trình xác nhận hoàn thành chương trình học của nhà trường.',
+                                t('student.graduatedStatusHelp', 'Trạng thái Đã tốt nghiệp chỉ được cập nhật thông qua quy trình xác nhận hoàn thành chương trình học của nhà trường.'),
                                 { duration: 6000 }
                               );
                               return;
@@ -965,11 +965,11 @@ export function StudentDrawer({
                           }}
                           className="w-full h-9 px-3 bg-background border border-border rounded-none text-[13px] text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer"
                         >
-                          <option value="studying">Đang học</option>
-                          <option value="reserved">Bảo lưu</option>
-                          <option value="transferred">Chuyển trường</option>
-                          <option value="dropped_out">Thôi học</option>
-                          <option value="graduated">Đã tốt nghiệp</option>
+                          <option value="studying">{t('student.statusStudying', 'Đang học')}</option>
+                          <option value="reserved">{t('student.statusReserved', 'Bảo lưu')}</option>
+                          <option value="transferred">{t('student.statusTransferred', 'Chuyển trường')}</option>
+                          <option value="dropped_out">{t('student.statusDroppedOut', 'Thôi học')}</option>
+                          <option value="graduated">{t('student.statusGraduated', 'Đã tốt nghiệp')}</option>
                         </select>
                       )}
                     </div>
@@ -981,7 +981,7 @@ export function StudentDrawer({
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-1.5">
                             <Label className="text-[12px] font-medium text-foreground">
-                              Ngày vào lớp
+                              {t('student.classEnrolledAt', 'Ngày vào lớp')}
                             </Label>
                             <Input
                               value={classEnrolledAtStr || '—'}
@@ -993,7 +993,7 @@ export function StudentDrawer({
 
                           <div className="space-y-1.5">
                             <Label className="text-[12px] font-medium text-foreground">
-                              Ngày rời lớp
+                              {t('student.classLeftAt', 'Ngày rời lớp')}
                             </Label>
                             <Input
                               value={classLeftAtStr}
@@ -1007,7 +1007,7 @@ export function StudentDrawer({
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-1.5">
                             <Label className="text-[12px] font-medium text-foreground">
-                              Ngày nhập học
+                              {t('student.joinDate', 'Ngày nhập học')}
                             </Label>
                             <Input
                               value={joinDate || '—'}
@@ -1019,7 +1019,7 @@ export function StudentDrawer({
 
                           <div className="space-y-1.5">
                             <Label className="text-[12px] font-medium text-foreground">
-                              Nơi sinh
+                              {t('student.birthPlace', 'Nơi sinh')}
                             </Label>
                             <Input
                               value={placeOfBirth}
@@ -1035,7 +1035,7 @@ export function StudentDrawer({
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-1.5">
                             <Label className="text-[12px] font-medium text-foreground">
-                              Ngày vào lớp
+                              {t('student.classEnrolledAt', 'Ngày vào lớp')}
                             </Label>
                             <Input
                               value={classEnrolledAtStr || '—'}
@@ -1047,7 +1047,7 @@ export function StudentDrawer({
 
                           <div className="space-y-1.5">
                             <Label className="text-[12px] font-medium text-foreground">
-                              Ngày nhập học
+                              {t('student.joinDate', 'Ngày nhập học')}
                             </Label>
                             <Input
                               value={joinDate || '—'}
@@ -1060,7 +1060,7 @@ export function StudentDrawer({
 
                         <div className="space-y-1.5">
                           <Label className="text-[12px] font-medium text-foreground">
-                            Nơi sinh
+                            {t('student.birthPlace', 'Nơi sinh')}
                           </Label>
                           <Input
                             value={placeOfBirth}
@@ -1075,7 +1075,7 @@ export function StudentDrawer({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
                         <Label className="text-[12px] font-medium text-foreground">
-                          Ngày nhập học
+                          {t('student.joinDate', 'Ngày nhập học')}
                         </Label>
                         <Input
                           value={joinDate}
@@ -1092,7 +1092,7 @@ export function StudentDrawer({
 
                       <div className="space-y-1.5">
                         <Label className="text-[12px] font-medium text-foreground">
-                          Nơi sinh
+                          {t('student.birthPlace', 'Nơi sinh')}
                         </Label>
                         <Input
                           value={placeOfBirth}
@@ -1106,7 +1106,7 @@ export function StudentDrawer({
 
                   <div className="space-y-1.5">
                     <Label className="text-[12px] font-medium text-foreground">
-                      Địa chỉ thường trú
+                      {t('student.residenceAddress', 'Địa chỉ thường trú')}
                     </Label>
                     <Input
                       value={permanentResidence}
@@ -1118,7 +1118,7 @@ export function StudentDrawer({
 
                   <div className="space-y-1.5">
                     <Label className="text-[12px] font-medium text-foreground">
-                      Nơi ở hiện tại
+                      {t('student.currentAddress', 'Nơi ở hiện tại')}
                     </Label>
                     <Input
                       value={currentResidence}
@@ -1175,9 +1175,9 @@ export function StudentDrawer({
                         ) : (
                           <span
                             className="text-[11px] text-muted-foreground italic px-2 font-medium"
-                            title="Mỗi học sinh bắt buộc có ít nhất 1 phụ huynh/người giám hộ"
+                            title={t('student.minOneParentHint', 'Mỗi học sinh bắt buộc có ít nhất 1 phụ huynh/người giám hộ')}
                           >
-                            (Tối thiểu 1 phụ huynh)
+                            {t('student.minOneParentBadge', '(Tối thiểu 1 phụ huynh)')}
                           </span>
                         )}
                       </div>
@@ -1224,7 +1224,7 @@ export function StudentDrawer({
 
                           <div className="space-y-1.5">
                             <Label className="text-[12px] font-medium text-foreground">
-                              Số CCCD / Định danh <span className="text-destructive">*</span>
+                              {t('student.citizenIdLabel', 'Số CCCD / Định danh')} <span className="text-destructive">*</span>
                             </Label>
                             <Input
                               value={p.citizenId || ''}
@@ -1262,17 +1262,17 @@ export function StudentDrawer({
               <div className="border border-border bg-card rounded-none overflow-hidden">
                 <div className="p-4 border-b border-border bg-muted/20">
                   <h3 className="text-[14px] font-semibold text-foreground">
-                    Theo dõi sức khỏe & Thể trạng
+                    {t('student.healthTrackTitle', 'Theo dõi sức khỏe & Thể trạng')}
                   </h3>
                   <p className="text-[12px] text-muted-foreground font-normal">
-                    Dị ứng thức ăn và tiền sử bệnh lý cần lưu ý
+                    {t('student.healthTrackSub', 'Dị ứng thức ăn và tiền sử bệnh lý cần lưu ý')}
                   </p>
                 </div>
 
                 <div className="p-4 space-y-4">
                   <div className="space-y-1.5">
                     <Label className="text-[12px] font-medium text-foreground">
-                      Dị ứng thực phẩm / Thuốc
+                      {t('student.allergiesLabel', 'Dị ứng thực phẩm / Thuốc')}
                     </Label>
                     <textarea
                       rows={2}
@@ -1285,7 +1285,7 @@ export function StudentDrawer({
 
                   <div className="space-y-1.5">
                     <Label className="text-[12px] font-medium text-foreground">
-                      Tiền sử bệnh lý / Lưu ý chăm sóc
+                      {t('student.medicalHistoryLabel', 'Tiền sử bệnh lý / Lưu ý chăm sóc')}
                     </Label>
                     <textarea
                       rows={2}
@@ -1302,17 +1302,17 @@ export function StudentDrawer({
               <div className="border border-border bg-card rounded-none overflow-hidden">
                 <div className="p-4 border-b border-border bg-muted/20">
                   <h3 className="text-[14px] font-semibold text-foreground">
-                    Hồ sơ chuyển trường
+                    {t('student.transferSchoolTitle', 'Hồ sơ chuyển trường')}
                   </h3>
                   <p className="text-[12px] text-muted-foreground font-normal">
-                    Trường mầm non bé từng theo học trước đây
+                    {t('student.transferSchoolSub', 'Trường mầm non bé từng theo học trước đây')}
                   </p>
                 </div>
 
                 <div className="p-4 space-y-4">
                   <div className="space-y-1.5">
                     <Label className="text-[12px] font-medium text-foreground">
-                      Trường mầm non trước đây
+                      {t('student.previousSchoolTitle', 'Trường mầm non trước đây')}
                     </Label>
                     <input
                       type="text"
@@ -1338,7 +1338,7 @@ export function StudentDrawer({
                 onClick={() => setActiveTab(activeTab === 'health' ? 'parents' : 'basic')}
                 className="h-8 px-3 text-[13px] rounded-none border-border cursor-pointer"
               >
-                Quay lại
+                {t('student.btnBack', 'Quay lại')}
               </Button>
             )}
             {activeTab !== 'health' && (
@@ -1348,7 +1348,7 @@ export function StudentDrawer({
                 onClick={handleNextTab}
                 className="h-8 px-3 text-[13px] rounded-none border-border cursor-pointer"
               >
-                Tiếp theo
+                {t('student.btnNext', 'Tiếp theo')}
               </Button>
             )}
           </div>
@@ -1371,10 +1371,10 @@ export function StudentDrawer({
                   'h-8 px-4 text-[13px] rounded-none bg-[#1447e6] hover:bg-[#1447e6]/90 text-white cursor-pointer',
                   isStudentGraduated && 'opacity-40 cursor-not-allowed hover:bg-[#1447e6]'
                 )}
-                title={isStudentGraduated ? 'Học sinh đã tốt nghiệp, không thể chỉnh sửa' : undefined}
+                title={isStudentGraduated ? t('student.graduatedCannotEdit', 'Học sinh đã tốt nghiệp, không thể chỉnh sửa') : undefined}
               >
                 {isTeacher && activeTab === 'health'
-                  ? 'Lưu chỉ số sức khỏe'
+                  ? t('student.btnSaveHealthOnly', 'Lưu chỉ số sức khỏe')
                   : drawerMode === 'edit'
                     ? t('common.saveChanges', 'Lưu thay đổi')
                     : t('student.createSubmit', 'Thêm học sinh')}

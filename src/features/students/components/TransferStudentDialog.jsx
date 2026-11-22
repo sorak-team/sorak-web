@@ -40,11 +40,11 @@ export function TransferStudentDialog({ onSuccess }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const GRADE_OPTIONS = [
-    { value: 'ALL', label: 'Tất cả các khối' },
-    { value: 'nhatre', label: 'Khối Nhà trẻ' },
-    { value: 'mam', label: 'Khối Mầm (3–4 tuổi)' },
-    { value: 'choi', label: 'Khối Chồi (4–5 tuổi)' },
-    { value: 'la', label: 'Khối Lá (5–6 tuổi)' },
+    { value: 'ALL', label: t('classes.allGrades', 'Tất cả các khối') },
+    { value: 'nhatre', label: t('classes.nurseryGrade', 'Khối Nhà trẻ') },
+    { value: 'mam', label: t('classes.juniorGradeWithAge', 'Khối Mầm (3–4 tuổi)') },
+    { value: 'choi', label: t('classes.middleGradeWithAge', 'Khối Chồi (4–5 tuổi)') },
+    { value: 'la', label: t('classes.seniorGradeWithAge', 'Khối Lá (5–6 tuổi)') },
   ];
 
   useEffect(() => {
@@ -106,23 +106,23 @@ export function TransferStudentDialog({ onSuccess }) {
     e.preventDefault();
 
     if (!hasCurrentClass) {
-      toast.error('Học sinh chưa được xếp lớp. Vui lòng phân lớp trước khi tạo yêu cầu chuyển lớp.');
+      toast.error(t('student.transferNoCurrentClassToast', 'Học sinh chưa được xếp lớp. Vui lòng phân lớp trước khi tạo yêu cầu chuyển lớp.'));
       return;
     }
 
     if (!targetClassId) {
-      toast.error('Vui lòng chọn lớp học chuyển đến');
+      toast.error(t('student.transferSelectTargetClassToast', 'Vui lòng chọn lớp học chuyển đến'));
       return;
     }
 
     if (!reason.trim()) {
-      toast.error('Vui lòng nhập lý do chuyển lớp');
+      toast.error(t('student.transferInputReasonToast', 'Vui lòng nhập lý do chuyển lớp'));
       return;
     }
 
     const todayStr = new Date().toISOString().split('T')[0];
     if (transferDate < todayStr) {
-      toast.error('Ngày dự kiến chuyển phải từ hôm nay trở đi (nằm ở hiện tại hoặc tương lai)');
+      toast.error(t('student.transferDateFutureToast', 'Ngày dự kiến chuyển phải từ hôm nay trở đi (nằm ở hiện tại hoặc tương lai)'));
       return;
     }
 
@@ -141,7 +141,9 @@ export function TransferStudentDialog({ onSuccess }) {
       );
 
       toast.success(
-        `Đã tạo yêu cầu chuyển lớp cho học sinh ${studentToTransfer.fullName} (Chờ Ban Giám Hiệu duyệt)`
+        t('student.transferSuccessToast', 'Đã tạo yêu cầu chuyển lớp cho học sinh {{name}} (Chờ Ban Giám Hiệu duyệt)', {
+          name: studentToTransfer.fullName,
+        })
       );
 
       if (onSuccess) {
@@ -149,7 +151,7 @@ export function TransferStudentDialog({ onSuccess }) {
       }
     } catch (err) {
       console.error('Submit transfer request error:', err);
-      toast.error(err.response?.data?.message || err.message || 'Tạo yêu cầu chuyển lớp thất bại');
+      toast.error(err.response?.data?.message || err.message || t('student.transferFailedToast', 'Tạo yêu cầu chuyển lớp thất bại'));
     } finally {
       setIsSubmitting(false);
     }
@@ -163,7 +165,7 @@ export function TransferStudentDialog({ onSuccess }) {
             {t('student.createTransferRequest', 'Tạo yêu cầu chuyển lớp')}
           </DialogTitle>
           <DialogDescription className="text-[13px] text-muted-foreground pt-1.5">
-            Đề xuất chuyển lớp cho học sinh{' '}
+            {t('student.transferDescription', 'Đề xuất chuyển lớp cho học sinh')}{' '}
             <strong className="text-foreground font-semibold">
               {studentToTransfer.fullName} ({studentToTransfer.studentCode})
             </strong>
@@ -178,9 +180,8 @@ export function TransferStudentDialog({ onSuccess }) {
             className="shrink-0 mt-0.5 text-blue-600 dark:text-blue-400"
           />
           <div className="leading-relaxed">
-            <span className="font-semibold">Quy trình duyệt:</span> Hành động này sẽ{' '}
-            <strong>tạo yêu cầu chuyển lớp (chờ duyệt)</strong> gửi đến Ban Giám Hiệu. Học sinh{' '}
-            <strong>vẫn học tại lớp hiện tại</strong> cho đến khi yêu cầu được Ban Giám Hiệu phê duyệt.
+            <span className="font-semibold">{t('student.transferNoticeTitle', 'Quy trình duyệt:')}</span>{' '}
+            {t('student.transferNoticeBody', 'Hành động này sẽ tạo yêu cầu chuyển lớp (chờ duyệt) gửi đến Ban Giám Hiệu. Học sinh vẫn học tại lớp hiện tại cho đến khi yêu cầu được Ban Giám Hiệu phê duyệt.')}
           </div>
         </div>
 
@@ -188,7 +189,7 @@ export function TransferStudentDialog({ onSuccess }) {
           {/* Current Class */}
           <div className="space-y-1.5">
             <Label className="text-[12px] font-medium text-foreground">
-              Lớp học hiện tại
+              {t('student.currentClassLabel', 'Lớp học hiện tại')}
             </Label>
             <div
               className={`h-9 px-3 border border-border rounded-none flex items-center font-medium text-[13px] ${
@@ -197,11 +198,11 @@ export function TransferStudentDialog({ onSuccess }) {
                   : 'bg-destructive/10 text-destructive border-destructive/30'
               }`}
             >
-              {currentClassName || 'Chưa phân lớp (Không thể tạo yêu cầu chuyển lớp)'}
+              {currentClassName || t('student.unassignedCannotTransfer', 'Chưa phân lớp (Không thể tạo yêu cầu chuyển lớp)')}
             </div>
             {!hasCurrentClass && (
               <p className="text-[11px] text-destructive">
-                * Học sinh cần được phân lớp trước khi có thể đề xuất chuyển sang lớp khác.
+                {t('student.unassignedNotice', '* Học sinh cần được phân lớp trước khi có thể đề xuất chuyển sang lớp khác.')}
               </p>
             )}
           </div>
@@ -209,15 +210,15 @@ export function TransferStudentDialog({ onSuccess }) {
           {/* Filter by Grade */}
           <div className="space-y-1.5">
             <Label htmlFor="targetGrade" className="text-[12px] font-medium text-foreground">
-              {isTeacher ? 'Khối lớp học sinh' : 'Lọc theo khối lớp'}
+              {isTeacher ? t('student.teacherGradeLabel', 'Khối lớp học sinh') : t('student.filterGradeLabel', 'Lọc theo khối lớp')}
             </Label>
             {isTeacher ? (
               <div>
                 <div className="w-full h-9 px-3 bg-muted/40 border border-border/70 rounded-none text-[13px] text-muted-foreground flex items-center select-none cursor-not-allowed">
-                  {currentClassObj?.gradeLabel || (GRADE_OPTIONS.find((g) => g.value === currentGrade)?.label) || 'Cùng khối học'}
+                  {currentClassObj?.gradeLabel || (GRADE_OPTIONS.find((g) => g.value === currentGrade)?.label) || t('student.teacherGradeLabel', 'Khối lớp học sinh')}
                 </div>
                 <p className="text-[11.5px] text-muted-foreground italic mt-1">
-                  * Theo quy định, giáo viên chỉ đề xuất chuyển lớp cho học sinh trong cùng khối học.
+                  {t('student.teacherGradeRuleNotice', '* Theo quy định, giáo viên chỉ đề xuất chuyển lớp cho học sinh trong cùng khối học.')}
                 </p>
               </div>
             ) : (
@@ -243,7 +244,7 @@ export function TransferStudentDialog({ onSuccess }) {
           {/* Target Class */}
           <div className="space-y-1.5">
             <Label htmlFor="targetClass" className="text-[12px] font-medium text-foreground">
-              Lớp học đề xuất chuyển đến <span className="text-destructive">*</span>
+              {t('student.targetClassLabel', 'Lớp học đề xuất chuyển đến')} <span className="text-destructive">*</span>
             </Label>
             <select
               id="targetClass"
@@ -255,12 +256,12 @@ export function TransferStudentDialog({ onSuccess }) {
             >
               <option value="">
                 {filteredClasses.length === 0
-                  ? '-- Không có lớp khác trong khối này --'
-                  : '-- Chọn lớp học chuyển đến --'}
+                  ? t('student.noOtherClassesInGrade', '-- Không có lớp khác trong khối này --')
+                  : t('student.selectTargetClassPlaceholder', '-- Chọn lớp học chuyển đến --')}
               </option>
               {filteredClasses.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name} ({c.gradeLabel || 'Khối Mầm'} • {c.studentCount || 0}/{c.capacity || 40} học sinh)
+                  {c.name} ({c.gradeLabel || t('classes.juniorGrade', 'Khối Mầm')} • {c.studentCount || 0}/{c.capacity || 40} {t('common.students', 'học sinh')})
                 </option>
               ))}
             </select>
@@ -269,7 +270,7 @@ export function TransferStudentDialog({ onSuccess }) {
           {/* Transfer Date */}
           <div className="space-y-1.5">
             <Label htmlFor="transferDate" className="text-[12px] font-medium text-foreground">
-              Ngày dự kiến chuyển <span className="text-destructive">*</span>
+              {t('student.expectedTransferDate', 'Ngày dự kiến chuyển')} <span className="text-destructive">*</span>
             </Label>
             <Input
               id="transferDate"
@@ -286,11 +287,11 @@ export function TransferStudentDialog({ onSuccess }) {
           {/* Reason */}
           <div className="space-y-1.5">
             <Label htmlFor="reason" className="text-[12px] font-medium text-foreground">
-              Lý do chuyển lớp <span className="text-destructive">*</span>
+              {t('student.transferReason', 'Lý do chuyển lớp')} <span className="text-destructive">*</span>
             </Label>
             <Input
               id="reason"
-              placeholder="VD: Điều chỉnh độ tuổi, phụ huynh yêu cầu chuyển buổi..."
+              placeholder={t('student.transferReasonPlaceholder', 'VD: Điều chỉnh độ tuổi, phụ huynh yêu cầu chuyển buổi...')}
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               disabled={!hasCurrentClass || isSubmitting}
@@ -318,7 +319,7 @@ export function TransferStudentDialog({ onSuccess }) {
                 <HugeiconsIcon icon={ArrowReloadHorizontalIcon} size={14} className="animate-spin" />
               )}
               {isSubmitting
-                ? 'Đang gửi yêu cầu...'
+                ? t('student.submittingTransferRequest', 'Đang gửi yêu cầu...')
                 : t('student.submitTransferRequest', 'Gửi yêu cầu chuyển lớp')}
             </Button>
           </DialogFooter>

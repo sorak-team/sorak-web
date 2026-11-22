@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Download01Icon } from '@hugeicons/core-free-icons';
@@ -128,33 +129,35 @@ function parseDateFlexible(dateStr) {
  * Helper to evaluate child growth according to Ministry of Health & WHO standards
  * 2 distinct columns (Chiều cao / Tuổi & Cân nặng / Thể trạng)
  */
-export function evaluateChildGrowth({ heightZ, weightZ, bmiZ }) {
+export function evaluateChildGrowth({ heightZ, weightZ, bmiZ, t }) {
   const hz = heightZ != null ? Number(heightZ) : null;
   const wz = weightZ != null ? Number(weightZ) : null;
   const bz = bmiZ != null ? Number(bmiZ) : null;
 
+  const tr = (key, fallback) => (typeof t === 'function' ? t(key, fallback) : fallback);
+
   // 1. Chiều cao theo tuổi (HAZ)
   let heightEvaluation = {
-    label: 'Đạt chuẩn',
+    label: tr('whoGrowth.evalStandard', 'Đạt chuẩn'),
     color: 'emerald',
     badgeClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
   };
   if (hz != null && !isNaN(hz)) {
     if (hz < -3) {
       heightEvaluation = {
-        label: 'Thấp còi độ 2 (nặng)',
+        label: tr('whoGrowth.evalStunted2', 'Thấp còi độ 2 (nặng)'),
         color: 'rose',
         badgeClass: 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20',
       };
     } else if (hz < -2) {
       heightEvaluation = {
-        label: 'Thấp còi độ 1',
+        label: tr('whoGrowth.evalStunted1', 'Thấp còi độ 1'),
         color: 'amber',
         badgeClass: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20',
       };
     } else if (hz > 2) {
       heightEvaluation = {
-        label: 'Cao hơn tuổi',
+        label: tr('whoGrowth.evalTaller', 'Cao hơn tuổi'),
         color: 'blue',
         badgeClass: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
       };
@@ -163,7 +166,7 @@ export function evaluateChildGrowth({ heightZ, weightZ, bmiZ }) {
 
   // 2. Cân nặng / Thể trạng (WAZ & BAZ)
   let weightEvaluation = {
-    label: 'Đạt chuẩn',
+    label: tr('whoGrowth.evalStandard', 'Đạt chuẩn'),
     color: 'emerald',
     badgeClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
   };
@@ -171,31 +174,31 @@ export function evaluateChildGrowth({ heightZ, weightZ, bmiZ }) {
   if (bz != null && !isNaN(bz)) {
     if (bz > 3) {
       weightEvaluation = {
-        label: 'Béo phì',
+        label: tr('whoGrowth.evalObese', 'Béo phì'),
         color: 'rose',
         badgeClass: 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20',
       };
     } else if (bz > 2) {
       weightEvaluation = {
-        label: 'Thừa cân',
+        label: tr('whoGrowth.evalOverweight', 'Thừa cân'),
         color: 'rose',
         badgeClass: 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20',
       };
     } else if (bz > 1.5 && (wz == null || wz > 1.5)) {
       weightEvaluation = {
-        label: 'Nguy cơ thừa cân',
+        label: tr('whoGrowth.evalRiskOverweight', 'Nguy cơ thừa cân'),
         color: 'amber',
         badgeClass: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20',
       };
     } else if (bz < -3) {
       weightEvaluation = {
-        label: 'Gầy còm nặng',
+        label: tr('whoGrowth.evalWastedSevere', 'Gầy còm nặng'),
         color: 'rose',
         badgeClass: 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20',
       };
     } else if (bz < -2) {
       weightEvaluation = {
-        label: 'Gầy còm',
+        label: tr('whoGrowth.evalWasted', 'Gầy còm'),
         color: 'amber',
         badgeClass: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20',
       };
@@ -206,19 +209,19 @@ export function evaluateChildGrowth({ heightZ, weightZ, bmiZ }) {
   if (weightEvaluation.color === 'emerald' && wz != null && !isNaN(wz)) {
     if (wz < -3) {
       weightEvaluation = {
-        label: 'Suy dinh dưỡng nặng',
+        label: tr('whoGrowth.evalUnderweightSevere', 'Suy dinh dưỡng nặng'),
         color: 'rose',
         badgeClass: 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20',
       };
     } else if (wz < -2) {
       weightEvaluation = {
-        label: 'Nhẹ cân',
+        label: tr('whoGrowth.evalUnderweight', 'Nhẹ cân'),
         color: 'amber',
         badgeClass: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20',
       };
     } else if (wz > 2) {
       weightEvaluation = {
-        label: 'Cân nặng cao hơn tuổi',
+        label: tr('whoGrowth.evalHeavyForAge', 'Cân nặng cao hơn tuổi'),
         color: 'blue',
         badgeClass: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
       };
@@ -229,6 +232,7 @@ export function evaluateChildGrowth({ heightZ, weightZ, bmiZ }) {
 }
 
 export function WhoGrowthCharts({ student, healthData, hideCharts = false, highlightedId = null }) {
+  const { t } = useTranslation();
   // Determine standard reference: girl or boy
   const isGirl = useMemo(() => {
     const g = String(student?.gender || '').toLowerCase();
@@ -321,11 +325,28 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
       };
     });
 
-    const minSpacing = 28;
+    const minSpacing = 24;
     for (let i = 1; i < mapped.length; i++) {
       if (mapped[i].rawX - mapped[i - 1].rawX < minSpacing) {
         mapped[i].rawX = mapped[i - 1].rawX + minSpacing;
       }
+    }
+
+    // Backward bounding pass: prevent points and badges at month 72 from overflowing past chart right edge
+    const minX = margin.left + 14;
+    const maxX = margin.left + chartWidth - 14;
+    if (mapped.length > 0 && mapped[mapped.length - 1].rawX > maxX) {
+      mapped[mapped.length - 1].rawX = maxX;
+      for (let i = mapped.length - 2; i >= 0; i--) {
+        if (mapped[i + 1].rawX - mapped[i].rawX < minSpacing) {
+          mapped[i].rawX = mapped[i + 1].rawX - minSpacing;
+        }
+      }
+    }
+
+    // Clamp all points within chart horizontal bounds
+    for (let i = 0; i < mapped.length; i++) {
+      mapped[i].rawX = Math.max(minX, Math.min(maxX, mapped[i].rawX));
     }
 
     return mapped.map((item) => ({
@@ -341,14 +362,14 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
   const handleExportChartPng = async (type) => {
     const svgEl = type === 'height' ? heightSvgRef.current : weightSvgRef.current;
     if (!svgEl) {
-      toast.error('Chưa tải xong biểu đồ để xuất ảnh');
+      toast.error(t('studentReport.exportPngChartNotReady', 'Chưa tải xong biểu đồ để xuất ảnh'));
       return;
     }
-    const typeLabel = type === 'height' ? 'Chiều cao theo tuổi' : 'Cân nặng theo tuổi';
+    const typeLabel = type === 'height' ? t('whoGrowth.heightForAge', 'Chiều cao theo tuổi') : t('whoGrowth.weightForAge', 'Cân nặng theo tuổi');
 
     try {
       setExportingChart(type);
-      toast.loading(`Đang xuất ảnh biểu đồ ${typeLabel}...`, { id: `export-chart-${type}` });
+      toast.loading(t('whoGrowth.exportChartLoading', 'Đang xuất ảnh biểu đồ {{type}}...', { type: typeLabel }), { id: `export-chart-${type}` });
 
       await exportSingleChartPng({
         svgElement: svgEl,
@@ -359,10 +380,10 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
         isGirl,
       });
 
-      toast.success(`Đã xuất ảnh biểu đồ ${typeLabel} thành công!`, { id: `export-chart-${type}` });
+      toast.success(t('whoGrowth.exportChartSuccess', 'Đã xuất ảnh biểu đồ {{type}} thành công!', { type: typeLabel }), { id: `export-chart-${type}` });
     } catch (err) {
       console.error('Error exporting chart to PNG:', err);
-      toast.error(`Không thể xuất ảnh biểu đồ: ${err.message || 'Lỗi xử lý'}`, { id: `export-chart-${type}` });
+      toast.error(t('whoGrowth.exportChartError', 'Không thể xuất ảnh biểu đồ: {{error}}', { error: err.message || 'Lỗi xử lý' }), { id: `export-chart-${type}` });
     } finally {
       setExportingChart(null);
     }
@@ -490,7 +511,7 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
           fontWeight="500"
           fontFamily="system-ui, -apple-system, sans-serif"
         >
-          Tháng tuổi
+          {t('whoGrowth.ageInMonths', 'Tháng tuổi')}
         </text>
 
         {/* Curve boundary lines */}
@@ -760,7 +781,7 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
           fontWeight="500"
           fontFamily="system-ui, -apple-system, sans-serif"
         >
-          Tháng tuổi
+          {t('whoGrowth.ageInMonths', 'Tháng tuổi')}
         </text>
 
         {/* Curve boundary lines */}
@@ -999,13 +1020,13 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
             <div className="p-3.5 border-b border-border flex flex-wrap items-center justify-between gap-2 bg-card">
               <div>
                 <h4 className="text-[14px] font-semibold text-foreground">
-                  Chiều cao theo tuổi · {isGirl ? 'Bé gái' : 'Bé trai'}
+                  {t('whoGrowth.heightForAge', 'Chiều cao theo tuổi')} · {isGirl ? t('whoGrowth.girl', 'Bé gái') : t('whoGrowth.boy', 'Bé trai')}
                 </h4>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
-                  Tham chiếu WHO · Chiều cao (cm) · 24–72 tháng (Độ tuổi Mầm non)
+                  {t('whoGrowth.whoRefHeight', 'Tham chiếu WHO · Chiều cao (cm) · 24–72 tháng (Độ tuổi Mầm non)')}
                   {studentPoints.length > 0 && (
                     <span className="text-primary font-medium ml-1.5">
-                      · Hiển thị đầy đủ {studentPoints.length} đợt đo (Đ1 → Đ{studentPoints.length})
+                      {t('whoGrowth.displayAllRounds', '· Hiển thị đầy đủ {{count}} đợt đo (Đ1 → Đ{{count}})', { count: studentPoints.length })}
                     </span>
                   )}
                 </p>
@@ -1014,18 +1035,23 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
               <div className="flex items-center gap-2">
                 <span className="px-2.5 py-1 text-[11px] font-medium bg-muted text-muted-foreground border border-border">
                   {latestPoint
-                    ? `Đo gần nhất: ${latestPoint.dateFormatted || latestPoint.date || '—'} · ${latestPoint.height} cm (${latestPoint.ageInMonths} tháng)`
-                    : 'Chưa có số đo'}
+                    ? t('whoGrowth.latestMeasurement', 'Đo gần nhất: {{date}} · {{value}} {{unit}} ({{age}} tháng)', {
+                        date: latestPoint.dateFormatted || latestPoint.date || '—',
+                        value: latestPoint.height,
+                        unit: 'cm',
+                        age: latestPoint.ageInMonths,
+                      })
+                    : t('whoGrowth.noMeasurements', 'Chưa có số đo')}
                 </span>
                 <button
                   type="button"
                   onClick={() => handleExportChartPng('height')}
                   disabled={exportingChart === 'height'}
                   className="h-7 px-2.5 inline-flex items-center gap-1.5 text-[11px] font-medium border border-border bg-background hover:bg-muted text-foreground rounded-none transition-colors cursor-pointer select-none disabled:opacity-50"
-                  title="Xuất ảnh biểu đồ chiều cao độ phân giải cao (PNG)"
+                  title={t('whoGrowth.exportChartPngTitle', 'Xuất ảnh biểu đồ {{type}} độ phân giải cao (PNG)', { type: t('whoGrowth.heightForAge', 'Chiều cao theo tuổi') })}
                 >
                   <HugeiconsIcon icon={Download01Icon} size={13} className="text-muted-foreground" />
-                  <span>{exportingChart === 'height' ? 'Đang xuất...' : 'Xuất ảnh PNG'}</span>
+                  <span>{exportingChart === 'height' ? t('whoGrowth.exporting', 'Đang xuất...') : t('whoGrowth.exportPng', 'Xuất ảnh PNG')}</span>
                 </button>
               </div>
             </div>
@@ -1034,34 +1060,34 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
             <div className="px-3.5 py-2 border-b border-border/60 bg-muted/20 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px]">
               <div className="flex items-center gap-1.5">
                 <span className="size-3 rounded-none bg-[#FEF9C3] border border-[#FDE047]" />
-                <span className="text-foreground/90">Cao hơn so với tuổi</span>
+                <span className="text-foreground/90">{t('whoGrowth.legendTaller', 'Cao hơn so với tuổi')}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="size-3 rounded-none bg-[#D6F1FD] border border-[#7DD3FC]" />
-                <span className="text-foreground/90">Chiều cao bình thường</span>
+                <span className="text-foreground/90">{t('whoGrowth.legendNormalHeight', 'Chiều cao bình thường')}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="size-3 rounded-none bg-[#FED7AA] border border-[#FDBA74]" />
-                <span className="text-foreground/90">Thấp còi độ 1</span>
+                <span className="text-foreground/90">{t('whoGrowth.legendStunted1', 'Thấp còi độ 1')}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="size-3 rounded-none bg-[#EE7D8D] border border-[#E11D48]" />
-                <span className="text-foreground/90">Thấp còi độ 2</span>
+                <span className="text-foreground/90">{t('whoGrowth.legendStunted2', 'Thấp còi độ 2')}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="w-4 h-0.5 bg-[#16A34A]" />
                 <span className="text-foreground/90 font-medium text-emerald-700 dark:text-emerald-400">
-                  Trung vị (0)
+                  {t('whoGrowth.legendMedian', 'Trung vị (0)')}
                 </span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="size-2 rounded-full bg-[#2563EB]" />
                 <span className="text-[#2563EB] font-semibold">
-                  {student?.fullName || 'Học sinh'}
+                  {student?.fullName || t('common.student', 'Học sinh')}
                 </span>
                 {studentPoints.length > 0 && (
                   <span className="font-mono text-muted-foreground ml-1">
-                    ({studentPoints.length} đợt đo: Đ1 → Đ{studentPoints.length})
+                    {t('whoGrowth.roundsCountSummary', '({{count}} đợt đo: Đ1 → Đ{{count}})', { count: studentPoints.length })}
                   </span>
                 )}
               </div>
@@ -1082,13 +1108,13 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
             <div className="p-3.5 border-b border-border flex flex-wrap items-center justify-between gap-2 bg-card">
               <div>
                 <h4 className="text-[14px] font-semibold text-foreground">
-                  Cân nặng theo tuổi · {isGirl ? 'Bé gái' : 'Bé trai'}
+                  {t('whoGrowth.weightForAge', 'Cân nặng theo tuổi')} · {isGirl ? t('whoGrowth.girl', 'Bé gái') : t('whoGrowth.boy', 'Bé trai')}
                 </h4>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
-                  Tham chiếu WHO · Cân nặng (kg) · 24–72 tháng (Độ tuổi Mầm non)
+                  {t('whoGrowth.whoRefWeight', 'Tham chiếu WHO · Cân nặng (kg) · 24–72 tháng (Độ tuổi Mầm non)')}
                   {studentPoints.length > 0 && (
                     <span className="text-primary font-medium ml-1.5">
-                      · Hiển thị đầy đủ {studentPoints.length} đợt đo (Đ1 → Đ{studentPoints.length})
+                      {t('whoGrowth.displayAllRounds', '· Hiển thị đầy đủ {{count}} đợt đo (Đ1 → Đ{{count}})', { count: studentPoints.length })}
                     </span>
                   )}
                 </p>
@@ -1097,18 +1123,23 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
               <div className="flex items-center gap-2">
                 <span className="px-2.5 py-1 text-[11px] font-medium bg-muted text-muted-foreground border border-border">
                   {latestPoint
-                    ? `Đo gần nhất: ${latestPoint.dateFormatted || latestPoint.date || '—'} · ${latestPoint.weight} kg (${latestPoint.ageInMonths} tháng)`
-                    : 'Chưa có số đo'}
+                    ? t('whoGrowth.latestMeasurement', 'Đo gần nhất: {{date}} · {{value}} {{unit}} ({{age}} tháng)', {
+                        date: latestPoint.dateFormatted || latestPoint.date || '—',
+                        value: latestPoint.weight,
+                        unit: 'kg',
+                        age: latestPoint.ageInMonths,
+                      })
+                    : t('whoGrowth.noMeasurements', 'Chưa có số đo')}
                 </span>
                 <button
                   type="button"
                   onClick={() => handleExportChartPng('weight')}
                   disabled={exportingChart === 'weight'}
                   className="h-7 px-2.5 inline-flex items-center gap-1.5 text-[11px] font-medium border border-border bg-background hover:bg-muted text-foreground rounded-none transition-colors cursor-pointer select-none disabled:opacity-50"
-                  title="Xuất ảnh biểu đồ cân nặng độ phân giải cao (PNG)"
+                  title={t('whoGrowth.exportChartPngTitle', 'Xuất ảnh biểu đồ {{type}} độ phân giải cao (PNG)', { type: t('whoGrowth.weightForAge', 'Cân nặng theo tuổi') })}
                 >
                   <HugeiconsIcon icon={Download01Icon} size={13} className="text-muted-foreground" />
-                  <span>{exportingChart === 'weight' ? 'Đang xuất...' : 'Xuất ảnh PNG'}</span>
+                  <span>{exportingChart === 'weight' ? t('whoGrowth.exporting', 'Đang xuất...') : t('whoGrowth.exportPng', 'Xuất ảnh PNG')}</span>
                 </button>
               </div>
             </div>
@@ -1117,34 +1148,34 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
             <div className="px-3.5 py-2 border-b border-border/60 bg-muted/20 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px]">
               <div className="flex items-center gap-1.5">
                 <span className="size-3 rounded-none bg-[#FEF9C3] border border-[#FDE047]" />
-                <span className="text-foreground/90">Cân nặng cao hơn so với tuổi</span>
+                <span className="text-foreground/90">{t('whoGrowth.legendHeavier', 'Cân nặng cao hơn so với tuổi')}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="size-3 rounded-none bg-[#D6F1FD] border border-[#7DD3FC]" />
-                <span className="text-foreground/90">Cân nặng bình thường</span>
+                <span className="text-foreground/90">{t('whoGrowth.legendNormalWeight', 'Cân nặng bình thường')}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="size-3 rounded-none bg-[#FED7AA] border border-[#FDBA74]" />
-                <span className="text-foreground/90">Suy dinh dưỡng vừa</span>
+                <span className="text-foreground/90">{t('whoGrowth.legendUnderweightModerate', 'Suy dinh dưỡng vừa')}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="size-3 rounded-none bg-[#EE7D8D] border border-[#E11D48]" />
-                <span className="text-foreground/90">Suy dinh dưỡng nặng</span>
+                <span className="text-foreground/90">{t('whoGrowth.legendUnderweightSevere', 'Suy dinh dưỡng nặng')}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="w-4 h-0.5 bg-[#16A34A]" />
                 <span className="text-foreground/90 font-medium text-emerald-700 dark:text-emerald-400">
-                  Trung vị (0)
+                  {t('whoGrowth.legendMedian', 'Trung vị (0)')}
                 </span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="size-2 rounded-full bg-[#2563EB]" />
                 <span className="text-[#2563EB] font-semibold">
-                  {student?.fullName || 'Học sinh'}
+                  {student?.fullName || t('common.student', 'Học sinh')}
                 </span>
                 {studentPoints.length > 0 && (
                   <span className="font-mono text-muted-foreground ml-1">
-                    ({studentPoints.length} đợt đo: Đ1 → Đ{studentPoints.length})
+                    {t('whoGrowth.roundsCountSummary', '({{count}} đợt đo: Đ1 → Đ{{count}})', { count: studentPoints.length })}
                   </span>
                 )}
               </div>
@@ -1165,20 +1196,20 @@ export function WhoGrowthCharts({ student, healthData, hideCharts = false, highl
       <div className="border border-border bg-card shadow-xs text-xs">
         <div className="px-4 py-3 border-b border-border flex flex-wrap items-center justify-between gap-2 bg-card">
           <span className="text-[13px] font-semibold text-foreground">
-            Căn cứ y tế & Tiêu chuẩn phát triển
+            {t('whoGrowth.medicalBasisTitle', 'Căn cứ y tế & Tiêu chuẩn phát triển')}
           </span>
           <div className="text-[12px] text-muted-foreground font-mono">
-            <span>Đối tượng: </span>
-            <span className="font-medium text-foreground">{isGirl ? 'Bé gái (24–72 tháng)' : 'Bé trai (24–72 tháng)'}</span>
+            <span>{t('whoGrowth.targetSubject', 'Đối tượng: ')}</span>
+            <span className="font-medium text-foreground">{isGirl ? t('whoGrowth.targetSubjectGirl', 'Bé gái (24–72 tháng)') : t('whoGrowth.targetSubjectBoy', 'Bé trai (24–72 tháng)')}</span>
           </div>
         </div>
 
         <div className="p-4 space-y-2 text-[12px] text-muted-foreground leading-relaxed">
           <p>
-            <strong className="text-foreground font-medium">• Quy chuẩn WHO:</strong> Bảng tăng trưởng Chiều cao và Cân nặng theo độ tuổi (24–60 tháng áp dụng <em>WHO 2006</em>; 61–72 tháng áp dụng <em>WHO 2007</em>).
+            <strong className="text-foreground font-medium">{t('whoGrowth.whoStandardLabel', '• Quy chuẩn WHO:')}</strong> {t('whoGrowth.whoStandardDesc', 'Bảng tăng trưởng Chiều cao và Cân nặng theo độ tuổi (24–60 tháng áp dụng WHO 2006; 61–72 tháng áp dụng WHO 2007).')}
           </p>
           <p>
-            <strong className="text-foreground font-medium">• Quy định học đường:</strong> Thông tư liên tịch 13/2016/TTLT-BYT-BGDĐT về quản lý, theo dõi thể lực định kỳ cho học sinh mầm non.
+            <strong className="text-foreground font-medium">{t('whoGrowth.whoSchoolRegulationLabel', '• Quy định học đường:')}</strong> {t('whoGrowth.whoSchoolStandardDesc', 'Thông tư liên tịch 13/2016/TTLT-BYT-BGDĐT về quản lý, theo dõi thể lực định kỳ cho học sinh mầm non.')}
           </p>
         </div>
       </div>
