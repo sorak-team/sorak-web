@@ -70,7 +70,7 @@ export function TeacherGrid({ paginatedTeachers }) {
   if (!paginatedTeachers || paginatedTeachers.length === 0) {
     return (
       <div className="w-full border border-border bg-card p-12 text-center text-muted-foreground rounded-none">
-        <p className="text-[14px]">Không tìm thấy giáo viên nào phù hợp.</p>
+        <p className="text-[14px]">{t('teacher.noTeacherFound', 'Không tìm thấy giáo viên nào phù hợp.')}</p>
       </div>
     );
   }
