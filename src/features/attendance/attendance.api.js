@@ -10,6 +10,14 @@ export const attendanceApi = {
   },
 
   /**
+   * UC 66: Get class attendance statistics (totals & present rates)
+   */
+  async getClassAttendanceStats(classId = '1', params = {}) {
+    const response = await apiClient.get(`/attendance/classes/${classId}/stats`, { params });
+    return response.data?.data || response.data;
+  },
+
+  /**
    * Update student attendance records
    */
   async updateAttendance(classId = '1', payload = {}) {

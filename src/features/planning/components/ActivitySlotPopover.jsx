@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
   Cancel01Icon,
@@ -34,36 +35,36 @@ const formatGoalCode = (code) => {
   return raw;
 };
 
-const ROUTINE_SLOT_NAMES = {
-  ARRIVAL_PLAY: 'Đón trẻ, chơi',
-  MORNING_EXERCISE: 'Thể dục sáng',
-  DIRECTED_STUDY: 'Học',
-  CORNER_PLAY: 'Chơi, hoạt động ở các góc',
-  OUTDOOR_PLAY: 'Chơi ngoài trời',
-  AFTERNOON_ACTIVITY: 'Chơi, hoạt động theo ý thích (Chiều)',
-  RETURN_CHILD: 'Trả trẻ',
-};
+const getRoutineSlotNames = (t) => ({
+  ARRIVAL_PLAY: t('routineSlots.ARRIVAL_PLAY.name', 'Đón trẻ, chơi'),
+  MORNING_EXERCISE: t('routineSlots.MORNING_EXERCISE.name', 'Thể dục sáng'),
+  DIRECTED_STUDY: t('routineSlots.DIRECTED_STUDY.name', 'Học'),
+  CORNER_PLAY: t('routineSlots.CORNER_PLAY.name', 'Chơi, hoạt động ở các góc'),
+  OUTDOOR_PLAY: t('routineSlots.OUTDOOR_PLAY.name', 'Chơi ngoài trời'),
+  AFTERNOON_ACTIVITY: t('routineSlots.AFTERNOON_ACTIVITY.name', 'Chơi, hoạt động theo ý thích (Chiều)'),
+  RETURN_CHILD: t('routineSlots.RETURN_CHILD.name', 'Trả trẻ'),
+});
 
-const DOMAIN_NAMES = {
-  PHYSICAL: 'Phát triển thể chất',
-  COGNITIVE: 'Phát triển nhận thức',
-  LANGUAGE: 'Phát triển ngôn ngữ',
-  SOCIO_EMOTIONAL: 'Phát triển tình cảm và kỹ năng xã hội',
-  AESTHETIC: 'Phát triển thẩm mỹ',
-  Physical: 'Phát triển thể chất',
-  Cognitive: 'Phát triển nhận thức',
-  Language: 'Phát triển ngôn ngữ',
-  'Socio-emotional': 'Phát triển tình cảm và kỹ năng xã hội',
-  'Socio Emotional': 'Phát triển tình cảm và kỹ năng xã hội',
-  Aesthetic: 'Phát triển thẩm mỹ',
-  'Thể chất': 'Phát triển thể chất',
-  'Nhận thức': 'Phát triển nhận thức',
-  'Ngôn ngữ': 'Phát triển ngôn ngữ',
-  'Tình cảm - Kỹ năng xã hội': 'Phát triển tình cảm và kỹ năng xã hội',
-  'Thẩm mỹ': 'Phát triển thẩm mỹ',
-};
+const getDomainNames = (t) => ({
+  PHYSICAL: t('domains.physicalTitle', 'Phát triển thể chất'),
+  COGNITIVE: t('domains.cognitiveTitle', 'Phát triển nhận thức'),
+  LANGUAGE: t('domains.languageTitle', 'Phát triển ngôn ngữ'),
+  SOCIO_EMOTIONAL: t('domains.socialEmotionalTitle', 'Phát triển tình cảm và kỹ năng xã hội'),
+  AESTHETIC: t('domains.aestheticTitle', 'Phát triển thẩm mỹ'),
+  Physical: t('domains.physicalTitle', 'Phát triển thể chất'),
+  Cognitive: t('domains.cognitiveTitle', 'Phát triển nhận thức'),
+  Language: t('domains.languageTitle', 'Phát triển ngôn ngữ'),
+  'Socio-emotional': t('domains.socialEmotionalTitle', 'Phát triển tình cảm và kỹ năng xã hội'),
+  'Socio Emotional': t('domains.socialEmotionalTitle', 'Phát triển tình cảm và kỹ năng xã hội'),
+  Aesthetic: t('domains.aestheticTitle', 'Phát triển thẩm mỹ'),
+  'Thể chất': t('domains.physicalTitle', 'Phát triển thể chất'),
+  'Nhận thức': t('domains.cognitiveTitle', 'Phát triển nhận thức'),
+  'Ngôn ngữ': t('domains.languageTitle', 'Phát triển ngôn ngữ'),
+  'Tình cảm - Kỹ năng xã hội': t('domains.socialEmotionalTitle', 'Phát triển tình cảm và kỹ năng xã hội'),
+  'Thẩm mỹ': t('domains.aestheticTitle', 'Phát triển thẩm mỹ'),
+});
 
-const getDomainText = (slot) => {
+const getDomainText = (slot, domainNames) => {
   const d =
     slot.domainLabel ||
     slot.criteria?.domainLabel ||
@@ -73,10 +74,10 @@ const getDomainText = (slot) => {
     '';
   if (!d) return '';
   const str = typeof d === 'string' ? d.trim() : '';
-  return DOMAIN_NAMES[str.toUpperCase()] || DOMAIN_NAMES[str] || str;
+  return domainNames[str.toUpperCase()] || domainNames[str] || str;
 };
 
-const getIndicatorText = (slot) => {
+const getIndicatorText = (slot, t) => {
   const val =
     slot.indicatorCode ||
     slot.indicator ||
@@ -86,7 +87,7 @@ const getIndicatorText = (slot) => {
   if (val && typeof val === 'string' && val.trim()) {
     return val.trim();
   }
-  return 'Không áp dụng (Khối Nhà trẻ)';
+  return t('planning.notApplicableCreche', 'Không áp dụng (Khối Nhà trẻ)');
 };
 
 export function ActivitySlotPopover({
@@ -103,6 +104,9 @@ export function ActivitySlotPopover({
   onSelectSlot,
   readOnly = false,
 }) {
+  const { t } = useTranslation();
+  const ROUTINE_SLOT_NAMES = useMemo(() => getRoutineSlotNames(t), [t]);
+  const DOMAIN_NAMES = useMemo(() => getDomainNames(t), [t]);
   const [localSlots, setLocalSlots] = useState([]);
   const [activeSlotId, setActiveSlotId] = useState(slot?.id);
 
@@ -191,7 +195,7 @@ export function ActivitySlotPopover({
           <div className="flex flex-col gap-1 min-w-0 pr-4">
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-[18px] font-semibold text-foreground tracking-tight truncate">
-                Chi tiết slot tuần
+                {t('planning.weeklySlotDetailTitle', 'Chi tiết slot tuần')}
               </h2>
               {/* Badge 1: Loại hoạt động giáo dục (Xanh nhẹ) */}
               <span className="inline-flex items-center h-6 px-2.5 text-[11.5px] font-medium bg-blue-500/10 text-[#1447e6] dark:text-blue-400 border border-blue-500/20 rounded-none shrink-0 select-none whitespace-nowrap">
@@ -203,17 +207,29 @@ export function ActivitySlotPopover({
                   {dateOnly}
                 </span>
               )}
-              {/* Badge 3: Khóa dạy do ngày lễ / sự kiện */}
+              {/* Badge 3: Khóa dạy do ngày lễ / sự kiện hoặc chuyển lịch */}
               {day?.isLocked && (
-                <span className="inline-flex items-center gap-1 h-6 px-2 text-[11px] font-semibold bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/25 rounded-none shrink-0 select-none">
-                  <span>🔒</span>
-                  <span>{day.lockReason ? `Đã khóa: ${day.lockReason}` : 'Đã khóa dạy'}</span>
+                <span className="inline-flex items-center h-6 px-2 text-[11px] font-semibold bg-blue-500/10 text-[#1447e6] dark:text-blue-400 border border-blue-500/25 rounded-none shrink-0 select-none">
+                  {day?.holiday?.makeupDate ? (
+                    (() => {
+                      const parts = day.holiday.makeupDate.split('-');
+                      return t('planning.holidayMovedSaturday', { date: `${parts[2]}/${parts[1]}`, defaultValue: `Lịch dạy dời sang T7 (${parts[2]}/${parts[1]})` });
+                    })()
+                  ) : (
+                    <span>{day.lockReason ? t('planning.dayOffReason', { reason: day.lockReason, defaultValue: `Lịch nghỉ: ${day.lockReason}` }) : t('planning.dayOff', 'Ngày nghỉ')}</span>
+                  )}
+                </span>
+              )}
+              {/* Badge 4: Dạy bù nếu có */}
+              {(slot?.notes?.includes('[Dạy bù') || day?.isSaturdayMakeup) && (
+                <span className="inline-flex items-center h-6 px-2 text-[11px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/25 rounded-none shrink-0 select-none">
+                  {slot?.notes?.match(/\[Dạy bù ngày (.*?)\]/)?.[0] || t('planning.bghMakeupLabel', 'Dạy bù BGH')}
                 </span>
               )}
             </div>
 
             <p className="text-[12px] text-muted-foreground font-normal mt-0.5">
-              Xem chi tiết các hoạt động giáo dục, nội dung mục tiêu và tiến trình bài dạy trong khung giờ sinh hoạt của tuần.
+              {t('planning.weeklySlotDetailDesc', 'Xem chi tiết các hoạt động giáo dục, nội dung mục tiêu và tiến trình bài dạy trong khung giờ sinh hoạt của tuần.')}
             </p>
           </div>
 
@@ -221,7 +237,7 @@ export function ActivitySlotPopover({
             type="button"
             onClick={onClose}
             className="size-8.5 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors rounded-none cursor-pointer shrink-0"
-            title="Đóng drawer"
+            title={t('planning.closeDrawerTooltip', 'Đóng drawer')}
           >
             <HugeiconsIcon icon={Cancel01Icon} size={18} />
           </button>
@@ -234,8 +250,8 @@ export function ActivitySlotPopover({
             {displaySlots.map((itemSlot, index) => {
               const activityNumber = index + 1;
               const isSelected = activeSlotId === itemSlot.id;
-              const domainText = getDomainText(itemSlot);
-              const indicatorText = getIndicatorText(itemSlot);
+              const domainText = getDomainText(itemSlot, DOMAIN_NAMES);
+              const indicatorText = getIndicatorText(itemSlot, t);
 
               return (
                 <div
@@ -255,7 +271,7 @@ export function ActivitySlotPopover({
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex flex-col gap-1 flex-1 min-w-0 pr-1">
                       <span className="text-[11.5px] font-mono font-semibold text-muted-foreground tracking-wider uppercase">
-                        Hoạt động {activityNumber}
+                        {t('planning.activityNumber', { number: activityNumber, defaultValue: `Hoạt động ${activityNumber}` })}
                       </span>
                       <h4 className="text-[16px] font-semibold text-foreground leading-snug break-words">
                         {itemSlot.title}
@@ -274,7 +290,7 @@ export function ActivitySlotPopover({
                               handleMove(index, -1);
                             }}
                             className="size-8 border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground disabled:opacity-25 disabled:hover:bg-background disabled:cursor-not-allowed flex items-center justify-center transition-colors rounded-none cursor-pointer"
-                            title="Di chuyển lên trên"
+                            title={t('planning.moveUpTooltip', 'Di chuyển lên trên')}
                           >
                             <HugeiconsIcon icon={ArrowUp01Icon} size={15} />
                           </button>
@@ -286,7 +302,7 @@ export function ActivitySlotPopover({
                               handleMove(index, 1);
                             }}
                             className="size-8 border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground disabled:opacity-25 disabled:hover:bg-background disabled:cursor-not-allowed flex items-center justify-center transition-colors rounded-none cursor-pointer"
-                            title="Di chuyển xuống dưới"
+                            title={t('planning.moveDownTooltip', 'Di chuyển xuống dưới')}
                           >
                             <HugeiconsIcon icon={ArrowDown01Icon} size={15} />
                           </button>
@@ -299,7 +315,7 @@ export function ActivitySlotPopover({
                           <button
                             type="button"
                             className="size-8 border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors rounded-none cursor-pointer"
-                            title="Tùy chọn thao tác"
+                            title={t('planning.actionOptionsTooltip', 'Tùy chọn thao tác')}
                           >
                             <HugeiconsIcon icon={MoreHorizontalIcon} size={16} />
                           </button>
@@ -314,7 +330,7 @@ export function ActivitySlotPopover({
                               className="cursor-pointer gap-2.5 text-[12.5px] py-2 rounded-none"
                             >
                               <HugeiconsIcon icon={PencilEdit02Icon} size={15} className="text-muted-foreground" />
-                              <span>{readOnly ? 'Xem chi tiết giáo án' : 'Chỉnh sửa giáo án'}</span>
+                              <span>{readOnly ? t('planning.viewLessonPlanDetail', 'Xem chi tiết giáo án') : t('planning.editLessonPlan', 'Chỉnh sửa giáo án')}</span>
                             </DropdownMenuItem>
                           )}
                           {!readOnly && !day?.isLocked && onChangeActivity && (
@@ -326,7 +342,7 @@ export function ActivitySlotPopover({
                               className="cursor-pointer gap-2.5 text-[12.5px] py-2 rounded-none"
                             >
                               <HugeiconsIcon icon={RefreshIcon} size={15} className="text-muted-foreground" />
-                              <span>Đổi hoạt động khác</span>
+                              <span>{t('planning.switchAnotherActivity', 'Đổi hoạt động khác')}</span>
                             </DropdownMenuItem>
                           )}
                           {!readOnly && onClearSlot && (
@@ -340,7 +356,7 @@ export function ActivitySlotPopover({
                                 className="cursor-pointer gap-2.5 text-[12.5px] py-2 text-destructive focus:text-destructive focus:bg-destructive/10 rounded-none"
                               >
                                 <HugeiconsIcon icon={Delete02Icon} size={15} />
-                                <span>Gỡ khỏi slot</span>
+                                <span>{t('planning.removeFromSlot', 'Gỡ khỏi slot')}</span>
                               </DropdownMenuItem>
                             </>
                           )}
@@ -355,7 +371,7 @@ export function ActivitySlotPopover({
                       {(itemSlot.slotCreatorName || itemSlot.creatorName) && (
                         <div className="flex items-center gap-1.5">
                           <HugeiconsIcon icon={UserIcon} size={12} className="text-muted-foreground/70" />
-                          <span className="text-muted-foreground/80">Xếp lịch bởi:</span>
+                          <span className="text-muted-foreground/80">{t('planning.scheduledBy', 'Xếp lịch bởi:')}</span>
                           <span className="font-medium text-foreground">
                             {itemSlot.slotCreatorName || itemSlot.creatorName}
                           </span>
@@ -364,7 +380,7 @@ export function ActivitySlotPopover({
                       {(itemSlot.slotUpdaterName || itemSlot.updaterName) &&
                         (itemSlot.slotUpdaterName || itemSlot.updaterName) !== (itemSlot.slotCreatorName || itemSlot.creatorName) && (
                           <div className="flex items-center gap-1 text-[11.5px]">
-                            <span className="text-muted-foreground/70">Dời/sửa:</span>
+                            <span className="text-muted-foreground/70">{t('planning.rescheduledBy', 'Dời/sửa:')}</span>
                             <span className="font-medium text-foreground">
                               {itemSlot.slotUpdaterName || itemSlot.updaterName}
                             </span>
@@ -372,7 +388,7 @@ export function ActivitySlotPopover({
                         )}
                       {itemSlot.activityCreatorName && (
                         <div className="flex items-center gap-1.5 border-l border-border/80 pl-3">
-                          <span className="text-muted-foreground/70">Soạn bài:</span>
+                          <span className="text-muted-foreground/70">{t('planning.composedBy', 'Soạn bài:')}</span>
                           <span className="font-medium text-foreground">
                             {itemSlot.activityCreatorName}
                           </span>
@@ -384,7 +400,7 @@ export function ActivitySlotPopover({
                   {/* Thông tin Lĩnh vực, Mục tiêu GD, Chỉ số BGD, Nội dung GD: Thoáng đãng */}
                   <div className="space-y-1.5 text-[13px] border-t border-border/50 pt-3">
                     <div className="flex items-baseline gap-2">
-                      <span className="text-muted-foreground min-w-[85px] shrink-0">Lĩnh vực:</span>
+                      <span className="text-muted-foreground min-w-[85px] shrink-0">{t('planning.domainLabelColon', 'Lĩnh vực:')}</span>
                       <span className="text-foreground font-medium">
                         {domainText || '—'}
                       </span>
@@ -392,7 +408,7 @@ export function ActivitySlotPopover({
 
                     {(itemSlot.goalCode || itemSlot.goalTitle) && (
                       <div className="flex items-baseline gap-2">
-                        <span className="text-muted-foreground min-w-[85px] shrink-0">Mục tiêu:</span>
+                        <span className="text-muted-foreground min-w-[85px] shrink-0">{t('planning.goalLabelColon', 'Mục tiêu:')}</span>
                         <div className="flex items-baseline gap-2 flex-wrap">
                           {itemSlot.goalCode && (
                             <span className="px-2 py-0.5 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-mono text-[11px] font-semibold shrink-0 select-none">
@@ -407,7 +423,7 @@ export function ActivitySlotPopover({
                     )}
 
                     <div className="flex items-baseline gap-2">
-                      <span className="text-muted-foreground min-w-[85px] shrink-0">Chỉ số BGD:</span>
+                      <span className="text-muted-foreground min-w-[85px] shrink-0">{t('planning.bgdIndicatorColon', 'Chỉ số BGD:')}</span>
                       <span
                         className={cn(
                           indicatorText && !indicatorText.includes('Không áp dụng')
@@ -421,7 +437,7 @@ export function ActivitySlotPopover({
 
                     {(itemSlot.contentTitle || itemSlot.content) && (
                       <div className="flex items-baseline gap-2">
-                        <span className="text-muted-foreground min-w-[85px] shrink-0">Nội dung:</span>
+                        <span className="text-muted-foreground min-w-[85px] shrink-0">{t('planning.contentLabelColon', 'Nội dung:')}</span>
                         <span className="text-foreground">{itemSlot.contentTitle || itemSlot.content}</span>
                       </div>
                     )}
@@ -433,7 +449,7 @@ export function ActivitySlotPopover({
                     {itemSlot.objective && (
                       <div className="space-y-1">
                         <div className="font-semibold text-foreground text-[13px]">
-                          1. Mục tiêu hoạt động
+                          {t('planning.actGoalHeading1', '1. Mục tiêu hoạt động')}
                         </div>
                         <p className="text-muted-foreground leading-relaxed">
                           {itemSlot.objective}
@@ -445,7 +461,7 @@ export function ActivitySlotPopover({
                     {itemSlot.preparation && (
                       <div className="space-y-1">
                         <div className="font-semibold text-foreground text-[13px]">
-                          2. Chuẩn bị
+                          {t('planning.actPrepHeading2', '2. Chuẩn bị')}
                         </div>
                         <p className="text-muted-foreground leading-relaxed">
                           {itemSlot.preparation}
@@ -457,7 +473,7 @@ export function ActivitySlotPopover({
                     {itemSlot.procedure && (
                       <div className="space-y-1">
                         <div className="font-semibold text-foreground text-[13px]">
-                          3. Tiến trình bài dạy
+                          {t('planning.actProcedureHeading3', '3. Tiến trình bài dạy')}
                         </div>
                         <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
                           {itemSlot.procedure}
@@ -469,7 +485,7 @@ export function ActivitySlotPopover({
                     {(itemSlot.evaluation || itemSlot.evaluationCriteria) && (
                       <div className="space-y-1">
                         <div className="font-semibold text-foreground text-[13px]">
-                          4. Đánh giá / Tiêu chí đạt
+                          {t('planning.actEvalHeading4', '4. Đánh giá / Tiêu chí đạt')}
                         </div>
                         <p className="text-muted-foreground leading-relaxed">
                           {itemSlot.evaluation || itemSlot.evaluationCriteria}
@@ -490,13 +506,13 @@ export function ActivitySlotPopover({
               className="w-full h-10 border border-dashed border-border hover:border-primary/60 hover:bg-primary/5 text-primary text-[13px] font-medium rounded-none flex items-center justify-center gap-2 transition-colors cursor-pointer select-none"
             >
               <HugeiconsIcon icon={PlusSignIcon} size={15} />
-              <span>Thêm hoạt động vào slot này</span>
+              <span>{t('planning.addActivityToSlotBtn', 'Thêm hoạt động vào slot này')}</span>
             </button>
           )}
           {day?.isLocked && (
             <div className="w-full p-2.5 border border-dashed border-red-500/30 bg-red-500/5 text-red-600 dark:text-red-400 text-[12px] font-medium flex items-center justify-center gap-1.5 select-none">
               <span>🔒</span>
-              <span>Ngày này đã bị khóa lịch dạy{day.lockReason ? ` (${day.lockReason})` : ''}. Không thể xếp thêm hoạt động.</span>
+              <span>{t('planning.dayLockedNoAdd', { reason: day.lockReason ? ` (${day.lockReason})` : '', defaultValue: `Ngày này đã bị khóa lịch dạy${day.lockReason ? ` (${day.lockReason})` : ''}. Không thể xếp thêm hoạt động.` })}</span>
             </div>
           )}
         </div>
@@ -504,7 +520,7 @@ export function ActivitySlotPopover({
         {/* 3. Drawer Footer */}
         <div className="p-4 border-t border-border bg-card flex items-center justify-between shrink-0">
           <span className="text-[12.5px] text-muted-foreground">
-            Tổng cộng <strong className="text-foreground">{displaySlots.length}</strong> hoạt động trong slot
+            {t('planning.totalActsInSlotFooter', { count: displaySlots.length, defaultValue: `Tổng cộng ${displaySlots.length} hoạt động trong slot` })}
           </span>
           <Button
             type="button"
@@ -512,7 +528,7 @@ export function ActivitySlotPopover({
             onClick={onClose}
             className="h-9 px-6 text-[13px] font-medium rounded-none border border-border bg-background hover:bg-muted text-foreground cursor-pointer shadow-none transition-colors"
           >
-            Đóng
+            {t('common.close', 'Đóng')}
           </Button>
         </div>
       </div>

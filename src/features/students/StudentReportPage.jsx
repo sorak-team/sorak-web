@@ -15,6 +15,7 @@ import {
   Calendar03Icon,
   Tick02Icon,
   Cancel01Icon,
+  File02Icon,
 } from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
 import { useStudentStore, getStudentAvatarUrl, transformBackendStudent } from './students.store';
@@ -27,6 +28,8 @@ import { useAuthStore } from '@/features/auth';
 import { useAcademicYearStore } from '@/features/academic-years';
 import { useClassesStore } from '@/features/classes';
 import { classesApi } from '@/features/classes/classes.api';
+import { healthApi } from '@/features/health/health.api';
+import { downloadBlob } from '@/shared/utils/download';
 import { NotFoundPage } from '@/features/error';
 import { GraduationCap } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
@@ -41,22 +44,22 @@ function formatDateDisplay(iso) {
   return `${day}/${month}/${year}`;
 }
 
-function getAgeGroupLabel(ageGroup) {
+function getAgeGroupLabel(ageGroup, t) {
   switch ((ageGroup || '').toUpperCase()) {
     case 'NHA_TRE':
-      return 'Khối Nhà trẻ';
+      return t ? t('classes.grades.nhaTre', 'Khối Nhà trẻ') : 'Khối Nhà trẻ';
     case 'MAM':
-      return 'Khối Mầm';
+      return t ? t('classes.grades.mam', 'Khối Mầm') : 'Khối Mầm';
     case 'CHOI':
-      return 'Khối Chồi';
+      return t ? t('classes.grades.choi', 'Khối Chồi') : 'Khối Chồi';
     case 'LA':
-      return 'Khối Lá';
+      return t ? t('classes.grades.la', 'Khối Lá') : 'Khối Lá';
     default:
       return ageGroup || '';
   }
 }
 
-function calculateAge(dobStr) {
+function calculateAge(dobStr, t) {
   if (!dobStr) return '';
   const dob = new Date(dobStr);
   if (isNaN(dob.getTime())) return '';
@@ -70,14 +73,14 @@ function calculateAge(dobStr) {
     years--;
     months += 12;
   }
-  if (years <= 0) return `${months} tháng`;
-  return `${years} tuổi ${months > 0 ? `${months} tháng` : ''}`;
+  if (years <= 0) return t ? t('common.monthsCount', '{{count}} tháng', { count: months }) : `${months} tháng`;
+  return `${years} ${t ? t('common.yearsOld', 'tuổi') : 'tuổi'} ${months > 0 ? `${months} ${t ? t('common.monthsShort', 'tháng') : 'tháng'}` : ''}`;
 }
 
-function formatRecordedBy(name) {
-  if (!name) return 'Cán bộ Y tế';
-  if (/^HS\d+$/i.test(name.trim())) return 'Cán bộ Y tế';
-  if (/^admin$/i.test(name.trim())) return 'Cán bộ Y tế';
+function formatRecordedBy(name, t) {
+  if (!name) return t ? t('studentReport.healthStaff', 'Cán bộ Y tế') : 'Cán bộ Y tế';
+  if (/^HS\d+$/i.test(name.trim())) return t ? t('studentReport.healthStaff', 'Cán bộ Y tế') : 'Cán bộ Y tế';
+  if (/^admin$/i.test(name.trim())) return t ? t('studentReport.healthStaff', 'Cán bộ Y tế') : 'Cán bộ Y tế';
   return name;
 }
 
@@ -117,6 +120,7 @@ export function StudentReportPage() {
   const [selectedSemester, setSelectedSemester] = useState('SEMESTER_1');
   const [reportData, setReportData] = useState(null);
   const [isReportLoading, setIsReportLoading] = useState(false);
+  const [isExportingHealthExcel, setIsExportingHealthExcel] = useState(false);
   const reportCacheRef = useRef(new Map());
 
   // Class Program Graduation State
@@ -168,6 +172,35 @@ export function StudentReportPage() {
     reloadDetail();
   }, [fetchStudents, reloadDetail]);
 
+  const rawStudent = students.find(
+    (item) =>
+      String(item.id) === String(effectiveStudentId) ||
+      item.studentCode === effectiveStudentId ||
+      item.publicId === effectiveStudentId ||
+      String(item.studentId) === String(effectiveStudentId)
+  );
+  const student = detailStudent || rawStudent;
+  const classIdFromQuery = searchParams.get('classId');
+  const classIdFromUrl = routeClassId || classIdFromQuery;
+  const currentClassId = classIdFromUrl || student?.currentClass?.classId || student?.classId;
+
+  // Class students list for switcher & navigation (< >)
+  // Prefers reportData.studentList (authoritative list of active students in this class)
+  const classStudents = useMemo(() => {
+    if (Array.isArray(reportData?.studentList) && reportData.studentList.length > 0) {
+      return [...reportData.studentList].sort((a, b) =>
+        (a.studentCode || '').localeCompare(b.studentCode || '', undefined, { numeric: true })
+      );
+    }
+    if (!currentClassId) return [];
+    return students
+      .filter((s) => {
+        const inCurrent = String(s.currentClass?.classId || s.classId) === String(currentClassId);
+        return inCurrent;
+      })
+      .sort((a, b) => (a.studentCode || '').localeCompare(b.studentCode || '', undefined, { numeric: true }));
+  }, [reportData?.studentList, students, currentClassId]);
+
   // If effectiveStudentId is a numeric sequence ID, gracefully redirect to publicId/studentCode
   useEffect(() => {
     if (effectiveStudentId && /^\d+$/.test(String(effectiveStudentId).trim())) {
@@ -196,31 +229,6 @@ export function StudentReportPage() {
       }
     }
   }, [effectiveStudentId, students, classStudents, routeClassId, classIdFromUrl, searchParams, navigate]);
-
-  const rawStudent = students.find(
-    (item) => String(item.id) === String(effectiveStudentId) || item.studentCode === effectiveStudentId
-  );
-  const student = detailStudent || rawStudent;
-  const classIdFromQuery = searchParams.get('classId');
-  const classIdFromUrl = routeClassId || classIdFromQuery;
-  const currentClassId = classIdFromUrl || student?.currentClass?.classId || student?.classId;
-
-  // Class students list for switcher & navigation (< >)
-  // Prefers reportData.studentList (authoritative list of active students in this class)
-  const classStudents = useMemo(() => {
-    if (Array.isArray(reportData?.studentList) && reportData.studentList.length > 0) {
-      return [...reportData.studentList].sort((a, b) =>
-        (a.studentCode || '').localeCompare(b.studentCode || '', undefined, { numeric: true })
-      );
-    }
-    if (!currentClassId) return [];
-    return students
-      .filter((s) => {
-        const inCurrent = String(s.currentClass?.classId || s.classId) === String(currentClassId);
-        return inCurrent;
-      })
-      .sort((a, b) => (a.studentCode || '').localeCompare(b.studentCode || '', undefined, { numeric: true }));
-  }, [reportData?.studentList, students, currentClassId]);
 
   const currentStudentIndex = useMemo(() => {
     if (!student || classStudents.length === 0) return -1;
@@ -428,28 +436,28 @@ export function StudentReportPage() {
         case 'ENROLLED':
           return { status: 'studying', reason: null };
         case 'COMPLETED':
-          return { status: 'completed', reason: currentClassEnrollment.leaveReason || 'Hoàn thành năm học' };
+          return { status: 'completed', reason: currentClassEnrollment.leaveReason || t('student.reasonCompletedYear', 'Hoàn thành năm học') };
         case 'GRADUATED':
-          return { status: 'graduated', reason: currentClassEnrollment.leaveReason || 'Đã tốt nghiệp' };
+          return { status: 'graduated', reason: currentClassEnrollment.leaveReason || t('student.statusGraduated', 'Đã tốt nghiệp') };
         case 'TRANSFERRED_CLASS':
-          return { status: 'transferred_class', reason: currentClassEnrollment.leaveReason || 'Chuyển lớp' };
+          return { status: 'transferred_class', reason: currentClassEnrollment.leaveReason || t('student.transferClass', 'Chuyển lớp') };
         case 'TRANSFERRED_SCHOOL':
-          return { status: 'transferred', reason: currentClassEnrollment.leaveReason || 'Chuyển trường' };
+          return { status: 'transferred', reason: currentClassEnrollment.leaveReason || t('student.statusTransferred', 'Chuyển trường') };
         case 'RESERVED':
-          return { status: 'reserved', reason: currentClassEnrollment.leaveReason || 'Bảo lưu' };
+          return { status: 'reserved', reason: currentClassEnrollment.leaveReason || t('student.statusReserved', 'Bảo lưu') };
         case 'DROPPED_OUT':
-          return { status: 'dropped_out', reason: currentClassEnrollment.leaveReason || 'Thôi học' };
+          return { status: 'dropped_out', reason: currentClassEnrollment.leaveReason || t('student.statusDroppedOut', 'Thôi học') };
         default:
           break;
       }
     }
 
     if (currentClassEnrollment?.leftAt) {
-      return { status: 'completed', reason: 'Hoàn thành' };
+      return { status: 'completed', reason: t('student.statusCompleted', 'Hoàn thành') };
     }
 
     return { status: student?.status || 'studying', reason: null };
-  }, [student, currentClassEnrollment, classIdFromUrl, isTeacher]);
+  }, [student, currentClassEnrollment, classIdFromUrl, isTeacher, t]);
 
   const isStudentGraduated = useMemo(() => {
     return (student?.status || '').toLowerCase() === 'graduated';
@@ -479,21 +487,21 @@ export function StudentReportPage() {
         totalRequiredMonths: 9,
         evaluatedMonthsCount: 0,
         missingMonths: [],
-        missingSemesters: ['Học kỳ 1', 'Học kỳ 2'],
+        missingSemesters: [t('studentReport.semester1', 'Học kỳ 1'), t('studentReport.semester2', 'Học kỳ 2')],
       }
     );
-  }, [reportData]);
+  }, [reportData, t]);
 
   const handleConfirmGraduation = async () => {
     if (!currentClassId || !student?.id) return;
     if (!eligibility.isEligible) {
-      toast.error('Học sinh chưa có đủ 2 đánh giá học kỳ và đầy đủ đánh giá tháng.');
+      toast.error(t('studentReport.evalIncompleteToast', 'Học sinh chưa có đủ 2 đánh giá học kỳ và đầy đủ đánh giá tháng.'));
       return;
     }
     setIsGraduating(true);
     try {
       const res = await classesApi.graduateStudent(currentClassId, student.id);
-      toast.success(res?.message || 'Đã ghi nhận hoàn thành chương trình học thành công');
+      toast.success(res?.message || t('studentReport.completeSuccessToast', 'Đã ghi nhận hoàn thành chương trình học thành công'));
       setIsGraduateModalOpen(false);
       reportCacheRef.current.clear();
       await reloadDetail();
@@ -501,7 +509,7 @@ export function StudentReportPage() {
       await loadStudentReport(student.id, currentClassId, selectedSemester);
     } catch (err) {
       console.error('Graduation error:', err);
-      toast.error(err.response?.data?.message || err.message || 'Thao tác thất bại');
+      toast.error(err.response?.data?.message || err.message || t('common.actionFailed', 'Thao tác thất bại'));
     } finally {
       setIsGraduating(false);
     }
@@ -512,7 +520,7 @@ export function StudentReportPage() {
     if (!file) return;
 
     if (file.size > 2 * 1024 * 1024) {
-      toast.error('Kích thước ảnh tối đa là 2MB');
+      toast.error(t('teacher.avatarMaxSize', 'Kích thước ảnh tối đa là 2MB'));
       return;
     }
 
@@ -525,7 +533,7 @@ export function StudentReportPage() {
       }
     } catch (err) {
       console.error('Avatar upload failed:', err);
-      toast.error(err.response?.data?.message || err.message || 'Tải ảnh thất bại');
+      toast.error(err.response?.data?.message || err.message || t('teacher.avatarUploadFailed', 'Tải ảnh thất bại'));
     } finally {
       setIsUploadingAvatar(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -539,7 +547,7 @@ export function StudentReportPage() {
       toast.info(t('student.avatarResetNotice', 'Đã đặt lại linh vật mặc định (DiceBear Critters)'));
     } catch (err) {
       console.error('Reset avatar failed:', err);
-      toast.error('Đặt lại ảnh thất bại');
+      toast.error(t('teacher.avatarResetFailed', 'Đặt lại ảnh thất bại'));
     }
   };
 
@@ -667,7 +675,7 @@ export function StudentReportPage() {
                     type="button"
                     onClick={() => setIsStudentMenuOpen(!isStudentMenuOpen)}
                     className="inline-flex items-center justify-between border border-border bg-background hover:bg-muted/70 transition-colors h-7 px-2.5 gap-2 rounded-none text-[12px] font-medium text-foreground cursor-pointer shadow-2xs max-w-[220px]"
-                    title="Chọn học sinh khác trong lớp"
+                    title={t('studentReport.selectAnotherStudent', 'Chọn học sinh khác trong lớp')}
                   >
                     <span className="truncate">{student.fullName}</span>
                   </button>
@@ -680,7 +688,7 @@ export function StudentReportPage() {
                           type="text"
                           value={studentSearch}
                           onChange={(e) => setStudentSearch(e.target.value)}
-                          placeholder="Tìm học sinh trong lớp..."
+                          placeholder={t('studentReport.searchInClassPlaceholder', 'Tìm học sinh trong lớp...')}
                           autoFocus
                           className="flex-1 bg-transparent text-[12px] text-foreground placeholder:text-muted-foreground outline-none border-0 focus:outline-none focus:border-0 focus:ring-0 shadow-none"
                         />
@@ -688,7 +696,7 @@ export function StudentReportPage() {
                       <div className="max-h-[240px] overflow-y-auto p-1 divide-y divide-border/30">
                         {filteredStudents.length === 0 ? (
                           <div className="p-3 text-center text-[12px] text-muted-foreground">
-                            Không tìm thấy
+                            {t('studentReport.notFound', 'Không tìm thấy')}
                           </div>
                         ) : (
                           filteredStudents.map((st) => {
@@ -729,7 +737,7 @@ export function StudentReportPage() {
                     type="button"
                     onClick={handlePrevStudent}
                     disabled={!hasPrev}
-                    title="Học sinh trước (Phím ←)"
+                    title={t('studentReport.prevStudent', 'Học sinh trước (Phím ←)')}
                     className="size-7 flex items-center justify-center border-r border-border text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
                   >
                     <HugeiconsIcon icon={ArrowLeft02Icon} size={13} />
@@ -738,7 +746,7 @@ export function StudentReportPage() {
                     type="button"
                     onClick={handleNextStudent}
                     disabled={!hasNext}
-                    title="Học sinh tiếp theo (Phím →)"
+                    title={t('studentReport.nextStudent', 'Học sinh tiếp theo (Phím →)')}
                     className="size-7 flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
                   >
                     <HugeiconsIcon icon={ArrowRight02Icon} size={13} />
@@ -771,7 +779,7 @@ export function StudentReportPage() {
                     : 'text-muted-foreground hover:text-foreground'
                 )}
               >
-                Học kỳ 1
+                {t('studentReport.semester1', 'Học kỳ 1')}
               </button>
               <button
                 type="button"
@@ -779,8 +787,8 @@ export function StudentReportPage() {
                 onClick={() => handleSemesterChange('SEMESTER_2')}
                 title={
                   !isSem2Available
-                    ? `Học kỳ 2 chưa bắt đầu (bắt đầu từ ${reportData?.semesterInfo?.sem2StartDateVN || '16/01/2027'})`
-                    : 'Xem dữ liệu Học kỳ 2'
+                    ? t('studentReport.semester2NotStarted', 'Học kỳ 2 chưa bắt đầu (bắt đầu từ {{date}})', { date: reportData?.semesterInfo?.sem2StartDateVN || '16/01/2027' })
+                    : t('studentReport.viewSemester2Data', 'Xem dữ liệu Học kỳ 2')
                 }
                 className={cn(
                   'h-6 px-2 text-[11.5px] font-medium transition-all rounded-none',
@@ -791,7 +799,7 @@ export function StudentReportPage() {
                     : 'text-muted-foreground hover:text-foreground cursor-pointer'
                 )}
               >
-                Học kỳ 2
+                {t('studentReport.semester2', 'Học kỳ 2')}
               </button>
             </div>
 
@@ -868,7 +876,7 @@ export function StudentReportPage() {
                   return displayClassName
                     ? ` · ${displayClassName}`
                     : pastEnrollments.length > 0
-                      ? ` · Chưa xếp lớp (Lớp cũ: ${pastEnrollments[0].className})`
+                      ? t('studentReport.unassignedPastClass', ' · Chưa xếp lớp (Lớp cũ: {{className}})', { className: pastEnrollments[0].className })
                       : ` · ${t('student.notAssigned', 'Chưa phân lớp')}`;
                 })()}
                 {student.primaryParent && ` · ${t('student.parentLabel', 'Phụ huynh')}: ${student.primaryParent.fullName} (${student.primaryParent.phone})`}
@@ -883,7 +891,7 @@ export function StudentReportPage() {
               isClassEnrollmentGraduated ? (
                 <span className="inline-flex items-center gap-1.5 h-8 px-2.5 text-[12px] font-medium text-muted-foreground bg-muted/40 border border-border rounded-none shadow-2xs select-none">
                   <GraduationCap className="size-3.5 text-muted-foreground" />
-                  <span>Đã hoàn thành lớp</span>
+                  <span>{t('studentReport.classCompletedBadge', 'Đã hoàn thành lớp')}</span>
                 </span>
               ) : (
                 <Button
@@ -891,10 +899,10 @@ export function StudentReportPage() {
                   variant="outline"
                   onClick={() => setIsGraduateModalOpen(true)}
                   className="h-8 px-3 text-[12px] rounded-none border border-border bg-background hover:bg-muted text-foreground cursor-pointer shadow-2xs transition-colors font-normal inline-flex items-center gap-1.5"
-                  title="Hoàn thành chương trình học"
+                  title={t('studentReport.completeProgramTitle', 'Hoàn thành chương trình học')}
                 >
                   <GraduationCap className="size-3.5 text-muted-foreground shrink-0" />
-                  <span>Hoàn thành chương trình học</span>
+                  <span>{t('studentReport.completeProgramBtn', 'Hoàn thành chương trình học')}</span>
                 </Button>
               )
             )}
@@ -913,7 +921,7 @@ export function StudentReportPage() {
                   'size-8 rounded-none border border-border bg-background hover:bg-muted text-foreground cursor-pointer',
                   isStudentGraduated && 'opacity-40 cursor-not-allowed hover:bg-background'
                 )}
-                title={isStudentGraduated ? 'Học sinh đã tốt nghiệp, không thể chỉnh sửa' : t('common.edit', 'Chỉnh sửa')}
+                title={isStudentGraduated ? t('student.graduatedCannotEdit', 'Học sinh đã tốt nghiệp, không thể chỉnh sửa') : t('common.edit', 'Chỉnh sửa')}
               >
                 <HugeiconsIcon icon={PencilEdit02Icon} size={15} />
               </Button>
@@ -948,7 +956,7 @@ export function StudentReportPage() {
           )}
         >
           <div className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">
-            Sức khỏe ({healthData.totalChecks} đợt)
+            {t('studentReport.healthSummaryCard', 'Sức khỏe ({{count}} đợt)', { count: healthData.totalChecks })}
           </div>
           <div className="text-xs font-medium text-foreground mt-1 truncate">
             {healthData.latest ? (
@@ -956,7 +964,7 @@ export function StudentReportPage() {
                 {healthData.latest.height}cm · {healthData.latest.weight}kg
               </span>
             ) : (
-              'Chưa có dữ liệu'
+              t('studentReport.noData', 'Chưa có dữ liệu')
             )}
           </div>
         </button>
@@ -972,12 +980,12 @@ export function StudentReportPage() {
           )}
         >
           <div className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">
-            Chuyên cần {attendanceData.totalDays > 0 ? `(${attendanceData.attendanceRate}%)` : '(Chưa có dữ liệu)'}
+            {attendanceData.totalDays > 0 ? t('studentReport.attendanceSummaryCard', 'Chuyên cần ({{rate}}%)', { rate: attendanceData.attendanceRate }) : t('studentReport.noData', 'Chưa có dữ liệu')}
           </div>
           <div className="text-xs font-medium text-foreground mt-1 truncate">
             {attendanceData.totalDays > 0
-              ? `${attendanceData.presentCount}/${attendanceData.totalDays} buổi có mặt`
-              : 'Chưa có dữ liệu'}
+              ? t('studentReport.attendancePresentCount', '{{present}}/{{total}} buổi có mặt', { present: attendanceData.presentCount, total: attendanceData.totalDays })
+              : t('studentReport.noData', 'Chưa có dữ liệu')}
           </div>
         </button>
 
@@ -992,10 +1000,10 @@ export function StudentReportPage() {
           )}
         >
           <div className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">
-            Đánh giá ({assessmentsData.totalAssessed} tiết)
+            {t('studentReport.assessmentSummaryCard', 'Đánh giá ({{count}} tiết)', { count: assessmentsData.totalAssessed })}
           </div>
           <div className="text-xs font-medium text-foreground mt-1 truncate">
-            {assessmentsData.achievedCount} Đạt · {assessmentsData.outstandingCount} Vượt trội
+            {t('studentReport.assessmentStats', '{{achieved}} Đạt · {{outstanding}} Vượt trội', { achieved: assessmentsData.achievedCount, outstanding: assessmentsData.outstandingCount })}
           </div>
         </button>
 
@@ -1010,11 +1018,11 @@ export function StudentReportPage() {
           )}
         >
           <div className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">
-            Ủy quyền ({authorizationsData.total} đơn)
+            {t('studentReport.authSummaryCard', 'Ủy quyền ({{count}} đơn)', { count: authorizationsData.total })}
           </div>
           <div className="text-xs font-medium text-foreground mt-1 truncate">
-            {authorizationsData.approvedCount} Đã duyệt
-            {authorizationsData.pendingCount > 0 ? ` · ${authorizationsData.pendingCount} Chờ` : ''}
+            {t('studentReport.authApprovedCount', '{{count}} Đã duyệt', { count: authorizationsData.approvedCount })}
+            {authorizationsData.pendingCount > 0 ? t('studentReport.authPendingCount', ' · {{count}} Chờ', { count: authorizationsData.pendingCount }) : ''}
           </div>
         </button>
       </div>
@@ -1031,7 +1039,7 @@ export function StudentReportPage() {
               : 'border-transparent text-muted-foreground hover:text-foreground'
           )}
         >
-          Hồ sơ lý lịch
+          {t('studentReport.tabProfile', 'Hồ sơ lý lịch')}
         </button>
 
         <button
@@ -1044,7 +1052,7 @@ export function StudentReportPage() {
               : 'border-transparent text-muted-foreground hover:text-foreground'
           )}
         >
-          Theo dõi Sức khỏe
+          {t('studentReport.tabHealth', 'Theo dõi Sức khỏe')}
         </button>
 
         <button
@@ -1057,7 +1065,7 @@ export function StudentReportPage() {
               : 'border-transparent text-muted-foreground hover:text-foreground'
           )}
         >
-          Lịch sử Điểm danh
+          {t('studentReport.tabAttendance', 'Lịch sử Điểm danh')}
         </button>
 
         <button
@@ -1070,7 +1078,7 @@ export function StudentReportPage() {
               : 'border-transparent text-muted-foreground hover:text-foreground'
           )}
         >
-          Đánh giá Hoạt động
+          {t('studentReport.tabAssessments', 'Đánh giá Hoạt động')}
         </button>
 
         <button
@@ -1083,7 +1091,7 @@ export function StudentReportPage() {
               : 'border-transparent text-muted-foreground hover:text-foreground'
           )}
         >
-          Ủy quyền đưa đón
+          {t('studentReport.tabAuthorizations', 'Ủy quyền đưa đón')}
         </button>
       </div>
 
@@ -1350,37 +1358,69 @@ export function StudentReportPage() {
           <div className="border border-border bg-card shadow-xs">
             <div className="p-3.5 border-b border-border flex items-center justify-between bg-card">
               <h4 className="text-[13px] font-semibold text-foreground">
-                Lịch sử các đợt đo & Khám sức khỏe định kỳ
+                {t('studentReport.healthHistoryTitle', 'Lịch sử các đợt đo & Khám sức khỏe định kỳ')}
               </h4>
-              <span className="text-[11.5px] font-mono text-muted-foreground">
-                {healthData.history?.length || 0} đợt đo
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-[11.5px] font-mono text-muted-foreground">
+                  {t('studentReport.healthHistoryCount', '{{count}} đợt đo', { count: healthData.history?.length || 0 })}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    const targetStudentId = student?.publicId || student?.id || student?.studentCode || effectiveStudentId;
+                    if (!targetStudentId) return;
+                    try {
+                      setIsExportingHealthExcel(true);
+                      const blob = await healthApi.exportStudentHealthExcel(targetStudentId, {
+                        classId: currentClassId,
+                        schoolYearId: selectedYearId,
+                      });
+                      const safeName = (student?.fullName || student?.name || 'HocSinh').trim().replace(/\s+/g, '_');
+                      const filename = `Bao_cao_suc_khoe_${student?.studentCode || student?.code || 'HS'}_${safeName}.xlsx`;
+                      downloadBlob(blob, filename);
+                      toast.success(t('studentReport.exportHealthSuccess', 'Xuất dữ liệu sức khỏe thành công!'));
+                    } catch (err) {
+                      console.error('Failed to export student health excel:', err);
+                      toast.error(t('studentReport.exportHealthError', 'Không thể xuất dữ liệu sức khỏe. Vui lòng thử lại.'));
+                    } finally {
+                      setIsExportingHealthExcel(false);
+                    }
+                  }}
+                  disabled={isExportingHealthExcel}
+                  className="h-7 px-2.5 text-[12px] rounded-none border border-border flex items-center gap-1.5 cursor-pointer hover:bg-muted/60"
+                >
+                  <HugeiconsIcon icon={File02Icon} size={14} className="text-emerald-600" />
+                  <span>{isExportingHealthExcel ? t('common.exporting', 'Đang xuất...') : t('studentReport.exportHealthBtn', 'Xuất dữ liệu sức khỏe (.xlsx)')}</span>
+                </Button>
+              </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="border-b border-border bg-muted/40 font-medium text-muted-foreground uppercase text-[11px] tracking-wider">
                   <tr>
-                    <th className="px-4 py-2.5">Đợt đo</th>
-                    <th className="px-4 py-2.5">Ngày đo</th>
-                    <th className="px-4 py-2.5 text-right">Chiều cao</th>
-                    <th className="px-4 py-2.5 text-right">Cân nặng</th>
-                    <th className="px-4 py-2.5">Chiều cao / Tuổi</th>
-                    <th className="px-4 py-2.5">Cân nặng / Thể trạng</th>
-                    <th className="px-4 py-2.5">Ghi chú y tế</th>
-                    <th className="px-4 py-2.5">Người ghi nhận</th>
+                    <th className="px-4 py-2.5">{t('studentReport.colRoundName', 'Đợt đo')}</th>
+                    <th className="px-4 py-2.5">{t('studentReport.colCheckDate', 'Ngày đo')}</th>
+                    <th className="px-4 py-2.5 text-right">{t('studentReport.colHeight', 'Chiều cao')}</th>
+                    <th className="px-4 py-2.5 text-right">{t('studentReport.colWeight', 'Cân nặng')}</th>
+                    <th className="px-4 py-2.5">{t('studentReport.colHeightForAge', 'Chiều cao / Tuổi')}</th>
+                    <th className="px-4 py-2.5">{t('studentReport.colWeightForAge', 'Cân nặng / Thể trạng')}</th>
+                    <th className="px-4 py-2.5">{t('studentReport.colMedicalNotes', 'Ghi chú y tế')}</th>
+                    <th className="px-4 py-2.5">{t('studentReport.colRecordedBy', 'Người ghi nhận')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {isReportLoading ? (
                     <tr>
                       <td colSpan={8} className="py-8 text-center text-muted-foreground">
-                        Đang tải dữ liệu đo sức khỏe...
+                        {t('studentReport.loadingHealth', 'Đang tải dữ liệu đo sức khỏe...')}
                       </td>
                     </tr>
                   ) : healthData.history.length === 0 ? (
                     <tr>
                       <td colSpan={8} className="py-8 text-center text-muted-foreground">
-                        Chưa có dữ liệu đo sức khỏe cho học sinh này.
+                        {t('studentReport.noHealthData', 'Chưa có dữ liệu đo sức khỏe cho học sinh này.')}
                       </td>
                     </tr>
                   ) : (
@@ -1389,6 +1429,7 @@ export function StudentReportPage() {
                         heightZ: record.zscoreHeight ?? record.heightZscore,
                         weightZ: record.zscoreWeight ?? record.weightZscore,
                         bmiZ: record.zscoreBmi ?? record.bmiZscore,
+                        t,
                       });
 
                       return (
@@ -1421,7 +1462,7 @@ export function StudentReportPage() {
                             </span>
                           </td>
                           <td className="max-w-xs px-4 py-2.5 text-muted-foreground">
-                            {record.notes || 'Bình thường, thể trạng ổn định'}
+                            {record.notes || t('studentReport.defaultNormalHealth', 'Bình thường, thể trạng ổn định')}
                           </td>
                           <td className="px-4 py-2.5 text-foreground font-medium">
                             {formatRecordedBy(record.recordedBy)}
@@ -1447,46 +1488,46 @@ export function StudentReportPage() {
             <table className="w-full text-left text-xs">
               <thead className="border-b border-border bg-muted/40 font-medium text-muted-foreground uppercase text-[11px] tracking-wider">
                 <tr>
-                  <th className="px-4 py-2.5">Ngày</th>
-                  <th className="px-4 py-2.5">Thứ</th>
-                  <th className="px-4 py-2.5">Lớp ghi nhận</th>
-                  <th className="px-4 py-2.5">Trạng thái</th>
-                  <th className="px-4 py-2.5">Giờ đón</th>
-                  <th className="px-4 py-2.5">Giờ về</th>
-                  <th className="px-4 py-2.5">Người đón trẻ</th>
-                  <th className="px-4 py-2.5">Ghi chú & Lý do</th>
+                  <th className="px-4 py-2.5">{t('studentReport.colDate', 'Ngày')}</th>
+                  <th className="px-4 py-2.5">{t('studentReport.colDayOfWeek', 'Thứ')}</th>
+                  <th className="px-4 py-2.5">{t('studentReport.colLoggedClass', 'Lớp ghi nhận')}</th>
+                  <th className="px-4 py-2.5">{t('studentReport.colAttendanceStatus', 'Trạng thái')}</th>
+                  <th className="px-4 py-2.5">{t('studentReport.colCheckinTime', 'Giờ đón')}</th>
+                  <th className="px-4 py-2.5">{t('studentReport.colCheckoutTime', 'Giờ về')}</th>
+                  <th className="px-4 py-2.5">{t('studentReport.colPickupPerson', 'Người đón trẻ')}</th>
+                  <th className="px-4 py-2.5">{t('studentReport.colAttendanceNotes', 'Ghi chú & Lý do')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {isReportLoading ? (
                   <tr>
                     <td colSpan={8} className="py-8 text-center text-muted-foreground">
-                      Đang tải lịch sử điểm danh...
+                      {t('studentReport.loadingAttendance', 'Đang tải lịch sử điểm danh...')}
                     </td>
                   </tr>
                 ) : attendanceData.history.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-8 text-center text-muted-foreground">
-                      Không tìm thấy bản ghi điểm danh nào.
+                      {t('studentReport.noAttendanceData', 'Không tìm thấy bản ghi điểm danh nào.')}
                     </td>
                   </tr>
                 ) : (
                   attendanceData.history.map((att) => {
                     let statusBadge = (
                       <span className="inline-flex items-center px-2 py-0.5 text-[11.5px] font-medium rounded-none bg-blue-100 dark:bg-blue-950/60 text-[#1447e6] dark:text-blue-400 border border-blue-200 dark:border-blue-800/50">
-                        Có mặt
+                        {t('studentReport.statusPresent', 'Có mặt')}
                       </span>
                     );
                     if (att.status === 'EXCUSED_ABSENCE') {
                       statusBadge = (
                         <span className="inline-flex items-center px-2 py-0.5 text-[11.5px] font-medium rounded-none bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50">
-                          Nghỉ có phép
+                          {t('studentReport.statusExcused', 'Nghỉ có phép')}
                         </span>
                       );
                     } else if (att.status === 'UNEXCUSED_ABSENCE') {
                       statusBadge = (
                         <span className="inline-flex items-center px-2 py-0.5 text-[11.5px] font-medium rounded-none bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800/50">
-                          Nghỉ không phép
+                          {t('studentReport.statusUnexcused', 'Nghỉ không phép')}
                         </span>
                       );
                     }
@@ -1543,44 +1584,44 @@ export function StudentReportPage() {
             <table className="w-full text-left text-xs">
               <thead className="border-b border-border bg-muted/40 font-medium text-muted-foreground uppercase text-[11px] tracking-wider">
                 <tr>
-                  <th className="px-4 py-2.5">Ngày</th>
-                  <th className="px-4 py-2.5">Khung giờ</th>
-                  <th className="px-4 py-2.5">Hoạt động giáo dục</th>
-                  <th className="px-4 py-2.5">Kết quả</th>
-                  <th className="px-4 py-2.5">Nhận xét của giáo viên</th>
-                  <th className="px-4 py-2.5">Giáo viên</th>
+                  <th className="px-4 py-2.5">{t('studentReport.colDate', 'Ngày')}</th>
+                  <th className="px-4 py-2.5">{t('studentReport.colTimeSlot', 'Khung giờ')}</th>
+                  <th className="px-4 py-2.5">{t('studentReport.colEducationActivity', 'Hoạt động giáo dục')}</th>
+                  <th className="px-4 py-2.5">{t('studentReport.colResult', 'Kết quả')}</th>
+                  <th className="px-4 py-2.5">{t('studentReport.colTeacherFeedback', 'Nhận xét của giáo viên')}</th>
+                  <th className="px-4 py-2.5">{t('studentReport.colTeacher', 'Giáo viên')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {isReportLoading ? (
                   <tr>
                     <td colSpan={6} className="py-8 text-center text-muted-foreground">
-                      Đang tải đánh giá hoạt động...
+                      {t('studentReport.loadingAssessments', 'Đang tải đánh giá hoạt động...')}
                     </td>
                   </tr>
                 ) : assessmentsData.history.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-8 text-center text-muted-foreground">
-                      Không tìm thấy hoạt động đánh giá nào phù hợp.
+                      {t('studentReport.noAssessmentsData', 'Không tìm thấy hoạt động đánh giá nào phù hợp.')}
                     </td>
                   </tr>
                 ) : (
                   assessmentsData.history.map((ass) => {
                     let statusBadge = (
                       <span className="inline-flex items-center px-2 py-0.5 text-[11.5px] font-medium rounded-none bg-blue-100 dark:bg-blue-950/60 text-[#1447e6] dark:text-blue-400 border border-blue-200 dark:border-blue-800/50">
-                        Đạt yêu cầu
+                        {t('studentReport.resultAchieved', 'Đạt yêu cầu')}
                       </span>
                     );
                     if (ass.status === 'OUTSTANDING') {
                       statusBadge = (
                         <span className="inline-flex items-center px-2 py-0.5 text-[11.5px] font-medium rounded-none bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800/50 font-semibold">
-                          Vượt trội ★
+                          {t('studentReport.resultOutstanding', 'Vượt trội ★')}
                         </span>
                       );
                     } else if (ass.status === 'NOT_ACHIEVED') {
                       statusBadge = (
                         <span className="inline-flex items-center px-2 py-0.5 text-[11.5px] font-medium rounded-none bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800/50">
-                          Cần rèn luyện
+                          {t('studentReport.resultNeedsPractice', 'Cần rèn luyện')}
                         </span>
                       );
                     }
@@ -1603,7 +1644,7 @@ export function StudentReportPage() {
                           {ass.notes || '—'}
                         </td>
                         <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">
-                          {ass.evaluatorName || 'Giáo viên'}
+                          {ass.evaluatorName || t('studentReport.colTeacher', 'Giáo viên')}
                         </td>
                       </tr>
                     );
@@ -1622,26 +1663,27 @@ export function StudentReportPage() {
             <table className="w-full text-left text-xs">
               <thead className="border-b border-border bg-muted/40 font-medium text-muted-foreground uppercase text-[11px] tracking-wider">
                 <tr>
-                  <th className="px-4 py-2.5">Người được ủy quyền</th>
-                  <th className="px-4 py-2.5">Quan hệ</th>
-                  <th className="px-4 py-2.5">Số điện thoại</th>
-                  <th className="px-4 py-2.5">Thời gian hiệu lực</th>
-                  <th className="px-4 py-2.5">Trạng thái</th>
-                  <th className="px-4 py-2.5">Dặn dò / Ghi chú</th>
+                  <th className="px-4 py-2.5">{t('studentReport.colAuthorizedPerson', 'Người được ủy quyền')}</th>
+                  <th className="px-4 py-2.5">{t('studentReport.colRelationship', 'Quan hệ')}</th>
+                  <th className="px-4 py-2.5">{t('studentReport.colPhone', 'Số điện thoại')}</th>
+                  <th className="px-4 py-2.5">{t('studentReport.colValidityPeriod', 'Thời gian hiệu lực')}</th>
+                  <th className="px-4 py-2.5">{t('studentReport.colAuthStatus', 'Trạng thái')}</th>
+                  <th className="px-4 py-2.5">{t('studentReport.colAuthNotes', 'Dặn dò / Ghi chú')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {isReportLoading ? (
                   <tr>
                     <td colSpan={6} className="py-8 text-center text-muted-foreground">
-                      Đang tải danh sách ủy quyền...
+                      {t('studentReport.loadingAuthorizations', 'Đang tải danh sách ủy quyền...')}
                     </td>
                   </tr>
                 ) : authorizationsData.history.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-8 text-center text-muted-foreground">
-                      Không có yêu cầu ủy quyền đưa đón nào của học sinh này trong{' '}
-                      {selectedSemester === 'SEMESTER_1' ? 'Học kỳ 1' : 'Học kỳ 2'}.
+                      {t('studentReport.noAuthDataInSemester', 'Không có yêu cầu ủy quyền đưa đón nào của học sinh này trong {{semester}}.', {
+                        semester: selectedSemester === 'SEMESTER_1' ? t('studentReport.semester1', 'Học kỳ 1') : t('studentReport.semester2', 'Học kỳ 2'),
+                      })}
                     </td>
                   </tr>
                 ) : (
@@ -1656,10 +1698,10 @@ export function StudentReportPage() {
                               auth.photoUrl &&
                               setPreviewPhoto({
                                 url: auth.photoUrl,
-                                title: `Ảnh người được ủy quyền: ${auth.pickupPersonName}`,
+                                title: `${t('studentReport.defaultAuthPhotoTitle', 'Ảnh người được ủy quyền')}: ${auth.pickupPersonName}`,
                               })
                             }
-                            title={auth.photoUrl ? 'Bấm để phóng to ảnh' : undefined}
+                            title={auth.photoUrl ? t('studentReport.viewPhotoZoom', 'Bấm để phóng to ảnh') : undefined}
                           >
                             <img
                               src={
@@ -1680,7 +1722,7 @@ export function StudentReportPage() {
                               </span>
                             ) : (
                               <span className="text-[11px] text-muted-foreground/50 font-mono">
-                                Chưa có CCCD
+                                {t('studentReport.noCitizenId', 'Chưa có CCCD')}
                               </span>
                             )}
                           </div>
@@ -1707,20 +1749,20 @@ export function StudentReportPage() {
                         {auth.status === 'APPROVED' ? (
                           auth.isActiveNow ? (
                             <span className="inline-flex items-center px-2 py-0.5 text-[11.5px] font-medium rounded-none bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                              Đang hiệu lực
+                              {t('studentReport.statusActiveAuth', 'Đang hiệu lực')}
                             </span>
                           ) : (
                             <span className="inline-flex items-center px-2 py-0.5 text-[11.5px] font-medium rounded-none bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-200/60">
-                              Đã duyệt
+                              {t('studentReport.statusApprovedAuth', 'Đã duyệt')}
                             </span>
                           )
                         ) : auth.status === 'PENDING' ? (
                           <span className="inline-flex items-center px-2 py-0.5 text-[11.5px] font-medium rounded-none bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200">
-                            Chờ duyệt
+                            {t('studentReport.statusPendingAuth', 'Chờ duyệt')}
                           </span>
                         ) : (
                           <span className="inline-flex items-center px-2 py-0.5 text-[11.5px] font-medium rounded-none bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200">
-                            Đã từ chối
+                            {t('studentReport.statusRejectedAuth', 'Đã từ chối')}
                           </span>
                         )}
                       </td>
@@ -1756,7 +1798,7 @@ export function StudentReportPage() {
           >
             <div className="flex items-center justify-between border-b border-border pb-2">
               <span className="text-[13px] font-semibold text-foreground truncate">
-                {previewPhoto.title || 'Ảnh chân dung người được ủy quyền'}
+                {previewPhoto.title || t('studentReport.defaultAuthPhotoTitle', 'Ảnh chân dung người được ủy quyền')}
               </span>
               <button
                 type="button"
@@ -1792,7 +1834,7 @@ export function StudentReportPage() {
               <div className="flex items-center gap-2">
                 <GraduationCap className="size-4.5 text-foreground shrink-0" />
                 <h3 className="text-[15px] font-semibold text-foreground tracking-tight">
-                  Hoàn thành chương trình lớp học
+                  {t('studentReport.modalCompleteTitle', 'Hoàn thành chương trình lớp học')}
                 </h3>
               </div>
               <button
@@ -1807,43 +1849,56 @@ export function StudentReportPage() {
 
             {/* Student Summary */}
             <div className="text-[13px] text-muted-foreground leading-normal">
-              Xác nhận hoàn thành năm học cho học sinh{' '}
-              <span className="font-semibold text-foreground">{student.fullName}</span> ({student.studentCode}) tại lớp{' '}
-              <span className="font-semibold text-foreground">{reportData?.classInfo?.name || student?.currentClass?.className || 'này'}</span>.
+              {t(
+                'studentReport.modalCompleteConfirm',
+                'Xác nhận hoàn thành năm học cho học sinh {{name}} ({{code}}) tại lớp {{className}}.',
+                {
+                  name: student.fullName,
+                  code: student.studentCode,
+                  className: reportData?.classInfo?.name || student?.currentClass?.className || 'này',
+                }
+              )}
             </div>
 
             {/* Clean Evaluation Checklist */}
             <div className="border border-border divide-y divide-border text-[13px]">
               <div className="flex items-center justify-between px-3.5 py-2.5">
-                <span className="text-foreground">Đánh giá Học kỳ 1</span>
+                <span className="text-foreground">{t('studentReport.sem1Evaluation', 'Đánh giá Học kỳ 1')}</span>
                 <span className={cn('text-[12px] font-mono', eligibility.hasSem1 ? 'text-foreground font-medium' : 'text-muted-foreground')}>
-                  {eligibility.hasSem1 ? 'Đã hoàn thành' : 'Chưa đánh giá'}
+                  {eligibility.hasSem1 ? t('studentReport.completed', 'Đã hoàn thành') : t('studentReport.notEvaluated', 'Chưa đánh giá')}
                 </span>
               </div>
 
               <div className="flex items-center justify-between px-3.5 py-2.5">
-                <span className="text-foreground">Đánh giá Học kỳ 2</span>
+                <span className="text-foreground">{t('studentReport.sem2Evaluation', 'Đánh giá Học kỳ 2')}</span>
                 <span className={cn('text-[12px] font-mono', eligibility.hasSem2 ? 'text-foreground' : 'text-muted-foreground')}>
-                  {eligibility.hasSem2 ? 'Đã hoàn thành' : 'Chưa đánh giá'}
+                  {eligibility.hasSem2 ? t('studentReport.completed', 'Đã hoàn thành') : t('studentReport.notEvaluated', 'Chưa đánh giá')}
                 </span>
               </div>
 
               <div className="flex items-center justify-between px-3.5 py-2.5">
-                <span className="text-foreground">Đánh giá các tháng</span>
+                <span className="text-foreground">{t('studentReport.monthlyEvaluation', 'Đánh giá các tháng')}</span>
                 <span
                   className={cn(
                     'text-[12px] font-mono',
                     eligibility.missingMonths?.length === 0 ? 'text-foreground font-medium' : 'text-muted-foreground'
                   )}
                 >
-                  {eligibility.evaluatedMonthsCount}/{eligibility.totalRequiredMonths} tháng
-                  {eligibility.missingMonths?.length > 0 ? ` (thiếu ${eligibility.missingMonths.length} tháng)` : ''}
+                  {t('studentReport.evaluatedMonths', '{{count}}/{{total}} tháng', {
+                    count: eligibility.evaluatedMonthsCount,
+                    total: eligibility.totalRequiredMonths,
+                  })}
+                  {eligibility.missingMonths?.length > 0
+                    ? t('studentReport.missingMonthsCount', ' (thiếu {{count}} tháng)', {
+                        count: eligibility.missingMonths.length,
+                      })
+                    : ''}
                 </span>
               </div>
 
               {eligibility.missingMonths?.length > 0 && (
                 <div className="px-3.5 py-2 text-[11.5px] text-muted-foreground bg-muted/20 leading-relaxed">
-                  <span className="font-medium text-foreground">Tháng chưa đánh giá: </span>
+                  <span className="font-medium text-foreground">{t('studentReport.missingMonthsLabel', 'Tháng chưa đánh giá: ')}</span>
                   {eligibility.missingMonths.map((m) => `T${m.month}/${m.year}`).join(', ')}
                 </div>
               )}
@@ -1852,12 +1907,12 @@ export function StudentReportPage() {
             {/* Minimalist Notice */}
             <div className="text-[12px] text-muted-foreground space-y-1 pt-1 leading-normal">
               {!eligibility.isEligible && (
-                <p>• Cần hoàn thành đủ 2 kỳ đánh giá và toàn bộ các tháng trước khi xác nhận.</p>
+                <p>{t('studentReport.completeRequirementNotice', '• Cần hoàn thành đủ 2 kỳ đánh giá và toàn bộ các tháng trước khi xác nhận.')}</p>
               )}
               <p>
                 • {isClassLopLa
-                  ? 'Đối với lớp Lá: Học sinh sẽ được ghi nhận tốt nghiệp ra trường.'
-                  : 'Trạng thái học sinh tại trường vẫn giữ nguyên để tiếp tục xếp lớp năm học mới.'}
+                  ? t('studentReport.completeLaNotice', 'Đối với lớp Lá: Học sinh sẽ được ghi nhận tốt nghiệp ra trường.')
+                  : t('studentReport.completeOtherNotice', 'Trạng thái học sinh tại trường vẫn giữ nguyên để tiếp tục xếp lớp năm học mới.')}
               </p>
             </div>
 
@@ -1870,7 +1925,7 @@ export function StudentReportPage() {
                 onClick={() => setIsGraduateModalOpen(false)}
                 className="h-8 px-4 text-[12px] rounded-none border-border cursor-pointer hover:bg-muted"
               >
-                Hủy
+                {t('common.cancel', 'Hủy')}
               </Button>
               <Button
                 type="button"
@@ -1878,7 +1933,7 @@ export function StudentReportPage() {
                 onClick={handleConfirmGraduation}
                 className="h-8 px-4 text-[12px] rounded-none bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                {isGraduating ? 'Đang xử lý...' : 'Xác nhận hoàn thành'}
+                {isGraduating ? t('studentReport.processing', 'Đang xử lý...') : t('studentReport.btnConfirmComplete', 'Xác nhận hoàn thành')}
               </Button>
             </div>
           </div>

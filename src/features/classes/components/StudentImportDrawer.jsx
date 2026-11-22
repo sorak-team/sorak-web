@@ -72,7 +72,7 @@ export function StudentImportDrawer({ isOpen, onClose, currentClass, onSuccess }
     if (file) {
       setSelectedFileName(file.name);
       setFileSize(`${(file.size / 1024).toFixed(1)} KB`);
-      toast.success(`Đã tải lên tệp tin: ${file.name}`);
+      toast.success(t('classes.uploadedFileSuccess', 'Đã tải lên tệp tin: {{name}}', { name: file.name }));
     }
   };
 
@@ -87,7 +87,8 @@ export function StudentImportDrawer({ isOpen, onClose, currentClass, onSuccess }
       toast.success(
         t(
           'classes.importSuccess',
-          `Đã import thành công ${previewStudents.length} học sinh vào hệ thống!`,
+          'Đã import thành công {{count}} học sinh vào hệ thống!',
+          { count: previewStudents.length },
         ),
       );
       if (onSuccess) onSuccess();
@@ -188,9 +189,9 @@ export function StudentImportDrawer({ isOpen, onClose, currentClass, onSuccess }
                   onChange={(e) => setMapping((m) => ({ ...m, code: e.target.value }))}
                   className="flex-1 h-8 px-2.5 bg-background border border-border rounded-none text-[12.5px] text-foreground outline-none focus:border-primary cursor-pointer"
                 >
-                  <option value="colA">Cột A - Mã</option>
-                  <option value="colB">Cột B - Họ tên</option>
-                  <option value="none">Không map</option>
+                  <option value="colA">{t('classes.colA_code', 'Cột A - Mã')}</option>
+                  <option value="colB">{t('classes.colB_name', 'Cột B - Họ tên')}</option>
+                  <option value="none">{t('classes.noMapping', 'Không map')}</option>
                 </select>
               </div>
 
@@ -204,9 +205,9 @@ export function StudentImportDrawer({ isOpen, onClose, currentClass, onSuccess }
                   onChange={(e) => setMapping((m) => ({ ...m, name: e.target.value }))}
                   className="flex-1 h-8 px-2.5 bg-background border border-border rounded-none text-[12.5px] text-foreground outline-none focus:border-primary cursor-pointer"
                 >
-                  <option value="colB">Cột B - Họ tên</option>
-                  <option value="colA">Cột A - Mã</option>
-                  <option value="colC">Cột C - Ngày sinh</option>
+                  <option value="colB">{t('classes.colB_name', 'Cột B - Họ tên')}</option>
+                  <option value="colA">{t('classes.colA_code', 'Cột A - Mã')}</option>
+                  <option value="colC">{t('classes.colC_dob', 'Cột C - Ngày sinh')}</option>
                 </select>
               </div>
 
@@ -220,8 +221,8 @@ export function StudentImportDrawer({ isOpen, onClose, currentClass, onSuccess }
                   onChange={(e) => setMapping((m) => ({ ...m, dob: e.target.value }))}
                   className="flex-1 h-8 px-2.5 bg-background border border-border rounded-none text-[12.5px] text-foreground outline-none focus:border-primary cursor-pointer"
                 >
-                  <option value="colC">Cột C - Ngày sinh</option>
-                  <option value="colD">Cột D - Giới tính</option>
+                  <option value="colC">{t('classes.colC_dob', 'Cột C - Ngày sinh')}</option>
+                  <option value="colD">{t('classes.colD_gender', 'Cột D - Giới tính')}</option>
                 </select>
               </div>
 
@@ -235,8 +236,8 @@ export function StudentImportDrawer({ isOpen, onClose, currentClass, onSuccess }
                   onChange={(e) => setMapping((m) => ({ ...m, gender: e.target.value }))}
                   className="flex-1 h-8 px-2.5 bg-background border border-border rounded-none text-[12.5px] text-foreground outline-none focus:border-primary cursor-pointer"
                 >
-                  <option value="colD">Cột D - Giới tính</option>
-                  <option value="colE">Cột E - Khối</option>
+                  <option value="colD">{t('classes.colD_gender', 'Cột D - Giới tính')}</option>
+                  <option value="colE">{t('classes.colE_grade', 'Cột E - Khối')}</option>
                 </select>
               </div>
 
@@ -250,8 +251,8 @@ export function StudentImportDrawer({ isOpen, onClose, currentClass, onSuccess }
                   onChange={(e) => setMapping((m) => ({ ...m, grade: e.target.value }))}
                   className="flex-1 h-8 px-2.5 bg-background border border-border rounded-none text-[12.5px] text-foreground outline-none focus:border-primary cursor-pointer"
                 >
-                  <option value="colE">Cột E - Khối</option>
-                  <option value="none">Tự động theo ngày sinh</option>
+                  <option value="colE">{t('classes.colE_grade', 'Cột E - Khối')}</option>
+                  <option value="none">{t('classes.autoByDob', 'Tự động theo ngày sinh')}</option>
                 </select>
               </div>
             </div>
@@ -273,10 +274,10 @@ export function StudentImportDrawer({ isOpen, onClose, currentClass, onSuccess }
               <table className="w-full text-left text-[12.5px] border-collapse">
                 <thead className="bg-[#f9fafb] dark:bg-muted/40 border-b border-border sticky top-0 z-10 text-[11.5px] uppercase font-semibold text-muted-foreground tracking-wider">
                   <tr>
-                    <th className="py-2 px-3">Mã</th>
-                    <th className="py-2 px-3">Họ tên</th>
-                    <th className="py-2 px-3">Ngày sinh</th>
-                    <th className="py-2 px-3">Khối</th>
+                    <th className="py-2 px-3">{t('classes.colCodeShort', 'Mã')}</th>
+                    <th className="py-2 px-3">{t('classes.colFullName', 'Họ tên')}</th>
+                    <th className="py-2 px-3">{t('classes.colDob', 'Ngày sinh')}</th>
+                    <th className="py-2 px-3">{t('classes.colGrade', 'Khối')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/60">
@@ -325,7 +326,8 @@ export function StudentImportDrawer({ isOpen, onClose, currentClass, onSuccess }
               <span>
                 {t(
                   'classes.confirmImportBtn',
-                  `Import ${previewStudents.length} học sinh`,
+                  'Import {{count}} học sinh',
+                  { count: previewStudents.length },
                 )}
               </span>
             )}

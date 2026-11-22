@@ -32,6 +32,16 @@ export function AttendancePage() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [classStats, setClassStats] = useState(null);
+
+  const fetchClassStats = async () => {
+    try {
+      const stats = await attendanceApi.getClassAttendanceStats(targetClassId);
+      if (stats) setClassStats(stats);
+    } catch (e) {
+      console.warn('Failed to fetch class attendance stats:', e);
+    }
+  };
 
   const handleExportExcel = async () => {
     try {
@@ -46,10 +56,10 @@ export function AttendancePage() {
       const className = currentClass?.name || `Lop_${targetClassId}`;
       const safeName = className.replace(/\s+/g, '_');
       downloadBlob(blob, `So_Diem_Danh_Thang_${currentMonth}_${currentYear}_${safeName}.xlsx`);
-      toast.success('Đã xuất sổ điểm danh chuyên cần thành công');
+      toast.success(t('attendance.exportSuccess', 'Đã xuất sổ điểm danh chuyên cần thành công'));
     } catch (err) {
-      toast.error('Lỗi khi xuất sổ điểm danh', {
-        description: err.message || 'Vui lòng thử lại sau.',
+      toast.error(t('attendance.exportError', 'Lỗi khi xuất sổ điểm danh'), {
+        description: err.message || t('common.tryAgainLater', 'Vui lòng thử lại sau.'),
       });
     } finally {
       setIsExporting(false);
@@ -60,10 +70,14 @@ export function AttendancePage() {
     async function loadData() {
       setIsLoading(true);
       try {
-        const res = await attendanceApi.getTimetableOverview(targetClassId);
-        setData(res);
-        setSlots(res.slots || []);
-        setStudents(res.students || []);
+        const [resTimetable, resStats] = await Promise.all([
+          attendanceApi.getTimetableOverview(targetClassId),
+          attendanceApi.getClassAttendanceStats(targetClassId).catch(() => null),
+        ]);
+        setData(resTimetable);
+        setSlots(resTimetable?.slots || []);
+        setStudents(resTimetable?.students || []);
+        if (resStats) setClassStats(resStats);
       } catch (err) {
         console.warn('Failed to load attendance timetable:', err);
       } finally {
@@ -174,6 +188,51 @@ export function AttendancePage() {
         </div>
       </div>
 
+      {/* UC 66: Class Attendance Statistics Banner (Tỷ lệ đi học đủ buổi & Tổng số chuyên cần của lớp) */}
+      <div className="bg-card border-b border-border px-4 py-2.5 grid grid-cols-2 sm:grid-cols-5 gap-2 shrink-0 select-none">
+        <div className="border border-border/70 bg-muted/20 p-2 flex flex-col justify-between">
+          <span className="text-[11px] text-muted-foreground">{t('attendance.kpiPresentRate', 'Tỷ lệ đi học đủ buổi')}</span>
+          <div className="flex items-baseline gap-1 mt-0.5">
+            <span className="text-[18px] font-bold font-mono text-foreground">
+              {classStats?.stats?.presentRate ?? 100}%
+            </span>
+            <span className="text-[10px] text-muted-foreground">({t('attendance.monthPeriod', 'tháng này')})</span>
+          </div>
+        </div>
+
+        <div className="border border-border/70 bg-muted/20 p-2 flex flex-col justify-between">
+          <span className="text-[11px] text-muted-foreground">{t('attendance.kpiPresentCount', 'Lượt có mặt')}</span>
+          <span className="text-[18px] font-bold font-mono text-foreground mt-0.5">
+            {classStats?.stats?.presentCount ?? 0}
+            <span className="text-[11px] font-normal text-muted-foreground ml-1">/ {classStats?.stats?.totalRecordedSlots ?? 0}</span>
+          </span>
+        </div>
+
+        <div className="border border-border/70 bg-muted/20 p-2 flex flex-col justify-between">
+          <span className="text-[11px] text-muted-foreground">{t('attendance.kpiExcusedCount', 'Nghỉ có phép')}</span>
+          <span className="text-[18px] font-bold font-mono text-foreground mt-0.5">
+            {classStats?.stats?.excusedCount ?? 0}
+            <span className="text-[11px] font-normal text-muted-foreground ml-1">lượt</span>
+          </span>
+        </div>
+
+        <div className="border border-border/70 bg-muted/20 p-2 flex flex-col justify-between">
+          <span className="text-[11px] text-muted-foreground">{t('attendance.kpiUnexcusedCount', 'Nghỉ không phép')}</span>
+          <span className="text-[18px] font-bold font-mono text-foreground mt-0.5">
+            {classStats?.stats?.unexcusedCount ?? 0}
+            <span className="text-[11px] font-normal text-muted-foreground ml-1">lượt</span>
+          </span>
+        </div>
+
+        <div className="border border-border/70 bg-muted/20 p-2 flex flex-col justify-between col-span-2 sm:col-span-1">
+          <span className="text-[11px] text-muted-foreground">{t('attendance.kpiTotalStudents', 'Sĩ số lớp')}</span>
+          <span className="text-[18px] font-bold font-mono text-foreground mt-0.5">
+            {classStats?.totalStudents ?? students.length}
+            <span className="text-[11px] font-normal text-muted-foreground ml-1">học sinh</span>
+          </span>
+        </div>
+      </div>
+
       {/* 2. Main Workspace: Timetable + Active Panel (Calendar or Check-in Drawer) */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left Timetable Area */}
@@ -199,9 +258,11 @@ export function AttendancePage() {
             onClose={handleClosePanel}
             onSaveSuccess={(updated) => {
               setStudents(updated);
+              fetchClassStats();
             }}
             onCleanSuccess={(resetStudents) => {
               setStudents(resetStudents);
+              fetchClassStats();
             }}
           />
         ) : isCalendarOpen ? (

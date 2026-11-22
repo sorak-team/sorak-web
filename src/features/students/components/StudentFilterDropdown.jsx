@@ -51,8 +51,8 @@ export function StudentFilterDropdown({ hideClassFilter = false, isClassContext 
 
   const genders = [
     { key: 'all', label: t('student.allGenders', 'Tất cả giới tính') },
-    { key: 'Nam', label: 'Bé trai (Nam)' },
-    { key: 'Nữ', label: 'Bé gái (Nữ)' },
+    { key: 'Nam', label: t('student.genderBoy', 'Bé trai (Nam)') },
+    { key: 'Nữ', label: t('student.genderGirl', 'Bé gái (Nữ)') },
   ];
 
   const isFiltered = statusFilter !== 'all' || genderFilter !== 'all' || (!isClass && classFilter !== 'all');
@@ -134,7 +134,7 @@ export function StudentFilterDropdown({ hideClassFilter = false, isClassContext 
               onClick={() => setClassFilter('all')}
               className="flex items-center justify-between h-8 px-2 text-[13px] cursor-pointer rounded-none hover:bg-muted/60"
             >
-              <span>Tất cả lớp học</span>
+              <span>{t('classes.allClasses', 'Tất cả lớp học')}</span>
               {classFilter === 'all' && (
                 <HugeiconsIcon
                   icon={CheckmarkSquare02Icon}

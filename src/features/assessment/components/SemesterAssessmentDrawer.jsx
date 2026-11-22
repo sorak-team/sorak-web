@@ -276,10 +276,10 @@ export function SemesterAssessmentDrawer({
               const heightFormatted = formatMeasurement(student.health?.height, 'cm');
               const weightFormatted = formatMeasurement(student.health?.weight, 'kg');
               const heightTooltip = heightFormatted
-                ? `Chiều cao: ${heightFormatted} · ${heightEvaluation.label}`
+                ? `${t('assessment.height', 'Chiều cao')}: ${heightFormatted} · ${heightEvaluation.label}`
                 : heightEvaluation.label;
               const weightTooltip = weightFormatted
-                ? `Cân nặng: ${weightFormatted} · ${weightEvaluation.label}`
+                ? `${t('assessment.weight', 'Cân nặng')}: ${weightFormatted} · ${weightEvaluation.label}`
                 : weightEvaluation.label;
 
               return (

@@ -45,12 +45,12 @@ export function StudentTable({ paginatedStudents, hideClassColumn = false, class
     if (enr?.status) {
       const s = String(enr.status).toUpperCase();
       if (s === 'ENROLLED') return { status: 'studying', reason: null };
-      if (s === 'COMPLETED') return { status: 'completed', reason: enr.leaveReason || 'Hoàn thành năm học' };
-      if (s === 'GRADUATED') return { status: 'graduated', reason: enr.leaveReason || 'Đã tốt nghiệp' };
-      if (s === 'TRANSFERRED_CLASS') return { status: 'transferred_class', reason: enr.leaveReason || 'Chuyển lớp' };
-      if (s === 'TRANSFERRED_SCHOOL') return { status: 'transferred', reason: enr.leaveReason || 'Chuyển trường' };
-      if (s === 'RESERVED') return { status: 'reserved', reason: enr.leaveReason || 'Bảo lưu' };
-      if (s === 'DROPPED_OUT') return { status: 'dropped_out', reason: enr.leaveReason || 'Thôi học' };
+      if (s === 'COMPLETED') return { status: 'completed', reason: enr.leaveReason || t('student.reasonCompletedYear', 'Hoàn thành năm học') };
+      if (s === 'GRADUATED') return { status: 'graduated', reason: enr.leaveReason || t('student.statusGraduated', 'Đã tốt nghiệp') };
+      if (s === 'TRANSFERRED_CLASS') return { status: 'transferred_class', reason: enr.leaveReason || t('student.transferClass', 'Chuyển lớp') };
+      if (s === 'TRANSFERRED_SCHOOL') return { status: 'transferred', reason: enr.leaveReason || t('student.statusTransferred', 'Chuyển trường') };
+      if (s === 'RESERVED') return { status: 'reserved', reason: enr.leaveReason || t('student.statusReserved', 'Bảo lưu') };
+      if (s === 'DROPPED_OUT') return { status: 'dropped_out', reason: enr.leaveReason || t('student.statusDroppedOut', 'Thôi học') };
     }
     return { status: student.status || 'studying', reason: null };
   };
@@ -133,7 +133,7 @@ export function StudentTable({ paginatedStudents, hideClassColumn = false, class
   if (!isLoading && (!paginatedStudents || paginatedStudents.length === 0)) {
     return (
       <div className="w-full border border-border bg-card p-12 text-center text-muted-foreground rounded-none">
-        <p className="text-[14px]">Không tìm thấy học sinh nào phù hợp.</p>
+        <p className="text-[14px]">{t('student.notFound', 'Không tìm thấy học sinh nào phù hợp.')}</p>
       </div>
     );
   }
@@ -286,7 +286,7 @@ export function StudentTable({ paginatedStudents, hideClassColumn = false, class
                       </span>
                     ) : (
                       <span className="text-[13px] text-muted-foreground italic">
-                        Chưa phân lớp
+                        {t('student.notAssigned', 'Chưa phân lớp')}
                       </span>
                     )}
                   </td>
@@ -399,7 +399,7 @@ export function StudentTable({ paginatedStudents, hideClassColumn = false, class
                             'flex items-center gap-2 h-8 px-2 text-[13px] cursor-pointer rounded-none hover:bg-muted/60',
                             student.status === 'graduated' && 'opacity-40 cursor-not-allowed hover:bg-transparent'
                           )}
-                          title={student.status === 'graduated' ? 'Học sinh đã tốt nghiệp, không thể chỉnh sửa' : undefined}
+                          title={student.status === 'graduated' ? t('student.graduatedCannotEdit', 'Học sinh đã tốt nghiệp, không thể chỉnh sửa') : undefined}
                         >
                           <HugeiconsIcon icon={PencilEdit02Icon} size={15} />
                           <span>{t('common.edit', 'Chỉnh sửa')}</span>

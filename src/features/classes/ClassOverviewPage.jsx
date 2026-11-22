@@ -298,10 +298,10 @@ export function ClassOverviewPage() {
         <div className="container mx-auto px-4 py-4 sm:px-6">
           <div className="flex flex-col gap-1">
             <h1 className="text-[26px] font-semibold text-foreground tracking-tight">
-              Báo cáo Học sinh
+              {t('classes.studentReportTitle', 'Báo cáo Học sinh')}
             </h1>
             <p className="text-[12px] text-muted-foreground font-normal">
-              Hồ sơ theo dõi sức khỏe, chuyên cần và đánh giá hoạt động của học sinh
+              {t('classes.studentReportSubtitle', 'Hồ sơ theo dõi sức khỏe, chuyên cần và đánh giá hoạt động của học sinh')}
             </p>
           </div>
         </div>
@@ -312,7 +312,7 @@ export function ClassOverviewPage() {
         <div className="container mx-auto px-4 py-2.5 sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 shrink-0">
-              <span className="text-xs font-medium text-muted-foreground shrink-0">Lớp:</span>
+              <span className="text-xs font-medium text-muted-foreground shrink-0">{t('classes.classLabel', 'Lớp:')}</span>
               <div className="relative shrink-0">
                 <select
                   value={currentClass?.id || ''}
@@ -337,7 +337,7 @@ export function ClassOverviewPage() {
                 </select>
               </div>
 
-              <span className="text-xs font-medium text-muted-foreground shrink-0 ml-1">Học sinh:</span>
+              <span className="text-xs font-medium text-muted-foreground shrink-0 ml-1">{t('classes.studentLabel', 'Học sinh:')}</span>
 
               {/* Student Dropdown Command Menu (matching ClassCommandMenu design) */}
               <div className="relative shrink-0" ref={studentDropdownRef}>
@@ -345,10 +345,10 @@ export function ClassOverviewPage() {
                   type="button"
                   onClick={() => setIsStudentMenuOpen(!isStudentMenuOpen)}
                   className="inline-flex items-center justify-between border border-border bg-background hover:bg-muted/70 transition-colors h-8 px-3 gap-2 rounded-none text-[13px] font-medium text-foreground cursor-pointer shadow-2xs w-[200px] sm:w-[220px] select-none"
-                  title="Chọn học sinh để xem báo cáo"
+                  title={t('classes.selectStudentTooltip', 'Chọn học sinh để xem báo cáo')}
                 >
                   <span className="truncate flex-1 text-left font-medium">
-                    {currentStudent ? currentStudent.fullName : 'Chọn học sinh...'}
+                    {currentStudent ? currentStudent.fullName : t('classes.chooseStudentPlaceholder', 'Chọn học sinh...')}
                   </span>
                   <HugeiconsIcon
                     icon={UnfoldMoreIcon}
@@ -373,7 +373,7 @@ export function ClassOverviewPage() {
                         type="text"
                         value={studentSearch}
                         onChange={(e) => setStudentSearch(e.target.value)}
-                        placeholder="Tìm học sinh theo tên, mã HS..."
+                        placeholder={t('classes.searchStudentReportPlaceholder', 'Tìm học sinh theo tên, mã HS...')}
                         autoFocus
                         className="flex-1 bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground outline-none border-0 focus:outline-none focus:border-0 focus:ring-0 shadow-none"
                       />
@@ -386,7 +386,7 @@ export function ClassOverviewPage() {
                     <div className="max-h-[280px] overflow-y-auto p-1 divide-y divide-border/30">
                       {filteredStudents.length === 0 ? (
                         <div className="p-4 text-center text-[13px] text-muted-foreground">
-                          Không tìm thấy học sinh phù hợp.
+                          {t('classes.noStudentMatched', 'Không tìm thấy học sinh phù hợp.')}
                         </div>
                       ) : (
                         filteredStudents.map((st) => {
@@ -441,7 +441,7 @@ export function ClassOverviewPage() {
                   type="button"
                   onClick={handlePrevStudent}
                   disabled={!hasPrev || isLoading}
-                  title="Học sinh trước (Phím ←)"
+                  title={t('classes.prevStudentTooltip', 'Học sinh trước (Phím ←)')}
                   className="size-8 flex items-center justify-center border-r border-border text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
                 >
                   <HugeiconsIcon icon={ArrowLeft02Icon} size={14} />
@@ -450,7 +450,7 @@ export function ClassOverviewPage() {
                   type="button"
                   onClick={handleNextStudent}
                   disabled={!hasNext || isLoading}
-                  title="Học sinh tiếp theo (Phím →)"
+                  title={t('classes.nextStudentTooltip', 'Học sinh tiếp theo (Phím →)')}
                   className="size-8 flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
                 >
                   <HugeiconsIcon icon={ArrowRight02Icon} size={14} />
@@ -477,7 +477,7 @@ export function ClassOverviewPage() {
                       : 'text-muted-foreground hover:text-foreground'
                   )}
                 >
-                  Học kỳ 1
+                  {t('common.semester1', 'Học kỳ 1')}
                 </button>
                 <button
                   type="button"
@@ -497,7 +497,7 @@ export function ClassOverviewPage() {
                       : 'text-muted-foreground hover:text-foreground cursor-pointer'
                   )}
                 >
-                  Học kỳ 2
+                  {t('common.semester2', 'Học kỳ 2')}
                 </button>
               </div>
 
@@ -515,11 +515,11 @@ export function ClassOverviewPage() {
       <main className="container mx-auto px-4 pt-5 sm:px-6 space-y-5">
         {isLoading && !reportData ? (
           <div className="border border-border bg-card p-12 text-center text-xs text-muted-foreground">
-            Đang tải dữ liệu hồ sơ học sinh...
+            {t('classes.loadingReport', 'Đang tải dữ liệu hồ sơ học sinh...')}
           </div>
         ) : !currentStudent ? (
           <div className="border border-border bg-card p-12 text-center text-xs text-muted-foreground">
-            Không tìm thấy học sinh nào trong lớp học này.
+            {t('classes.noStudentsInClass', 'Không tìm thấy học sinh nào trong lớp học này.')}
           </div>
         ) : (
           <>
@@ -548,11 +548,11 @@ export function ClassOverviewPage() {
 
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                       <span>
-                        Ngày sinh:{' '}
+                        {t('common.dob', 'Ngày sinh')}:{' '}
                         <span className="text-foreground font-medium">
                           {currentStudent.dateOfBirth
                             ? new Date(currentStudent.dateOfBirth).toLocaleDateString('vi-VN')
-                            : 'Chưa có'}
+                            : t('common.none', 'Chưa có')}
                         </span>
                         {calculateAge(currentStudent.dateOfBirth) && (
                           <span className="text-muted-foreground ml-1">
@@ -577,7 +577,7 @@ export function ClassOverviewPage() {
                     )}
                   >
                     <div className="text-[11px] text-muted-foreground uppercase tracking-wider">
-                      Sức khỏe ({healthData.totalChecks} đợt)
+                      {t('classes.kpiHealth', 'Sức khỏe ({{count}} đợt)', { count: healthData.totalChecks })}
                     </div>
                     <div className="text-xs font-medium text-foreground mt-0.5">
                       {healthData.latest ? (
@@ -585,7 +585,7 @@ export function ClassOverviewPage() {
                           {healthData.latest.height}cm · {healthData.latest.weight}kg
                         </span>
                       ) : (
-                        'Chưa có dữ liệu'
+                        t('common.noData', 'Chưa có dữ liệu')
                       )}
                     </div>
                   </button>
@@ -601,10 +601,10 @@ export function ClassOverviewPage() {
                     )}
                   >
                     <div className="text-[11px] text-muted-foreground uppercase tracking-wider">
-                      Chuyên cần ({attendanceData.attendanceRate}%)
+                      {t('classes.kpiAttendance', 'Chuyên cần ({{rate}}%)', { rate: attendanceData.attendanceRate })}
                     </div>
                     <div className="text-xs font-medium text-foreground mt-0.5">
-                      {attendanceData.presentCount}/{attendanceData.totalDays} buổi có mặt
+                      {t('classes.attendanceSummary', '{{present}}/{{total}} buổi có mặt', { present: attendanceData.presentCount, total: attendanceData.totalDays })}
                     </div>
                   </button>
 
@@ -619,10 +619,10 @@ export function ClassOverviewPage() {
                     )}
                   >
                     <div className="text-[11px] text-muted-foreground uppercase tracking-wider">
-                      Đánh giá ({assessmentsData.totalAssessed} tiết)
+                      {t('classes.kpiAssessments', 'Đánh giá ({{count}} tiết)', { count: assessmentsData.totalAssessed })}
                     </div>
                     <div className="text-xs font-medium text-foreground mt-0.5">
-                      {assessmentsData.achievedCount} Đạt · {assessmentsData.outstandingCount} Vượt trội
+                      {t('classes.assessmentsSummary', '{{achieved}} Đạt · {{outstanding}} Vượt trội', { achieved: assessmentsData.achievedCount, outstanding: assessmentsData.outstandingCount })}
                     </div>
                   </button>
 
@@ -637,11 +637,11 @@ export function ClassOverviewPage() {
                     )}
                   >
                     <div className="text-[11px] text-muted-foreground uppercase tracking-wider">
-                      Ủy quyền ({authorizationsData.total} đơn)
+                      {t('classes.kpiAuthorizations', 'Ủy quyền ({{count}} đơn)', { count: authorizationsData.total })}
                     </div>
                     <div className="text-xs font-medium text-foreground mt-0.5">
-                      {authorizationsData.approvedCount} Đã duyệt
-                      {authorizationsData.pendingCount > 0 ? ` · ${authorizationsData.pendingCount} Chờ duyệt` : ''}
+                      {t('classes.approvedAuthorizations', '{{count}} Đã duyệt', { count: authorizationsData.approvedCount })}
+                      {authorizationsData.pendingCount > 0 ? t('classes.pendingAuthorizations', ' · {{count}} Chờ duyệt', { count: authorizationsData.pendingCount }) : ''}
                     </div>
                   </button>
                 </div>
@@ -660,7 +660,7 @@ export function ClassOverviewPage() {
                     : 'border-transparent text-muted-foreground hover:text-foreground'
                 )}
               >
-                Theo dõi Sức khỏe
+                {t('classes.tabHealth', 'Theo dõi Sức khỏe')}
               </button>
 
               <button
@@ -673,7 +673,7 @@ export function ClassOverviewPage() {
                     : 'border-transparent text-muted-foreground hover:text-foreground'
                 )}
               >
-                Lịch sử Điểm danh
+                {t('classes.tabAttendance', 'Lịch sử Điểm danh')}
               </button>
 
               <button
@@ -686,7 +686,7 @@ export function ClassOverviewPage() {
                     : 'border-transparent text-muted-foreground hover:text-foreground'
                 )}
               >
-                Đánh giá Hoạt động
+                {t('classes.tabAssessments', 'Đánh giá Hoạt động')}
               </button>
 
               <button
@@ -699,7 +699,7 @@ export function ClassOverviewPage() {
                     : 'border-transparent text-muted-foreground hover:text-foreground'
                 )}
               >
-                Phụ huynh & Giám hộ
+                {t('classes.tabParents', 'Phụ huynh & Giám hộ')}
               </button>
 
               <button
@@ -712,7 +712,7 @@ export function ClassOverviewPage() {
                     : 'border-transparent text-muted-foreground hover:text-foreground'
                 )}
               >
-                Ủy quyền đưa đón
+                {t('classes.tabAuthorizations', 'Ủy quyền đưa đón')}
               </button>
             </div>
 
@@ -723,21 +723,21 @@ export function ClassOverviewPage() {
                   <table className="w-full text-left text-xs">
                     <thead className="border-b border-border bg-muted/40 font-medium text-muted-foreground uppercase text-[11px] tracking-wider">
                       <tr>
-                        <th className="px-4 py-2.5">Đợt đo</th>
-                        <th className="px-4 py-2.5">Ngày đo</th>
-                        <th className="px-4 py-2.5 text-right">Chiều cao</th>
-                        <th className="px-4 py-2.5 text-right">Cân nặng</th>
-                        <th className="px-4 py-2.5 text-right">BMI</th>
-                        <th className="px-4 py-2.5">Thể trạng (WHO)</th>
-                        <th className="px-4 py-2.5">Ghi chú y tế</th>
-                        <th className="px-4 py-2.5">Người ghi nhận</th>
+                        <th className="px-4 py-2.5">{t('classes.colRound', 'Đợt đo')}</th>
+                        <th className="px-4 py-2.5">{t('classes.colDate', 'Ngày đo')}</th>
+                        <th className="px-4 py-2.5 text-right">{t('classes.colHeight', 'Chiều cao')}</th>
+                        <th className="px-4 py-2.5 text-right">{t('classes.colWeight', 'Cân nặng')}</th>
+                        <th className="px-4 py-2.5 text-right">{t('classes.colBMI', 'BMI')}</th>
+                        <th className="px-4 py-2.5">{t('classes.colFitnessWHO', 'Thể trạng (WHO)')}</th>
+                        <th className="px-4 py-2.5">{t('classes.colMedicalNotes', 'Ghi chú y tế')}</th>
+                        <th className="px-4 py-2.5">{t('classes.colRecorder', 'Người ghi nhận')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
                       {healthData.history.length === 0 ? (
                         <tr>
                           <td colSpan={8} className="py-8 text-center text-muted-foreground">
-                            Chưa có dữ liệu đo sức khỏe cho học sinh này.
+                            {t('classes.noHealthRecords', 'Chưa có dữ liệu đo sức khỏe cho học sinh này.')}
                           </td>
                         </tr>
                       ) : (
@@ -764,20 +764,20 @@ export function ClassOverviewPage() {
                               <td className="px-4 py-2.5">
                                 {isUnderweight ? (
                                   <span className="inline-flex items-center px-2 py-0.5 text-[11.5px] font-medium rounded-none bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50">
-                                    {record.classification || 'Theo dõi nhẹ cân'}
+                                    {record.classification || t('health.needMonitor', 'Theo dõi nhẹ cân')}
                                   </span>
                                 ) : isOverweight ? (
                                   <span className="inline-flex items-center px-2 py-0.5 text-[11.5px] font-medium rounded-none bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800/50">
-                                    {record.classification || 'Theo dõi thừa cân'}
+                                    {record.classification || t('health.needMonitor', 'Theo dõi thừa cân')}
                                   </span>
                                 ) : (
                                   <span className="inline-flex items-center px-2 py-0.5 text-[11.5px] font-medium rounded-none bg-blue-100 dark:bg-blue-950/60 text-[#1447e6] dark:text-blue-400 border border-blue-200 dark:border-blue-800/50">
-                                    {record.classification || 'Bình thường'}
+                                    {record.classification || t('health.standard', 'Bình thường')}
                                   </span>
                                 )}
                               </td>
                               <td className="max-w-xs px-4 py-2.5 text-muted-foreground">
-                                {record.notes || 'Bình thường, thể trạng ổn định'}
+                                {record.notes || t('health.defaultMedicalNotes', 'Bình thường, thể trạng ổn định')}
                               </td>
                               <td className="px-4 py-2.5 text-foreground font-medium">
                                 {formatRecordedBy(record.recordedBy)}
@@ -799,39 +799,39 @@ export function ClassOverviewPage() {
                   <table className="w-full text-left text-xs">
                     <thead className="border-b border-border bg-muted/40 font-medium text-muted-foreground uppercase text-[11px] tracking-wider">
                       <tr>
-                        <th className="px-4 py-2.5">Ngày</th>
-                        <th className="px-4 py-2.5">Thứ</th>
-                        <th className="px-4 py-2.5">Trạng thái</th>
-                        <th className="px-4 py-2.5">Giờ đón</th>
-                        <th className="px-4 py-2.5">Giờ về</th>
-                        <th className="px-4 py-2.5">Người đón trẻ</th>
-                        <th className="px-4 py-2.5">Ghi chú & Lý do</th>
+                        <th className="px-4 py-2.5">{t('classes.colDayDate', 'Ngày')}</th>
+                        <th className="px-4 py-2.5">{t('classes.colDayName', 'Thứ')}</th>
+                        <th className="px-4 py-2.5">{t('classes.colStatus', 'Trạng thái')}</th>
+                        <th className="px-4 py-2.5">{t('classes.colCheckIn', 'Giờ đón')}</th>
+                        <th className="px-4 py-2.5">{t('classes.colCheckOut', 'Giờ về')}</th>
+                        <th className="px-4 py-2.5">{t('classes.colPickupPerson', 'Người đón trẻ')}</th>
+                        <th className="px-4 py-2.5">{t('classes.colNotesReason', 'Ghi chú & Lý do')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
                       {attendanceData.history.length === 0 ? (
                         <tr>
                           <td colSpan={7} className="py-8 text-center text-muted-foreground">
-                            Không tìm thấy bản ghi điểm danh nào.
+                            {t('classes.noAttendanceRecords', 'Không tìm thấy bản ghi điểm danh nào.')}
                           </td>
                         </tr>
                       ) : (
                         attendanceData.history.map((att) => {
                           let statusBadge = (
                             <span className="inline-flex items-center px-2 py-0.5 text-[11.5px] font-medium rounded-none bg-blue-100 dark:bg-blue-950/60 text-[#1447e6] dark:text-blue-400 border border-blue-200 dark:border-blue-800/50">
-                              Có mặt
+                              {t('attendance.statusPresent', 'Có mặt')}
                             </span>
                           );
                           if (att.status === 'EXCUSED_ABSENCE') {
                             statusBadge = (
                               <span className="inline-flex items-center px-2 py-0.5 text-[11.5px] font-medium rounded-none bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50">
-                                Nghỉ có phép
+                                {t('attendance.statusExcused', 'Nghỉ có phép')}
                               </span>
                             );
                           } else if (att.status === 'UNEXCUSED_ABSENCE') {
                             statusBadge = (
                               <span className="inline-flex items-center px-2 py-0.5 text-[11.5px] font-medium rounded-none bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800/50">
-                                Nghỉ không phép
+                                {t('attendance.statusUnexcused', 'Nghỉ không phép')}
                               </span>
                             );
                           }
@@ -885,38 +885,38 @@ export function ClassOverviewPage() {
                   <table className="w-full text-left text-xs">
                     <thead className="border-b border-border bg-muted/40 font-medium text-muted-foreground uppercase text-[11px] tracking-wider">
                       <tr>
-                        <th className="px-4 py-2.5">Ngày</th>
-                        <th className="px-4 py-2.5">Khung giờ</th>
-                        <th className="px-4 py-2.5">Hoạt động giáo dục</th>
-                        <th className="px-4 py-2.5">Kết quả</th>
-                        <th className="px-4 py-2.5">Nhận xét của giáo viên</th>
-                        <th className="px-4 py-2.5">Giáo viên</th>
+                        <th className="px-4 py-2.5">{t('classes.colDate', 'Ngày')}</th>
+                        <th className="px-4 py-2.5">{t('classes.colTimeSlot', 'Khung giờ')}</th>
+                        <th className="px-4 py-2.5">{t('classes.colActivity', 'Hoạt động giáo dục')}</th>
+                        <th className="px-4 py-2.5">{t('classes.colResult', 'Kết quả')}</th>
+                        <th className="px-4 py-2.5">{t('classes.colTeacherComment', 'Nhận xét của giáo viên')}</th>
+                        <th className="px-4 py-2.5">{t('classes.colTeacher', 'Giáo viên')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
                       {assessmentsData.history.length === 0 ? (
                         <tr>
                           <td colSpan={6} className="py-8 text-center text-muted-foreground">
-                            Không tìm thấy hoạt động đánh giá nào phù hợp.
+                            {t('classes.noAssessmentRecords', 'Không tìm thấy hoạt động đánh giá nào phù hợp.')}
                           </td>
                         </tr>
                       ) : (
                         assessmentsData.history.map((ass) => {
                           let statusBadge = (
                             <span className="inline-flex items-center px-2 py-0.5 text-[11.5px] font-medium rounded-none bg-blue-100 dark:bg-blue-950/60 text-[#1447e6] dark:text-blue-400 border border-blue-200 dark:border-blue-800/50">
-                              Đạt yêu cầu
+                              {t('assessment.achieved', 'Đạt yêu cầu')}
                             </span>
                           );
                           if (ass.status === 'OUTSTANDING') {
                             statusBadge = (
                               <span className="inline-flex items-center px-2 py-0.5 text-[11.5px] font-medium rounded-none bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800/50 font-semibold">
-                                Vượt trội ★
+                                {t('assessment.outstanding', 'Vượt trội ★')}
                               </span>
                             );
                           } else if (ass.status === 'NOT_ACHIEVED') {
                             statusBadge = (
                               <span className="inline-flex items-center px-2 py-0.5 text-[11.5px] font-medium rounded-none bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800/50">
-                                Cần rèn luyện
+                                {t('assessment.notAchieved', 'Cần rèn luyện')}
                               </span>
                             );
                           }
@@ -939,7 +939,7 @@ export function ClassOverviewPage() {
                                 {ass.notes || '—'}
                               </td>
                               <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">
-                                {ass.evaluatorName || 'Giáo viên'}
+                                {ass.evaluatorName || t('classes.colTeacher', 'Giáo viên')}
                               </td>
                             </tr>
                           );
@@ -958,16 +958,16 @@ export function ClassOverviewPage() {
                   <table className="w-full text-left text-xs">
                     <thead className="border-b border-border bg-muted/40 font-medium text-muted-foreground uppercase text-[11px] tracking-wider">
                       <tr>
-                        <th className="px-4 py-2.5">Họ và tên</th>
-                        <th className="px-4 py-2.5">Quan hệ với trẻ</th>
-                        <th className="px-4 py-2.5">Số điện thoại</th>
+                        <th className="px-4 py-2.5">{t('classes.colFullName', 'Họ và tên')}</th>
+                        <th className="px-4 py-2.5">{t('classes.colRelationship', 'Quan hệ với trẻ')}</th>
+                        <th className="px-4 py-2.5">{t('classes.colPhone', 'Số điện thoại')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
                       {studentParents.length === 0 ? (
                         <tr>
                           <td colSpan={3} className="py-8 text-center text-muted-foreground">
-                            Chưa có thông tin phụ huynh hoặc người giám hộ cho học sinh này.
+                            {t('classes.noParentsInfo', 'Chưa có thông tin phụ huynh hoặc người giám hộ cho học sinh này.')}
                           </td>
                         </tr>
                       ) : (
@@ -978,7 +978,7 @@ export function ClassOverviewPage() {
                             </td>
                             <td className="px-4 py-3">
                               <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-none bg-muted text-foreground border border-border">
-                                {p.relationship || 'Phụ huynh'}
+                                {p.relationship || t('notifications.management.parentRole', 'Phụ huynh')}
                               </span>
                             </td>
                             <td className="px-4 py-3 font-mono text-foreground font-medium">
@@ -1000,20 +1000,21 @@ export function ClassOverviewPage() {
                   <table className="w-full text-left text-xs">
                     <thead className="border-b border-border bg-muted/40 font-medium text-muted-foreground uppercase text-[11px] tracking-wider">
                       <tr>
-                        <th className="px-4 py-2.5">Người được ủy quyền</th>
-                        <th className="px-4 py-2.5">Quan hệ</th>
-                        <th className="px-4 py-2.5">Số điện thoại</th>
-                        <th className="px-4 py-2.5">Thời gian hiệu lực</th>
-                        <th className="px-4 py-2.5">Trạng thái</th>
-                        <th className="px-4 py-2.5">Dặn dò / Ghi chú</th>
+                        <th className="px-4 py-2.5">{t('classes.colAuthorizedPerson', 'Người được ủy quyền')}</th>
+                        <th className="px-4 py-2.5">{t('classes.colRelationship', 'Quan hệ')}</th>
+                        <th className="px-4 py-2.5">{t('classes.colPhone', 'Số điện thoại')}</th>
+                        <th className="px-4 py-2.5">{t('classes.colValidityRange', 'Thời gian hiệu lực')}</th>
+                        <th className="px-4 py-2.5">{t('classes.colStatus', 'Trạng thái')}</th>
+                        <th className="px-4 py-2.5">{t('classes.colNotes', 'Dặn dò / Ghi chú')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
                       {authorizationsData.history.length === 0 ? (
                         <tr>
                           <td colSpan={6} className="py-8 text-center text-muted-foreground">
-                            Không có yêu cầu ủy quyền đưa đón nào của học sinh này trong{' '}
-                            {selectedSemester === 'SEMESTER_1' ? 'Học kỳ 1' : 'Học kỳ 2'}.
+                            {t('classes.noAuthorizations', 'Không có yêu cầu ủy quyền đưa đón nào của học sinh này trong {{semester}}.', {
+                              semester: selectedSemester === 'SEMESTER_1' ? t('common.semester1', 'Học kỳ 1') : t('common.semester2', 'Học kỳ 2'),
+                            })}
                           </td>
                         </tr>
                       ) : (
@@ -1028,10 +1029,10 @@ export function ClassOverviewPage() {
                                     auth.photoUrl &&
                                     setPreviewPhoto({
                                       url: auth.photoUrl,
-                                      title: `Ảnh người được ủy quyền: ${auth.pickupPersonName}`,
+                                      title: `${t('classes.colAuthorizedPerson', 'Ảnh người được ủy quyền')}: ${auth.pickupPersonName}`,
                                     })
                                   }
-                                  title={auth.photoUrl ? 'Bấm để phóng to ảnh' : undefined}
+                                  title={auth.photoUrl ? t('notifications.management.clickToZoom', 'Bấm để phóng to ảnh') : undefined}
                                 >
                                   <img
                                     src={
@@ -1052,7 +1053,7 @@ export function ClassOverviewPage() {
                                     </span>
                                   ) : (
                                     <span className="text-[11px] text-muted-foreground/50 font-mono">
-                                      Chưa có CCCD
+                                      {t('common.none', 'Chưa có')} CCCD
                                     </span>
                                   )}
                                 </div>
@@ -1079,20 +1080,20 @@ export function ClassOverviewPage() {
                               {auth.status === 'APPROVED' ? (
                                 auth.isActiveNow ? (
                                   <span className="inline-flex items-center px-2 py-0.5 text-[11.5px] font-medium rounded-none bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                                    Đang hiệu lực
+                                    {t('common.active', 'Đang hiệu lực')}
                                   </span>
                                 ) : (
                                   <span className="inline-flex items-center px-2 py-0.5 text-[11.5px] font-medium rounded-none bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-200/60">
-                                    Đã duyệt
+                                    {t('common.approved', 'Đã duyệt')}
                                   </span>
                                 )
                               ) : auth.status === 'PENDING' ? (
                                 <span className="inline-flex items-center px-2 py-0.5 text-[11.5px] font-medium rounded-none bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200">
-                                  Chờ duyệt
+                                  {t('common.pending', 'Chờ duyệt')}
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center px-2 py-0.5 text-[11.5px] font-medium rounded-none bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200">
-                                  Đã từ chối
+                                  {t('common.rejected', 'Đã từ chối')}
                                 </span>
                               )}
                             </td>

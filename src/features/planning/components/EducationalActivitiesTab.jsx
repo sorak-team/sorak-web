@@ -223,8 +223,6 @@ export function EducationalActivitiesTab({
     currentUser?.role?.toLowerCase()?.includes('principal') ||
     currentUser?.role?.toLowerCase()?.includes('bgh')
   );
-  const effectiveReadOnly = isBgh;
-
   const [data, setData] = useState(null);
   const [selectedThemeCode, setSelectedThemeCode] = useState(() => {
     const urlThemeId = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('themeId') : null;
@@ -255,6 +253,39 @@ export function EducationalActivitiesTab({
     selectedThemeId || (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('themeId') : '') || ''
   );
 
+  const getDomainOptionLabel = useCallback((value, fallback) => {
+    switch (value) {
+      case 'ALL': return t('planning.domainAll', 'Tất cả lĩnh vực');
+      case 'PHYSICAL': return t('domains.physical', 'Phát triển thể chất');
+      case 'COGNITIVE': return t('domains.cognitive', 'Phát triển nhận thức');
+      case 'LANGUAGE': return t('domains.language', 'Phát triển ngôn ngữ');
+      case 'SOCIO_EMOTIONAL': return t('domains.socioEmotional', 'Tình cảm - KNXH & Thẩm mỹ');
+      default: return fallback;
+    }
+  }, [t]);
+
+  const getStatusFilterLabel = useCallback((value, fallback) => {
+    switch (value) {
+      case 'ALL': return t('planning.statusFilterAll', 'Tất cả trạng thái');
+      case 'HAS_ACT': return t('planning.statusFilterHasAct', 'Đã có hoạt động');
+      case 'NO_ACT': return t('planning.statusFilterNoAct', 'Chưa có hoạt động');
+      case 'SCHEDULED': return t('planning.statusFilterScheduled', 'Đã xếp lịch tuần');
+      case 'UNSCHEDULED': return t('planning.statusFilterUnscheduled', 'Chưa xếp lịch tuần');
+      default: return fallback;
+    }
+  }, [t]);
+
+  const getRoutineSlotShort = useCallback((key, fallback) => {
+    if (key === 'ARRIVAL_PLAY') return t('routineSlots.ARRIVAL_PLAY.short', 'Đón trẻ');
+    if (key === 'MORNING_EXERCISE') return t('routineSlots.MORNING_EXERCISE.short', 'Thể dục sáng');
+    if (key === 'DIRECTED_STUDY') return t('routineSlots.DIRECTED_STUDY.short', 'Học');
+    if (key === 'CORNER_PLAY') return t('routineSlots.CORNER_PLAY.short', 'Hoạt động góc');
+    if (key === 'OUTDOOR_PLAY') return t('routineSlots.OUTDOOR_PLAY.short', 'Ngoài trời');
+    if (key === 'AFTERNOON_ACTIVITY') return t('routineSlots.AFTERNOON_ACTIVITY.short', 'Hoạt động chiều');
+    if (key === 'RETURN_CHILD') return t('routineSlots.RETURN_CHILD.short', 'Trả trẻ');
+    return fallback;
+  }, [t]);
+
 
   // Load activities data
   const loadData = useCallback(async () => {
@@ -278,11 +309,11 @@ export function EducationalActivitiesTab({
       setData(res);
     } catch (err) {
       console.warn('Failed to load theme activities:', err);
-      toast.error('Không thể tải danh sách hoạt động giáo dục.');
+      toast.error(t('planning.loadActivitiesError', 'Không thể tải danh sách hoạt động giáo dục.'));
     } finally {
       setIsLoading(false);
     }
-  }, [classId]);
+  }, [classId, t]);
 
   useEffect(() => {
     loadData();
@@ -302,21 +333,21 @@ export function EducationalActivitiesTab({
   const classGradeText = useMemo(() => {
     const rawAge = data?.classInfo?.ageGroup;
     const AGE_MAP = {
-      NHA_TRE: 'Khối Nhà trẻ',
-      MAM: 'Khối Mầm',
-      CHOI: 'Khối Chồi',
-      LA: 'Khối Lá',
-      nhatre: 'Khối Nhà trẻ',
-      mam: 'Khối Mầm',
-      choi: 'Khối Chồi',
-      la: 'Khối Lá',
+      NHA_TRE: t('classes.gradeNhaTre', 'Khối Nhà trẻ'),
+      MAM: t('classes.gradeMam', 'Khối Mầm'),
+      CHOI: t('classes.gradeChoi', 'Khối Chồi'),
+      LA: t('classes.gradeLa', 'Khối Lá'),
+      nhatre: t('classes.gradeNhaTre', 'Khối Nhà trẻ'),
+      mam: t('classes.gradeMam', 'Khối Mầm'),
+      choi: t('classes.gradeChoi', 'Khối Chồi'),
+      la: t('classes.gradeLa', 'Khối Lá'),
     };
     return (
       data?.classInfo?.ageGroupLabel ||
       AGE_MAP[rawAge] ||
-      (data?.classInfo?.name ? `lớp ${data.classInfo.name}` : 'khối lớp này')
+      (data?.classInfo?.name ? `${t('classes.classPrefix', 'Lớp ')}${data.classInfo.name}` : t('classes.thisGrade', 'khối lớp này'))
     );
-  }, [data?.classInfo]);
+  }, [data?.classInfo, t]);
 
   const classYearText = useMemo(() => {
     return data?.classInfo?.yearName || '';
@@ -354,6 +385,17 @@ export function EducationalActivitiesTab({
       ) || availableThemes[0]
     );
   }, [availableThemes, selectedThemeCode]);
+
+  // Khóa hoạt động khi chủ đề đã ĐÃ DUYỆT hoặc ĐANG CHỜ DUYỆT (Thread #1)
+  const isCurrentThemeLocked = useMemo(() => {
+    return Boolean(
+      currentTheme?.planStatus === 'USED' ||
+      currentTheme?.planStatus === 'PENDING_APPROVAL' ||
+      currentTheme?.planStatus === 'SUBMITTED'
+    );
+  }, [currentTheme]);
+
+  const effectiveReadOnly = isBgh || isCurrentThemeLocked;
 
   const handleSelectTheme = (th) => {
     const targetVal = th.code || th.id;
@@ -590,12 +632,12 @@ export function EducationalActivitiesTab({
       };
 
       await planningApi.saveEducationalActivity(classId, payload);
-      toast.success(formData.id ? 'Cập nhật hoạt động giáo dục thành công!' : 'Tạo mới hoạt động giáo dục thành công!');
+      toast.success(formData.id ? t('planning.updateActivitySuccess', 'Cập nhật hoạt động giáo dục thành công!') : t('planning.createActivitySuccess', 'Tạo mới hoạt động giáo dục thành công!'));
       setIsDrawerOpen(false);
       await loadData();
     } catch (err) {
       console.error('Save activity error:', err);
-      toast.error(err.response?.data?.message || err.message || 'Lỗi khi lưu hoạt động giáo dục.');
+      toast.error(err.response?.data?.message || err.message || t('planning.saveActivityError', 'Lỗi khi lưu hoạt động giáo dục.'));
     }
   };
 
@@ -603,17 +645,17 @@ export function EducationalActivitiesTab({
     if (!activityId) return;
     try {
       await planningApi.deleteEducationalActivity(classId, activityId);
-      toast.success('Đã xóa hoạt động giáo dục.');
+      toast.success(t('planning.deleteActivitySuccess', 'Đã xóa hoạt động giáo dục.'));
       setIsDrawerOpen(false);
       await loadData();
     } catch (err) {
       console.error('Delete activity error:', err);
-      toast.error(err.response?.data?.message || err.message || 'Không thể xóa hoạt động này.');
+      toast.error(err.response?.data?.message || err.message || t('planning.deleteActivityError', 'Không thể xóa hoạt động này.'));
     }
   };
 
   if (isLoading && !data) {
-    return <PlanningTabLoading message="Đang tải dữ liệu hoạt động giáo dục..." />;
+    return <PlanningTabLoading message={t('planning.loadingData', 'Đang tải dữ liệu hoạt động giáo dục...')} />;
   }
 
   // Giáo viên không được xem hoặc sử dụng dữ liệu chưa công bố (Đồng bộ hoàn toàn với Phân bổ mục tiêu: Ẩn cột danh sách chủ đề)
@@ -625,11 +667,15 @@ export function EducationalActivitiesTab({
             <HugeiconsIcon icon={AlertCircleIcon} size={22} />
           </div>
           <h3 className="text-[16px] font-semibold text-foreground tracking-tight">
-            Kế hoạch giáo dục chưa được công bố
+            {t('planning.curriculumUnpublishedTitle', 'Kế hoạch giáo dục chưa được công bố')}
           </h3>
           <p className="text-[13px] text-muted-foreground leading-relaxed">
             {data?.message ||
-              `Hiện tại Ban Giám Hiệu chưa ban hành bộ chủ đề và mục tiêu giáo dục áp dụng cho ${classGradeText}${classYearText ? ` (${classYearText})` : ''}. Giáo viên vui lòng liên hệ Ban Giám Hiệu để cập nhật kế hoạch chính thức.`}
+              t('planning.curriculumUnpublishedDesc', {
+                classGrade: classGradeText,
+                classYear: classYearText ? ` (${classYearText})` : '',
+                defaultValue: `Hiện tại Ban Giám Hiệu chưa ban hành bộ chủ đề và mục tiêu giáo dục áp dụng cho ${classGradeText}${classYearText ? ` (${classYearText})` : ''}. Giáo viên vui lòng liên hệ Ban Giám Hiệu để cập nhật kế hoạch chính thức.`,
+              })}
           </p>
         </div>
       </div>
@@ -645,10 +691,10 @@ export function EducationalActivitiesTab({
         {/* Header Column 1 */}
         <div className="p-4 border-b border-border/80 bg-card shrink-0">
           <h2 className="text-[17px] font-semibold text-foreground tracking-tight">
-            Danh sách chủ đề
+            {t('planning.themeListTitle', 'Danh sách chủ đề')}
           </h2>
           <p className="text-[12px] text-muted-foreground mt-0.5">
-            Xác định hoạt động theo chủ đề
+            {t('planning.themeListSubtitle', 'Xác định hoạt động theo chủ đề')}
           </p>
         </div>
 
@@ -656,11 +702,11 @@ export function EducationalActivitiesTab({
         <div className="flex-1 min-h-0 overflow-y-auto divide-y divide-border/40 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {!isCurriculumPublished ? (
             <div className="p-6 text-center text-[12px] text-muted-foreground italic select-none">
-              Chưa công bố bộ chủ đề
+              {t('planning.curriculumUnpublishedShort', 'Chưa công bố bộ chủ đề')}
             </div>
           ) : availableThemes.length === 0 ? (
             <div className="p-6 text-center text-[12.5px] text-muted-foreground italic select-none">
-              Chưa có chủ đề nào
+              {t('planning.noThemes', 'Chưa có chủ đề nào')}
             </div>
           ) : (
             availableThemes.map((th) => {
@@ -704,17 +750,17 @@ export function EducationalActivitiesTab({
                     </span>
                     <div className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground font-normal mt-0.5 min-w-0">
                       {th.planStatus === 'USED' && (
-                        <span className="inline-flex items-center text-emerald-600 dark:text-emerald-400 shrink-0" title="Đã phê duyệt">
+                        <span className="inline-flex items-center text-emerald-600 dark:text-emerald-400 shrink-0" title={t('planning.statusApproved', 'Đã phê duyệt')}>
                           <HugeiconsIcon icon={CheckmarkCircle01Icon} size={12} />
                         </span>
                       )}
                       {(th.planStatus === 'SUBMITTED' || th.planStatus === 'PENDING_APPROVAL') && (
-                        <span className="inline-flex items-center text-amber-600 dark:text-amber-400 shrink-0" title="Đang chờ duyệt">
+                        <span className="inline-flex items-center text-amber-600 dark:text-amber-400 shrink-0" title={t('planning.statusPending', 'Đang chờ duyệt')}>
                           <HugeiconsIcon icon={Clock01Icon} size={12} />
                         </span>
                       )}
                       {th.planStatus === 'REJECTED' && (
-                        <span className="inline-flex items-center text-rose-600 dark:text-rose-400 shrink-0" title="Yêu cầu sửa">
+                        <span className="inline-flex items-center text-rose-600 dark:text-rose-400 shrink-0" title={t('planning.statusRevisionRequested', 'Yêu cầu sửa')}>
                           <HugeiconsIcon icon={Cancel01Icon} size={12} />
                         </span>
                       )}
@@ -738,7 +784,7 @@ export function EducationalActivitiesTab({
               <HugeiconsIcon icon={Calendar03Icon} size={26} />
             </div>
             <h3 className="text-[16px] font-semibold text-foreground tracking-tight">
-              Chưa có chủ đề giáo dục nào
+              {t('planning.noThemesAvailable', 'Chưa có chủ đề giáo dục nào')}
             </h3>
           </div>
         ) : (
@@ -753,20 +799,20 @@ export function EducationalActivitiesTab({
                   className="text-[16px] sm:text-[18px] lg:text-[19px] font-semibold text-foreground tracking-tight truncate"
                   title={currentTheme?.name}
                 >
-                  {currentTheme?.name || 'Xác định hoạt động'}
+                  {currentTheme?.name || t('planning.activitiesTitle', 'Xác định hoạt động')}
                 </h1>
 
                 {currentTheme.planStatus === 'USED' && (
                   <span
                     className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 select-none border shrink-0 text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/50"
-                    title="Kế hoạch chủ đề đã được Ban Giám Hiệu phê duyệt"
+                    title={t('planning.planApprovedTooltip', 'Kế hoạch chủ đề đã được Ban Giám Hiệu phê duyệt')}
                   >
                     <HugeiconsIcon
                       icon={CheckmarkCircle01Icon}
                       size={12}
                       className="shrink-0 text-emerald-600 dark:text-emerald-400"
                     />
-                    <span>Đã duyệt</span>
+                    <span>{t('planning.statusApproved', 'Đã duyệt')}</span>
                   </span>
                 )}
                 {currentTheme.planStatus === 'REJECTED' && (
@@ -774,28 +820,28 @@ export function EducationalActivitiesTab({
                     type="button"
                     onClick={() => setIsFeedbackModalOpen(true)}
                     className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 select-none border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100/80 dark:hover:bg-rose-900/60 transition-colors cursor-pointer shrink-0"
-                    title="Nhấn để xem chi tiết ý kiến phản hồi"
+                    title={t('planning.viewFeedbackTooltip', 'Nhấn để xem chi tiết ý kiến phản hồi')}
                   >
                     <HugeiconsIcon icon={AlertCircleIcon} size={12} className="shrink-0 text-rose-600 dark:text-rose-400" />
-                    <span>Yêu cầu sửa</span>
+                    <span>{t('planning.statusRevisionRequested', 'Yêu cầu sửa')}</span>
                   </button>
                 )}
                 {(currentTheme.planStatus === 'SUBMITTED' || currentTheme.planStatus === 'PENDING_APPROVAL') && (
                   <span
                     className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 select-none border shrink-0 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/50"
-                    title="Kế hoạch chủ đề đang chờ phê duyệt"
+                    title={t('planning.planPendingTooltip', 'Kế hoạch chủ đề đang chờ phê duyệt')}
                   >
                     <HugeiconsIcon
                       icon={Clock01Icon}
                       size={12}
                       className="shrink-0 text-amber-600 dark:text-amber-400"
                     />
-                    <span>Chờ duyệt</span>
+                    <span>{t('planning.statusPending', 'Chờ duyệt')}</span>
                   </span>
                 )}
                 {(!currentTheme.planStatus || currentTheme.planStatus === 'DRAFT') && (
                   <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium bg-muted text-muted-foreground border border-border shrink-0">
-                    <span>Bản nháp</span>
+                    <span>{t('planning.statusDraft', 'Bản nháp')}</span>
                   </span>
                 )}
               </div>
@@ -813,7 +859,7 @@ export function EducationalActivitiesTab({
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Tìm hoạt động..."
+                    placeholder={t('planning.searchActivitiesPlaceholder', 'Tìm hoạt động...')}
                     className="h-8 pl-8 pr-7 w-36 sm:w-44 lg:w-48 text-[12px] bg-background border border-border rounded-none focus:outline-none focus:border-[#1447e6] transition-colors placeholder:text-muted-foreground/60 text-foreground"
                   />
                   {searchQuery && (
@@ -821,7 +867,7 @@ export function EducationalActivitiesTab({
                       type="button"
                       onClick={() => setSearchQuery('')}
                       className="absolute right-2 text-muted-foreground hover:text-foreground cursor-pointer"
-                      title="Xóa tìm kiếm"
+                      title={t('planning.clearSearch', 'Xóa tìm kiếm')}
                     >
                       <HugeiconsIcon icon={Cancel01Icon} size={11} />
                     </button>
@@ -830,7 +876,7 @@ export function EducationalActivitiesTab({
 
                 {/* Thống kê tiến độ tinh gọn (Chỉ giữ chỉ số quan trọng, bỏ lặp lại 34 ND · 34 HĐ) */}
                 <span className="text-[12px] text-muted-foreground whitespace-nowrap hidden sm:inline">
-                  Đã xếp lịch: <strong className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{themeStats.scheduledCount}/{themeStats.activitiesCount}</strong>
+                  {t('planning.scheduledRatio', 'Đã xếp lịch: ')}<strong className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{themeStats.scheduledCount}/{themeStats.activitiesCount}</strong>
                 </span>
 
                 {/* Nút Bộ lọc Dropdown */}
@@ -843,10 +889,10 @@ export function EducationalActivitiesTab({
                         (selectedDomain !== 'ALL' || selectedStatusFilter !== 'ALL') &&
                           'border-[#1447e6] text-[#1447e6] bg-[#1447e6]/5 font-semibold',
                       )}
-                      title="Bộ lọc hoạt động giáo dục"
+                      title={t('planning.filterActivitiesTooltip', 'Bộ lọc hoạt động giáo dục')}
                     >
                       <HugeiconsIcon icon={FilterHorizontalIcon} size={14} />
-                      <span>Bộ lọc</span>
+                      <span>{t('planning.filter', 'Bộ lọc')}</span>
                       {(selectedDomain !== 'ALL' || selectedStatusFilter !== 'ALL') && (
                         <span className="size-1.5 rounded-full bg-[#1447e6]" />
                       )}
@@ -858,7 +904,7 @@ export function EducationalActivitiesTab({
                   >
                     {/* Header: Lĩnh vực phát triển */}
                     <div className="flex items-center justify-between px-2 py-1 text-[11px] font-bold text-muted-foreground uppercase tracking-wider select-none">
-                      <span>Lĩnh vực phát triển</span>
+                      <span>{t('planning.developmentDomain', 'Lĩnh vực phát triển')}</span>
                       {selectedDomain !== 'ALL' && (
                         <button
                           type="button"
@@ -866,7 +912,7 @@ export function EducationalActivitiesTab({
                           onClick={() => setSelectedDomain('ALL')}
                           className="text-[11px] text-[#1447e6] hover:underline font-normal normal-case cursor-pointer"
                         >
-                          Chọn tất cả
+                          {t('planning.selectAll', 'Chọn tất cả')}
                         </button>
                       )}
                     </div>
@@ -880,7 +926,7 @@ export function EducationalActivitiesTab({
                           selectedDomain === item.value && 'bg-muted/80 font-semibold text-[#1447e6]',
                         )}
                       >
-                        <span>{item.label}</span>
+                        <span>{getDomainOptionLabel(item.value, item.label)}</span>
                         {selectedDomain === item.value && (
                           <HugeiconsIcon icon={CheckmarkSquare02Icon} size={13} className="text-[#1447e6] shrink-0" />
                         )}
@@ -891,7 +937,7 @@ export function EducationalActivitiesTab({
 
                     {/* Header: Trạng thái hoạt động */}
                     <DropdownMenuLabel className="px-2 py-1 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                      Trạng thái hoạt động
+                      {t('planning.activityStatus', 'Trạng thái hoạt động')}
                     </DropdownMenuLabel>
                     {STATUS_FILTER_OPTIONS.map((st) => (
                       <DropdownMenuItem
@@ -903,7 +949,7 @@ export function EducationalActivitiesTab({
                           selectedStatusFilter === st.value && 'bg-muted/80 font-semibold text-[#1447e6]',
                         )}
                       >
-                        <span>{st.label}</span>
+                        <span>{getStatusFilterLabel(st.value, st.label)}</span>
                         {selectedStatusFilter === st.value && (
                           <HugeiconsIcon icon={CheckmarkSquare02Icon} size={13} className="text-[#1447e6] shrink-0" />
                         )}
@@ -922,7 +968,7 @@ export function EducationalActivitiesTab({
                           }}
                           className="flex items-center justify-center h-7 px-2 text-[12px] text-[#1447e6] hover:bg-[#1447e6]/10 cursor-pointer rounded-none font-medium text-center"
                         >
-                          Đặt lại bộ lọc
+                          {t('planning.resetFilter', 'Đặt lại bộ lọc')}
                         </DropdownMenuItem>
                       </>
                     )}
@@ -941,10 +987,10 @@ export function EducationalActivitiesTab({
                   <HugeiconsIcon icon={Calendar03Icon} size={22} />
                 </div>
                 <h3 className="text-[15px] font-semibold text-foreground tracking-tight">
-                  Không tìm thấy nội dung giáo dục nào
+                  {t('planning.noEducationalContentFound', 'Không tìm thấy nội dung giáo dục nào')}
                 </h3>
                 <p className="text-[12px] text-muted-foreground mt-1 max-w-xs">
-                  Thử thay đổi từ khóa tìm kiếm hoặc chọn lại bộ lọc.
+                  {t('planning.tryChangingSearch', 'Thử thay đổi từ khóa tìm kiếm hoặc chọn lại bộ lọc.')}
                 </p>
               </div>
             ) : (
@@ -976,7 +1022,8 @@ export function EducationalActivitiesTab({
                           </span>
                           <span className="text-muted-foreground/40">·</span>
                           <span className="text-[11.5px] text-muted-foreground/80">
-                            {contents.length} nội dung giáo dục{goalActivitiesCount > 0 ? ` · ${goalActivitiesCount} hoạt động` : ''}
+                            {t('planning.contentCount', { count: contents.length, defaultValue: `${contents.length} nội dung giáo dục` })}
+                            {goalActivitiesCount > 0 ? ` · ${t('planning.activityCount', { count: goalActivitiesCount, defaultValue: `${goalActivitiesCount} hoạt động` })}` : ''}
                           </span>
                         </div>
                       </div>
@@ -1011,7 +1058,7 @@ export function EducationalActivitiesTab({
                                   className="text-[11.5px] text-[#1447e6] hover:underline font-medium inline-flex items-center gap-1 cursor-pointer shrink-0"
                                 >
                                   <HugeiconsIcon icon={PlusSignIcon} size={12} />
-                                  <span>Thêm hoạt động</span>
+                                  <span>{t('planning.addActivity', 'Thêm hoạt động')}</span>
                                 </button>
                               )}
                             </div>
@@ -1029,11 +1076,11 @@ export function EducationalActivitiesTab({
                                     size={12}
                                     className="text-muted-foreground/60 group-hover:text-[#1447e6] transition-colors"
                                   />
-                                  <span>Thêm hoạt động</span>
+                                  <span>{t('planning.addActivity', 'Thêm hoạt động')}</span>
                                 </button>
                               ) : (
                                 <div className="py-1 px-1 text-[11.5px] text-muted-foreground/50 italic select-none">
-                                  Chưa thiết lập hoạt động
+                                  {t('planning.noActivityConfigured', 'Chưa thiết lập hoạt động')}
                                 </div>
                               )
                             ) : (
@@ -1054,11 +1101,11 @@ export function EducationalActivitiesTab({
                                       <div className="flex items-center justify-between text-[11.5px] text-muted-foreground">
                                         <div className="flex items-center gap-1.5 min-w-0">
                                           <span className="font-semibold text-foreground/85 truncate">
-                                            {slotDef?.shortLabel || slotKey}
+                                            {getRoutineSlotShort(slotKey, slotDef?.shortLabel || slotKey)}
                                           </span>
                                           {isScheduled && (
                                             <span
-                                              title="Đã xếp lịch tuần"
+                                              title={t('planning.scheduledInWeekTooltip', 'Đã xếp lịch tuần')}
                                               className="text-emerald-600 dark:text-emerald-400 shrink-0 inline-flex items-center"
                                             >
                                               <HugeiconsIcon icon={Tick01Icon} size={14} strokeWidth={2.5} />
@@ -1123,10 +1170,10 @@ export function EducationalActivitiesTab({
         <DialogContent className="max-w-md rounded-none">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold text-foreground">
-              Ý kiến phản hồi của Ban Giám Hiệu
+              {t('planning.bghFeedbackTitle', 'Ý kiến phản hồi của Ban Giám Hiệu')}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground pt-1">
-              Chủ đề: <strong>{currentTheme?.name || 'Kế hoạch giáo dục'}</strong>
+              {t('planning.theme', 'Chủ đề')}: <strong>{currentTheme?.name || t('planning.theme', 'Kế hoạch giáo dục')}</strong>
               {currentTheme?.startDate && currentTheme?.endDate && (
                 <span> ({formatDateRange(currentTheme.startDate, currentTheme.endDate)})</span>
               )}
@@ -1137,15 +1184,15 @@ export function EducationalActivitiesTab({
             <div className="space-y-1">
               <span className="text-[11.5px] font-semibold text-rose-800 dark:text-rose-300 flex items-center gap-1.5">
                 <HugeiconsIcon icon={AlertCircleIcon} size={13} className="text-rose-600 dark:text-rose-400" />
-                Lý do yêu cầu sửa từ Ban Giám Hiệu:
+                {t('planning.rejectionReasonLabel', 'Lý do yêu cầu sửa từ Ban Giám Hiệu:')}
               </span>
               <div className="bg-rose-50/70 dark:bg-rose-950/25 border border-rose-200/80 dark:border-rose-900/40 p-3.5 text-rose-800 dark:text-rose-200 text-xs leading-relaxed font-medium">
-                "{currentTheme?.rejectionReason || 'Ban Giám Hiệu yêu cầu rà soát và bổ sung kế hoạch.'}"
+                "{currentTheme?.rejectionReason || t('planning.defaultRejectionReason', 'Ban Giám Hiệu yêu cầu rà soát và bổ sung kế hoạch.')}"
               </div>
             </div>
 
             <p className="text-muted-foreground text-[11.5px] leading-relaxed pt-1">
-              Vui lòng kiểm tra lại các hoạt động theo góp ý trên và nộp lại cho Ban Giám Hiệu duyệt.
+              {t('planning.rejectionFollowupAdvice', 'Vui lòng kiểm tra lại các hoạt động theo góp ý trên và nộp lại cho Ban Giám Hiệu duyệt.')}
             </p>
           </div>
 
@@ -1156,7 +1203,7 @@ export function EducationalActivitiesTab({
               onClick={() => setIsFeedbackModalOpen(false)}
               className="text-xs rounded-none h-8 px-4"
             >
-              Đóng
+              {t('common.close', 'Đóng')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1164,31 +1211,31 @@ export function EducationalActivitiesTab({
 
       {/* Dialog Xác nhận Xóa hoạt động trực tiếp từ thẻ */}
       <Dialog open={Boolean(cardActivityToDelete)} onOpenChange={(open) => !open && setCardActivityToDelete(null)}>
-        <DialogContent className="w-[92vw] max-w-[440px] sm:max-w-[440px] p-6 rounded-none border border-border bg-card shadow-2xl text-foreground select-none space-y-4">
+        <DialogContent className="w-[calc(100vw-32px)] max-w-[440px] p-5 sm:p-6 rounded-none border border-border bg-card shadow-2xl text-foreground select-none space-y-4 overflow-hidden box-border">
           <DialogHeader className="space-y-1.5 pb-0 text-left">
             <DialogTitle className="text-[16px] font-semibold text-foreground tracking-tight">
-              Xác nhận xóa hoạt động giáo dục
+              {t('planning.confirmDeleteActivityTitle', 'Xác nhận xóa hoạt động giáo dục')}
             </DialogTitle>
-            <DialogDescription className="text-[13px] text-muted-foreground leading-relaxed pt-1">
-              Hoạt động sẽ bị xóa khỏi danh sách của chủ đề. Thao tác này không thể hoàn tác.
+            <DialogDescription className="text-[13px] text-muted-foreground leading-relaxed pt-1 break-words">
+              {t('planning.confirmDeleteActivityDesc', 'Hoạt động sẽ bị xóa khỏi danh sách của chủ đề. Thao tác này không thể hoàn tác.')}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="p-3 bg-muted/20 border border-border/70 rounded-none">
-            <div className="font-semibold text-foreground text-[13px] leading-snug">
+          <div className="p-3 bg-muted/20 border border-border/70 rounded-none overflow-hidden">
+            <div className="font-semibold text-foreground text-[13px] leading-snug break-words whitespace-normal">
               {cardActivityToDelete?.title}
             </div>
           </div>
 
-          <DialogFooter className="flex items-center justify-end gap-2.5 pt-3 border-t border-border/60 sm:space-x-0">
+          <DialogFooter className="flex items-center justify-end gap-2.5 pt-3 border-t border-border/60 sm:space-x-0 shrink-0">
             <Button
               type="button"
               variant="outline"
               disabled={isDeletingCardActivity}
               onClick={() => setCardActivityToDelete(null)}
-              className="h-8 px-3.5 text-[12.5px] rounded-none border border-border cursor-pointer shadow-none"
+              className="h-8 px-3.5 text-[12.5px] rounded-none border border-border cursor-pointer shadow-none shrink-0"
             >
-              Hủy
+              {t('common.cancel', 'Hủy')}
             </Button>
             <Button
               type="button"
@@ -1208,7 +1255,7 @@ export function EducationalActivitiesTab({
               }}
               className="h-8 px-4 text-[12.5px] font-medium rounded-none bg-destructive hover:bg-destructive/90 text-white cursor-pointer shadow-none"
             >
-              {isDeletingCardActivity ? 'Đang xóa...' : 'Xóa hoạt động'}
+              {isDeletingCardActivity ? t('planning.deletingActivityAction', 'Đang xóa...') : t('planning.deleteActivityAction', 'Xóa hoạt động')}
             </Button>
           </DialogFooter>
         </DialogContent>

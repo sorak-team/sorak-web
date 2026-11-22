@@ -26,7 +26,7 @@ import { getTeacherAvatarUrl } from '../../teachers/teachers.store';
 import { useAuthStore } from '@/features/auth';
 
 export function ClassTeacherAllocation({ currentClass, isTeacher: propIsTeacher }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const isTeacher =
@@ -45,6 +45,22 @@ export function ClassTeacherAllocation({ currentClass, isTeacher: propIsTeacher 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [teacherToRemove, setTeacherToRemove] = useState(null);
   const [isRemoving, setIsRemoving] = useState(false);
+
+  const isClassFull = (data?.activeTeachers?.length || 0) >= 3;
+  const isSchoolYearEnded = Boolean(data?.summary?.isSchoolYearEnded || currentClass?.isCompleted);
+  const canAddTeacher = !isClassFull && !isSchoolYearEnded;
+
+  const handleOpenAddDrawer = () => {
+    if (isSchoolYearEnded) {
+      toast.warning('Năm học đã kết thúc. Không thể thay đổi phân công giáo viên.');
+      return;
+    }
+    if (isClassFull) {
+      toast.warning('Lớp học đã có đủ 3 giáo viên (tối đa theo BR-38). Không thể phân công thêm.');
+      return;
+    }
+    setIsDrawerOpen(true);
+  };
 
   const loadData = useCallback(async () => {
     if (!currentClass?.id) return;
@@ -90,7 +106,7 @@ export function ClassTeacherAllocation({ currentClass, isTeacher: propIsTeacher 
       setTeacherToRemove(null);
       loadData();
     } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Lỗi khi gỡ giáo viên';
+      const msg = err.response?.data?.message || err.message || t('classes.errorRemovingTeacher', 'Lỗi khi gỡ giáo viên');
       toast.error(msg);
     } finally {
       setIsRemoving(false);
@@ -126,7 +142,7 @@ export function ClassTeacherAllocation({ currentClass, isTeacher: propIsTeacher 
                     {t('classes.assignedTeachersHeading', 'Danh sách giáo viên')}
                   </h2>
                   <span className="text-[12px] font-medium px-2 py-0.5 bg-muted text-foreground border border-border/60">
-                    {data.activeTeachers?.length || 0} giáo viên
+                    {t('classes.teacherCount', '{{count}} giáo viên', { count: data.activeTeachers?.length || 0 })}
                   </span>
                 </div>
                 <p className="text-[13px] text-muted-foreground">
@@ -156,8 +172,21 @@ export function ClassTeacherAllocation({ currentClass, isTeacher: propIsTeacher 
                 {!isTeacher && (
                   <Button
                     type="button"
-                    onClick={() => setIsDrawerOpen(true)}
-                    className="h-8 px-3 rounded-none bg-[#1447e6] hover:bg-[#1447e6]/90 text-white text-[13px] font-medium cursor-pointer shadow-none flex items-center gap-1.5 shrink-0"
+                    onClick={handleOpenAddDrawer}
+                    disabled={!canAddTeacher}
+                    title={
+                      isSchoolYearEnded
+                        ? 'Năm học đã kết thúc'
+                        : isClassFull
+                        ? 'Lớp học đã có đủ 3 giáo viên (tối đa theo BR-38)'
+                        : t('classes.addTeacherBtn', 'Thêm giáo viên')
+                    }
+                    className={cn(
+                      'h-8 px-3 rounded-none text-white text-[13px] font-medium shadow-none flex items-center gap-1.5 shrink-0',
+                      canAddTeacher
+                        ? 'bg-[#1447e6] hover:bg-[#1447e6]/90 cursor-pointer'
+                        : 'bg-[#1447e6]/50 opacity-50 cursor-not-allowed'
+                    )}
                   >
                     <HugeiconsIcon icon={PlusSignIcon} size={15} />
                     <span>{t('classes.addTeacherBtn', 'Thêm giáo viên')}</span>
@@ -171,7 +200,7 @@ export function ClassTeacherAllocation({ currentClass, isTeacher: propIsTeacher 
               <table className="w-full text-left border-collapse min-w-[700px]">
                 <thead>
                   <tr className="h-10 border-b border-border bg-muted/30 text-[13px] font-medium text-foreground">
-                    <th className="px-3 w-[50px] text-center font-medium">STT</th>
+                    <th className="px-3 w-[50px] text-center font-medium">{t('classes.colIndex', 'STT')}</th>
                     <th className="px-3 min-w-[220px] font-medium">
                       {t('teacher.colTeacher', 'Giáo viên')}
                     </th>
@@ -218,7 +247,7 @@ export function ClassTeacherAllocation({ currentClass, isTeacher: propIsTeacher 
                   ) : (
                     filteredTeachers.map((teacher, index) => {
                       const assignedDateStr = teacher.assignedAt
-                        ? new Date(teacher.assignedAt).toLocaleDateString('vi-VN')
+                        ? new Date(teacher.assignedAt).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'vi-VN')
                         : '—';
 
                       return (
@@ -248,7 +277,7 @@ export function ClassTeacherAllocation({ currentClass, isTeacher: propIsTeacher 
                                   {teacher.fullName}
                                 </span>
                                 <span className="text-[12px] text-muted-foreground truncate">
-                                  {teacher.position || teacher.role || 'Giáo viên'} · <span className="font-mono">{teacher.employeeCode || '—'}</span>
+                                  {teacher.position || teacher.role || t('classes.teacherDefaultRole', 'Giáo viên')} · <span className="font-mono">{teacher.employeeCode || '—'}</span>
                                 </span>
                               </div>
                             </div>
@@ -319,6 +348,8 @@ export function ClassTeacherAllocation({ currentClass, isTeacher: propIsTeacher 
         classId={currentClass.id}
         className={currentClass.name}
         poolTeachers={data.poolTeachers || []}
+        currentCount={data.activeTeachers?.length || 0}
+        isSchoolYearEnded={isSchoolYearEnded}
         onSuccess={loadData}
       />
 

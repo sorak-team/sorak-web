@@ -114,10 +114,10 @@ export function AutomatedNotificationsPage() {
         {/* Title and Subtitle */}
         <div className="flex flex-col gap-1">
           <h1 className="text-[26px] font-semibold text-foreground tracking-tight">
-            Thông báo tự động
+            {t('notifications.management.automatedTitle', 'Thông báo tự động')}
           </h1>
           <p className="text-[12px] text-muted-foreground font-normal">
-            Theo dõi các thông báo tự động phát sinh từ hệ thống
+            {t('notifications.management.automatedSubtitle', 'Theo dõi các thông báo tự động phát sinh từ hệ thống')}
           </p>
         </div>
 
@@ -137,7 +137,7 @@ export function AutomatedNotificationsPage() {
                 setSearchQuery(e.target.value);
                 setCurrentPage(1);
               }}
-              placeholder="Tìm thông báo, người nhận, mã..."
+              placeholder={t('notifications.management.searchAutomatedPlaceholder', 'Tìm thông báo, người nhận, mã...')}
               className="h-8 pl-8 pr-2.5 text-[13px] bg-background border-border rounded-none shadow-none focus-visible:ring-1 focus-visible:ring-ring"
             />
           </div>
@@ -153,7 +153,7 @@ export function AutomatedNotificationsPage() {
             <button
               type="button"
               onClick={() => setViewMode('list')}
-              title="Dạng bảng"
+              title={t('common.tableView', 'Dạng bảng')}
               className={cn(
                 'size-8 flex items-center justify-center transition-colors cursor-pointer border-r border-border',
                 viewMode === 'list'
@@ -167,7 +167,7 @@ export function AutomatedNotificationsPage() {
             <button
               type="button"
               onClick={() => setViewMode('grid')}
-              title="Dạng lưới"
+              title={t('common.gridView', 'Dạng lưới')}
               className={cn(
                 'size-8 flex items-center justify-center transition-colors cursor-pointer',
                 viewMode === 'grid'
@@ -186,18 +186,18 @@ export function AutomatedNotificationsPage() {
             variant="outline"
             onClick={async () => {
               await fetchAutomatedNotifications();
-              toast.success('Đã làm mới danh sách thông báo tự động');
+              toast.success(t('notifications.management.refreshSuccess', 'Đã làm mới danh sách thông báo tự động'));
             }}
             disabled={isAutomatedLoading}
             className="h-8 px-2.5 text-[13px] rounded-none cursor-pointer flex items-center gap-1.5"
-            title="Tải lại danh sách"
+            title={t('common.refresh', 'Tải lại danh sách')}
           >
             <HugeiconsIcon
               icon={RefreshIcon}
               size={14}
               className={cn(isAutomatedLoading && 'animate-spin')}
             />
-            <span>Làm mới</span>
+            <span>{t('notifications.management.refresh', 'Làm mới')}</span>
           </Button>
         </div>
       </div>
@@ -205,10 +205,10 @@ export function AutomatedNotificationsPage() {
       {/* List Heading */}
       <div className="flex items-center justify-between pt-1">
         <h2 className="text-[16px] font-semibold text-foreground">
-          Danh sách thông báo tự động
+          {t('notifications.management.automatedListTitle', 'Danh sách thông báo tự động')}
         </h2>
         <span className="text-[12px] text-muted-foreground font-normal">
-          {filteredAutomated.length} thông báo
+          {t('notifications.management.automatedCountLabel', { count: filteredAutomated.length, defaultValue: `${filteredAutomated.length} thông báo` })}
         </span>
       </div>
 

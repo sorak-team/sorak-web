@@ -187,7 +187,7 @@ export function MonthlyAssessmentDrawer({
             {/* Achievements Summary Badges (Bông Sen without CNBH) */}
             <div className="flex items-center gap-2 shrink-0">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[12px] font-semibold bg-background border border-border">
-                <img src="/rose.webp" alt="Hoa hồng" className="size-4 object-contain" />
+                <img src="/rose.webp" alt={t('assessment.roseAlt', 'Hoa hồng')} className="size-4 object-contain" />
                 <span>{currentRosesCount}/{weekList.length || 4} {t('assessment.rosesUnit', 'hoa')}</span>
               </div>
 
@@ -196,7 +196,7 @@ export function MonthlyAssessmentDrawer({
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[12px] font-semibold bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-900"
                   title={t('assessment.achievedLotusTitle', 'Đạt danh hiệu Bông Sen')}
                 >
-                  <img src="/lotus.webp" alt="Bông Sen" className="size-4 object-contain" />
+                  <img src="/lotus.webp" alt={t('assessment.lotusAlt', 'Hoa sen')} className="size-4 object-contain" />
                   <span>{t('assessment.lotus', 'Bông Sen')}</span>
                 </div>
               ) : (
@@ -245,7 +245,7 @@ export function MonthlyAssessmentDrawer({
                             <span className="text-[13px] text-foreground font-medium">{wk.label}</span>
                             {wk.range && (
                               <span className="text-[11px] text-muted-foreground font-mono">
-                                Từ {wk.range.startDateStr} đến {wk.range.endDateStr}
+                                {t('common.from', 'Từ')} {wk.range.startDateStr} {t('common.to', 'đến')} {wk.range.endDateStr}
                               </span>
                             )}
                             {wk.range?.subThemeName && (
@@ -295,7 +295,7 @@ export function MonthlyAssessmentDrawer({
                                 )}
                                 <div
                                   className="flex flex-wrap items-center justify-center gap-x-1 text-[11px] leading-tight cursor-help mt-0.5"
-                                  title={heightFormatted ? `Chiều cao: ${heightFormatted} · ${heightEvaluation.label}` : heightEvaluation.label}
+                                  title={heightFormatted ? `${t('assessment.height', 'Chiều cao')}: ${heightFormatted} · ${heightEvaluation.label}` : heightEvaluation.label}
                                 >
                                   <span className={cn('font-medium whitespace-nowrap shrink-0', heightEvaluation.textColor)}>
                                     {heightEvaluation.label}
@@ -326,7 +326,7 @@ export function MonthlyAssessmentDrawer({
                                 )}
                                 <div
                                   className="flex flex-wrap items-center justify-center gap-x-1 text-[11px] leading-tight cursor-help mt-0.5"
-                                  title={weightFormatted ? `Cân nặng: ${weightFormatted} · ${weightEvaluation.label}` : weightEvaluation.label}
+                                  title={weightFormatted ? `${t('assessment.weight', 'Cân nặng')}: ${weightFormatted} · ${weightEvaluation.label}` : weightEvaluation.label}
                                 >
                                   <span className={cn('font-medium whitespace-nowrap shrink-0', weightEvaluation.textColor)}>
                                     {weightEvaluation.label}
@@ -346,7 +346,7 @@ export function MonthlyAssessmentDrawer({
                         <td className="px-3 text-center">
                           {wk.val ? (
                             <div className="size-8 mx-auto flex items-center justify-center bg-rose-50 border border-rose-200 dark:bg-rose-950/60 dark:border-rose-900 rounded-none">
-                              <img src="/rose.webp" alt="Hoa hồng" className="size-5 object-contain" />
+                              <img src="/rose.webp" alt={t('assessment.roseAlt', 'Hoa hồng')} className="size-5 object-contain" />
                             </div>
                           ) : (
                             <div className="size-8 mx-auto flex items-center justify-center text-muted-foreground/40 font-mono text-[13px]">

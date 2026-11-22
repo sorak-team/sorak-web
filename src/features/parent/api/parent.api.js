@@ -55,6 +55,16 @@ export const parentApi = {
     const res = await apiClient.patch(`/parent/notifications/${id}/read`);
     return res.data?.data || res.data;
   },
+
+  linkChild: async (data) => {
+    const res = await apiClient.post('/parent/link-child', data);
+    return res.data?.data || res.data;
+  },
+
+  switchChild: async (data) => {
+    const res = await apiClient.post('/parent/switch-child', data);
+    return res.data?.data || res.data;
+  },
 };
 
 export default parentApi;

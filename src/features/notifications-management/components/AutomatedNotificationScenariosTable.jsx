@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
   Notification03Icon,
@@ -452,6 +453,8 @@ export const NOTIFICATION_SCENARIOS = [
 ];
 
 export function AutomatedNotificationScenariosTable() {
+  const { t, i18n } = useTranslation();
+  const isEn = i18n.language?.startsWith('en');
   const [expandedRowId, setExpandedRowId] = useState(null);
 
   const handleCopyJson = (scenario, e) => {
@@ -469,7 +472,7 @@ export function AutomatedNotificationScenariosTable() {
       action_url: scenario.actionUrl,
     };
     navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
-    toast.success(`Đã sao chép JSON kịch bản #${scenario.id} (${scenario.code})`);
+    toast.success(t('notifications.management.scenarios.copySuccess', 'Đã sao chép JSON mẫu vào clipboard!'));
   };
 
   const getCategoryBadgeClass = (catKey) => {
@@ -497,10 +500,10 @@ export function AutomatedNotificationScenariosTable() {
       {/* Header */}
       <div className="p-4 sm:p-5 flex flex-col gap-0.5 border-b border-border/80 bg-muted/20">
         <h3 className="text-[15px] font-semibold text-foreground tracking-tight">
-          Quy định & Bảng tra cứu 22 kịch bản thông báo tự động
+          {t('notifications.management.scenarios.title', 'Quy định & Bảng tra cứu 22 kịch bản thông báo tự động')}
         </h3>
         <p className="text-[12px] text-muted-foreground font-normal">
-          Quy chuẩn 22 loại thông báo tự động, điều kiện phát, cơ chế tức thời/hẹn giờ và mẫu thông báo thực tế trong hệ thống Sorak
+          {t('notifications.management.scenarios.subtitle', 'Quy chuẩn 22 loại thông báo tự động, điều kiện phát, cơ chế tức thời/hẹn giờ và mẫu thông báo thực tế trong hệ thống Sorak')}
         </p>
       </div>
 
@@ -511,12 +514,12 @@ export function AutomatedNotificationScenariosTable() {
             <thead>
               <tr className="h-10 border-b border-border bg-muted/40 text-[12px] font-medium text-foreground">
                 <th className="px-3 w-[50px] text-center font-semibold">#</th>
-                <th className="px-3 min-w-[200px] font-semibold">Chức năng & Phân loại</th>
-                <th className="px-3 min-w-[260px] font-semibold">Khi nào phát & Tác nhân</th>
-                <th className="px-3 min-w-[190px] font-semibold">Tab hộp thư & Cơ chế</th>
-                <th className="px-3 min-w-[190px] font-semibold">Người nhận & Phạm vi</th>
-                <th className="px-3 min-w-[260px] font-semibold">Gửi ra sao (Tiêu đề & Nội dung mẫu)</th>
-                <th className="px-3 w-[80px] text-center font-semibold">Thao tác</th>
+                <th className="px-3 min-w-[200px] font-semibold">{t('notifications.management.scenarios.colFunctionCategory', 'Chức năng & Phân loại')}</th>
+                <th className="px-3 min-w-[260px] font-semibold">{t('notifications.management.scenarios.colTriggerSender', 'Khi nào phát & Tác nhân')}</th>
+                <th className="px-3 min-w-[190px] font-semibold">{t('notifications.management.scenarios.colTabMechanism', 'Tab hộp thư & Cơ chế')}</th>
+                <th className="px-3 min-w-[190px] font-semibold">{t('notifications.management.scenarios.colRecipientScope', 'Người nhận & Phạm vi')}</th>
+                <th className="px-3 min-w-[260px] font-semibold">{t('notifications.management.scenarios.colSample', 'Gửi ra sao (Tiêu đề & Nội dung mẫu)')}</th>
+                <th className="px-3 w-[80px] text-center font-semibold">{t('notifications.management.scenarios.colActions', 'Thao tác')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60 text-[13px]">
@@ -541,7 +544,7 @@ export function AutomatedNotificationScenariosTable() {
                           <td className="px-3 py-3">
                             <div className="flex flex-col gap-1 min-w-0">
                               <span className="font-semibold text-foreground text-[13px] leading-snug group-hover:text-primary transition-colors">
-                                {s.featureVi}
+                                {isEn ? s.feature : s.featureVi}
                               </span>
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <span
@@ -566,7 +569,7 @@ export function AutomatedNotificationScenariosTable() {
                                 {s.trigger}
                               </span>
                               <span className="text-[11px] text-muted-foreground">
-                                Tác nhân kích hoạt:{' '}
+                                {t('notifications.management.scenarios.triggerLabel', 'Tác nhân kích hoạt')}:{' '}
                                 <strong className="text-foreground font-medium">{s.sender}</strong>
                               </span>
                             </div>
@@ -591,7 +594,7 @@ export function AutomatedNotificationScenariosTable() {
                                 {s.recipient}
                               </span>
                               <div className="flex items-center gap-1.5">
-                                <span className="text-[11px] text-muted-foreground">Phạm vi:</span>
+                                <span className="text-[11px] text-muted-foreground">{t('notifications.management.scenarios.scopeLabel', 'Phạm vi')}:</span>
                                 <span className="inline-flex items-center px-1.5 py-0.2 text-[11px] bg-muted/60 text-foreground font-normal border border-border/60">
                                   {s.scope}
                                 </span>
@@ -609,7 +612,7 @@ export function AutomatedNotificationScenariosTable() {
                                 {s.sampleBody}
                               </span>
                               <span className="text-[10px] font-mono text-muted-foreground/80 mt-0.5">
-                                Điều hướng: {s.actionUrl}
+                                {t('notifications.management.scenarios.navigation', 'Điều hướng')}: {s.actionUrl}
                               </span>
                             </div>
                           </td>
@@ -620,7 +623,7 @@ export function AutomatedNotificationScenariosTable() {
                               <button
                                 type="button"
                                 onClick={(e) => handleCopyJson(s, e)}
-                                title="Sao chép JSON mẫu cho Tester"
+                                title={t('notifications.management.scenarios.copyJson', 'Sao chép JSON mẫu cho Tester')}
                                 className="size-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted border border-border/80 rounded-none transition-colors"
                               >
                                 <HugeiconsIcon icon={Copy01Icon} size={14} />
@@ -638,7 +641,7 @@ export function AutomatedNotificationScenariosTable() {
                                 <div className="space-y-3">
                                   <div className="flex items-center justify-between">
                                     <span className="text-[12px] font-semibold text-foreground uppercase tracking-wider">
-                                      Mô phỏng hiển thị thông báo trong hộp thư (In-app Preview)
+                                      {t('notifications.management.scenarios.inappPreview', 'Mô phỏng hiển thị thông báo trong hộp thư (In-app Preview)')}
                                     </span>
                                     <span className="px-2 py-0.5 text-[11px] font-medium bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
                                       {s.targetTabLabel}
@@ -654,13 +657,13 @@ export function AutomatedNotificationScenariosTable() {
                                         <p className="text-[13px] font-semibold text-foreground leading-snug">
                                           {s.sampleTitle}
                                         </p>
-                                        <span className="text-[11px] text-muted-foreground">Vừa xong</span>
+                                        <span className="text-[11px] text-muted-foreground">{t('notifications.management.scenarios.justNow', 'Vừa xong')}</span>
                                       </div>
                                       <p className="text-[12px] text-muted-foreground leading-relaxed">
                                         {s.sampleBody}
                                       </p>
                                       <div className="flex items-center gap-2 pt-1 text-[11px] text-primary font-medium">
-                                        <span>Bấm vào để mở {s.actionUrl}</span>
+                                        <span>{t('notifications.management.scenarios.clickToOpen', 'Bấm vào để mở {{url}}', { url: s.actionUrl })}</span>
                                         <HugeiconsIcon icon={ArrowRight01Icon} size={12} />
                                       </div>
                                     </div>
@@ -669,13 +672,13 @@ export function AutomatedNotificationScenariosTable() {
 
                                   <div className="text-[12px] text-muted-foreground space-y-1">
                                     <p>
-                                      • <strong>Cơ chế phát:</strong> {s.deliveryMechanism} ngay khi {s.trigger.toLowerCase()}
+                                      • <strong>{t('notifications.management.scenarios.deliveryMechanism', 'Cơ chế phát')}:</strong> {s.deliveryMechanism} ngay khi {s.trigger.toLowerCase()}
                                     </p>
                                     <p>
-                                      • <strong>Đối tượng nhận:</strong> {s.recipient} (Phạm vi: {s.scope})
+                                      • <strong>{t('notifications.management.scenarios.recipient', 'Đối tượng nhận')}:</strong> {s.recipient} ({t('notifications.management.scenarios.scopeLabel', 'Phạm vi')}: {s.scope})
                                     </p>
                                     <p>
-                                      • <strong>Vị trí hiển thị:</strong> Hộp thư hệ thống → Tab {s.targetTabLabel}
+                                      • <strong>{t('notifications.management.scenarios.displayLocation', 'Vị trí hiển thị')}:</strong> Hộp thư hệ thống → Tab {s.targetTabLabel}
                                     </p>
                                   </div>
                                 </div>
@@ -684,7 +687,7 @@ export function AutomatedNotificationScenariosTable() {
                                 <div className="space-y-2 flex flex-col justify-between">
                                   <div className="flex items-center justify-between">
                                     <span className="text-[12px] font-semibold text-foreground uppercase tracking-wider">
-                                      JSON Payload (Dành cho Tester / Swagger / API test)
+                                      {t('notifications.management.scenarios.jsonPayload', 'JSON Payload (Dành cho Tester / Swagger / API test)')}
                                     </span>
                                     <button
                                       type="button"
@@ -692,7 +695,7 @@ export function AutomatedNotificationScenariosTable() {
                                       className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium bg-muted hover:bg-muted/80 text-foreground border border-border transition-colors cursor-pointer"
                                     >
                                       <HugeiconsIcon icon={Copy01Icon} size={12} />
-                                      <span>Sao chép JSON</span>
+                                      <span>{t('notifications.management.scenarios.copyJson', 'Sao chép JSON')}</span>
                                     </button>
                                   </div>
 

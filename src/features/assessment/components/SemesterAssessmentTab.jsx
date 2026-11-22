@@ -321,6 +321,16 @@ export function SemesterAssessmentTab({ targetClassId, currentClass }) {
         matchesStatus = s.isEvaluated;
       } else if (statusFilter === 'NOT_EVALUATED') {
         matchesStatus = !s.isEvaluated;
+      } else if (statusFilter === 'SUPPORT_NEEDED') {
+        const d = s.domains || {};
+        const vals = Object.values(d).filter((v) => v !== null && v !== undefined);
+        const hasLow = vals.some((v) => v < 70);
+        matchesStatus = Boolean(s.needsSupport || s.hasNotAchieved || hasLow);
+      } else if (statusFilter === 'OUTSTANDING') {
+        const d = s.domains || {};
+        const vals = Object.values(d).filter((v) => v !== null && v !== undefined);
+        const allHigh = vals.length > 0 && vals.every((v) => v >= 85);
+        matchesStatus = Boolean(s.isOutstanding || allHigh);
       }
 
       return matchesSearch && matchesStatus;
@@ -387,6 +397,8 @@ export function SemesterAssessmentTab({ targetClassId, currentClass }) {
     { key: 'ALL', label: t('assessment.filterAllStatus', 'Tất cả trạng thái') },
     { key: 'EVALUATED', label: t('assessment.filterEvaluated', 'Đã nhận xét') },
     { key: 'NOT_EVALUATED', label: t('assessment.filterNotEvaluated', 'Chưa nhận xét') },
+    { key: 'SUPPORT_NEEDED', label: t('schoolOverview.supportNeeded', 'Trẻ cần hỗ trợ (UC 130)') },
+    { key: 'OUTSTANDING', label: t('schoolOverview.outstandingStudents', 'Trẻ vượt trội (UC 131)') },
   ];
 
   return (
@@ -549,6 +561,51 @@ export function SemesterAssessmentTab({ targetClassId, currentClass }) {
                   <span className="text-[11.5px] text-muted-foreground">Chưa bắt đầu</span>
                 </>
               )}
+            </div>
+
+            {/* Quick Filter Badges for UC 130 & UC 131 */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setStatusFilter((f) => (f === 'SUPPORT_NEEDED' ? 'ALL' : 'SUPPORT_NEEDED'))}
+                className={cn(
+                  'h-8 px-2.5 text-[12px] font-medium border rounded-none transition-colors cursor-pointer flex items-center gap-1.5',
+                  statusFilter === 'SUPPORT_NEEDED'
+                    ? 'border-amber-500 bg-amber-500/15 text-amber-700 dark:text-amber-400 font-semibold'
+                    : 'border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                )}
+                title="Xem danh sách trẻ cần hỗ trợ (UC 130)"
+              >
+                <span>{t('schoolOverview.supportNeeded', 'Cần hỗ trợ')}</span>
+                <span className="font-mono text-[11px] px-1 py-0.2 bg-muted/60 border border-border/80">
+                  {students.filter((s) => {
+                    const d = s.domains || {};
+                    const vals = Object.values(d).filter((v) => v !== null && v !== undefined);
+                    return s.needsSupport || s.hasNotAchieved || vals.some((v) => v < 70);
+                  }).length}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setStatusFilter((f) => (f === 'OUTSTANDING' ? 'ALL' : 'OUTSTANDING'))}
+                className={cn(
+                  'h-8 px-2.5 text-[12px] font-medium border rounded-none transition-colors cursor-pointer flex items-center gap-1.5',
+                  statusFilter === 'OUTSTANDING'
+                    ? 'border-emerald-500 bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-semibold'
+                    : 'border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                )}
+                title="Xem danh sách trẻ đạt thành tích vượt trội (UC 131)"
+              >
+                <span>{t('schoolOverview.outstandingStudents', 'Vượt trội')}</span>
+                <span className="font-mono text-[11px] px-1 py-0.2 bg-muted/60 border border-border/80">
+                  {students.filter((s) => {
+                    const d = s.domains || {};
+                    const vals = Object.values(d).filter((v) => v !== null && v !== undefined);
+                    return s.isOutstanding || (vals.length > 0 && vals.every((v) => v >= 85));
+                  }).length}
+                </span>
+              </button>
             </div>
 
             {/* 3. Nút Tính toán */}

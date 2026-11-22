@@ -25,7 +25,7 @@ import { CreateTransferDrawer } from './CreateTransferDrawer';
 import { getStudentAvatarUrl } from '../../students/students.store';
 
 export function ClassTransferRequests({ currentClass }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [data, setData] = useState({
     items: [],
     targetClasses: [],
@@ -75,7 +75,7 @@ export function ClassTransferRequests({ currentClass }) {
       );
       loadData();
     } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Lỗi khi phê duyệt';
+      const msg = err.response?.data?.message || err.message || t('classes.approveTransferError', 'Lỗi khi phê duyệt');
       toast.error(msg);
     } finally {
       setIsUpdatingStatus(false);
@@ -97,7 +97,7 @@ export function ClassTransferRequests({ currentClass }) {
       setRejectReason('');
       loadData();
     } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Lỗi khi từ chối';
+      const msg = err.response?.data?.message || err.message || t('classes.rejectTransferError', 'Lỗi khi từ chối');
       toast.error(msg);
     } finally {
       setIsUpdatingStatus(false);
@@ -157,10 +157,10 @@ export function ClassTransferRequests({ currentClass }) {
               {/* Status filter tabs */}
               <div className="flex items-center gap-1 pt-2 sm:pt-0">
                 {[
-                  { key: 'ALL', label: `Tất cả (${summary.total})` },
-                  { key: 'PENDING', label: `Chờ duyệt (${summary.pending})` },
-                  { key: 'APPROVED', label: `Đã duyệt (${summary.approved})` },
-                  { key: 'REJECTED', label: `Từ chối (${summary.rejected})` },
+                  { key: 'ALL', label: t('classes.filterAllTransfers', 'Tất cả ({{count}})', { count: summary.total }) },
+                  { key: 'PENDING', label: t('classes.filterPendingTransfers', 'Chờ duyệt ({{count}})', { count: summary.pending }) },
+                  { key: 'APPROVED', label: t('classes.filterApprovedTransfers', 'Đã duyệt ({{count}})', { count: summary.approved }) },
+                  { key: 'REJECTED', label: t('classes.filterRejectedTransfers', 'Từ chối ({{count}})', { count: summary.rejected }) },
                 ].map((tab) => (
                   <button
                     key={tab.key}
@@ -200,7 +200,7 @@ export function ClassTransferRequests({ currentClass }) {
               <table className="w-full text-left border-collapse min-w-[800px]">
                 <thead>
                   <tr className="h-10 border-b border-border bg-muted/30 text-[13px] font-medium text-foreground">
-                    <th className="px-3 w-[50px] text-center font-medium">STT</th>
+                    <th className="px-3 w-[50px] text-center font-medium">{t('classes.colIndex', 'STT')}</th>
                     <th className="px-3 min-w-[220px] font-medium">
                       {t('student.colStudent', 'Học sinh')}
                     </th>
@@ -250,7 +250,7 @@ export function ClassTransferRequests({ currentClass }) {
                     items.map((transfer, index) => {
                       const isOutbound = transfer.direction === 'OUT';
                       const dateStr = transfer.transferDate
-                        ? new Date(transfer.transferDate).toLocaleDateString('vi-VN')
+                        ? new Date(transfer.transferDate).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'vi-VN')
                         : '—';
 
                       return (
@@ -366,7 +366,7 @@ export function ClassTransferRequests({ currentClass }) {
                               </DropdownMenu>
                             ) : (
                               <span className="text-[12px] text-muted-foreground font-normal pr-2">
-                                {transfer.status === 'APPROVED' ? 'Hoàn tất' : 'Đã đóng'}
+                                {transfer.status === 'APPROVED' ? t('common.completed', 'Hoàn tất') : t('common.closed', 'Đã đóng')}
                               </span>
                             )}
                           </td>
@@ -437,7 +437,7 @@ export function ClassTransferRequests({ currentClass }) {
                 rows={3}
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="Ví dụ: Lớp tiếp nhận đã đủ sĩ số quy định..."
+                placeholder={t('classes.rejectReasonPlaceholder', 'Ví dụ: Lớp tiếp nhận đã đủ sĩ số quy định...')}
                 className="w-full p-2.5 text-[13px] bg-background border border-border rounded-none shadow-none focus:outline-none focus:border-primary placeholder:text-muted-foreground/60 resize-none text-foreground"
               />
             </div>

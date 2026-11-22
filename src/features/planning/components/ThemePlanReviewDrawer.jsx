@@ -38,146 +38,116 @@ const formatGoalCode = (code) => {
 };
 
 // Preschool Domain Labels & Accent Colors
-const DOMAIN_STYLES = {
+const getDomainStyles = (t) => ({
   PHYSICAL: {
-    label: 'Thể chất',
-    shortLabel: 'Thể chất',
+    label: t('domains.physical', 'Thể chất'),
+    shortLabel: t('domains.physical', 'Thể chất'),
     bg: 'bg-blue-50 dark:bg-blue-950/40',
     text: 'text-blue-700 dark:text-blue-300',
     border: 'border-blue-200 dark:border-blue-800',
   },
   COGNITIVE: {
-    label: 'Nhận thức',
-    shortLabel: 'Nhận thức',
+    label: t('domains.cognitive', 'Nhận thức'),
+    shortLabel: t('domains.cognitive', 'Nhận thức'),
     bg: 'bg-indigo-50 dark:bg-indigo-950/40',
     text: 'text-indigo-700 dark:text-indigo-300',
     border: 'border-indigo-200 dark:border-indigo-800',
   },
   LANGUAGE: {
-    label: 'Ngôn ngữ',
-    shortLabel: 'Ngôn ngữ',
+    label: t('domains.language', 'Ngôn ngữ'),
+    shortLabel: t('domains.language', 'Ngôn ngữ'),
     bg: 'bg-emerald-50 dark:bg-emerald-950/40',
     text: 'text-emerald-700 dark:text-emerald-300',
     border: 'border-emerald-200 dark:border-emerald-800',
   },
   SOCIO_EMOTIONAL: {
-    label: 'Tình cảm - Xã hội',
-    shortLabel: 'Tình cảm - XH',
+    label: t('domains.socialEmotionalTitle', 'Tình cảm - Xã hội'),
+    shortLabel: t('domains.socialEmotionalShort', 'Tình cảm - XH'),
     bg: 'bg-amber-50 dark:bg-amber-950/40',
     text: 'text-amber-700 dark:text-amber-300',
     border: 'border-amber-200 dark:border-amber-800',
   },
   AESTHETIC: {
-    label: 'Thẩm mỹ',
-    shortLabel: 'Thẩm mỹ',
+    label: t('domains.aesthetic', 'Thẩm mỹ'),
+    shortLabel: t('domains.aesthetic', 'Thẩm mỹ'),
     bg: 'bg-rose-50 dark:bg-rose-950/40',
     text: 'text-rose-700 dark:text-rose-300',
     border: 'border-rose-200 dark:border-rose-800',
   },
-};
+});
 
-const GRADE_LABELS = {
-  NHA_TRE: 'Khối Nhà trẻ',
-  MAM: 'Khối Mầm',
-  CHOI: 'Khối Chồi',
-  LA: 'Khối Lá',
-};
+const getGradeLabels = (t) => ({
+  NHA_TRE: t('classes.gradeNhaTre', 'Khối Nhà trẻ'),
+  MAM: t('classes.gradeMam', 'Khối Mầm'),
+  CHOI: t('classes.gradeChoi', 'Khối Chồi'),
+  LA: t('classes.gradeLa', 'Khối Lá'),
+});
 
-const ROUTINE_SLOT_LABELS = {
-  ARRIVAL_PLAY: 'Đón Trẻ, Chơi',
-  MORNING_EXERCISE: 'Thể Dục Sáng',
-  DIRECTED_STUDY: 'Học',
-  CORNER_PLAY: 'Chơi, Hoạt Động Ở Các Góc',
-  OUTDOOR_PLAY: 'Chơi Ngoài Trời',
-  HYGIENE_MEAL_SLEEP: 'Vệ Sinh - Ăn - Ngủ',
-  AFTERNOON_ACTIVITY: 'Chơi, Hoạt Động Theo Ý Thích',
-  RETURN_CHILD: 'Trả Trẻ',
-};
-
-const ROUTINE_SLOT_TIMES = {
-  ARRIVAL_PLAY: '07:15 – 08:00',
-  MORNING_EXERCISE: '08:00 – 08:30',
-  DIRECTED_STUDY: '08:30 – 09:15',
-  CORNER_PLAY: '09:15 – 10:15',
-  OUTDOOR_PLAY: '10:15 – 11:00',
-  HYGIENE_MEAL_SLEEP: '11:00 – 14:00',
-  AFTERNOON_ACTIVITY: '14:00 – 14:45',
-  RETURN_CHILD: '15:30 – 16:30',
-};
-
-const ROUTINE_SLOTS = [
+const getRoutineSlots = (t) => [
   {
     key: 'ARRIVAL_PLAY',
-    label: 'Đón Trẻ, Chơi',
-    lines: ['Đón Trẻ, Chơi'],
+    label: t('routineSlots.ARRIVAL_PLAY.name', 'Đón Trẻ, Chơi'),
+    lines: t('routineSlots.ARRIVAL_PLAY.lines', { returnObjects: true, defaultValue: ['Đón Trẻ, Chơi'] }),
     time: '07:15 – 08:00',
     session: 'MORNING',
   },
   {
     key: 'MORNING_EXERCISE',
-    label: 'Thể Dục Sáng',
-    lines: ['Thể Dục Sáng'],
+    label: t('routineSlots.MORNING_EXERCISE.name', 'Thể Dục Sáng'),
+    lines: t('routineSlots.MORNING_EXERCISE.lines', { returnObjects: true, defaultValue: ['Thể Dục Sáng'] }),
     time: '08:00 – 08:30',
     session: 'MORNING',
   },
   {
     key: 'DIRECTED_STUDY',
-    label: 'Học',
-    lines: ['Học'],
+    label: t('routineSlots.DIRECTED_STUDY.name', 'Học'),
+    lines: t('routineSlots.DIRECTED_STUDY.lines', { returnObjects: true, defaultValue: ['Học'] }),
     time: '08:30 – 09:15',
     isCore: true,
     session: 'MORNING',
   },
   {
     key: 'CORNER_PLAY',
-    label: 'Chơi, Hoạt Động Ở Các Góc',
-    lines: ['Chơi, Hoạt', 'Động Ở Các', 'Góc'],
+    label: t('routineSlots.CORNER_PLAY.name', 'Chơi, Hoạt Động Ở Các Góc'),
+    lines: t('routineSlots.CORNER_PLAY.lines', { returnObjects: true, defaultValue: ['Chơi, Hoạt', 'Động Ở Các', 'Góc'] }),
     time: '09:15 – 10:15',
     session: 'MORNING',
   },
   {
     key: 'OUTDOOR_PLAY',
-    label: 'Chơi Ngoài Trời',
-    lines: ['Chơi Ngoài', 'Trời'],
+    label: t('routineSlots.OUTDOOR_PLAY.name', 'Chơi Ngoài Trời'),
+    lines: t('routineSlots.OUTDOOR_PLAY.lines', { returnObjects: true, defaultValue: ['Chơi Ngoài', 'Trời'] }),
     time: '10:15 – 11:00',
     session: 'MORNING',
   },
   {
     key: 'AFTERNOON_ACTIVITY',
-    label: 'Chơi, Hoạt Động Theo Ý Thích',
-    lines: ['Chơi, Hoạt', 'Động Theo Ý', 'Thích'],
+    label: t('routineSlots.AFTERNOON_ACTIVITY.name', 'Chơi, Hoạt Động Theo Ý Thích'),
+    lines: t('routineSlots.AFTERNOON_ACTIVITY.lines', { returnObjects: true, defaultValue: ['Chơi, Hoạt', 'Động Theo Ý', 'Thích'] }),
     time: '14:00 – 14:45',
     session: 'AFTERNOON',
   },
   {
     key: 'RETURN_CHILD',
-    label: 'Trả Trẻ',
-    lines: ['Trả Trẻ'],
+    label: t('routineSlots.RETURN_CHILD.name', 'Trả Trẻ'),
+    lines: t('routineSlots.RETURN_CHILD.lines', { returnObjects: true, defaultValue: ['Trả Trẻ'] }),
     time: '15:30 – 16:30',
     session: 'AFTERNOON',
   },
 ];
 
-const getCleanWeekName = (name, weekNumber) => {
-  if (!name) return `Tuần ${weekNumber}`;
-  return name.replace(/^Tuần\s*\d+\s*:\s*/i, '').trim();
-};
-
-const DAY_LABELS = {
-  MONDAY: 'Thứ Hai',
-  TUESDAY: 'Thứ Ba',
-  WEDNESDAY: 'Thứ Tư',
-  THURSDAY: 'Thứ Năm',
-  FRIDAY: 'Thứ Sáu',
-};
-
-const WEEK_DAYS = [
-  { key: 'MONDAY', short: 'T2', full: 'Thứ Hai', offset: 0 },
-  { key: 'TUESDAY', short: 'T3', full: 'Thứ Ba', offset: 1 },
-  { key: 'WEDNESDAY', short: 'T4', full: 'Thứ Tư', offset: 2 },
-  { key: 'THURSDAY', short: 'T5', full: 'Thứ Năm', offset: 3 },
-  { key: 'FRIDAY', short: 'T6', full: 'Thứ Sáu', offset: 4 },
+const getWeekDays = (t) => [
+  { key: 'MONDAY', short: t('common.mon', 'T2'), full: t('common.monday', 'Thứ Hai'), offset: 0 },
+  { key: 'TUESDAY', short: t('common.tue', 'T3'), full: t('common.tuesday', 'Thứ Ba'), offset: 1 },
+  { key: 'WEDNESDAY', short: t('common.wed', 'T4'), full: t('common.wednesday', 'Thứ Tư'), offset: 2 },
+  { key: 'THURSDAY', short: t('common.thu', 'T5'), full: t('common.thursday', 'Thứ Năm'), offset: 3 },
+  { key: 'FRIDAY', short: t('common.fri', 'T6'), full: t('common.friday', 'Thứ Sáu'), offset: 4 },
 ];
+
+const getCleanWeekName = (name, weekNumber, t) => {
+  if (!name) return t('planning.weekIndex', { number: weekNumber, defaultValue: `Tuần ${weekNumber}` });
+  return name.replace(/^Tuần\s*\d+\s*:\s*/i, '').replace(/^Week\s*\d+\s*:\s*/i, '').trim();
+};
 
 export function ThemePlanReviewDrawer({
   isOpen,
@@ -193,6 +163,11 @@ export function ThemePlanReviewDrawer({
   isTeacherView = false,
 }) {
   const { t } = useTranslation();
+  const DOMAIN_STYLES = useMemo(() => getDomainStyles(t), [t]);
+  const GRADE_LABELS = useMemo(() => getGradeLabels(t), [t]);
+  const ROUTINE_SLOTS = useMemo(() => getRoutineSlots(t), [t]);
+  const WEEK_DAYS = useMemo(() => getWeekDays(t), [t]);
+
   const user = useAuthStore((state) => state.user);
   const isBGH = isBghRole(user?.role) && !isTeacherView;
 
@@ -223,11 +198,11 @@ export function ThemePlanReviewDrawer({
       setRejectReasonInput('');
     } catch (err) {
       console.error('Failed to load appraisal preview:', err);
-      toast.error('Không thể tải chi tiết kế hoạch của lớp.');
+      toast.error(t('planning.loadClassPlanError', 'Không thể tải chi tiết kế hoạch của lớp.'));
     } finally {
       setIsLoading(false);
     }
-  }, [classId, themeId]);
+  }, [classId, themeId, t]);
 
   useEffect(() => {
     if (isOpen) {
@@ -305,12 +280,12 @@ export function ThemePlanReviewDrawer({
         themeName: previewData.theme.name,
       });
 
-      toast.success(`Đã phê duyệt kế hoạch lớp ${previewData.class.name} thành công!`);
+      toast.success(t('planning.approveSuccess', { name: previewData.class.name, defaultValue: `Đã phê duyệt kế hoạch lớp ${previewData.class.name} thành công!` }));
       if (onPlanStatusUpdated) onPlanStatusUpdated();
       fetchPreview();
     } catch (err) {
       console.error('Approve failed:', err);
-      toast.error(err?.response?.data?.message || 'Phê duyệt thất bại.');
+      toast.error(err?.response?.data?.message || t('planning.approveFailed', 'Phê duyệt thất bại.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -321,7 +296,7 @@ export function ThemePlanReviewDrawer({
     if (!previewData) return;
     const trimmedReason = rejectReasonInput.trim();
     if (!trimmedReason) {
-      toast.warning('Vui lòng nhập lý do cụ thể cần điều chỉnh để giáo viên nắm rõ.');
+      toast.warning(t('planning.rejectReasonRequired', 'Vui lòng nhập lý do cụ thể cần điều chỉnh để giáo viên nắm rõ.'));
       return;
     }
 
@@ -336,14 +311,14 @@ export function ThemePlanReviewDrawer({
         reason: trimmedReason,
       });
 
-      toast.success(`Đã gửi yêu cầu chỉnh sửa cho giáo viên lớp ${previewData.class.name}!`);
+      toast.success(t('planning.rejectSuccess', { name: previewData.class.name, defaultValue: `Đã gửi yêu cầu chỉnh sửa cho giáo viên lớp ${previewData.class.name}!` }));
       setRejectReasonInput('');
       setIsRejectModalOpen(false);
       if (onPlanStatusUpdated) onPlanStatusUpdated();
       fetchPreview();
     } catch (err) {
       console.error('Revision request failed:', err);
-      toast.error(err?.response?.data?.message || 'Gửi yêu cầu sửa thất bại.');
+      toast.error(err?.response?.data?.message || t('planning.rejectFailed', 'Gửi yêu cầu sửa thất bại.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -362,12 +337,12 @@ export function ThemePlanReviewDrawer({
         themeName: previewData.theme.name,
       });
 
-      toast.success(`Đã nộp kế hoạch chủ đề "${previewData.theme.name}" cho Ban Giám Hiệu phê duyệt thành công!`);
+      toast.success(t('planning.submitPlanSuccess', { name: previewData.theme.name, defaultValue: `Đã nộp kế hoạch chủ đề "${previewData.theme.name}" cho Ban Giám Hiệu phê duyệt thành công!` }));
       if (onPlanStatusUpdated) onPlanStatusUpdated();
       fetchPreview();
     } catch (err) {
       console.error('Teacher submit failed:', err);
-      toast.error(err?.response?.data?.message || 'Có lỗi xảy ra khi nộp kế hoạch.');
+      toast.error(err?.response?.data?.message || t('planning.submitPlanError', 'Có lỗi xảy ra khi nộp kế hoạch.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -445,7 +420,7 @@ export function ThemePlanReviewDrawer({
             <div className="min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="text-[14.5px] font-semibold text-foreground tracking-tight">
-                  Lớp {previewData?.class?.name || '...'}
+                  {t('planning.classTitle', { name: previewData?.class?.name || '...', defaultValue: `Lớp ${previewData?.class?.name || '...'}` })}
                 </span>
                 <span className="text-[12px] text-muted-foreground">
                   ({GRADE_LABELS[previewData?.class?.ageGroup] || previewData?.class?.ageGroup || ''})
@@ -454,8 +429,8 @@ export function ThemePlanReviewDrawer({
               <div className="text-[11.5px] text-muted-foreground flex items-center gap-1.5 truncate">
                 <span>
                   {previewData?.class?.teachers?.length > 0
-                    ? `GV phụ trách: ${previewData.class.teachers.join(', ')}`
-                    : 'Chưa phân công giáo viên'}
+                    ? t('planning.teachersInCharge', { names: previewData.class.teachers.join(', '), defaultValue: `GV phụ trách: ${previewData.class.teachers.join(', ')}` })
+                    : t('planning.unassignedTeacher', 'Chưa phân công giáo viên')}
                 </span>
               </div>
             </div>
@@ -475,7 +450,7 @@ export function ThemePlanReviewDrawer({
                   <>
                     <span className="text-muted-foreground/40">•</span>
                     <span>
-                      Ngày nộp:{' '}
+                      {t('planning.submittedDateColon', 'Ngày nộp:')}{' '}
                       <strong className="font-medium text-foreground">
                         {formatDate(previewData.plan.submittedAt)}
                       </strong>
@@ -490,7 +465,7 @@ export function ThemePlanReviewDrawer({
               type="button"
               onClick={onClose}
               className="size-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-none transition-colors cursor-pointer"
-              title="Đóng (Esc)"
+              title={t('planning.closeEsc', 'Đóng (Esc)')}
             >
               <HugeiconsIcon icon={Cancel01Icon} size={16} />
             </button>
@@ -517,9 +492,9 @@ export function ThemePlanReviewDrawer({
                       ? 'border-primary bg-primary text-primary-foreground font-semibold shadow-xs'
                       : 'border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground'
                   )}
-                  title={`Tuần ${w.weekNumber}: ${getCleanWeekName(w.name, w.weekNumber)}`}
+                  title={`${t('planning.weekIndex', { number: w.weekNumber, defaultValue: `Tuần ${w.weekNumber}` })}: ${getCleanWeekName(w.name, w.weekNumber, t)}`}
                 >
-                  <span>Tuần {w.weekNumber}</span>
+                  <span>{t('planning.weekIndex', { number: w.weekNumber, defaultValue: `Tuần ${w.weekNumber}` })}</span>
                 </button>
               );
             })}
@@ -534,10 +509,10 @@ export function ThemePlanReviewDrawer({
                   ? 'border-primary bg-primary text-primary-foreground font-semibold shadow-xs'
                   : 'border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground'
               )}
-              title="Xem chi tiết ma trận mục tiêu 5 lĩnh vực"
+              title={t('planning.viewGoalsMatrixTooltip', 'Xem chi tiết ma trận mục tiêu 5 lĩnh vực')}
             >
               <HugeiconsIcon icon={Target01Icon} size={12} />
-              <span>Mục tiêu</span>
+              <span>{t('planning.goalsTab', 'Mục tiêu')}</span>
               <span
                 className={cn(
                   'px-1.5 py-0.2 text-[10px] font-mono font-semibold border select-none',
@@ -554,12 +529,12 @@ export function ThemePlanReviewDrawer({
           {/* Right: Week Subtheme Name & Dates (Gọn gàng trên 1 dòng, không bị xuống dòng hay lặp thông tin) */}
           {activeTab === 'timetable' && activeWeek && (
             <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground min-w-0 truncate justify-end">
-              <span className="text-[11.5px] font-medium text-muted-foreground shrink-0">Chủ đề nhánh:</span>
+              <span className="text-[11.5px] font-medium text-muted-foreground shrink-0">{t('planning.subthemeColon', 'Chủ đề nhánh:')}</span>
               <span
                 className="font-semibold text-foreground text-[12.5px] truncate"
-                title={getCleanWeekName(activeWeek.name, activeWeek.weekNumber)}
+                title={getCleanWeekName(activeWeek.name, activeWeek.weekNumber, t)}
               >
-                {getCleanWeekName(activeWeek.name, activeWeek.weekNumber)}
+                {getCleanWeekName(activeWeek.name, activeWeek.weekNumber, t)}
               </span>
               <span className="text-[11.5px] font-mono text-muted-foreground shrink-0">
                 ({formatDate(activeWeek.startDate)} – {formatDate(activeWeek.endDate)})
@@ -577,7 +552,7 @@ export function ThemePlanReviewDrawer({
             <div className="p-2.5 px-3 bg-slate-50 border border-slate-200 text-slate-800 text-xs flex items-start gap-2.5 shadow-2xs mb-3 shrink-0">
               <HugeiconsIcon icon={InformationCircleIcon} size={15} className="text-slate-600 shrink-0 mt-0.5" />
               <div className="leading-relaxed">
-                <strong className="text-slate-800 font-semibold">Ghi chú nộp kế hoạch của giáo viên: </strong>
+                <strong className="text-slate-800 font-semibold">{t('planning.teacherSubmitNote', 'Ghi chú nộp kế hoạch của giáo viên:')} </strong>
                 <span className="text-slate-700">{previewData.plan.teacherNote}</span>
               </div>
             </div>
@@ -587,7 +562,7 @@ export function ThemePlanReviewDrawer({
             <div className="p-2.5 px-3 bg-rose-50 border border-rose-200 text-rose-900 text-xs flex items-start gap-2.5 shadow-2xs mb-3 shrink-0">
               <HugeiconsIcon icon={AlertCircleIcon} size={15} className="text-rose-600 shrink-0 mt-0.5" />
               <div className="leading-relaxed">
-                <strong className="text-rose-800 font-semibold">Lý do yêu cầu sửa trước đây: </strong>
+                <strong className="text-rose-800 font-semibold">{t('planning.previousRejectReason', 'Lý do yêu cầu sửa trước đây:')} </strong>
                 <span className="text-rose-700">{previewData.plan.rejectionReason}</span>
               </div>
             </div>
@@ -595,14 +570,14 @@ export function ThemePlanReviewDrawer({
           {isLoading ? (
             <div className="py-20 flex flex-col items-center justify-center gap-3 text-muted-foreground flex-1">
               <HugeiconsIcon icon={ReloadIcon} size={28} className="animate-spin text-primary" />
-              <p className="text-[13px]">Đang tải toàn cảnh kế hoạch giáo dục...</p>
+              <p className="text-[13px]">{t('planning.loadingFullPlan', 'Đang tải toàn cảnh kế hoạch giáo dục...')}</p>
             </div>
           ) : activeTab === 'timetable' ? (
             /* TAB 1: WEEK-BY-WEEK TIMETABLE VIEW */
             <div className="flex-1 min-h-0 flex flex-col">
               {(!previewData?.timetableByWeek || previewData.timetableByWeek.length === 0) ? (
                 <div className="flex-1 flex items-center justify-center py-12 border border-dashed border-border p-8 text-center text-muted-foreground text-[13px]">
-                  Chủ đề này chưa được giáo viên phân chia nhánh và lên lịch hoạt động.
+                  {t('planning.noSubthemesYet', 'Chủ đề này chưa được giáo viên phân chia nhánh và lên lịch hoạt động.')}
                 </div>
               ) : activeWeek ? (
                 /* TIMETABLE VIEW: BỐ CỤC, TEXT SIZE, FONT WEIGHT CHUẨN TRANG NHẬT KÝ NGÀY (TEACHER TIMETABLE GRID) */
@@ -698,7 +673,7 @@ export function ThemePlanReviewDrawer({
                                         'h-full flex flex-col items-center text-center cursor-pointer rounded-none transition-all group border border-border/80 bg-card hover:border-foreground/40 hover:shadow-2xs relative select-text',
                                         hasBadges ? 'p-2 justify-between' : 'p-2.5 justify-center'
                                       )}
-                                      title="Nhấp để xem chi tiết hoạt động giáo dục"
+                                      title={t('planning.clickToViewActDetail', 'Nhấp để xem chi tiết hoạt động giáo dục')}
                                     >
                                       {/* PA 1: Micro-Badges ở 2 góc đỉnh ô cho hoạt động có Lĩnh vực / Mục tiêu */}
                                       {hasBadges && (
@@ -711,7 +686,7 @@ export function ThemePlanReviewDrawer({
                                                 domainStyle.text,
                                                 domainStyle.border
                                               )}
-                                              title={`Lĩnh vực: ${domainStyle.label}`}
+                                              title={t('planning.domainTooltip', { name: domainStyle.label, defaultValue: `Lĩnh vực: ${domainStyle.label}` })}
                                             >
                                               {domainStyle.shortLabel || domainStyle.label}
                                             </span>
@@ -721,7 +696,7 @@ export function ThemePlanReviewDrawer({
                                           {goalBadge ? (
                                             <span
                                               className="px-1.5 py-0.2 text-[9.5px] font-mono font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shrink-0"
-                                              title={`Mục tiêu: ${goalBadge}`}
+                                              title={t('planning.goalTooltip', { code: goalBadge, defaultValue: `Mục tiêu: ${goalBadge}` })}
                                             >
                                               {goalBadge}
                                             </span>
@@ -761,7 +736,7 @@ export function ThemePlanReviewDrawer({
                                           'flex-1 flex flex-col items-center text-center cursor-pointer rounded-none transition-all group border border-border/80 bg-card hover:border-foreground/40 hover:shadow-2xs min-h-[44px] relative select-text',
                                           hasBadges ? 'p-1.5 justify-between' : 'p-1.5 justify-center'
                                         )}
-                                        title="Nhấp để xem chi tiết hoạt động giáo dục"
+                                        title={t('planning.clickToViewActDetail', 'Nhấp để xem chi tiết hoạt động giáo dục')}
                                       >
                                         {hasBadges && (
                                           <div className="flex items-center justify-between gap-1 w-full shrink-0 mb-1 select-none">
@@ -773,7 +748,7 @@ export function ThemePlanReviewDrawer({
                                                   domainStyle.text,
                                                   domainStyle.border
                                                 )}
-                                                title={`Lĩnh vực: ${domainStyle.label}`}
+                                                title={t('planning.domainTooltip', { name: domainStyle.label, defaultValue: `Lĩnh vực: ${domainStyle.label}` })}
                                               >
                                                 {domainStyle.shortLabel || domainStyle.label}
                                               </span>
@@ -783,7 +758,7 @@ export function ThemePlanReviewDrawer({
                                             {goalBadge ? (
                                               <span
                                                 className="px-1 py-0.2 text-[9px] font-mono font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shrink-0"
-                                                title={`Mục tiêu: ${goalBadge}`}
+                                                title={t('planning.goalTooltip', { code: goalBadge, defaultValue: `Mục tiêu: ${goalBadge}` })}
                                               >
                                                 {goalBadge}
                                               </span>
@@ -815,10 +790,11 @@ export function ThemePlanReviewDrawer({
             <div className="space-y-4">
               <div className="p-3 bg-muted/20 border border-border text-[12px] text-muted-foreground flex items-center justify-between">
                 <span>
-                  Tổng số mục tiêu giáo dục được phân bổ cho chủ đề này: <strong>{previewData?.totalGoals || 0} mục tiêu</strong>
+                  {t('planning.totalGoalsAllocated', 'Tổng số mục tiêu giáo dục được phân bổ cho chủ đề này:')}{' '}
+                  <strong>{t('planning.goalsCount', { count: previewData?.totalGoals || 0, defaultValue: `${previewData?.totalGoals || 0} mục tiêu` })}</strong>
                 </span>
                 <span className="text-[11.5px]">
-                  Tiêu chuẩn: Phủ đều 5/5 lĩnh vực phát triển GD Mầm non
+                  {t('planning.standardCoverage5Domains', 'Tiêu chuẩn: Phủ đều 5/5 lĩnh vực phát triển GD Mầm non')}
                 </span>
               </div>
 
@@ -836,13 +812,13 @@ export function ThemePlanReviewDrawer({
                           {d.domainLabel}
                         </span>
                         <span className="text-[11.5px] font-medium text-muted-foreground">
-                          {d.count} mục tiêu
+                          {t('planning.goalsCount', { count: d.count, defaultValue: `${d.count} mục tiêu` })}
                         </span>
                       </div>
 
                       {d.goals.length === 0 ? (
                         <div className="py-4 text-center text-muted-foreground/50 text-xs italic">
-                          Chưa phân bổ mục tiêu cho lĩnh vực này
+                          {t('planning.noGoalsAllocatedDomain', 'Chưa phân bổ mục tiêu cho lĩnh vực này')}
                         </div>
                       ) : (
                         <ul className="space-y-1.5 text-xs">
@@ -875,10 +851,10 @@ export function ThemePlanReviewDrawer({
               variant="outline"
               onClick={() => window.print()}
               className="h-8 px-3 text-[12px] rounded-none border-border hover:bg-muted text-muted-foreground hover:text-foreground flex items-center gap-1.5 cursor-pointer"
-              title="In hoặc xuất PDF phiếu thẩm định kế hoạch"
+              title={t('planning.printSheetTooltip', 'In hoặc xuất PDF phiếu thẩm định kế hoạch')}
             >
               <HugeiconsIcon icon={PrinterIcon} size={13.5} />
-              <span>In phiếu</span>
+              <span>{t('planning.printSheet', 'In phiếu')}</span>
             </Button>
 
             {/* Class Switcher (Chỉ hiển thị cho BGH khi duyệt nhiều lớp, ẩn đối với Giáo viên) */}
@@ -887,7 +863,7 @@ export function ThemePlanReviewDrawer({
                 <div className="h-4 w-px bg-border hidden sm:block" />
 
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[11.5px] text-muted-foreground mr-0.5 hidden sm:inline">Chuyển lớp:</span>
+                  <span className="text-[11.5px] text-muted-foreground mr-0.5 hidden sm:inline">{t('planning.switchClass', 'Chuyển lớp:')}</span>
                   <button
                     type="button"
                     onClick={onPrevClass}
@@ -898,7 +874,7 @@ export function ThemePlanReviewDrawer({
                         ? 'hover:bg-muted text-foreground cursor-pointer'
                         : 'opacity-40 cursor-not-allowed text-muted-foreground'
                     )}
-                    title="Lớp trước (Phím tắt: [ hoặc Mũi tên trái)"
+                    title={t('planning.prevClassTooltip', 'Lớp trước (Phím tắt: [ hoặc Mũi tên trái)')}
                   >
                     <HugeiconsIcon icon={ArrowLeft01Icon} size={13} />
                   </button>
@@ -917,7 +893,7 @@ export function ThemePlanReviewDrawer({
                         ? 'hover:bg-muted text-foreground cursor-pointer'
                         : 'opacity-40 cursor-not-allowed text-muted-foreground'
                     )}
-                    title="Lớp sau (Phím tắt: ] hoặc Mũi tên phải)"
+                    title={t('planning.nextClassTooltip', 'Lớp sau (Phím tắt: ] hoặc Mũi tên phải)')}
                   >
                     <HugeiconsIcon icon={ArrowRight01Icon} size={13} />
                   </button>
@@ -929,26 +905,26 @@ export function ThemePlanReviewDrawer({
 
             {/* Plan Status (Clean dot + text indicator, matching table view exactly) */}
             <div className="hidden md:flex items-center gap-1.5 text-[11.5px]">
-              <span className="text-muted-foreground">Trạng thái:</span>
+              <span className="text-muted-foreground">{t('planning.statusColon', 'Trạng thái:')}</span>
               {previewData?.plan?.status === 'USED' ? (
                 <span className="inline-flex items-center gap-1.5 text-emerald-700 font-medium">
                   <span className="size-2 rounded-full bg-emerald-500" />
-                  Đã phê duyệt
+                  {t('common.approved', 'Đã phê duyệt')}
                 </span>
               ) : previewData?.plan?.status === 'PENDING_APPROVAL' ? (
                 <span className="inline-flex items-center gap-1.5 text-blue-700 font-medium">
                   <span className="size-2 rounded-full bg-blue-500" />
-                  Chờ duyệt
+                  {t('common.pending', 'Chờ duyệt')}
                 </span>
               ) : previewData?.plan?.status === 'REJECTED' ? (
                 <span className="inline-flex items-center gap-1.5 text-rose-700 font-medium">
                   <span className="size-2 rounded-full bg-rose-500" />
-                  Yêu cầu sửa
+                  {t('planning.requestRevisionBtn', 'Yêu cầu sửa')}
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1.5 text-muted-foreground font-medium">
                   <span className="size-2 rounded-full bg-slate-400" />
-                  Bản nháp
+                  {t('planning.statusDraft', 'Bản nháp')}
                 </span>
               )}
             </div>
@@ -968,17 +944,17 @@ export function ThemePlanReviewDrawer({
                     }}
                     disabled={isSubmitting || isLoading}
                     className="h-8 px-3 text-[12px] rounded-none bg-rose-50 text-rose-700 border-rose-300 hover:bg-rose-100 font-medium flex items-center gap-1.5 cursor-pointer transition-colors"
-                    title="Yêu cầu giáo viên sửa đổi hoặc bổ sung kế hoạch"
+                    title={t('planning.requestRevisionTooltip', 'Yêu cầu giáo viên sửa đổi hoặc bổ sung kế hoạch')}
                   >
                     <HugeiconsIcon icon={Cancel01Icon} size={13} />
-                    <span>Yêu cầu sửa</span>
+                    <span>{t('planning.requestRevisionBtn', 'Yêu cầu sửa')}</span>
                   </Button>
                 )}
 
                 {previewData?.plan?.status === 'USED' ? (
                   <span className="h-8 px-3 text-[12px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1.5 select-none">
                     <HugeiconsIcon icon={CheckmarkSquare02Icon} size={13.5} className="text-emerald-700" />
-                    <span>Đã phê duyệt</span>
+                    <span>{t('common.approved', 'Đã phê duyệt')}</span>
                   </span>
                 ) : (
                   <Button
@@ -988,7 +964,7 @@ export function ThemePlanReviewDrawer({
                     className="h-8 px-3.5 text-[12px] rounded-none bg-[#1447e6] hover:bg-[#1447e6]/90 text-white font-medium flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
                   >
                     <HugeiconsIcon icon={CheckmarkSquare02Icon} size={13.5} />
-                    <span>{isSubmitting ? 'Đang duyệt...' : 'Phê duyệt kế hoạch'}</span>
+                    <span>{isSubmitting ? t('planning.approvingBtn', 'Đang duyệt...') : t('planning.approvePlanBtn', 'Phê duyệt kế hoạch')}</span>
                   </Button>
                 )}
               </>
@@ -998,12 +974,12 @@ export function ThemePlanReviewDrawer({
                 {previewData?.plan?.status === 'USED' ? (
                   <span className="h-8 px-3 text-[12px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1.5 select-none">
                     <HugeiconsIcon icon={CheckmarkSquare02Icon} size={13.5} className="text-emerald-700" />
-                    <span>Kế hoạch đã phê duyệt</span>
+                    <span>{t('planning.planApprovedBadge', 'Kế hoạch đã phê duyệt')}</span>
                   </span>
                 ) : previewData?.plan?.status === 'PENDING_APPROVAL' ? (
                   <span className="h-8 px-3 text-[12px] font-medium bg-blue-50 text-blue-800 border border-blue-200 flex items-center gap-1.5 select-none">
                     <HugeiconsIcon icon={Clock01Icon} size={13.5} className="text-blue-700" />
-                    <span>Đang chờ duyệt</span>
+                    <span>{t('planning.pendingApprovalBadge', 'Đang chờ duyệt')}</span>
                   </span>
                 ) : (
                   <Button
@@ -1015,10 +991,10 @@ export function ThemePlanReviewDrawer({
                     <HugeiconsIcon icon={SendIcon} size={13.5} />
                     <span>
                       {isSubmitting
-                        ? 'Đang nộp...'
+                        ? t('planning.submittingBtn', 'Đang nộp...')
                         : previewData?.plan?.status === 'REJECTED'
-                        ? 'Nộp lại cho BGH duyệt'
-                        : 'Nộp cho BGH duyệt'}
+                        ? t('planning.resubmitToBghBtn', 'Nộp lại cho BGH duyệt')
+                        : t('planning.submitToBghBtn', 'Nộp cho BGH duyệt')}
                     </span>
                   </Button>
                 )}
@@ -1033,13 +1009,13 @@ export function ThemePlanReviewDrawer({
             <div className="w-full max-w-md bg-card border border-border shadow-2xl p-5 space-y-4 animate-in zoom-in-95 duration-150 text-foreground">
               <div className="flex items-center justify-between border-b border-border pb-3">
                 <h3 className="font-semibold text-[15px] text-foreground">
-                  Yêu cầu giáo viên sửa đổi kế hoạch
+                  {t('planning.requestRevisionModalTitle', 'Yêu cầu giáo viên sửa đổi kế hoạch')}
                 </h3>
                 <button
                   type="button"
                   onClick={() => setIsRejectModalOpen(false)}
                   className="size-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-none transition-colors cursor-pointer"
-                  title="Đóng"
+                  title={t('planning.closeEsc', 'Đóng (Esc)')}
                 >
                   <HugeiconsIcon icon={Cancel01Icon} size={15} />
                 </button>
@@ -1047,19 +1023,19 @@ export function ThemePlanReviewDrawer({
 
               <div className="space-y-1.5">
                 <label htmlFor="modal-review-note" className="text-xs font-medium text-foreground">
-                  Lý do yêu cầu sửa đổi <span className="text-rose-600">*</span>
+                  {t('planning.revisionReasonLabel', 'Lý do yêu cầu sửa đổi')} <span className="text-rose-600">*</span>
                 </label>
                 <textarea
                   id="modal-review-note"
                   rows={3}
                   value={rejectReasonInput}
                   onChange={(e) => setRejectReasonInput(e.target.value)}
-                  placeholder="Nhập nhận xét cụ thể về mục tiêu, hoạt động hoặc khung giờ cần giáo viên sửa đổi..."
+                  placeholder={t('planning.revisionReasonPlaceholder', 'Nhập nhận xét cụ thể về mục tiêu, hoạt động hoặc khung giờ cần giáo viên sửa đổi...')}
                   className="w-full text-xs sm:text-[13px] p-2.5 px-3 border border-border bg-background placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary rounded-none leading-relaxed resize-none"
                   autoFocus
                 />
                 <p className="text-[11px] text-muted-foreground">
-                  Nhận xét này sẽ được gửi trực tiếp đến giáo viên phụ trách lớp {previewData?.class?.name}.
+                  {t('planning.revisionReasonHint', { name: previewData?.class?.name, defaultValue: `Nhận xét này sẽ được gửi trực tiếp đến giáo viên phụ trách lớp ${previewData?.class?.name}.` })}
                 </p>
               </div>
 
@@ -1070,7 +1046,7 @@ export function ThemePlanReviewDrawer({
                   onClick={() => setIsRejectModalOpen(false)}
                   className="h-8 px-4 text-[13px] rounded-none border-border hover:bg-muted cursor-pointer"
                 >
-                  Hủy
+                  {t('common.cancel', 'Hủy')}
                 </Button>
                 <Button
                   type="button"
@@ -1078,7 +1054,7 @@ export function ThemePlanReviewDrawer({
                   disabled={isSubmitting || !rejectReasonInput.trim()}
                   className="h-8 px-4 text-[13px] rounded-none bg-rose-600 hover:bg-rose-700 text-white font-medium cursor-pointer"
                 >
-                  {isSubmitting ? 'Đang gửi...' : 'Gửi yêu cầu sửa'}
+                  {isSubmitting ? t('planning.submittingBtn', 'Đang gửi...') : t('planning.sendRevisionRequestBtn', 'Gửi yêu cầu sửa')}
                 </Button>
               </div>
             </div>
@@ -1105,7 +1081,7 @@ export function ThemePlanReviewDrawer({
                   type="button"
                   onClick={() => setSelectedActivityForModal(null)}
                   className="size-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-none transition-colors cursor-pointer shrink-0"
-                  title="Đóng (Esc)"
+                  title={t('planning.closeEsc', 'Đóng (Esc)')}
                 >
                   <HugeiconsIcon icon={Cancel01Icon} size={16} />
                 </button>
@@ -1116,7 +1092,7 @@ export function ThemePlanReviewDrawer({
                 {/* 1. Thông tin thời gian, khung giờ & phân bổ mục tiêu */}
                 <div className="space-y-2 pb-3.5 border-b border-border/60">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-muted-foreground min-w-[70px] shrink-0">Thời gian:</span>
+                    <span className="text-muted-foreground min-w-[70px] shrink-0">{t('planning.timeColon', 'Thời gian:')}</span>
                     <span className="font-medium text-foreground">
                       {selectedActivityForModal.dayLabel}
                       {selectedActivityForModal.formattedDate
@@ -1128,7 +1104,7 @@ export function ThemePlanReviewDrawer({
                   </div>
 
                   <div className="flex items-baseline gap-2">
-                    <span className="text-muted-foreground min-w-[70px] shrink-0">Khung giờ:</span>
+                    <span className="text-muted-foreground min-w-[70px] shrink-0">{t('planning.slotColon', 'Khung giờ:')}</span>
                     <span className="text-foreground">
                       {selectedActivityForModal.slotLabel}{' '}
                       <span className="text-muted-foreground font-mono">
@@ -1138,17 +1114,17 @@ export function ThemePlanReviewDrawer({
                   </div>
 
                   <div className="flex items-baseline gap-2">
-                    <span className="text-muted-foreground min-w-[70px] shrink-0">Lĩnh vực:</span>
+                    <span className="text-muted-foreground min-w-[70px] shrink-0">{t('planning.domainColon', 'Lĩnh vực:')}</span>
                     <span className="font-medium text-foreground">
                       {DOMAIN_STYLES[selectedActivityForModal.domain]?.label
-                        ? `Phát triển ${DOMAIN_STYLES[selectedActivityForModal.domain].label.toLowerCase()}`
-                        : selectedActivityForModal.domain || 'Phát triển chung'}
+                        ? t('planning.domainDev', { name: DOMAIN_STYLES[selectedActivityForModal.domain].label.toLowerCase(), defaultValue: `Phát triển ${DOMAIN_STYLES[selectedActivityForModal.domain].label.toLowerCase()}` })
+                        : selectedActivityForModal.domain || t('planning.generalDev', 'Phát triển chung')}
                     </span>
                   </div>
 
                   {(selectedActivityForModal.goalCode || selectedActivityForModal.goalTitle) && (
                     <div className="flex items-baseline gap-2">
-                      <span className="text-muted-foreground min-w-[70px] shrink-0">Mục tiêu:</span>
+                      <span className="text-muted-foreground min-w-[70px] shrink-0">{t('planning.goalColon', 'Mục tiêu:')}</span>
                       <div className="leading-relaxed flex items-baseline gap-2 flex-wrap">
                         {selectedActivityForModal.goalCode && (
                           <span className="px-2 py-0.5 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-mono text-[11.5px] font-semibold shrink-0 select-none">
@@ -1165,7 +1141,7 @@ export function ThemePlanReviewDrawer({
 
                   {selectedActivityForModal.contentTitle && (
                     <div className="flex items-baseline gap-2">
-                      <span className="text-muted-foreground min-w-[70px] shrink-0">Nội dung:</span>
+                      <span className="text-muted-foreground min-w-[70px] shrink-0">{t('planning.contentColon', 'Nội dung:')}</span>
                       <span className="text-foreground">{selectedActivityForModal.contentTitle}</span>
                     </div>
                   )}
@@ -1176,29 +1152,29 @@ export function ThemePlanReviewDrawer({
                   {/* Mục tiêu hoạt động */}
                   <div className="space-y-1">
                     <h4 className="font-semibold text-foreground text-[13px]">
-                      1. Mục tiêu hoạt động
+                      {t('planning.actGoalHeading', '1. Mục tiêu hoạt động')}
                     </h4>
                     <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
                       {selectedActivityForModal.objective ||
-                        'Trẻ hào hứng tham gia hoạt động, thực hiện đúng các thao tác, rèn luyện kỹ năng và hình thành thói quen tốt phù hợp lứa tuổi.'}
+                        t('planning.defaultActObjective', 'Trẻ hào hứng tham gia hoạt động, thực hiện đúng các thao tác, rèn luyện kỹ năng và hình thành thói quen tốt phù hợp lứa tuổi.')}
                     </p>
                   </div>
 
                   {/* Chuẩn bị */}
                   <div className="space-y-1">
                     <h4 className="font-semibold text-foreground text-[13px]">
-                      2. Chuẩn bị của giáo viên & trẻ
+                      {t('planning.actPrepHeading', '2. Chuẩn bị của giáo viên & trẻ')}
                     </h4>
                     <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
                       {selectedActivityForModal.preparation ||
-                        'Không gian phòng học an toàn, thoáng mát; đồ dùng dạy học, học liệu và trang thiết bị phù hợp với chủ đề tuần.'}
+                        t('planning.defaultActPreparation', 'Không gian phòng học an toàn, thoáng mát; đồ dùng dạy học, học liệu và trang thiết bị phù hợp với chủ đề tuần.')}
                     </p>
                   </div>
 
                   {/* Tiến trình tổ chức hoạt động */}
                   <div className="space-y-1.5">
                     <h4 className="font-semibold text-foreground text-[13px]">
-                      3. Tiến trình tổ chức hoạt động
+                      {t('planning.actProcedureHeading', '3. Tiến trình tổ chức hoạt động')}
                     </h4>
                     {selectedActivityForModal.procedure ? (
                       <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
@@ -1206,9 +1182,9 @@ export function ThemePlanReviewDrawer({
                       </p>
                     ) : (
                       <div className="text-muted-foreground leading-relaxed space-y-1">
-                        <p>• <strong>Ổn định - Tạo hứng thú:</strong> Cô đón trẻ, trò chuyện hoặc gợi mở về chủ đề bài học.</p>
-                        <p>• <strong>Tiến hành hoạt động:</strong> Hướng dẫn mẫu, tổ chức cho trẻ trải nghiệm, quan sát và hỗ trợ từng trẻ.</p>
-                        <p>• <strong>Kết thúc:</strong> Nhận xét, động viên, tuyên dương trẻ tích cực và chuyển hoạt động nhẹ nhàng.</p>
+                        <p>• <strong>{t('planning.stepIntro', 'Ổn định - Tạo hứng thú:')}</strong> {t('planning.stepIntroDesc', 'Cô đón trẻ, trò chuyện hoặc gợi mở về chủ đề bài học.')}</p>
+                        <p>• <strong>{t('planning.stepConduct', 'Tiến hành hoạt động:')}</strong> {t('planning.stepConductDesc', 'Hướng dẫn mẫu, tổ chức cho trẻ trải nghiệm, quan sát và hỗ trợ từng trẻ.')}</p>
+                        <p>• <strong>{t('planning.stepConclusion', 'Kết thúc:')}</strong> {t('planning.stepConclusionDesc', 'Nhận xét, động viên, tuyên dương trẻ tích cực và chuyển hoạt động nhẹ nhàng.')}</p>
                       </div>
                     )}
                   </div>
@@ -1217,7 +1193,7 @@ export function ThemePlanReviewDrawer({
                   {(selectedActivityForModal.evaluationCriteria || selectedActivityForModal.notes) && (
                     <div className="space-y-1 pt-1">
                       <h4 className="font-semibold text-foreground text-[13px]">
-                        4. Tiêu chí đánh giá & Ghi chú
+                        {t('planning.actEvalHeading', '4. Tiêu chí đánh giá & Ghi chú')}
                       </h4>
                       <div className="text-muted-foreground leading-relaxed">
                         {selectedActivityForModal.evaluationCriteria && (
@@ -1225,7 +1201,7 @@ export function ThemePlanReviewDrawer({
                         )}
                         {selectedActivityForModal.notes && (
                           <p className="mt-1">
-                            <strong className="text-foreground">Lưu ý: </strong>
+                            <strong className="text-foreground">{t('planning.notePrefix', 'Lưu ý: ')}</strong>
                             {selectedActivityForModal.notes}
                           </p>
                         )}
@@ -1243,7 +1219,7 @@ export function ThemePlanReviewDrawer({
                   onClick={() => setSelectedActivityForModal(null)}
                   className="h-8 px-4 text-[12px] rounded-none border-border hover:bg-muted text-foreground cursor-pointer"
                 >
-                  Đóng
+                  {t('common.close', 'Đóng')}
                 </Button>
               </div>
             </div>

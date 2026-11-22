@@ -22,12 +22,15 @@ export function AssignTeacherDrawer({
   className: propClassName,
   currentClass,
   poolTeachers = [],
+  currentCount = 0,
+  isSchoolYearEnded = false,
   onSuccess,
 }) {
   const { t } = useTranslation();
 
   const targetClassId = propClassId || currentClass?.id;
   const targetClassName = propClassName || currentClass?.name || '';
+  const maxCanAdd = Math.max(0, 3 - currentCount);
 
   const [teachers, setTeachers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -126,11 +129,19 @@ export function AssignTeacherDrawer({
 
   // Selection handlers
   const handleToggleSelect = (teacherId) => {
+    if (isSchoolYearEnded) {
+      toast.warning('Năm học đã kết thúc. Không thể thay đổi phân công giáo viên.');
+      return;
+    }
     setSelectedTeacherIds((prev) => {
       const next = new Set(prev);
       if (next.has(teacherId)) {
         next.delete(teacherId);
       } else {
+        if (next.size >= maxCanAdd) {
+          toast.warning(`Lớp học chỉ có thể phân công thêm tối đa ${maxCanAdd} giáo viên (BR-38: Tối đa 3 giáo viên/lớp).`);
+          return prev;
+        }
         next.add(teacherId);
       }
       return next;
@@ -141,6 +152,10 @@ export function AssignTeacherDrawer({
     pagedTeachers.length > 0 && pagedTeachers.every((s) => selectedTeacherIds.has(s.teacherId));
 
   const handleSelectAll = () => {
+    if (isSchoolYearEnded) {
+      toast.warning('Năm học đã kết thúc. Không thể thay đổi phân công giáo viên.');
+      return;
+    }
     if (isAllCurrentPageSelected) {
       setSelectedTeacherIds((prev) => {
         const next = new Set(prev);
@@ -150,7 +165,13 @@ export function AssignTeacherDrawer({
     } else {
       setSelectedTeacherIds((prev) => {
         const next = new Set(prev);
-        pagedTeachers.forEach((s) => next.add(s.teacherId));
+        for (const s of pagedTeachers) {
+          if (next.size >= maxCanAdd) {
+            toast.warning(`Lớp học chỉ có thể phân công thêm tối đa ${maxCanAdd} giáo viên (BR-38: Tối đa 3 giáo viên/lớp).`);
+            break;
+          }
+          next.add(s.teacherId);
+        }
         return next;
       });
     }
@@ -158,6 +179,14 @@ export function AssignTeacherDrawer({
 
   // Submit batch assignment
   const handleSubmit = async () => {
+    if (isSchoolYearEnded) {
+      toast.error('Năm học đã kết thúc. Không thể thay đổi phân công giáo viên.');
+      return;
+    }
+    if (currentCount + selectedTeacherIds.size > 3) {
+      toast.error('Mỗi lớp chỉ được phân công tối đa 3 giáo viên (BR-38).');
+      return;
+    }
     if (selectedTeacherIds.size === 0) {
       toast.error(t('classes.selectTeacherRequired', 'Vui lòng chọn ít nhất một giáo viên để thêm vào lớp.'));
       return;
@@ -180,7 +209,7 @@ export function AssignTeacherDrawer({
       if (onSuccess) onSuccess();
       onClose();
     } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Lỗi khi phân công giáo viên';
+      const msg = err.response?.data?.message || err.message || t('classes.errorAssigningTeacher', 'Lỗi khi phân công giáo viên');
       toast.error(msg);
     } finally {
       setIsSubmitting(false);
@@ -226,6 +255,16 @@ export function AssignTeacherDrawer({
 
         {/* 2. Drawer Body */}
         <div className="p-5 flex-1 overflow-y-auto flex flex-col gap-4">
+          {maxCanAdd <= 0 && (
+            <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-[12.5px]">
+              Lớp học đã có đủ 3 giáo viên phụ trách (tối đa theo quy định BR-38). Không thể thêm giáo viên mới.
+            </div>
+          )}
+          {isSchoolYearEnded && (
+            <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-[12.5px]">
+              Năm học đã kết thúc. Không thể thay đổi phân công giáo viên.
+            </div>
+          )}
           {/* Toolbar: Search input + Count stats */}
           <div className="flex flex-wrap items-center justify-between gap-2.5 shrink-0">
             <div className="flex flex-wrap items-center gap-2 flex-1 min-w-[280px]">
@@ -249,7 +288,7 @@ export function AssignTeacherDrawer({
             </div>
 
             <span className="text-[12.5px] text-muted-foreground font-mono">
-              {filteredTeachers.length} GV khả dụng
+              {t('classes.availableTeachersCount', '{{count}} GV khả dụng', { count: filteredTeachers.length })}
             </span>
           </div>
 
@@ -265,7 +304,7 @@ export function AssignTeacherDrawer({
                       checked={isAllCurrentPageSelected}
                       onChange={handleSelectAll}
                       className="size-4 rounded-none accent-[#1447e6] cursor-pointer align-middle"
-                      title="Chọn tất cả trang này"
+                      title={t('classes.selectAllOnPage', 'Chọn tất cả trang này')}
                     />
                   </th>
 
@@ -390,7 +429,7 @@ export function AssignTeacherDrawer({
 
                         {/* 5. Cột Chức vụ */}
                         <td className="px-3 text-[13.5px] text-muted-foreground font-normal whitespace-nowrap">
-                          {tc.position || 'Giáo viên'}
+                          {tc.position || t('classes.teacherDefaultRole', 'Giáo viên')}
                         </td>
                       </tr>
                     );
@@ -404,7 +443,11 @@ export function AssignTeacherDrawer({
           {filteredTeachers.length > 0 && (
             <div className="flex items-center justify-between pt-1 text-[12.5px] text-muted-foreground select-none shrink-0">
               <span>
-                {startItem}–{endItem} / {filteredTeachers.length} giáo viên
+                {t('classes.teachersPagination', '{{start}}–{{end}} / {{total}} giáo viên', {
+                  start: startItem,
+                  end: endItem,
+                  total: filteredTeachers.length,
+                })}
               </span>
               <div className="flex items-center border border-border bg-card rounded-none overflow-hidden shrink-0">
                 <button
@@ -436,7 +479,9 @@ export function AssignTeacherDrawer({
         {/* 3. Drawer Sticky Footer (Sorak Design System) */}
         <div className="border-t border-border px-5 py-3.5 bg-muted/20 flex items-center justify-between gap-3 shrink-0">
           <span className="text-[12.5px] text-muted-foreground font-medium">
-            {selectedTeacherIds.size} giáo viên đã chọn
+            {t('classes.selectedTeachersCount', '{{count}} giáo viên đã chọn', {
+              count: selectedTeacherIds.size,
+            })}
           </span>
           <div className="flex items-center gap-2">
             <Button
@@ -451,12 +496,14 @@ export function AssignTeacherDrawer({
             <Button
               type="button"
               onClick={handleSubmit}
-              disabled={selectedTeacherIds.size === 0 || isSubmitting}
+              disabled={selectedTeacherIds.size === 0 || isSubmitting || maxCanAdd <= 0 || isSchoolYearEnded}
               className="h-8 px-4 rounded-none bg-[#1447e6] hover:bg-[#1447e6]/90 text-white text-[13px] font-medium cursor-pointer shadow-none disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {isSubmitting
                 ? t('common.saving', 'Đang thêm...')
-                : `Thêm ${selectedTeacherIds.size > 0 ? selectedTeacherIds.size : ''} giáo viên`}
+                : t('classes.addTeachersSubmitBtn', 'Thêm {{count}} giáo viên', {
+                    count: selectedTeacherIds.size > 0 ? selectedTeacherIds.size : '',
+                  })}
             </Button>
           </div>
         </div>

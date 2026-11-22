@@ -5,6 +5,7 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { Search01Icon, Cancel01Icon, MoreHorizontalIcon } from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { confirmDialog } from '@/components/ui/confirm-dialog';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -163,13 +164,6 @@ export function HealthMeasurementPanel({
   const handleSave = async () => {
     if (readOnly) return;
 
-    // Reject future dates
-    const todayStr = new Date().toISOString().slice(0, 10);
-    if (date && date > todayStr) {
-      toast.error('Không được thực hiện đo trong thời gian tương lai.');
-      return;
-    }
-
     // Validate height and weight limits ONLY for examined students
     for (const s of students) {
       if (isStudentAbsent(s) || s.isTransferred) continue;
@@ -255,7 +249,16 @@ export function HealthMeasurementPanel({
       toast.warning(isVi ? 'Ngày này chưa có dữ liệu sức khỏe để xóa.' : 'No health records to clean.');
       return;
     }
-    if (!window.confirm(isVi ? 'Bạn có chắc chắn muốn xóa tất cả số đo sức khỏe không? Thao tác này không thể hoàn tác.' : 'Are you sure you want to clean all health records? This cannot be undone.')) {
+    const isConfirmed = await confirmDialog({
+      title: isVi ? 'Xác nhận xóa số đo sức khỏe' : 'Clean health records',
+      description: isVi
+        ? 'Bạn có chắc chắn muốn xóa tất cả số đo sức khỏe không? Thao tác này không thể hoàn tác.'
+        : 'Are you sure you want to clean all health records? This cannot be undone.',
+      confirmText: isVi ? 'Xóa' : 'Clean',
+      cancelText: isVi ? 'Hủy' : 'Cancel',
+      variant: 'destructive',
+    });
+    if (!isConfirmed) {
       return;
     }
     setIsCleaning(true);
@@ -538,7 +541,7 @@ export function HealthMeasurementPanel({
           {readOnly ? (
             <>
               <span className="px-2.5 py-1 text-[11.5px] font-medium bg-muted text-muted-foreground border border-border select-none">
-                {isVi ? 'Chế độ xem (BGH)' : 'View Mode (Principal)'}
+                {isVi ? 'Chế độ chỉ xem' : 'Read-only Mode'}
               </span>
               <Button
                 type="button"

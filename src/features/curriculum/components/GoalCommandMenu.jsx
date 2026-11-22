@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
   Search01Icon,
@@ -18,6 +19,7 @@ export function GoalCommandMenu({
   currentGoalCode = '',
   currentGoalTitle = '',
 }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const menuRef = useRef(null);
 
@@ -117,7 +119,7 @@ export function GoalCommandMenu({
           type="button"
           onClick={() => setIsOpen(!isOpen)}
           className="inline-flex items-center gap-1.5 cursor-pointer outline-none focus:outline-none"
-          title="Chuyển mục tiêu"
+          title={t('curriculum.switchGoal', 'Chuyển mục tiêu')}
           data-name="Goal Switcher Trigger"
         >
           <span className="font-semibold text-primary">{displayCode}</span>
@@ -140,7 +142,7 @@ export function GoalCommandMenu({
             type="button"
             onClick={handleCloseGoal}
             className="size-4 rounded-none flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer"
-            title="Đóng & quay lại ngân hàng mục tiêu"
+            title={t('curriculum.closeAndBackToGoals', 'Đóng & quay lại ngân hàng mục tiêu')}
             data-name="Close Goal Button"
           >
             <HugeiconsIcon icon={Cancel01Icon} size={12} />
@@ -165,7 +167,7 @@ export function GoalCommandMenu({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm mã hoặc tên mục tiêu..."
+              placeholder={t('curriculum.searchGoalPlaceholder', 'Tìm mã hoặc tên mục tiêu...')}
               autoFocus
               className="flex-1 bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground outline-none border-0 focus:outline-none focus:ring-0 shadow-none"
             />
@@ -178,7 +180,7 @@ export function GoalCommandMenu({
           <div className="max-h-[280px] overflow-y-auto p-1 divide-y divide-border/30">
             {filteredGoals.length === 0 ? (
               <div className="p-4 text-center text-[13px] text-muted-foreground">
-                Không tìm thấy mục tiêu phù hợp.
+                {t('curriculum.noMatchingGoals', 'Không tìm thấy mục tiêu phù hợp.')}
               </div>
             ) : (
               filteredGoals.map((g) => {
@@ -204,7 +206,7 @@ export function GoalCommandMenu({
                       <span className="text-[11.5px] text-muted-foreground truncate">
                         {g.indicatorCode
                           ? g.indicatorCode
-                          : 'Chưa có chỉ số'}
+                          : t('curriculum.noIndicator', 'Chưa có chỉ số')}
                         {g.domainLabel ? ` · ${g.domainLabel}` : ''}
                       </span>
                     </div>
@@ -232,7 +234,7 @@ export function GoalCommandMenu({
               className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[12.5px] font-normal text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer rounded-none"
             >
               <HugeiconsIcon icon={ArrowLeft01Icon} size={13} />
-              <span>Quay lại ngân hàng mục tiêu</span>
+              <span>{t('curriculum.backToGoalsList', 'Quay lại ngân hàng mục tiêu')}</span>
             </button>
           </div>
         </div>

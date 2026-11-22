@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
   Cancel01Icon,
@@ -13,15 +14,40 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { curriculumApi } from '../curriculum.api';
 
-const QUICK_CHIPS = [
-  { id: 'num', label: 'Chuẩn hoá cách đánh số', prompt: 'Chuẩn hoá cách đánh số mã mục tiêu theo chuẩn Thông tư 51.' },
-  { id: 'dup', label: 'Tìm mục tiêu trùng', prompt: 'Tìm các mục tiêu có nội dung trùng lặp hoặc tương tự.' },
-  { id: 'group', label: 'Nhóm lại theo lĩnh vực', prompt: 'Phân loại và kiểm tra mục tiêu theo 5 lĩnh vực GDMN.' },
-  { id: 'sub', label: 'Gợi ý mục tiêu theo chỉ số', prompt: 'Gợi ý mục tiêu giáo dục bám sát chỉ số đánh giá phát triển.' },
-  { id: 'check', label: 'Kiểm tra cấu trúc', prompt: 'Kiểm tra độ cân bằng số lượng mục tiêu giữa các lĩnh vực.' },
-];
-
 export function GoalAiAssistantDrawer({ isOpen, onClose, onApplyProposal }) {
+  const { t } = useTranslation();
+
+  const quickChips = useMemo(
+    () => [
+      {
+        id: 'num',
+        label: t('curriculum.aiChipNum', 'Chuẩn hoá cách đánh số'),
+        prompt: t('curriculum.aiChipNumPrompt', 'Chuẩn hoá cách đánh số mã mục tiêu theo chuẩn Thông tư 51.'),
+      },
+      {
+        id: 'dup',
+        label: t('curriculum.aiChipDup', 'Tìm mục tiêu trùng'),
+        prompt: t('curriculum.aiChipDupPrompt', 'Tìm các mục tiêu có nội dung trùng lặp hoặc tương tự.'),
+      },
+      {
+        id: 'group',
+        label: t('curriculum.aiChipGroup', 'Nhóm lại theo lĩnh vực'),
+        prompt: t('curriculum.aiChipGroupPrompt', 'Phân loại và kiểm tra mục tiêu theo 5 lĩnh vực GDMN.'),
+      },
+      {
+        id: 'sub',
+        label: t('curriculum.aiChipSub', 'Gợi ý mục tiêu theo chỉ số'),
+        prompt: t('curriculum.aiChipSubPrompt', 'Gợi ý mục tiêu giáo dục bám sát chỉ số đánh giá phát triển.'),
+      },
+      {
+        id: 'check',
+        label: t('curriculum.aiChipCheck', 'Kiểm tra cấu trúc'),
+        prompt: t('curriculum.aiChipCheckPrompt', 'Kiểm tra độ cân bằng số lượng mục tiêu giữa các lĩnh vực.'),
+      },
+    ],
+    [t],
+  );
+
   const [messages, setMessages] = useState([
     {
       id: 'm1',
@@ -95,14 +121,14 @@ export function GoalAiAssistantDrawer({ isOpen, onClose, onApplyProposal }) {
   };
 
   const handleApply = (proposal) => {
-    toast.success('Đã áp dụng các mục tiêu đề xuất vào ngân hàng!');
+    toast.success(t('curriculum.appliedProposalSuccess', 'Đã áp dụng các mục tiêu đề xuất vào ngân hàng!'));
     if (onApplyProposal) onApplyProposal(proposal);
   };
 
   const handleCopy = (proposal) => {
     const text = proposal.items ? proposal.items.join('\n') : proposal.title;
     navigator.clipboard?.writeText(text);
-    toast.success('Đã sao chép đề xuất vào clipboard');
+    toast.success(t('curriculum.copiedProposalSuccess', 'Đã sao chép đề xuất vào clipboard'));
   };
 
   return (
@@ -124,18 +150,18 @@ export function GoalAiAssistantDrawer({ isOpen, onClose, onApplyProposal }) {
                 <HugeiconsIcon icon={SparklesIcon} size={15} />
               </div>
               <h2 className="text-[16px] font-semibold text-foreground tracking-tight">
-                AI Assistant
+                {t('curriculum.aiAssistant', 'AI Assistant')}
               </h2>
             </div>
             <p className="text-[12.5px] text-muted-foreground font-normal">
-              Hỏi AI về cấu trúc và nội dung ngân hàng mục tiêu.
+              {t('curriculum.aiAssistantSubtitle', 'Hỏi AI về cấu trúc và nội dung ngân hàng mục tiêu.')}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer rounded-none"
-            title="Đóng"
+            title={t('common.close', 'Đóng')}
           >
             <HugeiconsIcon icon={Cancel01Icon} size={18} />
           </button>
@@ -144,10 +170,10 @@ export function GoalAiAssistantDrawer({ isOpen, onClose, onApplyProposal }) {
         {/* Quick Suggestion Chips */}
         <div className="p-3 border-b border-border/60 bg-[#f9fafb] dark:bg-muted/20 shrink-0">
           <span className="text-[11.5px] text-muted-foreground font-medium block mb-2">
-            Gợi ý nhanh
+            {t('curriculum.quickSuggestions', 'Gợi ý nhanh')}
           </span>
           <div className="flex flex-wrap gap-1.5">
-            {QUICK_CHIPS.map((chip) => (
+            {quickChips.map((chip) => (
               <button
                 key={chip.id}
                 type="button"
@@ -163,7 +189,7 @@ export function GoalAiAssistantDrawer({ isOpen, onClose, onApplyProposal }) {
         {/* Scrollable Chat Area */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           <div className="text-[11.5px] text-muted-foreground text-center italic">
-            AI chỉ đề xuất. Mọi thay đổi chỉ được áp dụng khi bạn xác nhận.
+            {t('curriculum.aiDisclaimer', 'AI chỉ đề xuất. Mọi thay đổi chỉ được áp dụng khi bạn xác nhận.')}
           </div>
 
           {messages.map((m) => (
@@ -209,7 +235,7 @@ export function GoalAiAssistantDrawer({ isOpen, onClose, onApplyProposal }) {
                       className="h-7 px-3 bg-[#1447e6] hover:bg-[#1447e6]/90 text-white text-[12px] rounded-none shadow-none cursor-pointer"
                     >
                       <HugeiconsIcon icon={Tick01Icon} size={13} className="mr-1" />
-                      Apply
+                      {t('common.apply', 'Áp dụng')}
                     </Button>
                     <Button
                       type="button"
@@ -219,7 +245,7 @@ export function GoalAiAssistantDrawer({ isOpen, onClose, onApplyProposal }) {
                       className="h-7 px-2.5 border-border text-[12px] rounded-none shadow-none cursor-pointer"
                     >
                       <HugeiconsIcon icon={ArrowDown01Icon} size={13} className="mr-1" />
-                      Insert below
+                      {t('curriculum.insertBelow', 'Thêm vào dưới')}
                     </Button>
                     <Button
                       type="button"
@@ -229,7 +255,7 @@ export function GoalAiAssistantDrawer({ isOpen, onClose, onApplyProposal }) {
                       className="h-7 px-2.5 border-border text-[12px] rounded-none shadow-none cursor-pointer"
                     >
                       <HugeiconsIcon icon={Exchange01Icon} size={13} className="mr-1" />
-                      Replace
+                      {t('curriculum.replace', 'Thay thế')}
                     </Button>
                     <Button
                       type="button"
@@ -239,7 +265,7 @@ export function GoalAiAssistantDrawer({ isOpen, onClose, onApplyProposal }) {
                       className="h-7 px-2.5 border-border text-[12px] rounded-none shadow-none cursor-pointer"
                     >
                       <HugeiconsIcon icon={Copy01Icon} size={13} className="mr-1" />
-                      Copy
+                      {t('common.copy', 'Sao chép')}
                     </Button>
                   </div>
                 </div>
@@ -250,7 +276,7 @@ export function GoalAiAssistantDrawer({ isOpen, onClose, onApplyProposal }) {
           {isGenerating && (
             <div className="flex items-center gap-2 text-muted-foreground text-[12.5px] italic">
               <span className="size-2 bg-primary rounded-full animate-ping" />
-              <span>AI đang phân tích và chuẩn bị đề xuất...</span>
+              <span>{t('curriculum.aiThinking', 'AI đang phân tích và chuẩn bị đề xuất...')}</span>
             </div>
           )}
         </div>
@@ -268,7 +294,7 @@ export function GoalAiAssistantDrawer({ isOpen, onClose, onApplyProposal }) {
               type="text"
               value={inputPrompt}
               onChange={(e) => setInputPrompt(e.target.value)}
-              placeholder="Hỏi AI về ngân hàng mục tiêu..."
+              placeholder={t('curriculum.askAiPlaceholder', 'Hỏi AI về ngân hàng mục tiêu...')}
               className="flex-1 h-9 px-3 bg-background border border-border text-[13px] text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition-colors rounded-none"
             />
             <Button
@@ -277,7 +303,7 @@ export function GoalAiAssistantDrawer({ isOpen, onClose, onApplyProposal }) {
               className="h-9 px-4 bg-[#1447e6] hover:bg-[#1447e6]/90 text-white text-[13px] rounded-none cursor-pointer shadow-none shrink-0"
             >
               <HugeiconsIcon icon={SentIcon} size={15} className="mr-1" />
-              Gửi
+              {t('common.send', 'Gửi')}
             </Button>
           </form>
         </div>

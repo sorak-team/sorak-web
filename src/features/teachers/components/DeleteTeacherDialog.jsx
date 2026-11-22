@@ -42,18 +42,18 @@ export function DeleteTeacherDialog({ onSuccess }) {
 
   const handleConfirm = async () => {
     if (isSelf) {
-      toast.error('Không thể xóa chính tài khoản/hồ sơ của bạn');
+      toast.error(t('teacher.cannotDeleteSelf', 'Không thể xóa chính tài khoản/hồ sơ của bạn'));
       closeDeleteDialog();
       return;
     }
     if (deletingTeacherId) {
       try {
         await deleteTeacher(deletingTeacherId);
-        toast.success(t('teacher.toastDeleted', 'Đã xóa hồ sơ giáo viên'));
+        toast.success(t('teacher.toastDeleted', 'Xóa giáo viên thành công'));
         if (onSuccess) onSuccess();
       } catch (err) {
         console.error('Delete teacher failed:', err);
-        const msg = err.response?.data?.message || err.message || 'Xóa giáo viên không thành công';
+        const msg = err.response?.data?.message || err.message || t('teacher.deleteFailed', 'Xóa giáo viên không thành công');
         toast.error(msg);
       }
     }

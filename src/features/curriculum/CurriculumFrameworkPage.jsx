@@ -41,8 +41,8 @@ export function CurriculumFrameworkPage() {
     if (!selectedYear) return '2026–2027';
     if (selectedYear.name && /\d{4}/.test(selectedYear.name)) return selectedYear.name;
     if (selectedYear.range) return selectedYear.range;
-    return `Năm học ${targetYearStr.replace('-', '–')}`;
-  }, [selectedYear, targetYearStr]);
+    return `${t('common.schoolYear', 'Năm học')} ${targetYearStr.replace('-', '–')}`;
+  }, [selectedYear, targetYearStr, t]);
 
   // Data states
   const [themeData, setThemeData] = useState(null);
@@ -60,17 +60,17 @@ export function CurriculumFrameworkPage() {
           year: targetYearStr,
         });
         downloadBlob(blob, `Ke_Hoach_Phan_Phoi_Bo_Chu_De_${safeYear}.xlsx`);
-        toast.success('Đã xuất kế hoạch phân phối bộ chủ đề thành công');
+        toast.success(t('curriculum.exportThemeSuccess', 'Đã xuất kế hoạch phân phối bộ chủ đề thành công'));
       } else {
         const blob = await curriculumApi.exportFrameworkExcel({
           year: targetYearStr,
         });
         downloadBlob(blob, `Khung_Chuong_Trinh_GDMN_${safeYear}.xlsx`);
-        toast.success('Đã xuất khung chương trình GDMN (Ngân hàng mục tiêu) thành công');
+        toast.success(t('curriculum.exportFrameworkSuccess', 'Đã xuất khung chương trình GDMN (Ngân hàng mục tiêu) thành công'));
       }
     } catch (err) {
-      toast.error('Lỗi khi xuất dữ liệu', {
-        description: err.message || 'Vui lòng thử lại sau.',
+      toast.error(t('curriculum.exportError', 'Lỗi khi xuất dữ liệu'), {
+        description: err.message || t('common.tryAgainLater', 'Vui lòng thử lại sau.'),
       });
     } finally {
       setIsExporting(false);
@@ -147,20 +147,11 @@ export function CurriculumFrameworkPage() {
           </h1>
           <p className="text-[12px] text-muted-foreground font-normal">
             {activeTab === 'goals'
-              ? 'Ngân hàng mục tiêu giáo dục mầm non đa tầng theo các lĩnh vực phát triển'
-              : 'Quản lý bộ chủ đề giáo dục mầm non theo tuần và khối lớp'}
+              ? t('curriculum.goalsSubtitle', 'Ngân hàng mục tiêu giáo dục mầm non đa tầng theo các lĩnh vực phát triển')
+              : t('curriculum.themesSubtitle', 'Quản lý bộ chủ đề giáo dục mầm non theo tuần và khối lớp')}
           </p>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-2.5">
-          {/* Export Educational Framework Excel */}
-          <ExcelActionsDropdown
-            onExport={handleExportExcel}
-            isExporting={isExporting}
-            showImport={false}
-          />
-        </div>
       </div>
 
       {/* 2. Main Workspace: Clean 2x2 Grid of 4 Grade Levels */}
@@ -181,9 +172,9 @@ export function CurriculumFrameworkPage() {
                 themeCount: 0,
                 subThemeCount: 0,
                 status: 'DRAFT',
-                statusLabel: 'Chưa thiết lập',
+                statusLabel: t('curriculum.notConfigured', 'Chưa thiết lập'),
                 statusBadge: 'neutral',
-                updatedAt: 'Chưa có dữ liệu',
+                updatedAt: t('common.noData', 'Chưa có dữ liệu'),
               };
 
               return (

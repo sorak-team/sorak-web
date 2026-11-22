@@ -138,7 +138,7 @@ export function ParentFeedbackModal({
 
             {/* Achievements Pill */}
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-background border border-border text-[12px] font-medium shrink-0">
-              <img src="/rose.webp" alt="Hoa hồng" className="size-3.5 object-contain" />
+              <img src="/rose.webp" alt={t('assessment.roseAlt', 'Hoa hồng')} className="size-3.5 object-contain" />
               <span>{currentStudent.rosesCount}/5 {t('assessment.flowersUnit', 'hoa')}</span>
             </div>
           </div>
@@ -170,7 +170,7 @@ export function ParentFeedbackModal({
             disabled={currentIndex <= 0}
             onClick={handlePrev}
             className="h-8 px-3 text-[12.5px] rounded-none border-border bg-card hover:bg-muted text-foreground flex items-center gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-            title="Xem phản hồi trước"
+            title={t('assessment.prevFeedbackTitle', 'Xem phản hồi trước')}
           >
             <HugeiconsIcon icon={ArrowLeft01Icon} size={14} />
             <span>{t('assessment.prevFeedback', 'Trước')}</span>
@@ -182,7 +182,7 @@ export function ParentFeedbackModal({
             disabled={currentIndex >= feedbackStudents.length - 1}
             onClick={handleNext}
             className="h-8 px-3 text-[12.5px] rounded-none border-border bg-card hover:bg-muted text-foreground flex items-center gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-            title="Xem phản hồi sau"
+            title={t('assessment.nextFeedbackTitle', 'Xem phản hồi sau')}
           >
             <span>{t('assessment.nextFeedback', 'Sau')}</span>
             <HugeiconsIcon icon={ArrowRight01Icon} size={14} />

@@ -38,27 +38,27 @@ export function AutomatedNotificationFilterDropdown() {
   );
 
   const automatedCategories = [
-    { key: 'all', label: 'Tất cả sự kiện' },
-    { key: 'PICKUP', label: 'Ủy quyền đón hộ' },
-    { key: 'TRANSFER', label: 'Chuyển lớp' },
-    { key: 'PLANNING', label: 'Kế hoạch giáo dục' },
-    { key: 'ASSESSMENT', label: 'Sổ theo dõi & Đánh giá' },
-    { key: 'ATTENDANCE', label: 'Điểm danh trẻ' },
-    { key: 'CALENDAR', label: 'Lịch năm học' },
-    { key: 'ACCOUNT', label: 'Tài khoản & Phân lớp' },
+    { key: 'all', label: t('notifications.management.allEvents', 'Tất cả sự kiện') },
+    { key: 'PICKUP', label: t('notifications.management.catPickup', 'Ủy quyền đón hộ') },
+    { key: 'TRANSFER', label: t('notifications.management.catTransfer', 'Chuyển lớp') },
+    { key: 'PLANNING', label: t('notifications.management.catPlanning', 'Kế hoạch giáo dục') },
+    { key: 'ASSESSMENT', label: t('notifications.management.catAssessment', 'Sổ theo dõi & Đánh giá') },
+    { key: 'ATTENDANCE', label: t('notifications.management.catAttendance', 'Điểm danh trẻ') },
+    { key: 'CALENDAR', label: t('notifications.management.catCalendar', 'Lịch năm học') },
+    { key: 'ACCOUNT', label: t('notifications.management.catAccount', 'Tài khoản & Phân lớp') },
   ];
 
   const automatedRoles = [
-    { key: 'all', label: 'Tất cả vai trò' },
-    { key: 'PRINCIPAL_BGH', label: 'Ban giám hiệu' },
-    { key: 'TEACHER_GV', label: 'Giáo viên' },
-    { key: 'PARENT_PH', label: 'Phụ huynh' },
+    { key: 'all', label: t('notifications.management.allRoles', 'Tất cả vai trò') },
+    { key: 'PRINCIPAL_BGH', label: t('notifications.management.rolePrincipal', 'Ban giám hiệu') },
+    { key: 'TEACHER_GV', label: t('notifications.management.roleTeacher', 'Giáo viên') },
+    { key: 'PARENT_PH', label: t('notifications.management.roleParent', 'Phụ huynh') },
   ];
 
   const automatedStatuses = [
-    { key: 'all', label: 'Tất cả trạng thái' },
-    { key: 'read', label: 'Đã đọc' },
-    { key: 'unread', label: 'Chưa đọc' },
+    { key: 'all', label: t('notifications.management.allStatuses', 'Tất cả trạng thái') },
+    { key: 'read', label: t('notifications.management.read', 'Đã đọc') },
+    { key: 'unread', label: t('notifications.management.unread', 'Chưa đọc') },
   ];
 
   const isFiltered =
@@ -75,7 +75,7 @@ export function AutomatedNotificationFilterDropdown() {
             'size-8 bg-background border border-border text-foreground hover:bg-muted/50 rounded-none flex items-center justify-center transition-colors cursor-pointer select-none',
             isFiltered && 'border-primary text-primary bg-primary/5',
           )}
-          title="Lọc thông báo tự động"
+          title={t('notifications.management.filterAutomatedTooltip', 'Lọc thông báo tự động')}
           data-name="Filter · Automated Notifications"
         >
           <HugeiconsIcon icon={FilterHorizontalIcon} size={16} />
@@ -87,7 +87,7 @@ export function AutomatedNotificationFilterDropdown() {
       >
         {/* Category Filter */}
         <DropdownMenuLabel className="px-2 py-1 text-[12px] font-medium text-muted-foreground">
-          Loại sự kiện
+          {t('notifications.management.eventType', 'Loại sự kiện')}
         </DropdownMenuLabel>
         {automatedCategories.map((c) => {
           const isSelected = automatedCategoryFilter === c.key;
@@ -116,7 +116,7 @@ export function AutomatedNotificationFilterDropdown() {
 
         {/* Role Filter */}
         <DropdownMenuLabel className="px-2 py-1 text-[12px] font-medium text-muted-foreground">
-          Vai trò người nhận
+          {t('notifications.management.colRole', 'Vai trò người nhận')}
         </DropdownMenuLabel>
         {automatedRoles.map((r) => {
           const isSelected = automatedRoleFilter === r.key;
@@ -145,7 +145,7 @@ export function AutomatedNotificationFilterDropdown() {
 
         {/* Read Status Filter */}
         <DropdownMenuLabel className="px-2 py-1 text-[12px] font-medium text-muted-foreground">
-          Trạng thái đọc
+          {t('notifications.management.colReadStatus', 'Trạng thái đọc')}
         </DropdownMenuLabel>
         {automatedStatuses.map((st) => {
           const isSelected = automatedStatusFilter === st.key;
@@ -181,7 +181,7 @@ export function AutomatedNotificationFilterDropdown() {
               }}
               className="px-2 py-1.5 text-[12px] text-destructive hover:bg-destructive/10 rounded-none cursor-pointer justify-center"
             >
-              Đặt lại bộ lọc
+              {t('common.resetFilter', 'Đặt lại bộ lọc')}
             </DropdownMenuItem>
           </>
         )}

@@ -163,7 +163,7 @@ export function TeacherOverviewPage() {
     if (!file) return;
 
     if (file.size > 2 * 1024 * 1024) {
-      toast.error('Kích thước ảnh tối đa là 2MB');
+      toast.error(t('teacher.avatarMaxSize', 'Kích thước ảnh tối đa là 2MB'));
       return;
     }
 
@@ -176,7 +176,7 @@ export function TeacherOverviewPage() {
       }
     } catch (err) {
       console.error('Avatar upload failed:', err);
-      toast.error(err.response?.data?.message || err.message || 'Tải ảnh thất bại');
+      toast.error(err.response?.data?.message || err.message || t('teacher.avatarUploadFailed', 'Tải ảnh thất bại'));
     } finally {
       setIsUploadingAvatar(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -190,7 +190,7 @@ export function TeacherOverviewPage() {
       toast.info(t('teacher.avatarResetNotice', 'Đã đặt lại ảnh đại diện mặc định'));
     } catch (err) {
       console.error('Reset avatar failed:', err);
-      toast.error('Đặt lại ảnh thất bại');
+      toast.error(t('teacher.avatarResetFailed', 'Đặt lại ảnh thất bại'));
     }
   };
 
@@ -458,7 +458,7 @@ export function TeacherOverviewPage() {
                 {t('teacher.position', 'Chức vụ')}
               </span>
               <span className="inline-flex items-center justify-center px-2.5 py-0.5 text-[12px] font-medium bg-secondary text-secondary-foreground rounded-none">
-                {teacher.role || teacher.position || 'Giáo viên'}
+                {teacher.role || teacher.position || t('teacher.roleTeacher', 'Giáo viên')}
               </span>
             </div>
 
@@ -475,21 +475,21 @@ export function TeacherOverviewPage() {
             {/* Tài khoản đăng nhập */}
             <div className="flex items-center justify-between p-4 min-h-[52px]">
               <span className="text-[14px] text-foreground/80 font-normal">
-                Tài khoản đăng nhập
+                {t('teacher.loginAccount', 'Tài khoản đăng nhập')}
               </span>
               <span className="text-[13px] font-normal text-right">
                 {teacher.account ? (
                   teacher.account.isDeleted ? (
                     <span className="text-amber-600 dark:text-amber-400 font-medium">
-                      Đã xóa / Chưa có quyền đăng nhập
+                      {t('teacher.accountDeletedOrNoPerm', 'Đã xóa / Chưa có quyền đăng nhập')}
                     </span>
                   ) : (
                     <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                      Đang hoạt động ({teacher.account.username})
+                      {t('teacher.accountActiveWithUser', 'Đang hoạt động ({{username}})', { username: teacher.account.username })}
                     </span>
                   )
                 ) : (
-                  <span className="text-muted-foreground">Chưa liên kết tài khoản</span>
+                  <span className="text-muted-foreground">{t('teacher.accountNotLinked', 'Chưa liên kết tài khoản')}</span>
                 )}
               </span>
             </div>
@@ -501,14 +501,14 @@ export function TeacherOverviewPage() {
           <div className="p-4 border-b border-border bg-muted/20 flex items-center justify-between">
             <div>
               <h3 className="text-[14px] font-semibold text-foreground">
-                Lịch sử phân công & giảng dạy
+                {t('teacher.assignmentHistory', 'Lịch sử phân công & giảng dạy')}
               </h3>
               <p className="text-[12px] text-muted-foreground font-normal">
-                Toàn bộ các lớp học và niên khóa giáo viên đã hoặc đang phụ trách
+                {t('teacher.assignmentHistorySub', 'Toàn bộ các lớp học và niên khóa giáo viên đã hoặc đang phụ trách')}
               </p>
             </div>
             <span className="text-[12px] font-mono text-muted-foreground">
-              {teacher.assignmentHistory?.length || 0} bản ghi
+              {t('teacher.assignmentRecordsCount', '{{count}} bản ghi', { count: teacher.assignmentHistory?.length || 0 })}
             </span>
           </div>
 
@@ -516,18 +516,18 @@ export function TeacherOverviewPage() {
             <table className="w-full text-left border-collapse text-[13px]">
               <thead>
                 <tr className="border-b border-border bg-muted/10 text-muted-foreground text-[11.5px] font-medium uppercase tracking-tight">
-                  <th className="py-2.5 px-4">Lớp học</th>
-                  <th className="py-2.5 px-4">Năm học</th>
-                  <th className="py-2.5 px-4">Ngày nhận lớp</th>
-                  <th className="py-2.5 px-4">Ngày kết thúc</th>
-                  <th className="py-2.5 px-4">Trạng thái phân công</th>
+                  <th className="py-2.5 px-4">{t('teacher.colClassName', 'Lớp học')}</th>
+                  <th className="py-2.5 px-4">{t('teacher.colSchoolYear', 'Năm học')}</th>
+                  <th className="py-2.5 px-4">{t('teacher.colStartDate', 'Ngày nhận lớp')}</th>
+                  <th className="py-2.5 px-4">{t('teacher.colEndDate', 'Ngày kết thúc')}</th>
+                  <th className="py-2.5 px-4">{t('teacher.colAssignmentStatus', 'Trạng thái phân công')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
                 {!teacher.assignmentHistory || teacher.assignmentHistory.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="py-6 text-center text-muted-foreground text-[13px]">
-                      Chưa có lịch sử phân công lớp học nào được ghi nhận.
+                      {t('teacher.noAssignmentHistory', 'Chưa có lịch sử phân công lớp học nào được ghi nhận.')}
                     </td>
                   </tr>
                 ) : (
@@ -548,11 +548,11 @@ export function TeacherOverviewPage() {
                       <td className="py-2.5 px-4">
                         {item.isActive ? (
                           <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-none bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                            Đang phụ trách
+                            {t('teacher.statusCurrentlyTeaching', 'Đang phụ trách')}
                           </span>
                         ) : (
                           <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-none bg-muted text-muted-foreground border border-border">
-                            {item.leaveReason === 'RESIGNED' ? 'Đã thôi việc' : 'Đã kết thúc'}
+                            {item.leaveReason === 'RESIGNED' ? t('teacher.statusResignedRecord', 'Đã thôi việc') : t('teacher.statusEndedRecord', 'Đã kết thúc')}
                           </span>
                         )}
                       </td>

@@ -6,6 +6,7 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { Search01Icon, Cancel01Icon, MoreHorizontalIcon } from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { confirmDialog } from '@/components/ui/confirm-dialog';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -138,7 +139,7 @@ export function WeeklyAssessmentPanel({
             attendanceStatus,
             isAbsent,
             status: studentStatus,
-            note: saved?.note || (isAbsent ? 'Nghỉ học' : ''),
+            note: saved?.note || (isAbsent ? t('attendance.absentFromSchool', 'Nghỉ học') : ''),
           };
         });
         setStudents(mapped);
@@ -181,7 +182,12 @@ export function WeeklyAssessmentPanel({
         const attendanceStatus = s.attendanceStatus || s.rawStatus || s.status;
         const isAbsent = attendanceStatus === 'EXCUSED_ABSENCE' || attendanceStatus === 'UNEXCUSED_ABSENCE' || attendanceStatus === 'ABSENT' || Boolean(s.isAbsent);
         if (isAbsent && (newStatus === 'ACHIEVED' || newStatus === 'OUTSTANDING')) {
-          toast.warning('Học sinh nghỉ học không thể đánh giá Đạt hoặc Vượt trội.');
+          toast.warning(
+            t(
+              'assessment.absentCannotEvaluateAchieved',
+              'Học sinh nghỉ học không thể đánh giá Đạt hoặc Vượt trội.'
+            )
+          );
           return s;
         }
         return { ...s, status: newStatus };
@@ -274,7 +280,16 @@ export function WeeklyAssessmentPanel({
       toast.warning(isVi ? 'Tiết này chưa có kết quả đánh giá để xóa.' : 'No assessment records to clean.');
       return;
     }
-    if (!window.confirm(isVi ? 'Bạn có chắc chắn muốn xóa toàn bộ đánh giá của tiết này không? Thao tác này không thể hoàn tác.' : 'Are you sure you want to clean all assessment records for this slot? This cannot be undone.')) {
+    const isConfirmed = await confirmDialog({
+      title: isVi ? 'Xác nhận xóa đánh giá' : 'Clean assessment records',
+      description: isVi
+        ? 'Bạn có chắc chắn muốn xóa toàn bộ đánh giá của tiết này không? Thao tác này không thể hoàn tác.'
+        : 'Are you sure you want to clean all assessment records for this slot? This cannot be undone.',
+      confirmText: isVi ? 'Xóa' : 'Clean',
+      cancelText: isVi ? 'Hủy' : 'Cancel',
+      variant: 'destructive',
+    });
+    if (!isConfirmed) {
       return;
     }
     setIsCleaning(true);
@@ -542,7 +557,7 @@ export function WeeklyAssessmentPanel({
                   <button
                     type="button"
                     className="size-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-none transition-colors cursor-pointer shrink-0"
-                    title="Tùy chọn khác"
+                    title={t('common.moreOptions', 'Tùy chọn khác')}
                   >
                     <HugeiconsIcon icon={MoreHorizontalIcon} size={16} />
                   </button>

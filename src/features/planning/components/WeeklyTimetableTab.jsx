@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/shared/lib/utils';
 import { toast } from 'sonner';
+import { confirmDialog } from '@/components/ui/confirm-dialog';
 import { planningApi } from '../planning.api';
 import { PlanningTabLoading } from './PlanningTabLoading';
 import {
@@ -365,10 +366,10 @@ export function WeeklyTimetableTab({
       const subThemeName = timetableData?.selectedSubTheme?.name || `Tuan_${currentWeekNumber}`;
       const cleanSubTheme = subThemeName.replace(/[^a-zA-Z0-9_\u00C0-\u024F\u1EA0-\u1EF9]/g, '_');
       downloadBlob(blob, `Ke_Hoach_Chi_Tiet_Tuan_${currentWeekNumber}_${cleanSubTheme}.xlsx`);
-      toast.success(`Đã xuất kế hoạch chi tiết tuần ${currentWeekNumber} ra file Excel thành công`);
+      toast.success(t('planning.exportTimetableSuccess', { week: currentWeekNumber, defaultValue: `Đã xuất kế hoạch chi tiết tuần ${currentWeekNumber} ra file Excel thành công` }));
     } catch (err) {
       console.error('Export weekly excel failed:', err);
-      toast.error('Có lỗi xảy ra khi xuất file Excel');
+      toast.error(t('planning.exportExcelError', 'Có lỗi xảy ra khi xuất file Excel'));
     } finally {
       setIsExportingExcel(false);
     }
@@ -411,7 +412,20 @@ export function WeeklyTimetableTab({
         }
       }
 
-      // Check if this date is locked by a SchoolHoliday where isTeachingAllowed is false
+      // 1. Sunday (CN) is ALWAYS a day off
+      const isSunday = day.key === 'CN';
+
+      // 2. Saturday (T7): locked UNLESS configured as makeup day (is_teaching_allowed === true or holiday makeupDate)
+      const isSaturday = day.key === 'T7';
+      const makeupHoliday = isSaturday && holidays.find((h) => {
+        const appliesToGrade = !h.targetGrades?.length || h.targetGrades.includes(classAgeGroup);
+        if (!appliesToGrade) return false;
+        if (h.makeupDate && dateIsoStr === h.makeupDate) return true;
+        return h.isTeachingAllowed && dateIsoStr >= h.startDate && dateIsoStr <= h.endDate;
+      });
+      const isSaturdayMakeup = Boolean(makeupHoliday);
+
+      // 3. SchoolHoliday where is_teaching_allowed === false
       let isHolidayLocked = false;
       let lockReason = '';
       let lockLabel = '';
@@ -425,7 +439,7 @@ export function WeeklyTimetableTab({
               if (dateIsoStr >= h.startDate && dateIsoStr <= h.endDate) {
                 isHolidayLocked = true;
                 lockReason = h.name;
-                lockLabel = 'Ngày nghỉ';
+                lockLabel = t('planning.holidayLabel', 'Ngày nghỉ');
                 activeHoliday = h;
                 break;
               }
@@ -438,13 +452,27 @@ export function WeeklyTimetableTab({
       const isToday = !isOutsideAcademicYear && Boolean(dayDetail?.isToday);
       let isFuture = selectedWeekIdx > currentWeekIdx;
 
-      const isLocked = isOutsideAcademicYear || isHolidayLocked;
-      const finalLockReason = isOutsideAcademicYear
-        ? 'Nằm ngoài năm học đang chọn'
-        : lockReason;
-      const finalLockLabel = isOutsideAcademicYear
-        ? 'Ngoại khóa'
-        : lockLabel;
+      let isLocked = false;
+      let finalLockReason = '';
+      let finalLockLabel = '';
+
+      if (isOutsideAcademicYear) {
+        isLocked = true;
+        finalLockReason = t('planning.outsideAcademicYear', 'Nằm ngoài năm học đang chọn');
+        finalLockLabel = t('planning.extracurricularLabel', 'Ngoại khóa');
+      } else if (isSunday) {
+        isLocked = true;
+        finalLockReason = t('planning.sundayIsHoliday', 'Chủ nhật là ngày nghỉ');
+        finalLockLabel = t('planning.holidayLabel', 'Ngày nghỉ');
+      } else if (isSaturday && !isSaturdayMakeup) {
+        isLocked = true;
+        finalLockReason = t('planning.saturdayNoMakeup', 'Thứ Bảy không có lịch học bù');
+        finalLockLabel = t('planning.holidayLabel', 'Ngày nghỉ');
+      } else if (isHolidayLocked) {
+        isLocked = true;
+        finalLockReason = lockReason;
+        finalLockLabel = t('planning.holidayLabel', 'Ngày nghỉ');
+      }
 
       return {
         ...day,
@@ -454,6 +482,8 @@ export function WeeklyTimetableTab({
         isFuture,
         isLocked,
         isHolidayLocked,
+        isSaturdayMakeup,
+        makeupHoliday: makeupHoliday || null,
         lockReason: finalLockReason,
         lockLabel: finalLockLabel,
         holiday: activeHoliday,
@@ -465,6 +495,11 @@ export function WeeklyTimetableTab({
   const hasWeekendSlots = useMemo(() => {
     return (slots || []).some((s) => s.day === 'T7' || s.day === 'CN');
   }, [slots]);
+
+  // Check if Saturday has makeup teaching configured
+  const hasSaturdayMakeup = useMemo(() => {
+    return currentDays.some((d) => d.key === 'T7' && d.isSaturdayMakeup);
+  }, [currentDays]);
 
   // Check if school year start date falls on weekend and belongs to this week
   const isStartWeekWithWeekend = useMemo(() => {
@@ -494,15 +529,15 @@ export function WeeklyTimetableTab({
     }
   });
 
-  // Tự động mở T7/CN nếu tuần có slot hoặc tuần khai giảng dính cuối tuần;
+  // Tự động mở T7/CN nếu tuần có slot, có lịch học bù thứ 7, hoặc tuần khai giảng dính cuối tuần;
   // nếu không thì theo lựa chọn ghi nhớ của người dùng (mặc định ẩn nếu người dùng không chọn hiện)
   useEffect(() => {
-    if (hasWeekendSlots || isStartWeekWithWeekend) {
+    if (hasWeekendSlots || isStartWeekWithWeekend || hasSaturdayMakeup) {
       setShowWeekend(true);
     } else {
       setShowWeekend(userPrefShowWeekend);
     }
-  }, [hasWeekendSlots, isStartWeekWithWeekend, selectedWeekId, userPrefShowWeekend]);
+  }, [hasWeekendSlots, isStartWeekWithWeekend, hasSaturdayMakeup, selectedWeekId, userPrefShowWeekend]);
 
   const handleToggleWeekend = (val) => {
     const nextVal = typeof val === 'boolean' ? val : !showWeekend;
@@ -599,9 +634,27 @@ export function WeeklyTimetableTab({
     try {
       const targetDay = currentDays.find((d) => d.key === dayKey);
       if (targetDay?.isLocked) {
-        toast.error(
-          `Không thể xếp kế hoạch tuần vào ngày ${targetDay.name} (${targetDay.date}) vì ngày này đã bị khóa dạy${targetDay.lockReason ? ` bởi "${targetDay.lockReason}"` : ''}.`
-        );
+        const makeupDate = targetDay?.holiday?.makeupDate || targetDay?.makeupDate;
+        if (makeupDate) {
+          const parts = makeupDate.split('-');
+          toast.info(
+            t('planning.saturdayMakeupAlert', {
+              day: targetDay.name,
+              reason: targetDay.lockReason || t('planning.regulation', 'Quy định'),
+              date: `${parts[2]}/${parts[1]}`,
+              defaultValue: `Ngày ${targetDay.name} là ngày nghỉ (${targetDay.lockReason || 'Quy định'}). Ban Giám Hiệu đã bố trí dạy bù vào Thứ Bảy (${parts[2]}/${parts[1]}). Vui lòng xếp lịch vào Thứ Bảy.`,
+            })
+          );
+        } else {
+          toast.error(
+            t('planning.cannotScheduleLockedDay', {
+              day: targetDay.name,
+              date: targetDay.date,
+              reason: targetDay.lockReason ? ` bởi "${targetDay.lockReason}"` : '',
+              defaultValue: `Không thể xếp kế hoạch tuần vào ngày ${targetDay.name} (${targetDay.date}) vì ngày này đã bị khóa dạy${targetDay.lockReason ? ` bởi "${targetDay.lockReason}"` : ''}.`,
+            })
+          );
+        }
         return;
       }
       const isAdd = Boolean(pickerCell?.isAdd);
@@ -615,9 +668,13 @@ export function WeeklyTimetableTab({
       );
 
       if (existingInCell.length > 0 && !replacingSlotId) {
-        const confirmed = window.confirm(
-          'Khung giờ này đã có hoạt động. Bạn có muốn thay thế hoạt động hiện tại không?'
-        );
+        const confirmed = await confirmDialog({
+          title: t('planning.replaceActivityConfirmTitle', 'Thay thế hoạt động'),
+          description: t('planning.replaceActivityConfirm', 'Khung giờ này đã có hoạt động. Bạn có muốn thay thế hoạt động hiện tại không?'),
+          confirmText: t('common.replace', 'Thay thế'),
+          cancelText: t('common.cancel', 'Hủy'),
+          variant: 'default',
+        });
         if (!confirmed) return;
       }
 
@@ -639,11 +696,16 @@ export function WeeklyTimetableTab({
 
       toast.success(
         isAdd
-          ? `Đã thêm "${activity.title}" vào slot ${dayKey}`
-          : `Đã xếp "${activity.title}" vào ${dayKey} (${ROUTINE_SLOT_SHORT_LABELS[routineSlotKey] || routineSlotKey})`
+          ? t('planning.addedToSlot', { title: activity.title, day: dayKey, defaultValue: `Đã thêm "${activity.title}" vào slot ${dayKey}` })
+          : t('planning.scheduledInSlot', {
+              title: activity.title,
+              day: dayKey,
+              slot: ROUTINE_SLOT_SHORT_LABELS[routineSlotKey] || routineSlotKey,
+              defaultValue: `Đã xếp "${activity.title}" vào ${dayKey} (${ROUTINE_SLOT_SHORT_LABELS[routineSlotKey] || routineSlotKey})`,
+            })
       );
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Không thể gán hoạt động vào slot');
+      toast.error(err.response?.data?.message || t('planning.assignActivityError', 'Không thể gán hoạt động vào slot'));
     }
   };
 
@@ -676,9 +738,9 @@ export function WeeklyTimetableTab({
       }
 
       await loadTimetable();
-      toast.success(`Đã gỡ "${slot.title}" khỏi lịch tuần`);
+      toast.success(t('planning.removeActivitySuccess', { title: slot.title, defaultValue: `Đã gỡ "${slot.title}" khỏi lịch tuần` }));
     } catch {
-      toast.error('Không thể gỡ hoạt động khỏi slot');
+      toast.error(t('planning.removeActivityError', 'Không thể gỡ hoạt động khỏi slot'));
     }
   };
 
@@ -707,7 +769,7 @@ export function WeeklyTimetableTab({
       );
     } catch (err) {
       console.error('Failed to save reordered activities:', err);
-      toast.error('Không thể lưu thứ tự hoạt động');
+      toast.error(t('planning.saveSlotOrderError', 'Không thể lưu thứ tự hoạt động'));
     }
   };
 
@@ -725,9 +787,9 @@ export function WeeklyTimetableTab({
     setIsDrawerOpen(false);
     try {
       await planningApi.saveWeeklySlot(classId, updatedSlot);
-      toast.success(`Đã cập nhật bài dạy "${updatedSlot.title}"`);
+      toast.success(t('planning.updateSlotSuccess', { title: updatedSlot.title, defaultValue: `Đã cập nhật bài dạy "${updatedSlot.title}"` }));
     } catch {
-      toast.error('Không thể lưu thay đổi vào cơ sở dữ liệu');
+      toast.error(t('planning.updateSlotError', 'Không thể lưu thay đổi vào cơ sở dữ liệu'));
     }
   };
 
@@ -741,14 +803,23 @@ export function WeeklyTimetableTab({
     try {
       if (targetDay?.isLocked) {
         toast.error(
-          `Không thể nhân bản hoạt động sang ngày ${targetDay.name} (${targetDay.date}) vì ngày này đã bị khóa dạy${targetDay.lockReason ? ` bởi "${targetDay.lockReason}"` : ''}.`
+          t('planning.duplicateToLockedDayError', {
+            day: targetDay.name,
+            date: targetDay.date,
+            reason: targetDay.lockReason ? ` bởi "${targetDay.lockReason}"` : '',
+            defaultValue: `Không thể nhân bản hoạt động sang ngày ${targetDay.name} (${targetDay.date}) vì ngày này đã bị khóa dạy${targetDay.lockReason ? ` bởi "${targetDay.lockReason}"` : ''}.`,
+          })
         );
         return;
       }
       if (targetExistingSlots.length > 0) {
-        const confirmed = window.confirm(
-          'Khung giờ này đã có hoạt động. Bạn có muốn thay thế hoạt động hiện tại không?'
-        );
+        const confirmed = await confirmDialog({
+          title: t('planning.replaceActivityConfirmTitle', 'Thay thế hoạt động'),
+          description: t('planning.replaceActivityConfirm', 'Khung giờ này đã có hoạt động. Bạn có muốn thay thế hoạt động hiện tại không?'),
+          confirmText: t('common.replace', 'Thay thế'),
+          cancelText: t('common.cancel', 'Hủy'),
+          variant: 'default',
+        });
         if (!confirmed) return;
 
         // Delete existing slot(s) in target cell to guarantee at most 1 activity per slot
@@ -801,11 +872,15 @@ export function WeeklyTimetableTab({
       ]);
       await loadTimetable();
       toast.success(
-        `Đã nhân bản "${sourceSlot.title || sourceSlot.shortTitle}" sang ${targetDay.name || targetDay.shortName}`
+        t('planning.duplicateSuccess', {
+          title: sourceSlot.title || sourceSlot.shortTitle,
+          day: targetDay.name || targetDay.shortName,
+          defaultValue: `Đã nhân bản "${sourceSlot.title || sourceSlot.shortTitle}" sang ${targetDay.name || targetDay.shortName}`,
+        })
       );
     } catch (err) {
       console.error('Failed to duplicate slot:', err);
-      toast.error('Không thể nhân bản hoạt động');
+      toast.error(t('planning.duplicateError', 'Không thể nhân bản hoạt động'));
     }
   };
 
@@ -838,7 +913,12 @@ export function WeeklyTimetableTab({
     const targetDay = currentDaysRef.current?.find((d) => d.key === dayKey);
     if (targetDay?.isLocked) {
       toast.warning(
-        `Ngày ${targetDay.name} (${targetDay.date}) đã bị khóa dạy${targetDay.lockReason ? ` (${targetDay.lockReason})` : ''}, không thể dán vào ngày này.`
+        t('planning.pasteToLockedDayError', {
+          day: targetDay.name,
+          date: targetDay.date,
+          reason: targetDay.lockReason ? ` (${targetDay.lockReason})` : '',
+          defaultValue: `Ngày ${targetDay.name} (${targetDay.date}) đã bị khóa dạy${targetDay.lockReason ? ` (${targetDay.lockReason})` : ''}, không thể dán vào ngày này.`,
+        })
       );
       return;
     }
@@ -972,7 +1052,7 @@ export function WeeklyTimetableTab({
     });
 
     if (targets.length === 0) {
-      toast.error('Không có ô hợp lệ để dán (các ô đã chọn có thể đã bị khóa dạy hoặc nằm ngoài năm học)');
+      toast.error(t('planning.noValidPasteCells', 'Không có ô hợp lệ để dán (các ô đã chọn có thể đã bị khóa dạy hoặc nằm ngoài năm học)'));
       return;
     }
 
@@ -995,9 +1075,13 @@ export function WeeklyTimetableTab({
         );
 
         if (existingInTarget.length > 0) {
-          const confirmed = window.confirm(
-            'Khung giờ này đã có hoạt động. Bạn có muốn thay thế hoạt động hiện tại không?'
-          );
+          const confirmed = await confirmDialog({
+            title: t('planning.replaceActivityConfirmTitle', 'Thay thế hoạt động'),
+            description: t('planning.replaceActivityConfirm', 'Khung giờ này đã có hoạt động. Bạn có muốn thay thế hoạt động hiện tại không?'),
+            confirmText: t('common.replace', 'Thay thế'),
+            cancelText: t('common.cancel', 'Hủy'),
+            variant: 'default',
+          });
           if (!confirmed) return null;
 
           for (const existing of existingInTarget) {
@@ -1045,7 +1129,11 @@ export function WeeklyTimetableTab({
       await loadTimetable(currentWeek);
 
       toast.success(
-        `Đã dán "${activeClipboard.title || activeClipboard.shortTitle}" vào ${targets.length} ô thời khóa biểu`
+        t('planning.pasteActivitiesSuccess', {
+          title: activeClipboard.title || activeClipboard.shortTitle,
+          count: targets.length,
+          defaultValue: `Đã dán "${activeClipboard.title || activeClipboard.shortTitle}" vào ${targets.length} ô thời khóa biểu`,
+        })
       );
 
       setClipboardSlot(null);
@@ -1053,7 +1141,7 @@ export function WeeklyTimetableTab({
       setLastClickedCell(null);
     } catch (err) {
       console.error('Lỗi khi dán hoạt động:', err);
-      toast.error('Không thể dán hoạt động vào các ô đã chọn');
+      toast.error(t('planning.pasteActivitiesError', 'Không thể dán hoạt động vào các ô đã chọn'));
     }
   };
 
@@ -1148,7 +1236,11 @@ export function WeeklyTimetableTab({
     if (!sourceSlot || !targetDay) return;
     if (targetDay?.isLocked) {
       toast.error(
-        `Không thể chuyển hoạt động sang ngày ${targetDay.name} (${targetDay.date}) vì ngày này đã bị khóa dạy${targetDay.lockReason ? ` bởi "${targetDay.lockReason}"` : ''}.`
+        t('planning.cannotMoveToLockedDay', 'Không thể chuyển hoạt động sang ngày {{day}} ({{date}}) vì ngày này đã bị khóa dạy{{reason}}.', {
+          day: targetDay.name,
+          date: targetDay.date,
+          reason: targetDay.lockReason ? ` bởi "${targetDay.lockReason}"` : '',
+        })
       );
       return;
     }
@@ -1195,13 +1287,21 @@ export function WeeklyTimetableTab({
       const targetSlot = targetSlotsInCell[0];
       if (sourceSlot.id === targetSlot.id) return;
 
-      const sourceName = sourceSlot.title || sourceSlot.shortTitle || 'hoạt động này';
-      const targetName = targetSlot.title || targetSlot.shortTitle || 'hoạt động đã có';
+      const sourceName = sourceSlot.title || sourceSlot.shortTitle || t('planning.thisActivity', 'hoạt động này');
+      const targetName = targetSlot.title || targetSlot.shortTitle || t('planning.existingActivity', 'hoạt động đã có');
       const cellName = `${targetDay.name} (${targetSlotDef.name})`;
 
-      const confirmed = window.confirm(
-        `Ô ${cellName} đã có hoạt động "${targetName}".\n\nBạn có muốn đổi chỗ hai hoạt động này cho nhau không?`
-      );
+      const confirmed = await confirmDialog({
+        title: t('planning.swapConfirmTitle', 'Đổi chỗ hoạt động'),
+        description: t(
+          'planning.swapConfirm',
+          'Ô {{cellName}} đã có hoạt động "{{targetName}}".\n\nBạn có muốn đổi chỗ hai hoạt động này cho nhau không?',
+          { cellName, targetName }
+        ),
+        confirmText: t('planning.swap', 'Đổi chỗ'),
+        cancelText: t('common.cancel', 'Hủy'),
+        variant: 'default',
+      });
 
       if (!confirmed) return;
 
@@ -1238,10 +1338,15 @@ export function WeeklyTimetableTab({
           targetSlotId: targetSlot.id,
         });
         await loadTimetable();
-        toast.success(`Đã đổi chỗ "${sourceName}" và "${targetName}"`);
+        toast.success(
+          t('planning.swapSuccess', 'Đã đổi chỗ "{{source}}" và "{{target}}"', {
+            source: sourceName,
+            target: targetName,
+          })
+        );
       } catch (err) {
         console.error('Swap slots error:', err);
-        toast.error(err.response?.data?.message || err.message || 'Lỗi khi đổi chỗ hoạt động.');
+        toast.error(err.response?.data?.message || err.message || t('planning.swapError', 'Lỗi khi đổi chỗ hoạt động.'));
         await loadTimetable();
       }
       return;
@@ -1272,11 +1377,14 @@ export function WeeklyTimetableTab({
       });
       await loadTimetable();
       toast.success(
-        `Đã chuyển "${sourceSlot.title || sourceSlot.shortTitle}" sang ${targetDay.name || targetDay.shortName}`
+        t('planning.moveSuccess', 'Đã chuyển "{{name}}" sang {{targetDay}}', {
+          name: sourceSlot.title || sourceSlot.shortTitle,
+          targetDay: targetDay.name || targetDay.shortName,
+        })
       );
     } catch (err) {
       console.warn('Failed to save moved slot:', err);
-      toast.error('Lỗi khi chuyển hoạt động.');
+      toast.error(t('planning.moveError', 'Lỗi khi chuyển hoạt động.'));
       await loadTimetable();
     }
   };
@@ -1287,7 +1395,7 @@ export function WeeklyTimetableTab({
   }, [selectedTargetCells, selectedWeekId]);
 
   if (isLoading && !timetableData) {
-    return <PlanningTabLoading message="Đang tải dữ liệu kế hoạch tuần..." />;
+    return <PlanningTabLoading message={t('planning.loadingWeeklyTimetable', 'Đang tải dữ liệu kế hoạch tuần...')} />;
   }
 
   return (
@@ -1307,34 +1415,34 @@ export function WeeklyTimetableTab({
                 type="button"
                 onClick={() => setIsFeedbackModalOpen(true)}
                 className="inline-flex items-center gap-1.5 text-[11.5px] font-medium px-2 py-0.5 select-none border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100/80 dark:hover:bg-rose-900/60 transition-colors cursor-pointer shrink-0"
-                title="Nhấn để xem chi tiết ý kiến phản hồi"
+                title={t('planning.clickToViewFeedback', 'Nhấn để xem chi tiết ý kiến phản hồi')}
               >
                 <HugeiconsIcon icon={AlertCircleIcon} size={12} className="shrink-0 text-rose-600 dark:text-rose-400" />
-                <span>Yêu cầu sửa</span>
+                <span>{t('planning.requestRevision', 'Yêu cầu sửa')}</span>
               </button>
             ) : isPendingApproval ? (
               <span
                 className="inline-flex items-center gap-1.5 text-[11.5px] font-medium px-2 py-0.5 select-none border shrink-0 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/50"
-                title="Kế hoạch tuần đang chờ phê duyệt"
+                title={t('planning.pendingApprovalTooltip', 'Kế hoạch tuần đang chờ phê duyệt')}
               >
                 <HugeiconsIcon
                   icon={Clock01Icon}
                   size={12}
                   className="shrink-0 text-amber-600 dark:text-amber-400"
                 />
-                <span>Chờ duyệt</span>
+                <span>{t('planning.pendingApproval', 'Chờ duyệt')}</span>
               </span>
             ) : isApproved ? (
               <span
                 className="inline-flex items-center gap-1.5 text-[11.5px] font-medium px-2 py-0.5 select-none border shrink-0 text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/50"
-                title="Kế hoạch tuần đã được phê duyệt"
+                title={t('planning.approvedTooltip', 'Kế hoạch tuần đã được phê duyệt')}
               >
                 <HugeiconsIcon
                   icon={CheckmarkCircle01Icon}
                   size={12}
                   className="shrink-0 text-emerald-600 dark:text-emerald-400"
                 />
-                <span>Đã duyệt</span>
+                <span>{t('planning.approved', 'Đã duyệt')}</span>
               </span>
             ) : null}
           </div>
@@ -1387,7 +1495,7 @@ export function WeeklyTimetableTab({
             <div className="w-[195px] h-8 flex items-center justify-center font-medium select-none text-[12.5px] text-foreground tabular-nums shrink-0 gap-1.5">
               <span>{t('planning.weekPrefix', 'Tuần')} {activeWeekObj?.label}</span>
               {isReadOnly && isThemeReadOnly && (
-                <span title="Tuần thuộc chủ đề đã duyệt (Chỉ đọc)">
+                <span title={t('planning.approvedThemeReadOnlyTooltip', 'Tuần thuộc chủ đề đã duyệt (Chỉ đọc)')}>
                   <HugeiconsIcon icon={Clock01Icon} size={12} className="text-blue-600 dark:text-blue-400 shrink-0" />
                 </span>
               )}
@@ -1414,7 +1522,7 @@ export function WeeklyTimetableTab({
                 ? 'bg-primary text-primary-foreground border-primary'
                 : 'bg-background hover:bg-muted text-muted-foreground hover:text-foreground'
             )}
-            title="Chọn tuần từ lịch"
+            title={t('planning.selectWeekFromCalendar', 'Chọn tuần từ lịch')}
           >
             <HugeiconsIcon icon={SidebarRightIcon} size={15} />
           </button>
@@ -1429,20 +1537,10 @@ export function WeeklyTimetableTab({
                 ? 'bg-primary/10 text-primary border-primary/40 font-semibold'
                 : 'bg-background hover:bg-muted text-muted-foreground hover:text-foreground border-border'
             )}
-            title={showWeekend ? 'Ẩn Thứ 7 & Chủ nhật' : 'Hiện Thứ 7 & Chủ nhật'}
+            title={showWeekend ? t('planning.hideWeekendTooltip', 'Ẩn Thứ 7 & Chủ nhật') : t('planning.showWeekendTooltip', 'Hiện Thứ 7 & Chủ nhật')}
           >
             <HugeiconsIcon icon={Calendar03Icon} size={14} />
-            <span>{showWeekend ? 'Ẩn T7, CN' : 'Hiện T7, CN'}</span>
-          </button>
-
-          {/* Nút In Kế hoạch Tuần A4 */}
-          <button
-            type="button"
-            onClick={handlePrintWeeklyPlan}
-            className="size-8 flex items-center justify-center border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer rounded-none shrink-0"
-            title="In Kế hoạch tuần (Khổ A4)"
-          >
-            <Printer size={15} />
+            <span>{showWeekend ? t('planning.hideWeekend', 'Ẩn T7, CN') : t('planning.showWeekend', 'Hiện T7, CN')}</span>
           </button>
 
           {/* Nút Xuất Excel Kế hoạch tuần */}
@@ -1480,9 +1578,32 @@ export function WeeklyTimetableTab({
         onSelectEmptyCell={(day, slotDef) => {
           if (isReadOnly) return;
           if (day?.isLocked) {
-            toast.error(
-              `Ngày ${day.name} (${day.date}) đã bị khóa dạy${day.lockReason ? ` bởi "${day.lockReason}"` : ''}. Không thể thêm kế hoạch tuần vào ngày này.`
-            );
+            const makeupDate = day?.holiday?.makeupDate || day?.makeupDate;
+            if (makeupDate) {
+              const parts = makeupDate.split('-');
+              toast.info(
+                t(
+                  'planning.holidayMakeupInfo',
+                  'Ngày {{day}} là ngày nghỉ. Ban Giám Hiệu đã bố trí dạy bù sang Thứ Bảy ({{date}}). Vui lòng xếp lịch vào Thứ Bảy.',
+                  {
+                    day: day.name,
+                    date: `${parts[2]}/${parts[1]}`,
+                  }
+                )
+              );
+            } else {
+              toast.error(
+                t(
+                  'planning.dayLockedError',
+                  'Ngày {{day}} ({{date}}) đã bị khóa dạy{{reason}}. Không thể thêm kế hoạch tuần vào ngày này.',
+                  {
+                    day: day.name,
+                    date: day.date,
+                    reason: day.lockReason ? ` bởi "${day.lockReason}"` : '',
+                  }
+                )
+              );
+            }
             return;
           }
           if (clipboardSlot) {
@@ -1644,14 +1765,28 @@ export function WeeklyTimetableTab({
         onChangeActivity={(slot, day) => {
           const currentDayObj = currentDays.find((d) => d.key === (day?.key || slot.day)) || day;
           if (currentDayObj?.isLocked) {
-            toast.error(
-              `Ngày ${currentDayObj.name || currentDayObj.key} (${currentDayObj.date || slot.date}) đã bị khóa dạy${currentDayObj.lockReason ? ` bởi "${currentDayObj.lockReason}"` : ''}. Không thể đổi hoạt động.`
-            );
+            const makeupDate = currentDayObj?.holiday?.makeupDate || currentDayObj?.makeupDate;
+            if (makeupDate) {
+              const parts = makeupDate.split('-');
+              toast.info(
+                t('planning.makeupRescheduledInfo', 'Lịch hoạt động này đã được Ban Giám Hiệu dời sang Thứ Bảy ({{date}}).', {
+                  date: `${parts[2]}/${parts[1]}`,
+                })
+              );
+            } else {
+              toast.error(
+                t('planning.dayLockedChangeError', 'Ngày {{day}} ({{date}}) đã bị khóa dạy{{reason}}. Không thể đổi hoạt động.', {
+                  day: currentDayObj.name || currentDayObj.key,
+                  date: currentDayObj.date || slot.date,
+                  reason: currentDayObj.lockReason ? ` bởi "${currentDayObj.lockReason}"` : '',
+                })
+              );
+            }
             return;
           }
           const slotDef = ROUTINE_SLOTS.find(
             (s) => s.key === slot.routineSlot || s.key === slot.routine_slot
-          ) || { key: slot.routineSlot, name: 'Tiết học', defaultTime: `${slot.startTime} – ${slot.endTime}` };
+          ) || { key: slot.routineSlot, name: t('planning.periodLesson', 'Tiết học'), defaultTime: `${slot.startTime} – ${slot.endTime}` };
 
           setSelectedSlotForPopover(null);
           setPickerCell({
@@ -1666,13 +1801,17 @@ export function WeeklyTimetableTab({
           const currentDayObj = currentDays.find((d) => d.key === (day?.key || slot.day)) || day;
           if (currentDayObj?.isLocked) {
             toast.error(
-              `Ngày ${currentDayObj.name || currentDayObj.key} (${currentDayObj.date || slot.date}) đã bị khóa dạy${currentDayObj.lockReason ? ` bởi "${currentDayObj.lockReason}"` : ''}. Không thể thêm hoạt động vào ngày này.`
+              t('planning.dayLockedAddError', 'Ngày {{day}} ({{date}}) đã bị khóa dạy{{reason}}. Không thể thêm hoạt động vào ngày này.', {
+                day: currentDayObj.name || currentDayObj.key,
+                date: currentDayObj.date || slot.date,
+                reason: currentDayObj.lockReason ? ` bởi "${currentDayObj.lockReason}"` : '',
+              })
             );
             return;
           }
           const slotDef = ROUTINE_SLOTS.find(
             (s) => s.key === slot.routineSlot || s.key === slot.routine_slot
-          ) || { key: slot.routineSlot, name: 'Tiết học', defaultTime: `${slot.startTime} – ${slot.endTime}` };
+          ) || { key: slot.routineSlot, name: t('planning.periodLesson', 'Tiết học'), defaultTime: `${slot.startTime} – ${slot.endTime}` };
 
           setSelectedSlotForPopover(null);
           setPickerCell({
@@ -1710,20 +1849,21 @@ export function WeeklyTimetableTab({
         <DialogContent className="max-w-md rounded-none">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold text-foreground">
-              Ý kiến phản hồi của Ban Giám Hiệu
+              {t('planning.bghFeedbackTitle', 'Ý kiến phản hồi của Ban Giám Hiệu')}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground pt-1">
-              Chủ đề: <strong>{timetableData?.selectedTheme?.name || timetableData?.theme?.name || 'Kế hoạch tuần'}</strong>
+              {t('planning.themePrefix', 'Chủ đề:')}{' '}
+              <strong>{timetableData?.selectedTheme?.name || timetableData?.theme?.name || t('planning.tabTimetable', 'Kế hoạch tuần')}</strong>
               {activeWeekObj?.label && <span> ({activeWeekObj.label})</span>}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 py-2 text-xs">
             <div className="bg-rose-50/70 dark:bg-rose-950/25 border border-rose-200/80 dark:border-rose-900/40 p-3.5 text-rose-800 dark:text-rose-200 text-xs leading-relaxed font-medium">
-              "{rejectionReason || 'Ban Giám Hiệu yêu cầu rà soát và bổ sung kế hoạch.'}"
+              "{rejectionReason || t('planning.bghReviewRequired', 'Ban Giám Hiệu yêu cầu rà soát và bổ sung kế hoạch.')}"
             </div>
             <p className="text-muted-foreground text-[11.5px] leading-relaxed">
-              Vui lòng kiểm tra lại các nội dung theo góp ý trên và nộp lại cho Ban Giám Hiệu duyệt.
+              {t('planning.bghFeedbackInstruction', 'Vui lòng kiểm tra lại các nội dung theo góp ý trên và nộp lại cho Ban Giám Hiệu duyệt.')}
             </p>
           </div>
 
@@ -1734,7 +1874,7 @@ export function WeeklyTimetableTab({
               onClick={() => setIsFeedbackModalOpen(false)}
               className="text-xs rounded-none h-8 px-4"
             >
-              Đóng
+              {t('common.close', 'Đóng')}
             </Button>
           </DialogFooter>
         </DialogContent>

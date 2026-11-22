@@ -47,28 +47,29 @@ import { planningApi } from '../planning.api';
 const WEEKDAYS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 
 const DOMAIN_OPTIONS = [
-  { key: 'ALL', label: 'Tất cả' },
-  { key: 'PHYSICAL', label: 'Thể chất' },
-  { key: 'COGNITIVE', label: 'Nhận thức' },
-  { key: 'LANGUAGE', label: 'Ngôn ngữ' },
-  { key: 'SOCIO_EMOTIONAL', label: 'Tình cảm - KNXH' },
-  { key: 'AESTHETIC', label: 'Thẩm mỹ' },
+  { key: 'ALL', labelKey: 'common.all', defaultLabel: 'Tất cả' },
+  { key: 'PHYSICAL', labelKey: 'domains.physical', defaultLabel: 'Thể chất' },
+  { key: 'COGNITIVE', labelKey: 'domains.cognitive', defaultLabel: 'Nhận thức' },
+  { key: 'LANGUAGE', labelKey: 'domains.language', defaultLabel: 'Ngôn ngữ' },
+  { key: 'SOCIO_EMOTIONAL', labelKey: 'domains.socioEmotional', defaultLabel: 'Tình cảm - KNXH' },
+  { key: 'AESTHETIC', labelKey: 'domains.aesthetic', defaultLabel: 'Thẩm mỹ' },
 ];
 
-const DOMAIN_SHORT_LABELS = {
-  PHYSICAL: 'Thể chất',
-  COGNITIVE: 'Nhận thức',
-  LANGUAGE: 'Ngôn ngữ',
-  SOCIO_EMOTIONAL: 'Tình cảm - KNXH',
-  AESTHETIC: 'Thẩm mỹ',
-};
-
-const DOMAIN_FULL_LABELS = {
-  PHYSICAL: 'Phát triển thể chất',
-  COGNITIVE: 'Phát triển nhận thức',
-  LANGUAGE: 'Phát triển ngôn ngữ',
-  SOCIO_EMOTIONAL: 'Tình cảm - KNXH',
-  AESTHETIC: 'Phát triển thẩm mỹ',
+const getDomainFullLabel = (domain, t = (k, def) => def) => {
+  switch (domain) {
+    case 'PHYSICAL':
+      return t('domains.physicalFull', 'Phát triển thể chất');
+    case 'COGNITIVE':
+      return t('domains.cognitiveFull', 'Phát triển nhận thức');
+    case 'LANGUAGE':
+      return t('domains.languageFull', 'Phát triển ngôn ngữ');
+    case 'SOCIO_EMOTIONAL':
+      return t('domains.socioEmotionalFull', 'Tình cảm - KNXH');
+    case 'AESTHETIC':
+      return t('domains.aestheticFull', 'Phát triển thẩm mỹ');
+    default:
+      return domain;
+  }
 };
 
 const STANDARD_GOAL_FALLBACKS = {
@@ -248,8 +249,8 @@ const formatDateVn = (dateStr) => {
 };
 
 // Format date range as dd/mm – dd/mm
-const formatDateRangeDdMm = (startDateStr, endDateStr) => {
-  if (!startDateStr && !endDateStr) return 'Chưa xếp ngày';
+const formatDateRangeDdMm = (startDateStr, endDateStr, t = (k, def) => def) => {
+  if (!startDateStr && !endDateStr) return t('planning.noDatesScheduled', 'Chưa xếp ngày');
   const formatDdMm = (str) => {
     if (!str) return '';
     const parts = str.split('-');
@@ -433,7 +434,7 @@ export function TargetAllocationTab({
         setAllGoals(enrichedGoals);
       } catch (err) {
         console.warn('Failed to load target allocation:', err);
-        toast.error('Không thể tải dữ liệu phân bổ mục tiêu');
+        toast.error(t('planning.cannotLoadTargetAllocation', 'Không thể tải dữ liệu phân bổ mục tiêu'));
       } finally {
         setIsLoading(false);
       }
@@ -496,6 +497,7 @@ export function TargetAllocationTab({
   const isCurriculumPublished = useMemo(() => {
     if (isPrincipal) return true;
     if (allocationData?.isCurriculumPublished === false) return false;
+    if (allocationData?.isGoalBankPublished === false) return false;
     if (!themes || themes.length === 0) return false;
     return themes.some((t) => t.status === 'PUBLISHED');
   }, [isPrincipal, allocationData, themes]);
@@ -504,21 +506,21 @@ export function TargetAllocationTab({
   const classGradeText = useMemo(() => {
     const rawAge = allocationData?.classInfo?.ageGroup;
     const AGE_MAP = {
-      NHA_TRE: 'Khối Nhà trẻ',
-      MAM: 'Khối Mầm',
-      CHOI: 'Khối Chồi',
-      LA: 'Khối Lá',
-      nhatre: 'Khối Nhà trẻ',
-      mam: 'Khối Mầm',
-      choi: 'Khối Chồi',
-      la: 'Khối Lá',
+      NHA_TRE: t('classes.gradeNhaTre', 'Khối Nhà trẻ'),
+      MAM: t('classes.gradeMam', 'Khối Mầm'),
+      CHOI: t('classes.gradeChoi', 'Khối Chồi'),
+      LA: t('classes.gradeLa', 'Khối Lá'),
+      nhatre: t('classes.gradeNhaTre', 'Khối Nhà trẻ'),
+      mam: t('classes.gradeMam', 'Khối Mầm'),
+      choi: t('classes.gradeChoi', 'Khối Chồi'),
+      la: t('classes.gradeLa', 'Khối Lá'),
     };
     return (
       allocationData?.classInfo?.ageGroupLabel ||
       AGE_MAP[rawAge] ||
-      (allocationData?.classInfo?.name ? `lớp ${allocationData.classInfo.name}` : 'khối lớp này')
+      (allocationData?.classInfo?.name ? `${t('classes.classPrefix', 'Lớp')} ${allocationData.classInfo.name}` : t('classes.thisGrade', 'khối lớp này'))
     );
-  }, [allocationData?.classInfo]);
+  }, [allocationData?.classInfo, t]);
 
   const classYearText = useMemo(() => {
     return allocationData?.classInfo?.yearName || '';
@@ -803,7 +805,7 @@ export function TargetAllocationTab({
   // Toggle selection of a single NDGD (EducationalContent)
   const handleToggleContentAllocation = async (goalId, contentId) => {
     if (effectiveReadOnly) {
-      toast.warning(`Chủ đề "${currentTheme?.name}" đang ở chế độ Chỉ đọc. Bạn có thể chọn các chủ đề ở trạng thái "Bản nháp" để phân bổ!`);
+      toast.warning(t('planning.themeReadOnlyWarning', 'Chủ đề "{{name}}" đang ở chế độ Chỉ đọc. Bạn có thể chọn các chủ đề ở trạng thái "Bản nháp" để phân bổ!', { name: currentTheme?.name }));
       return;
     }
     if (!currentTheme) return;
@@ -938,7 +940,7 @@ export function TargetAllocationTab({
   // Toggle selection of all contents of a goal (Master checkbox)
   const handleToggleGoalAllocation = async (goalId) => {
     if (effectiveReadOnly) {
-      toast.warning(`Chủ đề "${currentTheme?.name}" đang ở chế độ Chỉ đọc. Bạn có thể chọn các chủ đề ở trạng thái "Bản nháp" để phân bổ!`);
+      toast.warning(t('planning.themeReadOnlyWarning', 'Chủ đề "{{name}}" đang ở chế độ Chỉ đọc. Bạn có thể chọn các chủ đề ở trạng thái "Bản nháp" để phân bổ!', { name: currentTheme?.name }));
       return;
     }
     if (!currentTheme) return;
@@ -1072,7 +1074,7 @@ export function TargetAllocationTab({
   // Helper: Lưu phân bổ mục tiêu & NDGD cho chủ đề hiện tại
   const handleSaveAllocation = async () => {
     if (effectiveReadOnly) {
-      toast.warning(`Chủ đề "${currentTheme?.name}" đang ở chế độ Chỉ đọc. Bạn có thể chọn các chủ đề ở trạng thái "Bản nháp" để phân bổ!`);
+      toast.warning(t('planning.themeReadOnlyWarning', 'Chủ đề "{{name}}" đang ở chế độ Chỉ đọc. Bạn có thể chọn các chủ đề ở trạng thái "Bản nháp" để phân bổ!', { name: currentTheme?.name }));
       return;
     }
     if (!currentTheme) return;
@@ -1093,10 +1095,10 @@ export function TargetAllocationTab({
       });
       setLastSavedTime(new Date());
       setHasChanges(false);
-      toast.success(`Đã lưu ${allocatedContentIds.length} NDGD (${allocatedGoalIds.length} mục tiêu) cho Chủ đề "${currentTheme.name}" thành công!`);
+      toast.success(t('planning.saveAllocationSuccess', 'Đã lưu {{contentCount}} NDGD ({{goalCount}} mục tiêu) cho Chủ đề "{{name}}" thành công!', { contentCount: allocatedContentIds.length, goalCount: allocatedGoalIds.length, name: currentTheme.name }));
     } catch (err) {
       console.error('Save target allocation error:', err);
-      toast.error('Có lỗi xảy ra khi lưu phân bổ');
+      toast.error(t('planning.saveAllocationError', 'Có lỗi xảy ra khi lưu phân bổ'));
     } finally {
       setIsSaving(false);
     }
@@ -1111,10 +1113,10 @@ export function TargetAllocationTab({
       const cleanTheme = (currentTheme?.name || 'Ke_hoach_giao_duc').replace(/[^a-zA-Z0-9_\u00C0-\u024F\u1EA0-\u1EF9]/g, '_');
       const filename = `Ke_hoach_giao_duc_${cleanTheme}.xlsx`;
       downloadBlob(blob, filename);
-      toast.success('Đã xuất kế hoạch giáo dục theo chủ đề & hoạt động ra file Excel.');
+      toast.success(t('planning.exportExcelSuccess', 'Đã xuất kế hoạch giáo dục theo chủ đề & hoạt động ra file Excel.'));
     } catch (err) {
       console.error('Export Excel error:', err);
-      toast.error('Không thể xuất file Excel. Vui lòng thử lại sau.');
+      toast.error(t('planning.exportExcelError', 'Không thể xuất file Excel. Vui lòng thử lại sau.'));
     } finally {
       setIsExporting(false);
     }
@@ -1241,7 +1243,7 @@ export function TargetAllocationTab({
   );
 
   if (isLoading) {
-    return <PlanningTabLoading message="Đang tải dữ liệu phân bổ mục tiêu..." />;
+    return <PlanningTabLoading message={t('planning.loadingTargetAllocation', 'Đang tải dữ liệu phân bổ mục tiêu...')} />;
   }
 
   // Giáo viên không được xem hoặc sử dụng dữ liệu chưa công bố (Thiết kế clean, icon trung tính không màu)
@@ -1253,11 +1255,14 @@ export function TargetAllocationTab({
             <HugeiconsIcon icon={AlertCircleIcon} size={22} />
           </div>
           <h3 className="text-[16px] font-semibold text-foreground tracking-tight">
-            Kế hoạch giáo dục chưa được công bố
+            {t('planning.curriculumNotPublishedTitle', 'Kế hoạch giáo dục chưa được công bố')}
           </h3>
           <p className="text-[13px] text-muted-foreground leading-relaxed">
             {allocationData?.message ||
-              `Hiện tại Ban Giám Hiệu chưa ban hành bộ chủ đề và mục tiêu giáo dục áp dụng cho ${classGradeText}${classYearText ? ` (${classYearText})` : ''}. Giáo viên vui lòng liên hệ Ban Giám Hiệu để cập nhật kế hoạch chính thức.`}
+              t('planning.curriculumNotPublishedDesc', 'Hiện tại Ban Giám Hiệu chưa ban hành bộ chủ đề và mục tiêu giáo dục áp dụng cho {{grade}}{{year}}. Giáo viên vui lòng liên hệ Ban Giám Hiệu để cập nhật kế hoạch chính thức.', {
+                grade: classGradeText,
+                year: classYearText ? ` (${classYearText})` : '',
+              })}
           </p>
         </div>
       </div>
@@ -1276,10 +1281,10 @@ export function TargetAllocationTab({
         {/* Header Column 1 */}
         <div className="p-4 border-b border-border/80 bg-card shrink-0">
           <h2 className="text-[17px] font-semibold text-foreground tracking-tight">
-            Danh sách chủ đề
+            {t('planning.themeListTitle', 'Danh sách chủ đề')}
           </h2>
           <p className="text-[12px] text-muted-foreground mt-0.5">
-            Phân bổ mục tiêu theo năm học
+            {t('planning.themeListSubtitle', 'Phân bổ mục tiêu theo năm học')}
           </p>
         </div>
 
@@ -1287,7 +1292,7 @@ export function TargetAllocationTab({
         <div className="flex-1 min-h-0 overflow-y-auto divide-y divide-border/40 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {themes.length === 0 && (
             <div className="p-6 text-center text-[12.5px] text-muted-foreground italic select-none">
-              Chưa có chủ đề nào
+              {t('planning.noThemes', 'Chưa có chủ đề nào')}
             </div>
           )}
           {themes.map((th) => {
@@ -1328,21 +1333,21 @@ export function TargetAllocationTab({
                   </span>
                   <div className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground font-normal mt-0.5 min-w-0">
                     {th.planStatus === 'USED' && (
-                      <span className="inline-flex items-center text-emerald-600 dark:text-emerald-400 shrink-0" title="Đã phê duyệt (Chỉ đọc)">
+                      <span className="inline-flex items-center text-emerald-600 dark:text-emerald-400 shrink-0" title={t('planning.approvedReadOnlyTooltip', 'Đã phê duyệt (Chỉ đọc)')}>
                         <HugeiconsIcon icon={CheckmarkCircle01Icon} size={12} />
                       </span>
                     )}
                     {(th.planStatus === 'SUBMITTED' || th.planStatus === 'PENDING_APPROVAL') && (
-                      <span className="inline-flex items-center text-amber-600 dark:text-amber-400 shrink-0" title="Đang chờ duyệt (Chỉ đọc)">
+                      <span className="inline-flex items-center text-amber-600 dark:text-amber-400 shrink-0" title={t('planning.pendingApprovalReadOnlyTooltip', 'Đang chờ duyệt (Chỉ đọc)')}>
                         <HugeiconsIcon icon={Clock01Icon} size={12} />
                       </span>
                     )}
                     {th.planStatus === 'REJECTED' && (
-                      <span className="inline-flex items-center text-rose-600 dark:text-rose-400 shrink-0" title="Yêu cầu sửa">
+                      <span className="inline-flex items-center text-rose-600 dark:text-rose-400 shrink-0" title={t('planning.requestRevisionTooltip', 'Yêu cầu sửa')}>
                         <HugeiconsIcon icon={Cancel01Icon} size={12} />
                       </span>
                     )}
-                    <span className="truncate">{formatDateRangeDdMm(th.startDate, th.endDate)}</span>
+                    <span className="truncate">{formatDateRangeDdMm(th.startDate, th.endDate, t)}</span>
                   </div>
                 </div>
               </div>
@@ -1362,17 +1367,17 @@ export function TargetAllocationTab({
             <div className="p-3.5 border-b border-border flex items-center justify-between bg-card shrink-0">
               <div>
                 <h2 className="text-[15px] font-semibold text-foreground tracking-tight">
-                  Danh sách chủ đề
+                  {t('planning.themeListTitle', 'Danh sách chủ đề')}
                 </h2>
                 <p className="text-[11.5px] text-muted-foreground mt-0.5">
-                  {themes.length} chủ đề trong năm học
+                  {t('planning.themesCountInYear', '{{count}} chủ đề trong năm học', { count: themes.length })}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowMobileThemes(false)}
                 className="size-7 flex items-center justify-center hover:bg-muted text-muted-foreground rounded-xs cursor-pointer"
-                title="Đóng danh sách chủ đề"
+                title={t('planning.closeThemeList', 'Đóng danh sách chủ đề')}
               >
                 <HugeiconsIcon icon={Cancel01Icon} size={15} />
               </button>
@@ -1381,7 +1386,7 @@ export function TargetAllocationTab({
             <div className="flex-1 min-h-0 overflow-y-auto divide-y divide-border/40 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               {themes.length === 0 ? (
                 <div className="p-6 text-center text-[12.5px] text-muted-foreground italic select-none">
-                  Chưa có chủ đề nào
+                  {t('planning.noThemes', 'Chưa có chủ đề nào')}
                 </div>
               ) : (
                 themes.map((th) => {
@@ -1423,21 +1428,21 @@ export function TargetAllocationTab({
                         </span>
                         <div className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground font-normal mt-0.5 min-w-0">
                           {th.planStatus === 'USED' && (
-                            <span className="inline-flex items-center text-emerald-600 dark:text-emerald-400 shrink-0" title="Đã phê duyệt (Chỉ đọc)">
+                            <span className="inline-flex items-center text-emerald-600 dark:text-emerald-400 shrink-0" title={t('planning.approvedReadOnlyTooltip', 'Đã phê duyệt (Chỉ đọc)')}>
                               <HugeiconsIcon icon={CheckmarkCircle01Icon} size={12} />
                             </span>
                           )}
                           {(th.planStatus === 'SUBMITTED' || th.planStatus === 'PENDING_APPROVAL') && (
-                            <span className="inline-flex items-center text-amber-600 dark:text-amber-400 shrink-0" title="Đang chờ duyệt (Chỉ đọc)">
+                            <span className="inline-flex items-center text-amber-600 dark:text-amber-400 shrink-0" title={t('planning.pendingApprovalReadOnlyTooltip', 'Đang chờ duyệt (Chỉ đọc)')}>
                               <HugeiconsIcon icon={Clock01Icon} size={12} />
                             </span>
                           )}
                           {th.planStatus === 'REJECTED' && (
-                            <span className="inline-flex items-center text-rose-600 dark:text-rose-400 shrink-0" title="Yêu cầu sửa">
+                            <span className="inline-flex items-center text-rose-600 dark:text-rose-400 shrink-0" title={t('planning.requestRevisionTooltip', 'Yêu cầu sửa')}>
                               <HugeiconsIcon icon={Cancel01Icon} size={12} />
                             </span>
                           )}
-                          <span className="truncate">{formatDateRangeDdMm(th.startDate, th.endDate)}</span>
+                          <span className="truncate">{formatDateRangeDdMm(th.startDate, th.endDate, t)}</span>
                         </div>
                       </div>
                     </div>
@@ -1461,10 +1466,10 @@ export function TargetAllocationTab({
                   type="button"
                   onClick={() => setShowMobileThemes(true)}
                   className="h-8 px-3 flex items-center gap-1.5 border border-border bg-background hover:bg-muted text-foreground text-[12px] font-medium rounded-none transition-colors shrink-0 cursor-pointer"
-                  title="Xem danh sách chủ đề"
+                  title={t('planning.themeListButton', 'Danh sách chủ đề ({{count}})', { count: themes.length })}
                 >
                   <HugeiconsIcon icon={Menu01Icon} size={15} />
-                  <span>Danh sách chủ đề ({themes.length})</span>
+                  <span>{t('planning.themeListButton', 'Danh sách chủ đề ({{count}})', { count: themes.length })}</span>
                 </button>
               </div>
             )}
@@ -1472,10 +1477,10 @@ export function TargetAllocationTab({
               <HugeiconsIcon icon={Calendar03Icon} size={30} />
             </div>
             <h3 className="text-[17px] font-semibold text-foreground tracking-tight">
-              Chưa có chủ đề giáo dục nào
+              {t('planning.noThemesTitle', 'Chưa có chủ đề giáo dục nào')}
             </h3>
             <p className="text-[13px] text-muted-foreground mt-1.5 max-w-md leading-relaxed">
-              Lớp học này chưa có chủ đề giáo dục nào được công bố. Vui lòng chờ Ban Giám Hiệu công bố kế hoạch chủ đề trước khi phân bổ mục tiêu.
+              {t('planning.noThemesDesc', 'Lớp học này chưa có chủ đề giáo dục nào được công bố. Vui lòng chờ Ban Giám Hiệu công bố kế hoạch chủ đề trước khi phân bổ mục tiêu.')}
             </p>
           </div>
         ) : (
@@ -1491,18 +1496,18 @@ export function TargetAllocationTab({
                     type="button"
                     onClick={() => setShowMobileThemes(true)}
                     className="lg:hidden h-8 px-2.5 flex items-center gap-1.5 border border-border bg-background hover:bg-muted text-foreground text-[12px] font-medium rounded-none transition-colors shrink-0 cursor-pointer"
-                    title="Xem danh sách chủ đề"
+                    title={t('planning.themeListButton', 'Danh sách chủ đề ({{count}})', { count: themes.length })}
                   >
                     <HugeiconsIcon icon={Menu01Icon} size={15} />
-                    <span className="hidden sm:inline">Chủ đề</span>
+                    <span className="hidden sm:inline">{t('planning.themeListTitle', 'Chủ đề')}</span>
                     <span>({themes.length})</span>
                   </button>
 
                   <h1
                     className="text-[17px] sm:text-[19px] md:text-[20px] font-semibold text-foreground tracking-tight truncate"
-                    title={currentTheme?.name || 'Phân bổ mục tiêu'}
+                    title={currentTheme?.name || t('planning.tabTargetAllocation', 'Phân bổ mục tiêu')}
                   >
-                    {currentTheme?.name || 'Phân bổ mục tiêu'}
+                    {currentTheme?.name || t('planning.tabTargetAllocation', 'Phân bổ mục tiêu')}
                   </h1>
                 </div>
 
@@ -1519,7 +1524,7 @@ export function TargetAllocationTab({
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Tìm kiếm mục tiêu..."
+                      placeholder={t('planning.searchGoalsPlaceholder', 'Tìm kiếm mục tiêu...')}
                       className="h-8 pl-8 pr-7 w-28 sm:w-36 md:w-44 text-[12px] bg-background border border-border rounded-none focus:outline-none focus:border-[#1447e6] transition-colors placeholder:text-muted-foreground/60"
                     />
                     {searchQuery && (
@@ -1527,7 +1532,7 @@ export function TargetAllocationTab({
                         type="button"
                         onClick={() => setSearchQuery('')}
                         className="absolute right-2 text-muted-foreground hover:text-foreground cursor-pointer"
-                        title="Xóa tìm kiếm"
+                        title={t('common.clearSearch', 'Xóa tìm kiếm')}
                       >
                         <HugeiconsIcon icon={Cancel01Icon} size={11} />
                       </button>
@@ -1544,7 +1549,7 @@ export function TargetAllocationTab({
                         ? 'bg-muted text-foreground'
                         : 'bg-background hover:bg-muted text-muted-foreground hover:text-foreground',
                     )}
-                    title={showCalendar ? 'Thu gọn lịch' : 'Mở lịch'}
+                    title={showCalendar ? t('planning.collapseCalendar', 'Thu gọn lịch') : t('planning.openCalendar', 'Mở lịch')}
                   >
                     <HugeiconsIcon icon={SidebarRightIcon} size={18} />
                   </button>
@@ -1554,7 +1559,7 @@ export function TargetAllocationTab({
                     onExport={handleExportExcel}
                     isExporting={isExporting}
                     showImport={false}
-                    exportLabel="Xuất tệp Excel"
+                    exportLabel={t('planning.exportExcel', 'Xuất tệp Excel')}
                   />
                 </div>
               </div>
@@ -1568,40 +1573,40 @@ export function TargetAllocationTab({
                       type="button"
                       onClick={() => setIsFeedbackModalOpen(true)}
                       className="inline-flex items-center gap-1 text-[11px] font-medium px-1.5 py-0.5 select-none border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100/80 dark:hover:bg-rose-900/60 transition-colors cursor-pointer shrink-0"
-                      title="Nhấn để xem chi tiết ý kiến phản hồi"
+                      title={t('planning.clickToViewFeedback', 'Nhấn để xem chi tiết ý kiến phản hồi')}
                     >
                       <HugeiconsIcon icon={AlertCircleIcon} size={11} className="shrink-0 text-rose-600 dark:text-rose-400" />
-                      <span>Yêu cầu sửa</span>
+                      <span>{t('planning.requestRevision', 'Yêu cầu sửa')}</span>
                     </button>
                   ) : isPendingApproval ? (
                     <span
                       className="inline-flex items-center gap-1 text-[11px] font-medium px-1.5 py-0.5 select-none border shrink-0 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/50"
-                      title="Kế hoạch chủ đề đang chờ phê duyệt"
+                      title={t('planning.pendingApprovalTooltip', 'Kế hoạch chủ đề đang chờ phê duyệt')}
                     >
                       <HugeiconsIcon
                         icon={Clock01Icon}
                         size={11}
                         className="shrink-0 text-amber-600 dark:text-amber-400"
                       />
-                      <span>Chờ duyệt</span>
+                      <span>{t('planning.pendingApproval', 'Chờ duyệt')}</span>
                     </span>
                   ) : isApproved ? (
                     <span
                       className="inline-flex items-center gap-1 text-[11px] font-medium px-1.5 py-0.5 select-none border shrink-0 text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/50"
-                      title="Kế hoạch chủ đề đã được Ban Giám Hiệu phê duyệt"
+                      title={t('planning.approvedTooltip', 'Kế hoạch chủ đề đã được Ban Giám Hiệu phê duyệt')}
                     >
                       <HugeiconsIcon
                         icon={CheckmarkCircle01Icon}
                         size={11}
                         className="shrink-0 text-emerald-600 dark:text-emerald-400"
                       />
-                      <span>Đã duyệt</span>
+                      <span>{t('planning.approved', 'Đã duyệt')}</span>
                     </span>
                   ) : null}
 
                   {/* Trạng thái lưu tự động */}
                   <span className="text-[11.5px] text-muted-foreground/70 shrink-0 font-sans tracking-tight select-none">
-                    Đã lưu lúc <span className="font-mono text-muted-foreground font-medium">{updatedAt}</span>
+                    {t('planning.savedAt', 'Đã lưu lúc')} <span className="font-mono text-muted-foreground font-medium">{updatedAt}</span>
                   </span>
                 </div>
 
@@ -1609,7 +1614,7 @@ export function TargetAllocationTab({
                 <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
                   {/* Đã chọn bao nhiêu nội dung giáo dục */}
                   <span className="whitespace-nowrap">
-                    Đã chọn <strong className="font-mono font-bold text-foreground">{actualSelectedContentCount}</strong> / {totalContentsCount} NDGD
+                    {t('planning.selectedContentsCount', 'Đã chọn {{selected}} / {{total}} NDGD', { selected: actualSelectedContentCount, total: totalContentsCount })}
                   </span>
 
                   {/* Nút Bộ lọc & Sắp xếp mục tiêu (nằm sát bên phải) */}
@@ -1623,10 +1628,10 @@ export function TargetAllocationTab({
                             ? 'border-[#1447e6] text-[#1447e6] bg-[#1447e6]/10 font-semibold'
                             : 'border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground',
                         )}
-                        title="Bộ lọc & Sắp xếp mục tiêu"
+                        title={t('common.filter', 'Bộ lọc')}
                       >
                         <HugeiconsIcon icon={FilterHorizontalIcon} size={12} />
-                        <span>Bộ lọc</span>
+                        <span>{t('common.filter', 'Bộ lọc')}</span>
                         {(selectedDomainFilters.length > 0 || onlySelected || sortBy !== 'CODE_ASC') && (
                           <span className="size-1.5 rounded-full bg-[#1447e6]" />
                         )}
@@ -1638,7 +1643,7 @@ export function TargetAllocationTab({
                     >
                       {/* Sắp xếp mục tiêu */}
                       <DropdownMenuLabel className="px-2 py-1 text-[11px] font-bold text-muted-foreground uppercase tracking-wider select-none">
-                        Sắp xếp
+                        {t('common.sort', 'Sắp xếp')}
                       </DropdownMenuLabel>
                       <DropdownMenuItem
                         onSelect={(e) => e.preventDefault()}
@@ -1648,7 +1653,7 @@ export function TargetAllocationTab({
                           sortBy === 'CODE_ASC' && 'bg-muted/80 font-semibold text-[#1447e6]',
                         )}
                       >
-                        <span>Theo số thứ tự mục tiêu</span>
+                        <span>{t('planning.sortByGoalNumber', 'Theo số thứ tự mục tiêu')}</span>
                         {sortBy === 'CODE_ASC' && (
                           <HugeiconsIcon icon={CheckmarkSquare02Icon} size={13} className="text-[#1447e6] shrink-0" />
                         )}
@@ -1661,7 +1666,7 @@ export function TargetAllocationTab({
                           sortBy === 'NEWEST' && 'bg-muted/80 font-semibold text-[#1447e6]',
                         )}
                       >
-                        <span>Mục tiêu mới nhất</span>
+                        <span>{t('planning.sortByNewest', 'Mục tiêu mới nhất')}</span>
                         {sortBy === 'NEWEST' && (
                           <HugeiconsIcon icon={CheckmarkSquare02Icon} size={13} className="text-[#1447e6] shrink-0" />
                         )}
@@ -1671,7 +1676,7 @@ export function TargetAllocationTab({
 
                       {/* Header: Lĩnh vực phát triển */}
                       <div className="flex items-center justify-between px-2 py-1 text-[11px] font-bold text-muted-foreground uppercase tracking-wider select-none">
-                        <span>Lĩnh vực phát triển</span>
+                        <span>{t('planning.domainHeader', 'Lĩnh vực phát triển')}</span>
                         {selectedDomainFilters.length > 0 && (
                           <button
                             type="button"
@@ -1679,7 +1684,7 @@ export function TargetAllocationTab({
                             onClick={() => setSelectedDomainFilters([])}
                             className="text-[11px] text-[#1447e6] hover:underline font-normal normal-case cursor-pointer"
                           >
-                            Chọn tất cả
+                            {t('common.selectAll', 'Chọn tất cả')}
                           </button>
                         )}
                       </div>
@@ -1708,7 +1713,7 @@ export function TargetAllocationTab({
                               </svg>
                             )}
                           </div>
-                          <span>Tất cả lĩnh vực</span>
+                          <span>{t('planning.allDomains', 'Tất cả lĩnh vực')}</span>
                         </div>
                         <span className="font-mono text-[11px] text-muted-foreground">{allGoals.length}</span>
                       </DropdownMenuItem>
@@ -1744,7 +1749,7 @@ export function TargetAllocationTab({
                                   </svg>
                                 )}
                               </div>
-                              <span className="truncate">{item.label}</span>
+                              <span className="truncate">{t(item.labelKey, item.defaultLabel)}</span>
                             </div>
                             <div className="flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground shrink-0">
                               <span>{`${domainSelectedCount}/${domainGoals.length}`}</span>
@@ -1757,7 +1762,7 @@ export function TargetAllocationTab({
 
                       {/* Trạng thái phân bổ */}
                       <DropdownMenuLabel className="px-2 py-1 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                        Trạng thái phân bổ
+                        {t('planning.allocationStatus', 'Trạng thái phân bổ')}
                       </DropdownMenuLabel>
                       <DropdownMenuItem
                         onSelect={(e) => e.preventDefault()}
@@ -1767,7 +1772,7 @@ export function TargetAllocationTab({
                           !onlySelected && 'bg-muted/80 font-semibold text-[#1447e6]',
                         )}
                       >
-                        <span>Tất cả mục tiêu ({allGoals.length})</span>
+                        <span>{t('planning.allGoalsCount', 'Tất cả mục tiêu ({{count}})', { count: allGoals.length })}</span>
                         {!onlySelected && (
                           <HugeiconsIcon icon={CheckmarkSquare02Icon} size={13} className="text-[#1447e6] shrink-0" />
                         )}
@@ -1780,7 +1785,7 @@ export function TargetAllocationTab({
                           onlySelected && 'bg-muted/80 font-semibold text-[#1447e6]',
                         )}
                       >
-                        <span>Chỉ xem đã chọn ({actualSelectedCount})</span>
+                        <span>{t('planning.onlySelectedGoalsCount', 'Chỉ xem đã chọn ({{count}})', { count: actualSelectedCount })}</span>
                         {onlySelected && (
                           <HugeiconsIcon icon={CheckmarkSquare02Icon} size={13} className="text-[#1447e6] shrink-0" />
                         )}
@@ -1799,7 +1804,7 @@ export function TargetAllocationTab({
                             }}
                             className="flex items-center justify-center h-7 px-2 text-[12px] text-[#1447e6] hover:bg-[#1447e6]/10 cursor-pointer rounded-none font-medium text-center"
                           >
-                            Đặt lại mặc định
+                            {t('common.resetDefault', 'Đặt lại mặc định')}
                           </DropdownMenuItem>
                         </>
                       )}
@@ -1834,11 +1839,14 @@ export function TargetAllocationTab({
                 return (
                   <div
                     key={goal.id}
-                    onClick={() => handleToggleGoalAllocation(goal.id)}
+                    onClick={() => !effectiveReadOnly && handleToggleGoalAllocation(goal.id)}
                     className={cn(
-                      'border bg-card p-4 sm:p-5 rounded-none shadow-2xs space-y-3 transition-colors text-left select-none cursor-pointer',
+                      'border bg-card p-4 sm:p-5 rounded-none shadow-2xs space-y-3 transition-colors text-left select-none',
+                      effectiveReadOnly ? 'cursor-default' : 'cursor-pointer',
                       status.isSelected
                         ? 'border-[#1447e6]/40 bg-[#1447e6]/[0.015]'
+                        : effectiveReadOnly
+                        ? 'border-border bg-card'
                         : 'border-border bg-card hover:border-border hover:bg-muted/15',
                     )}
                   >
@@ -1861,11 +1869,11 @@ export function TargetAllocationTab({
                       {/* Tên lĩnh vực xuống dưới */}
                       <div className="flex items-center gap-2 flex-wrap text-[12px] text-muted-foreground">
                         <span className="font-medium">
-                          {DOMAIN_FULL_LABELS[goal.domain] || goal.domainLabel || goal.domain}
+                          {getDomainFullLabel(goal.domain, t) || goal.domainLabel || goal.domain}
                         </span>
                         {otherThemes.length > 0 && (
                           <span className="text-[11.5px] text-muted-foreground/80 italic font-normal">
-                            (Đã có ở Chủ đề {otherThemes.map((t) => t.code).join(', ')})
+                            {t('planning.alreadyInThemes', '(Đã có ở Chủ đề {{themes}})', { themes: otherThemes.map((t) => t.code).join(', ') })}
                           </span>
                         )}
                       </div>
@@ -1874,7 +1882,7 @@ export function TargetAllocationTab({
                       {showContents && goal.contents && goal.contents.length > 0 && (
                         <div className="pt-2.5 border-t border-border/60 space-y-2" onClick={(e) => e.stopPropagation()}>
                           <div className="text-[12px] text-muted-foreground font-medium">
-                            <span>Nội dung giáo dục ({status.selectedCount}/{status.totalCount}):</span>
+                            <span>{t('planning.educationalContentCount', 'Nội dung giáo dục ({{selected}}/{{total}}):', { selected: status.selectedCount, total: status.totalCount })}</span>
                           </div>
                           <div className="space-y-1.5">
                             {goal.contents.map((cnt) => {
@@ -1901,12 +1909,17 @@ export function TargetAllocationTab({
                                   key={cId}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleToggleContentAllocation(goal.id, cId);
+                                    if (!effectiveReadOnly) {
+                                      handleToggleContentAllocation(goal.id, cId);
+                                    }
                                   }}
                                   className={cn(
-                                    'flex items-center justify-between gap-3 p-2.5 sm:p-3 border rounded-none text-[12.5px] select-none transition-colors cursor-pointer',
+                                    'flex items-center justify-between gap-3 p-2.5 sm:p-3 border rounded-none text-[12.5px] select-none transition-colors',
+                                    effectiveReadOnly ? 'cursor-default' : 'cursor-pointer',
                                     isCntSelected
                                       ? 'bg-[#1447e6]/[0.04] border-[#1447e6]/35 text-foreground font-medium'
+                                      : effectiveReadOnly
+                                      ? 'bg-card border-border/60 text-muted-foreground'
                                       : 'bg-card border-border/60 text-muted-foreground hover:bg-muted/30 hover:text-foreground',
                                   )}
                                 >
@@ -1917,8 +1930,11 @@ export function TargetAllocationTab({
                                       aria-checked={Boolean(isCntSelected)}
                                       className={cn(
                                         'size-4 rounded-none border flex items-center justify-center shrink-0 mt-0.5 transition-colors',
+                                        effectiveReadOnly && 'opacity-60 cursor-not-allowed',
                                         isCntSelected
                                           ? 'bg-[#1447e6] border-[#1447e6] text-white'
+                                          : effectiveReadOnly
+                                          ? 'border-border/80 bg-background'
                                           : 'border-border/80 bg-background hover:border-[#1447e6]',
                                       )}
                                     >
@@ -1942,7 +1958,7 @@ export function TargetAllocationTab({
                                   {/* Hiển thị đúng số lượng HĐGD nếu có hoạt động giáo dục thực tế */}
                                   {themeActivitiesCount > 0 && (
                                     <span className="text-[11px] font-mono text-muted-foreground/75 px-1 py-0.5 shrink-0">
-                                      {themeActivitiesCount} HĐGD
+                                      {themeActivitiesCount} {t('planning.activityCountSuffixFull', 'HĐGD')}
                                     </span>
                                   )}
                                 </div>
@@ -1955,10 +1971,10 @@ export function TargetAllocationTab({
                       {/* Khi thu gọn nội dung chi tiết */}
                       {!showContents && goal.contents && goal.contents.length > 0 && (
                         <div className="pt-0.5 text-[11.5px] text-muted-foreground flex items-center gap-2">
-                          <span>· {goal.contents.length} nội dung giáo dục</span>
+                          <span>{t('planning.educationalContentsCollapsed', '· {{count}} nội dung giáo dục', { count: goal.contents.length })}</span>
                           {status.selectedCount > 0 && (
                             <span className="ml-1 text-foreground font-medium">
-                              (Đã chọn {status.selectedCount}/{status.totalCount})
+                              {t('planning.selectedCountIndicator', '(Đã chọn {{selected}}/{{total}})', { selected: status.selectedCount, total: status.totalCount })}
                             </span>
                           )}
                         </div>
@@ -1967,7 +1983,7 @@ export function TargetAllocationTab({
                       {/* Mục tiêu chưa có nội dung giáo dục thì hiển thị Chưa có NDGD ở bên dưới */}
                       {(!goal.contents || goal.contents.length === 0) && (
                         <div className="pt-1 text-[12px] text-muted-foreground/60 italic select-none">
-                          Chưa có NDGD
+                          {t('planning.noEducationalContent', 'Chưa có NDGD')}
                         </div>
                       )}
                     </div>
@@ -1979,14 +1995,14 @@ export function TargetAllocationTab({
             {filteredGoals.length === 0 && (
               <div className="h-48 flex flex-col items-center justify-center text-center p-6 space-y-1.5 text-muted-foreground bg-card border border-dashed border-border rounded-none">
                 <p className="text-[14px] font-semibold text-foreground">
-                  Không tìm thấy mục tiêu nào phù hợp
+                  {t('planning.noGoalsFoundTitle', 'Không tìm thấy mục tiêu nào phù hợp')}
                 </p>
                 <p className="text-[12.5px]">
                   {onlySelected
-                    ? 'Chủ đề này chưa có mục tiêu nào được chọn trong lĩnh vực hiện tại.'
+                    ? t('planning.noGoalsSelectedInDomain', 'Chủ đề này chưa có mục tiêu nào được chọn trong lĩnh vực hiện tại.')
                     : searchQuery
-                      ? `Không có kết quả nào cho từ khóa "${searchQuery}".`
-                      : 'Thử chọn bộ lọc "Tất cả" hoặc lĩnh vực phát triển khác.'}
+                      ? t('planning.noGoalsMatchingSearch', 'Không có kết quả nào cho từ khóa "{{query}}".', { query: searchQuery })
+                      : t('planning.tryResetFilterHint', 'Thử chọn bộ lọc "Tất cả" hoặc lĩnh vực phát triển khác.')}
                 </p>
                 {(onlySelected || selectedDomainFilters.length > 0 || searchQuery) && (
                   <button
@@ -1998,7 +2014,7 @@ export function TargetAllocationTab({
                     }}
                     className="mt-1 text-[12.5px] text-[#1447e6] hover:underline cursor-pointer font-medium"
                   >
-                    Xem tất cả {allGoals.length} mục tiêu
+                    {t('planning.viewAllGoalsCount', 'Xem tất cả {{count}} mục tiêu', { count: allGoals.length })}
                   </button>
                 )}
               </div>
@@ -2021,12 +2037,14 @@ export function TargetAllocationTab({
           <div className="fixed inset-y-0 right-0 z-50 w-[340px] max-w-[92vw] shadow-2xl border-l border-border bg-card flex flex-col h-full min-h-0 select-none overflow-hidden xl:static xl:z-auto xl:w-[320px] 2xl:w-[340px] xl:shadow-none animate-in slide-in-from-right duration-200">
             {/* Mobile close bar */}
             <div className="xl:hidden p-3 border-b border-border flex items-center justify-between bg-muted/30 shrink-0">
-              <span className="text-[13px] font-semibold text-foreground">Lịch chủ đề & nhánh</span>
+              <span className="text-[13px] font-semibold text-foreground">
+                {t('planning.calendarThemeAndSubThemes', 'Lịch chủ đề & nhánh')}
+              </span>
               <button
                 type="button"
                 onClick={() => setShowCalendar(false)}
                 className="size-7 flex items-center justify-center hover:bg-muted text-muted-foreground rounded-xs cursor-pointer"
-                title="Đóng lịch"
+                title={t('planning.closeCalendar', 'Đóng lịch')}
               >
                 <HugeiconsIcon icon={Cancel01Icon} size={15} />
               </button>
@@ -2045,13 +2063,13 @@ export function TargetAllocationTab({
                     ? 'opacity-25 cursor-not-allowed hover:bg-transparent text-muted-foreground/40'
                     : 'cursor-pointer',
                 )}
-                title={isPrevDisabled ? 'Đã ở tháng đầu tiên của năm học' : 'Lùi 1 tháng'}
+                title={isPrevDisabled ? t('planning.firstMonthAcademicYear', 'Đã ở tháng đầu tiên của năm học') : t('planning.prevMonth', 'Lùi 1 tháng')}
               >
                 <HugeiconsIcon icon={ArrowLeft01Icon} size={15} />
               </button>
 
               <span className="text-[13px] font-semibold text-foreground tracking-tight tabular-nums select-none">
-                Tháng {calendarMonth + 1}/{calendarYear} – {month2 + 1}/{month2Year}
+                {t('planning.monthLabel', 'Tháng {{month}}/{{year}}', { month: calendarMonth + 1, year: calendarYear })} – {t('planning.monthLabel', 'Tháng {{month}}/{{year}}', { month: month2 + 1, year: month2Year })}
               </span>
 
               <button
@@ -2064,7 +2082,7 @@ export function TargetAllocationTab({
                     ? 'opacity-25 cursor-not-allowed hover:bg-transparent text-muted-foreground/40'
                     : 'cursor-pointer',
                 )}
-                title={isNextDisabled ? 'Đã ở tháng cuối cùng của năm học' : 'Tiến 1 tháng'}
+                title={isNextDisabled ? t('planning.lastMonthAcademicYear', 'Đã ở tháng cuối cùng của năm học') : t('planning.nextMonth', 'Tiến 1 tháng')}
               >
                 <HugeiconsIcon icon={ArrowRight01Icon} size={15} />
               </button>
@@ -2079,14 +2097,14 @@ export function TargetAllocationTab({
                 <div key={mObj.key} className={cn('flex flex-col gap-1.5', !mObj.isFirst && 'pt-3.5 border-t border-border/70')}>
                   <div className="flex items-center justify-between px-0.5">
                     <span className="text-[13px] font-bold text-foreground tracking-tight">
-                      Tháng {mObj.month + 1}/{mObj.year}
+                      {t('planning.monthLabel', 'Tháng {{month}}/{{year}}', { month: mObj.month + 1, year: mObj.year })}
                     </span>
                   </div>
 
                   {/* Weekday headers: T2, T3, T4, T5, T6, T7, CN */}
                   <div className="grid grid-cols-7 text-center text-[11px] font-medium text-muted-foreground/80 py-1">
                     {WEEKDAYS.map((wd) => (
-                      <div key={wd}>{wd}</div>
+                      <div key={wd}>{t(`days.${wd}.short`, wd)}</div>
                     ))}
                   </div>
 
@@ -2177,16 +2195,16 @@ export function TargetAllocationTab({
                           )}
                           title={
                             isOutsideAcademicYear
-                              ? `Ngày ${formatDateVn(d.dateStr)} · Ngoài khung năm học`
+                              ? t('planning.dateOutsideAcademicYear', 'Ngày {{date}} · Ngoài khung năm học', { date: formatDateVn(d.dateStr) })
                               : isUnassignedInAcademicYear
-                                ? `Ngày ${formatDateVn(d.dateStr)} · Trong năm học (Chưa xếp chủ đề)`
+                                ? t('planning.dateUnassignedAcademicYear', 'Ngày {{date}} · Trong năm học (Chưa xếp chủ đề)', { date: formatDateVn(d.dateStr) })
                                 : isAssignedSubTheme
-                                  ? `Ngày ${formatDateVn(d.dateStr)} · Chủ đề: ${currentTheme?.name} · Nhánh: ${matchedSubTheme.name}`
+                                  ? t('planning.dateAssignedSubTheme', 'Ngày {{date}} · Chủ đề: {{theme}} · Nhánh: {{subTheme}}', { date: formatDateVn(d.dateStr), theme: currentTheme?.name, subTheme: matchedSubTheme?.name })
                                   : isUnassignedInTheme
-                                    ? `Ngày ${formatDateVn(d.dateStr)} · Chủ đề: ${currentTheme?.name} (Chưa xếp nhánh)`
+                                    ? t('planning.dateUnassignedInTheme', 'Ngày {{date}} · Chủ đề: {{theme}} (Chưa xếp nhánh)', { date: formatDateVn(d.dateStr), theme: currentTheme?.name })
                                     : isInOtherTheme
-                                      ? `Ngày ${formatDateVn(d.dateStr)} · Chủ đề: ${otherTheme.name} (Khác chủ đề)`
-                                      : `Ngày ${formatDateVn(d.dateStr)}`
+                                      ? t('planning.dateInOtherTheme', 'Ngày {{date}} · Chủ đề: {{theme}} (Khác chủ đề)', { date: formatDateVn(d.dateStr), theme: otherTheme?.name })
+                                      : `${t('common.date', 'Ngày')} ${formatDateVn(d.dateStr)}`
                           }
                         >
                           {/* Ngày trong năm học nhưng chưa có chủ đề: Viền nét đứt nhẹ */}
@@ -2235,7 +2253,7 @@ export function TargetAllocationTab({
                           {isSubThemeStart && matchedSubIdx !== -1 && (
                             <span
                               className="absolute top-0.5 left-0.5 z-20 text-[8px] font-mono font-bold leading-none px-1 py-0.2 shadow-xs bg-slate-900 text-white rounded-none"
-                              title={`Bắt đầu Nhánh ${matchedSubIdx + 1}: ${matchedSubTheme.name}`}
+                              title={t('planning.startSubThemeBadge', 'Bắt đầu Nhánh {{index}}: {{name}}', { index: matchedSubIdx + 1, name: matchedSubTheme.name })}
                             >
                               N{matchedSubIdx + 1}
                             </span>
@@ -2269,9 +2287,9 @@ export function TargetAllocationTab({
             {currentTheme?.subThemes && currentTheme.subThemes.length > 0 && (
               <div className="pt-3 border-t border-border/70 space-y-2">
                 <div className="flex items-center justify-between text-[12.5px] font-semibold text-foreground">
-                  <span>Chủ đề nhánh</span>
+                  <span>{t('planning.subThemesTitle', 'Chủ đề nhánh')}</span>
                   <span className="text-[11px] text-muted-foreground font-mono">
-                    {currentTheme.subThemes.length} nhánh
+                    {t('planning.subThemesCount', '{{count}} nhánh', { count: currentTheme.subThemes.length })}
                   </span>
                 </div>
                 <div className="border border-border/80 bg-card divide-y divide-border/40 text-[12px]">
@@ -2279,10 +2297,10 @@ export function TargetAllocationTab({
                     <div key={st.id || idx} className="p-2.5 space-y-1">
                       <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                         <span className="font-mono font-semibold text-[#1447e6]">
-                          Nhánh {idx + 1}
+                          {t('planning.subThemeIndex', 'Nhánh {{index}}', { index: idx + 1 })}
                         </span>
                         <span className="font-mono tabular-nums">
-                          {formatDateRangeDdMm(st.startDate, st.endDate)}
+                          {formatDateRangeDdMm(st.startDate, st.endDate, t)}
                         </span>
                       </div>
                       <p className="text-[12.5px] text-foreground font-medium leading-snug">
@@ -2297,11 +2315,11 @@ export function TargetAllocationTab({
             {/* Thanh chú thích tinh gọn & Popover quy ước */}
             <div className="pt-2.5 border-t border-border/70 flex items-center justify-between text-[11px] text-muted-foreground select-none">
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5" title="Chủ đề đang xem">
+                <div className="flex items-center gap-1.5" title={t('planning.conventionsSelectedTheme', 'Chủ đề đang chọn')}>
                   <span className="size-2.5 bg-[#1447e6] shrink-0 rounded-none" />
-                  <span className="font-medium text-foreground/85 text-[11px]">Chủ đề này</span>
+                  <span className="font-medium text-foreground/85 text-[11px]">{t('planning.thisThemeLegend', 'Chủ đề này')}</span>
                 </div>
-                <div className="flex items-center gap-1.5" title="Chưa xếp nhánh">
+                <div className="flex items-center gap-1.5" title={t('planning.unassignedSubThemeLegend', 'Chưa xếp nhánh')}>
                   <span
                     className="size-2.5 border border-[#1447e6]/40 shrink-0 rounded-none"
                     style={{
@@ -2309,7 +2327,7 @@ export function TargetAllocationTab({
                         'repeating-linear-gradient(45deg, rgba(20, 71, 230, 0.2), rgba(20, 71, 230, 0.2) 2px, rgba(20, 71, 230, 0.4) 2px, rgba(20, 71, 230, 0.4) 4px)',
                     }}
                   />
-                  <span className="text-[11px]">Chưa xếp nhánh</span>
+                  <span className="text-[11px]">{t('planning.unassignedSubThemeLegend', 'Chưa xếp nhánh')}</span>
                 </div>
               </div>
 
@@ -2319,10 +2337,10 @@ export function TargetAllocationTab({
                   <button
                     type="button"
                     className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer shrink-0 whitespace-nowrap rounded-none"
-                    title="Xem quy ước hiển thị lịch"
+                    title={t('planning.viewCalendarConventions', 'Xem quy ước hiển thị lịch')}
                   >
                     <HugeiconsIcon icon={InformationCircleIcon} size={12} className="shrink-0" />
-                    <span>Quy ước</span>
+                    <span>{t('planning.conventions', 'Quy ước')}</span>
                   </button>
                 </PopoverTrigger>
                 <PopoverContent
@@ -2334,14 +2352,14 @@ export function TargetAllocationTab({
                 >
                   <div className="flex items-center justify-between pb-1 border-b border-border/60">
                     <span className="font-semibold text-foreground text-[12px]">
-                      Quy ước hiển thị lịch
+                      {t('planning.calendarConventionsTitle', 'Quy ước hiển thị lịch')}
                     </span>
                   </div>
 
                   <div className="space-y-1.5 text-[11px]">
                     <div className="flex items-center gap-2">
                       <span className="size-3 bg-[#1447e6] shrink-0 rounded-none" />
-                      <span className="text-foreground">Chủ đề đang chọn</span>
+                      <span className="text-foreground">{t('planning.conventionsSelectedTheme', 'Chủ đề đang chọn')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span
@@ -2351,25 +2369,25 @@ export function TargetAllocationTab({
                             'repeating-linear-gradient(45deg, rgba(20, 71, 230, 0.2), rgba(20, 71, 230, 0.2) 2px, rgba(20, 71, 230, 0.4) 2px, rgba(20, 71, 230, 0.4) 4px)',
                         }}
                       />
-                      <span className="text-foreground">Chưa xếp nhánh</span>
+                      <span className="text-foreground">{t('planning.conventionsUnassignedSubTheme', 'Chưa xếp nhánh')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="size-3 bg-slate-100 dark:bg-slate-800/60 border border-border/60 shrink-0 rounded-none" />
-                      <span className="text-muted-foreground">Chủ đề khác</span>
+                      <span className="text-muted-foreground">{t('planning.conventionsOtherTheme', 'Chủ đề khác')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="size-3 border border-dashed border-border/80 bg-muted/20 shrink-0 rounded-none" />
-                      <span className="text-muted-foreground">Chưa có chủ đề</span>
+                      <span className="text-muted-foreground">{t('planning.conventionsNoTheme', 'Chưa có chủ đề')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="size-3 opacity-25 bg-muted/40 shrink-0 rounded-none" />
-                      <span className="text-muted-foreground/70">Ngoài năm học</span>
+                      <span className="text-muted-foreground/70">{t('planning.conventionsOutsideAcademicYear', 'Ngoài năm học')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-mono font-bold px-1 py-0.2 bg-slate-900 text-white shrink-0 rounded-none">
                         N1
                       </span>
-                      <span className="text-foreground">Mốc bắt đầu chủ đề nhánh</span>
+                      <span className="text-foreground">{t('planning.conventionsStartSubTheme', 'Mốc bắt đầu chủ đề nhánh')}</span>
                     </div>
                   </div>
                 </PopoverContent>
@@ -2384,22 +2402,23 @@ export function TargetAllocationTab({
         <DialogContent className="max-w-md rounded-none">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold text-foreground">
-              Ý kiến phản hồi của Ban Giám Hiệu
+              {t('planning.bghFeedbackTitle', 'Ý kiến phản hồi của Ban Giám Hiệu')}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground pt-1">
-              Chủ đề: <strong>{currentTheme?.name || 'Kế hoạch giáo dục'}</strong>
+              {t('planning.themePrefix', 'Chủ đề:')}{' '}
+              <strong>{currentTheme?.name || t('planning.educationalPlan', 'Kế hoạch giáo dục')}</strong>
               {currentTheme?.startDate && currentTheme?.endDate && (
-                <span> ({formatDateRangeDdMm(currentTheme.startDate, currentTheme.endDate)})</span>
+                <span> ({formatDateRangeDdMm(currentTheme.startDate, currentTheme.endDate, t)})</span>
               )}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 py-2 text-xs">
             <div className="bg-rose-50/70 dark:bg-rose-950/25 border border-rose-200/80 dark:border-rose-900/40 p-3.5 text-rose-800 dark:text-rose-200 text-xs leading-relaxed font-medium">
-              "{rejectionReason || 'Ban Giám Hiệu yêu cầu rà soát và bổ sung kế hoạch.'}"
+              "{rejectionReason || t('planning.bghReviewRequired', 'Ban Giám Hiệu yêu cầu rà soát và bổ sung kế hoạch.')}"
             </div>
             <p className="text-muted-foreground text-[11.5px] leading-relaxed">
-              Vui lòng kiểm tra lại các nội dung theo góp ý trên và nộp lại cho Ban Giám Hiệu duyệt.
+              {t('planning.bghFeedbackInstruction', 'Vui lòng kiểm tra lại các nội dung theo góp ý trên và nộp lại cho Ban Giám Hiệu duyệt.')}
             </p>
           </div>
 
@@ -2410,7 +2429,7 @@ export function TargetAllocationTab({
               onClick={() => setIsFeedbackModalOpen(false)}
               className="text-xs rounded-none h-8 px-4"
             >
-              Đóng
+              {t('common.close', 'Đóng')}
             </Button>
           </DialogFooter>
         </DialogContent>

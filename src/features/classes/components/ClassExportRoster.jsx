@@ -110,7 +110,7 @@ export function ClassExportRoster({ currentClass }) {
           {t('classes.exportTitle', 'Xuất danh sách')}
         </h1>
         <p className="text-[12.5px] text-muted-foreground font-normal">
-          Tải xuống các sổ bộ chính thức của lớp: Danh sách học sinh, Sổ điểm danh chuyên cần và Sổ theo dõi sức khỏe
+          {t('classes.exportSubtitleUnified', 'Tải xuống các sổ bộ chính thức của lớp: Danh sách học sinh, Sổ điểm danh chuyên cần và Sổ theo dõi sức khỏe')}
         </p>
       </div>
 
@@ -125,14 +125,14 @@ export function ClassExportRoster({ currentClass }) {
             <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[13.5px] font-medium text-foreground">
-                  Danh sách học sinh
+                  {t('classes.rosterTitle', 'Danh sách học sinh')}
                 </span>
                 <span className="text-[11.5px] text-muted-foreground">
-                  ({studentCount} học sinh · {teacherCount} giáo viên)
+                  {t('classes.rosterCounts', '({{studentCount}} học sinh · {{teacherCount}} giáo viên)', { studentCount, teacherCount })}
                 </span>
               </div>
               <p className="text-[12px] text-muted-foreground mt-0.5">
-                Hồ sơ học sinh đầy đủ kèm thông tin 2 phụ huynh, liên lạc khẩn cấp, địa chỉ và lưu ý sức khỏe (chuẩn Bộ GD&ĐT).
+                {t('classes.rosterDesc', 'Hồ sơ học sinh đầy đủ kèm thông tin 2 phụ huynh, liên lạc khẩn cấp, địa chỉ và lưu ý sức khỏe (chuẩn Bộ GD&ĐT).')}
               </p>
             </div>
           </div>
@@ -146,7 +146,7 @@ export function ClassExportRoster({ currentClass }) {
               className="h-8 px-3 rounded-none border-border bg-background hover:bg-muted/60 text-foreground text-[12px] font-normal cursor-pointer shadow-none flex items-center gap-1.5"
             >
               <HugeiconsIcon icon={Download01Icon} size={14} className="text-muted-foreground" />
-              <span>{isExportingRoster ? 'Đang xuất tệp...' : 'Xuất tệp Excel'}</span>
+              <span>{isExportingRoster ? t('classes.exportingFile', 'Đang xuất tệp...') : t('classes.exportExcelBtn', 'Xuất tệp Excel')}</span>
             </Button>
           </div>
         </div>
@@ -159,10 +159,10 @@ export function ClassExportRoster({ currentClass }) {
             </div>
             <div className="flex flex-col min-w-0">
               <span className="text-[13.5px] font-medium text-foreground">
-                Sổ điểm danh chuyên cần
+                {t('classes.attendanceBookTitle', 'Sổ điểm danh chuyên cần')}
               </span>
               <p className="text-[12px] text-muted-foreground mt-0.5">
-                Sổ theo dõi chuyên cần trọn năm học (Tháng 9–Tháng 5), mỗi tháng một trang bảng tính chi tiết kèm bảng tổng hợp cả năm.
+                {t('classes.attendanceBookDesc', 'Sổ theo dõi chuyên cần trọn năm học (Tháng 9–Tháng 5), mỗi tháng một trang bảng tính chi tiết kèm bảng tổng hợp cả năm.')}
               </p>
             </div>
           </div>
@@ -176,7 +176,7 @@ export function ClassExportRoster({ currentClass }) {
               className="h-8 px-3 rounded-none border-border bg-background hover:bg-muted/60 text-foreground text-[12px] font-normal cursor-pointer shadow-none flex items-center gap-1.5"
             >
               <HugeiconsIcon icon={Download01Icon} size={14} className="text-muted-foreground" />
-              <span>{isExportingAttendance ? 'Đang xuất tệp...' : 'Xuất tệp Excel'}</span>
+              <span>{isExportingAttendance ? t('classes.exportingFile', 'Đang xuất tệp...') : t('classes.exportExcelBtn', 'Xuất tệp Excel')}</span>
             </Button>
           </div>
         </div>
@@ -189,10 +189,10 @@ export function ClassExportRoster({ currentClass }) {
             </div>
             <div className="flex flex-col min-w-0">
               <span className="text-[13.5px] font-medium text-foreground">
-                Sổ theo dõi sức khỏe
+                {t('classes.healthBookTitle', 'Sổ theo dõi sức khỏe')}
               </span>
               <p className="text-[12px] text-muted-foreground mt-0.5">
-                Kết quả cân đo thể lực định kỳ (Chiều cao, Cân nặng, BMI), tình trạng dị ứng và phân loại chuẩn tăng trưởng WHO.
+                {t('classes.healthBookDesc', 'Kết quả cân đo thể lực định kỳ (Chiều cao, Cân nặng, BMI), tình trạng dị ứng và phân loại chuẩn tăng trưởng WHO.')}
               </p>
             </div>
           </div>
@@ -206,7 +206,7 @@ export function ClassExportRoster({ currentClass }) {
               className="h-8 px-3 rounded-none border-border bg-background hover:bg-muted/60 text-foreground text-[12px] font-normal cursor-pointer shadow-none flex items-center gap-1.5"
             >
               <HugeiconsIcon icon={Download01Icon} size={14} className="text-muted-foreground" />
-              <span>{isExportingHealth ? 'Đang xuất tệp...' : 'Xuất tệp Excel'}</span>
+              <span>{isExportingHealth ? t('classes.exportingFile', 'Đang xuất tệp...') : t('classes.exportExcelBtn', 'Xuất tệp Excel')}</span>
             </Button>
           </div>
         </div>

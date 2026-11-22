@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Cancel01Icon } from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ export function ThemeCreateModal({
   defaultYear = '2026–2027',
   onSuccess,
 }) {
+  const { t } = useTranslation();
   const academicYears = useAcademicYearStore((state) => state.academicYears);
   const [name, setName] = useState('');
   const [year, setYear] = useState(defaultYear);
@@ -29,8 +31,13 @@ export function ThemeCreateModal({
   const handleSubmit = (e) => {
     e.preventDefault();
     const cleanName =
-      name.trim() || (tab === 'themes' ? `Bộ chủ đề ${year}` : `Ngân hàng mục tiêu ${year}`);
-    toast.success(`Đã tạo ${cleanName} thành công!`);
+      name.trim() ||
+      (tab === 'themes'
+        ? `${t('curriculum.themeSet', 'Bộ chủ đề')} ${year}`
+        : `${t('curriculum.goalBank', 'Ngân hàng mục tiêu')} ${year}`);
+    toast.success(
+      t('curriculum.createFrameworkSuccess', 'Đã tạo {{name}} thành công!', { name: cleanName }),
+    );
     if (onSuccess) onSuccess();
     onClose();
   };
@@ -46,7 +53,9 @@ export function ThemeCreateModal({
       >
         <div className="p-4 border-b border-border flex items-center justify-between">
           <h2 className="text-[16px] font-semibold text-foreground">
-            {tab === 'themes' ? 'Tạo bộ chủ đề mới' : 'Tạo ngân hàng mục tiêu mới'}
+            {tab === 'themes'
+              ? t('curriculum.createNewThemeSet', 'Tạo bộ chủ đề mới')
+              : t('curriculum.createNewGoalBank', 'Tạo ngân hàng mục tiêu mới')}
           </h2>
           <button
             type="button"
@@ -60,7 +69,7 @@ export function ThemeCreateModal({
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           <div className="space-y-1.5">
             <label className="text-[13px] font-medium text-foreground">
-              Niên khóa áp dụng
+              {t('curriculum.targetSchoolYear', 'Niên khóa áp dụng')}
             </label>
             <select
               value={year}
@@ -72,14 +81,18 @@ export function ThemeCreateModal({
                   const val = ay.range || ay.name?.replace('Năm học ', '') || ay.code;
                   return (
                     <option key={ay.id} value={val}>
-                      {ay.name || `Năm học ${val}`}
+                      {ay.name || `${t('common.schoolYear', 'Năm học')} ${val}`}
                     </option>
                   );
                 })
               ) : (
                 <>
-                  <option value="2026–2027">Năm học 2026–2027 (Hiện tại)</option>
-                  <option value="2027–2028">Năm học 2027–2028</option>
+                  <option value="2026–2027">
+                    {t('common.schoolYear', 'Năm học')} 2026–2027 ({t('common.current', 'Hiện tại')})
+                  </option>
+                  <option value="2027–2028">
+                    {t('common.schoolYear', 'Năm học')} 2027–2028
+                  </option>
                 </>
               )}
             </select>
@@ -87,23 +100,31 @@ export function ThemeCreateModal({
 
           <div className="space-y-1.5">
             <label className="text-[13px] font-medium text-foreground">
-              Khối lớp
+              {t('common.grade', 'Khối lớp')}
             </label>
             <select
               value={ageGroup}
               onChange={(e) => setAgeGroup(e.target.value)}
               className="w-full h-8 px-2.5 bg-background border border-border text-[13px] rounded-none outline-none focus:border-primary cursor-pointer"
             >
-              <option value="nhatre">Khối Nhà trẻ (12–36 tháng)</option>
-              <option value="mam">Khối Mầm (3–4 tuổi)</option>
-              <option value="choi">Khối Chồi (4–5 tuổi)</option>
-              <option value="la">Khối Lá (5–6 tuổi)</option>
+              <option value="nhatre">
+                {t('classes.gradeNhaTre', 'Khối Nhà trẻ')} (12–36 {t('common.months', 'tháng')})
+              </option>
+              <option value="mam">
+                {t('classes.gradeMam', 'Khối Mầm')} (3–4 {t('common.yearsOld', 'tuổi')})
+              </option>
+              <option value="choi">
+                {t('classes.gradeChoi', 'Khối Chồi')} (4–5 {t('common.yearsOld', 'tuổi')})
+              </option>
+              <option value="la">
+                {t('classes.gradeLa', 'Khối Lá')} (5–6 {t('common.yearsOld', 'tuổi')})
+              </option>
             </select>
           </div>
 
           <div className="space-y-1.5">
             <label className="text-[13px] font-medium text-foreground">
-              Mẫu khởi tạo
+              {t('curriculum.initialTemplate', 'Mẫu khởi tạo')}
             </label>
             <div className="space-y-2 text-[13px]">
               <label className="flex items-center gap-2 cursor-pointer">
@@ -113,7 +134,7 @@ export function ThemeCreateModal({
                   checked={template === 'clone'}
                   onChange={() => setTemplate('clone')}
                 />
-                <span>Sao chép từ niên khóa 2025–2026 (Khuyên dùng)</span>
+                <span>{t('curriculum.cloneFromPreviousYear', 'Sao chép từ niên khóa 2025–2026 (Khuyên dùng)')}</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -122,7 +143,7 @@ export function ThemeCreateModal({
                   checked={template === 'blank'}
                   onChange={() => setTemplate('blank')}
                 />
-                <span>Tạo khung trống</span>
+                <span>{t('curriculum.createBlankFramework', 'Tạo khung trống')}</span>
               </label>
             </div>
           </div>
@@ -134,13 +155,13 @@ export function ThemeCreateModal({
               onClick={onClose}
               className="h-8 px-4 rounded-none border border-border text-[13px] shadow-none"
             >
-              Huỷ
+              {t('common.cancel', 'Huỷ')}
             </Button>
             <Button
               type="submit"
               className="h-8 px-4 rounded-none bg-[#1447e6] hover:bg-[#1447e6]/90 text-white text-[13px] font-medium shadow-none cursor-pointer"
             >
-              Tạo bộ khung
+              {t('curriculum.createFrameworkBtn', 'Tạo bộ khung')}
             </Button>
           </div>
         </form>

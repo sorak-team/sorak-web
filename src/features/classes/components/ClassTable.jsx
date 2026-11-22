@@ -110,7 +110,9 @@ export function ClassTable({ classes, isYearCompleted = false }) {
 
               {/* Giáo viên */}
               <td className="px-3 text-foreground font-normal">
-                {cls.teacher}
+                {cls.teacher === 'Chưa phân công' || !cls.teacher
+                  ? t('classes.unassigned', 'Chưa phân công')
+                  : cls.teacher}
               </td>
 
               {/* Phòng học */}

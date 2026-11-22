@@ -147,7 +147,7 @@ export function ClassCommandMenu() {
           data-node-id="4631:8165"
           data-name="Class Switcher Trigger"
         >
-          <span className="font-medium">{currentClass?.name || 'Chọn lớp'}</span>
+          <span className="font-medium">{currentClass?.name || t('classes.chooseClass', 'Chọn lớp')}</span>
           {(!isTeacher || teacherClasses.length > 1) && (
             <HugeiconsIcon
               icon={UnfoldMoreIcon}

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
   Copy01Icon,
@@ -8,6 +9,7 @@ import {
 } from '@hugeicons/core-free-icons';
 
 export function RecentActivityList({ activities = [] }) {
+  const { t } = useTranslation();
   const getIcon = (type) => {
     switch (type) {
       case 'CLONE':
@@ -28,10 +30,10 @@ export function RecentActivityList({ activities = [] }) {
     <div className="border border-border bg-card p-4 rounded-none flex flex-col gap-3 shadow-2xs">
       <div className="flex flex-col gap-0.5">
         <h3 className="text-[13.5px] font-semibold text-foreground">
-          Hoạt động gần đây
+          {t('curriculum.recentActivity', 'Hoạt động gần đây')}
         </h3>
         <span className="text-[11.5px] text-muted-foreground font-normal">
-          Thay đổi mới nhất
+          {t('curriculum.latestChanges', 'Thay đổi mới nhất')}
         </span>
       </div>
 

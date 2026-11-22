@@ -294,6 +294,8 @@ export const useTeacherStore = create((set, get) => ({
     if (updatedFields.citizenId) payload.citizenId = updatedFields.citizenId;
     if (updatedFields.address !== undefined) payload.address = updatedFields.address || null;
     if (updatedFields.avatar !== undefined) payload.avatarUrl = updatedFields.avatar;
+    if (updatedFields.updatedAt) payload.updatedAt = updatedFields.updatedAt;
+    if (updatedFields.updated_at) payload.updatedAt = updatedFields.updated_at;
     if (updatedFields.status) {
       payload.workStatus =
         updatedFields.status === 'on_leave'
