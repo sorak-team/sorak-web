@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams, useOutletContext } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Award,
   Sparkles,
@@ -28,6 +29,7 @@ import { cn } from '@/shared/lib/utils';
 import { getAcademicMonths, getMonthWeekRanges } from '@/features/assessment';
 
 export function ParentGoodBehaviorPage() {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const outletCtx = useOutletContext() || {};
   const [data, setData] = useState(null);
@@ -270,7 +272,7 @@ export function ParentGoodBehaviorPage() {
       <div className="w-full flex-1 flex items-center justify-center p-16 select-none font-sans">
         <div className="flex flex-col items-center gap-2 text-muted-foreground">
           <Activity className="size-6 animate-pulse text-primary" />
-          <span className="text-[13px]">Đang tải sổ bé ngoan của bé...</span>
+          <span className="text-[13px]">{t('parent.behavior.loading', 'Đang tải sổ bé ngoan của bé...')}</span>
         </div>
       </div>
     );
@@ -285,7 +287,7 @@ export function ParentGoodBehaviorPage() {
       {/* 1. Header Action Toolbar (Clean subtitle on left, controls on right) */}
       <div className="flex items-center justify-between gap-3 pb-1 shrink-0 flex-wrap sm:flex-nowrap">
         <span className="text-[12.5px] text-muted-foreground font-normal hidden sm:inline-block">
-          Sổ theo dõi rèn luyện nề nếp, chuyên cần và hoa bé ngoan của bé
+          {t('parent.behavior.subtitle', 'Sổ theo dõi rèn luyện nề nếp, chuyên cần và hoa bé ngoan của bé')}
         </span>
 
         {/* Action Toolbar on the right */}
@@ -302,7 +304,7 @@ export function ParentGoodBehaviorPage() {
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted'
               )}
             >
-              Hàng tháng
+              {t('parent.behavior.monthlyMode', 'Hàng tháng')}
             </button>
             <button
               type="button"
@@ -315,7 +317,7 @@ export function ParentGoodBehaviorPage() {
               )}
             >
               <BookOpen className="size-3.5" />
-              <span>Tổng kết HK1</span>
+              <span>{t('parent.behavior.semesterMode', 'Tổng kết HK1')}</span>
             </button>
           </div>
 
@@ -333,13 +335,13 @@ export function ParentGoodBehaviorPage() {
                     availableMonths.length - 1
                   }
                   className="size-8 flex items-center justify-center hover:bg-muted text-muted-foreground hover:text-foreground border-r border-border transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
-                  title="Tháng trước"
+                  title={t('common.prevMonth', 'Tháng trước')}
                 >
                   <ChevronLeft className="size-4" />
                 </button>
 
                 <div className="w-[125px] h-8 flex items-center justify-center font-medium select-none text-[12px] text-foreground tabular-nums shrink-0">
-                  <span>{selectedMonth ? `Tháng ${selectedMonth}/${selectedYear}` : 'Đang tải...'}</span>
+                  <span>{selectedMonth ? `${t('calendar.month', 'Tháng')} ${selectedMonth}/${selectedYear}` : t('common.loading', 'Đang tải...')}</span>
                 </div>
 
                 <button
@@ -351,7 +353,7 @@ export function ParentGoodBehaviorPage() {
                     ) <= 0
                   }
                   className="size-8 flex items-center justify-center hover:bg-muted text-muted-foreground hover:text-foreground border-l border-border transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
-                  title="Tháng sau"
+                  title={t('common.nextMonth', 'Tháng sau')}
                 >
                   <ChevronRight className="size-4" />
                 </button>
@@ -362,9 +364,9 @@ export function ParentGoodBehaviorPage() {
                   type="button"
                   onClick={handleGoToCurrentMonth}
                   className="h-8 px-2 text-[11.5px] font-medium text-primary hover:bg-primary/10 border border-primary/20 transition-colors cursor-pointer shrink-0"
-                  title="Quay lại tháng hiện tại"
+                  title={t('common.backToCurrentMonth', 'Quay lại tháng hiện tại')}
                 >
-                  Hiện tại
+                  {t('common.current', 'Hiện tại')}
                 </button>
               )}
             </div>

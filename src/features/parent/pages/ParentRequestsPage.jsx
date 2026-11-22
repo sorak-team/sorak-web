@@ -21,6 +21,7 @@ import { parentApi } from '../api/parent.api';
 import { PickupDelegationDrawer } from '../components/PickupDelegationDrawer';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/shared/lib/utils';
+import { confirmDialog } from '@/components/ui/confirm-dialog';
 
 export function ParentRequestsPage() {
   const navigate = useNavigate();
@@ -120,7 +121,14 @@ export function ParentRequestsPage() {
   }, []);
 
   const handleCancelRequest = async (requestId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn hủy yêu cầu này?')) return;
+    const isConfirmed = await confirmDialog({
+      title: 'Xác nhận hủy yêu cầu',
+      description: 'Bạn có chắc chắn muốn hủy yêu cầu này? Thao tác này không thể hoàn tác.',
+      confirmText: 'Hủy yêu cầu',
+      cancelText: 'Đóng',
+      variant: 'destructive',
+    });
+    if (!isConfirmed) return;
     try {
       await parentApi.cancelPickupRequest(requestId);
       toast.success('Đã hủy yêu cầu thành công.');
