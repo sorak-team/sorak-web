@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
   Cancel01Icon,
@@ -11,11 +12,15 @@ import { toast } from 'sonner';
 import { planningApi } from '../planning.api';
 
 export function AllocationAiDrawer({ isOpen, onClose, onApplyAiAllocation }) {
+  const { t } = useTranslation();
   const [messages, setMessages] = useState([
     {
       id: 'm1',
       sender: 'ai',
-      text: 'Mình có thể tự động phân bổ mục tiêu vào từng chủ đề nhánh theo độ khó tăng dần và đặc thù lứa tuổi.',
+      text: t(
+        'planning.aiDefaultMsg',
+        'Mình có thể tự động phân bổ mục tiêu vào từng chủ đề nhánh theo độ khó tăng dần và đặc thù lứa tuổi.',
+      ),
     },
   ]);
   const [inputText, setInputText] = useState('');
@@ -27,21 +32,24 @@ export function AllocationAiDrawer({ isOpen, onClose, onApplyAiAllocation }) {
     setIsProcessing(true);
     try {
       const res = await planningApi.queryAiAllocation({
-        prompt: 'Tự động phân bổ mục tiêu theo chủ đề Giao thông',
-        themeName: 'Giao thông',
+        prompt: t('planning.aiPromptExample', 'Tự động phân bổ mục tiêu theo chủ đề Giao thông'),
+        themeName: t('planning.aiThemeName', 'Giao thông'),
       });
       setMessages((prev) => [
         ...prev,
         {
           id: `m-${Date.now()}`,
           sender: 'ai',
-          text: 'Đã hoàn tất phân bổ 21 mục tiêu vào 3 chủ đề nhánh theo chuẩn Thông tư 51/BGDĐT. Bạn có muốn áp dụng ngay không?',
+          text: t(
+            'planning.aiProposalResponse',
+            'Đã hoàn tất phân bổ 21 mục tiêu vào 3 chủ đề nhánh theo chuẩn Thông tư 51/BGDĐT. Bạn có muốn áp dụng ngay không?',
+          ),
           proposals: res.proposals,
         },
       ]);
-      toast.success('Đã tạo đề xuất phân bổ mục tiêu tự động!');
+      toast.success(t('planning.aiSuccessToast', 'Đã tạo đề xuất phân bổ mục tiêu tự động!'));
     } catch {
-      toast.error('Lỗi khi gọi Sorak AI');
+      toast.error(t('planning.aiErrorToast', 'Lỗi khi gọi Sorak AI'));
     } finally {
       setIsProcessing(false);
     }
@@ -59,7 +67,10 @@ export function AllocationAiDrawer({ isOpen, onClose, onApplyAiAllocation }) {
         {
           id: `ai-${Date.now()}`,
           sender: 'ai',
-          text: `Đã ghi nhận yêu cầu: "${userMsg.text}". Đang cân đối số lượng mục tiêu giữa các tuần học.`,
+          text: t('planning.aiRequestRecorded', {
+            text: userMsg.text,
+            defaultValue: `Đã ghi nhận yêu cầu: "${userMsg.text}". Đang cân đối số lượng mục tiêu giữa các tuần học.`,
+          }),
         },
       ]);
     }, 600);
@@ -87,7 +98,7 @@ export function AllocationAiDrawer({ isOpen, onClose, onApplyAiAllocation }) {
                 Sorak AI
               </h2>
               <span className="text-[11.5px] text-muted-foreground">
-                Phân bổ mục tiêu · Giao thông
+                {t('planning.aiGoalAllocationSubtitle', 'Phân bổ mục tiêu · Giao thông')}
               </span>
             </div>
           </div>
@@ -133,12 +144,12 @@ export function AllocationAiDrawer({ isOpen, onClose, onApplyAiAllocation }) {
                     type="button"
                     onClick={() => {
                       if (onApplyAiAllocation) onApplyAiAllocation(m.proposals);
-                      toast.success('Đã áp dụng phân bổ AI vào các tuần học!');
+                      toast.success(t('planning.aiAppliedToast', 'Đã áp dụng phân bổ AI vào các tuần học!'));
                       onClose();
                     }}
                     className="w-full h-8 bg-emerald-600 hover:bg-emerald-700 text-white text-[12.5px] rounded-none shadow-none cursor-pointer"
                   >
-                    Áp dụng phân bổ này
+                    {t('planning.aiApplyProposalBtn', 'Áp dụng phân bổ này')}
                   </Button>
                 </div>
               )}
@@ -154,7 +165,7 @@ export function AllocationAiDrawer({ isOpen, onClose, onApplyAiAllocation }) {
               className="w-full h-9 bg-[#1447e6] hover:bg-[#1447e6]/90 text-white text-[13px] font-medium rounded-none shadow-none cursor-pointer flex items-center justify-center gap-2"
             >
               <HugeiconsIcon icon={SparklesIcon} size={15} />
-              <span>{isProcessing ? 'Đang phân tích...' : 'Tự động phân bổ bằng AI'}</span>
+              <span>{isProcessing ? t('planning.aiAnalyzing', 'Đang phân tích...') : t('planning.aiAutoAllocateBtn', 'Tự động phân bổ bằng AI')}</span>
             </Button>
           </div>
         </div>
@@ -162,7 +173,7 @@ export function AllocationAiDrawer({ isOpen, onClose, onApplyAiAllocation }) {
         {/* Footer with note & input */}
         <div className="p-4 border-t border-border bg-card space-y-2">
           <p className="text-[11px] text-muted-foreground text-center">
-            AI chỉ đề xuất. Giáo viên cần xem trước và xác nhận trước khi áp dụng phân bổ.
+            {t('planning.aiDisclaimer', 'AI chỉ đề xuất. Giáo viên cần xem trước và xác nhận trước khi áp dụng phân bổ.')}
           </p>
 
           <div className="flex items-center gap-1.5 border border-border bg-background px-2 py-1">
@@ -177,7 +188,7 @@ export function AllocationAiDrawer({ isOpen, onClose, onApplyAiAllocation }) {
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-              placeholder="Hỏi Sorak AI về cách phân bổ mục tiêu..."
+              placeholder={t('planning.aiInputPlaceholder', 'Hỏi Sorak AI về cách phân bổ mục tiêu...')}
               className="flex-1 h-7 bg-transparent text-[12.5px] text-foreground placeholder:text-muted-foreground outline-none"
             />
             <button

@@ -5,6 +5,7 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { Search01Icon, Cancel01Icon, MoreHorizontalIcon } from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { confirmDialog } from '@/components/ui/confirm-dialog';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -160,6 +161,11 @@ export function AttendanceCheckInPanel({
     }
   }, [initialStudents]);
 
+  // Future date check (Cho phép điểm danh ngày tương lai)
+  const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const isFutureDate = false;
+  const effectiveReadOnly = readOnly;
+
   // Kiểm tra xem giáo viên có thay đổi dữ liệu điểm danh so với ban đầu hay không
   const isDirty = useMemo(() => {
     if (!initialSnapshot || students.length === 0) return false;
@@ -167,19 +173,14 @@ export function AttendanceCheckInPanel({
     return current !== initialSnapshot;
   }, [students, initialSnapshot]);
 
-  // Điều kiện kích hoạt nút Lưu điểm danh:
-  // - Nếu đã điểm danh: chỉ enable khi có thay đổi (isDirty)
-  // - Nếu chưa điểm danh: luôn enable để lưu nhanh danh sách mặc định Có mặt
+  // Điều kiện kích hoạt nút Lưu điểm danh (Mở nút lưu theo yêu cầu tester #24):
   const canSave = useMemo(() => {
-    if (readOnly || isSaving || isCleaning || students.length === 0) return false;
-    if (isCurrentlyRecorded) {
-      return isDirty;
-    }
+    if (effectiveReadOnly || isSaving || isCleaning || students.length === 0) return false;
     return true;
-  }, [readOnly, isSaving, isCleaning, students.length, isCurrentlyRecorded, isDirty]);
+  }, [effectiveReadOnly, isSaving, isCleaning, students.length]);
 
   const handleToggleStatus = (id, newStatus) => {
-    if (readOnly) return;
+    if (effectiveReadOnly) return;
     setStudents((prev) => {
       const isAbsent = newStatus === 'EXCUSED_ABSENCE' || newStatus === 'UNEXCUSED_ABSENCE' || newStatus === 'ABSENT';
       const updated = prev.map((s) => (s.id === id ? { ...s, status: newStatus, rawStatus: newStatus, isAbsent } : s));
@@ -189,7 +190,7 @@ export function AttendanceCheckInPanel({
   };
 
   const handleNoteChange = (id, newNote) => {
-    if (readOnly) return;
+    if (effectiveReadOnly) return;
     setStudents((prev) => {
       const updated = prev.map((s) => (s.id === id ? { ...s, note: newNote, attendanceNote: newNote } : s));
       if (onStudentsChange) onStudentsChange(updated);
@@ -202,7 +203,7 @@ export function AttendanceCheckInPanel({
   const unexcusedCount = students.filter((s) => s.status === 'UNEXCUSED_ABSENCE').length;
 
   const handleSave = async () => {
-    if (readOnly || !canSave) return;
+    if (effectiveReadOnly || !canSave) return;
     setIsSaving(true);
     try {
       const targetClassId = classId || '5';
@@ -240,7 +241,16 @@ export function AttendanceCheckInPanel({
       toast.warning(isVi ? 'Ngày này chưa có dữ liệu điểm danh để xóa.' : 'No attendance records to clean.');
       return;
     }
-    if (!window.confirm(isVi ? 'Bạn có chắc chắn muốn xóa toàn bộ điểm danh của ngày này không? Thao tác này không thể hoàn tác.' : 'Are you sure you want to clean all attendance records for this day? This cannot be undone.')) {
+    const isConfirmed = await confirmDialog({
+      title: isVi ? 'Xác nhận xóa điểm danh' : 'Clean attendance records',
+      description: isVi
+        ? 'Bạn có chắc chắn muốn xóa toàn bộ điểm danh của ngày này không? Thao tác này không thể hoàn tác.'
+        : 'Are you sure you want to clean all attendance records for this day? This cannot be undone.',
+      confirmText: isVi ? 'Xóa' : 'Clean',
+      cancelText: isVi ? 'Hủy' : 'Cancel',
+      variant: 'destructive',
+    });
+    if (!isConfirmed) {
       return;
     }
     setIsCleaning(true);
@@ -360,6 +370,7 @@ export function AttendanceCheckInPanel({
         </div>
       )}
 
+
       {/* 2. Students List Table */}
       <div className="flex-1 overflow-y-auto px-6 py-4">
         {/* Chú thích viết tắt & Tìm kiếm mini ở phía trên */}
@@ -470,12 +481,12 @@ export function AttendanceCheckInPanel({
                           {/* Có mặt / Present */}
                           <button
                             type="button"
-                            disabled={readOnly || st.isTransferred}
+                            disabled={effectiveReadOnly || st.isTransferred}
                             onClick={() => handleToggleStatus(st.id, 'PRESENT')}
                             title={titlePresent}
                             className={cn(
                               'w-9 h-7 shrink-0 text-[11.5px] font-medium transition-colors rounded-none whitespace-nowrap flex items-center justify-center',
-                              readOnly || st.isTransferred ? 'cursor-default' : 'cursor-pointer',
+                              effectiveReadOnly || st.isTransferred ? 'cursor-default' : 'cursor-pointer',
                               isP
                                 ? 'bg-[#1447e6] text-white shadow-2xs font-semibold'
                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -487,12 +498,12 @@ export function AttendanceCheckInPanel({
                           {/* Có phép / Excused */}
                           <button
                             type="button"
-                            disabled={readOnly || st.isTransferred}
+                            disabled={effectiveReadOnly || st.isTransferred}
                             onClick={() => handleToggleStatus(st.id, 'EXCUSED_ABSENCE')}
                             title={titleExcused}
                             className={cn(
                               'w-9 h-7 shrink-0 text-[11.5px] font-medium transition-colors rounded-none border-x border-border/60 whitespace-nowrap flex items-center justify-center',
-                              readOnly || st.isTransferred ? 'cursor-default' : 'cursor-pointer',
+                              effectiveReadOnly || st.isTransferred ? 'cursor-default' : 'cursor-pointer',
                               isExcused
                                 ? 'bg-amber-500 text-white shadow-2xs font-semibold'
                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -504,12 +515,12 @@ export function AttendanceCheckInPanel({
                           {/* Không phép / Unexcused */}
                           <button
                             type="button"
-                            disabled={readOnly || st.isTransferred}
+                            disabled={effectiveReadOnly || st.isTransferred}
                             onClick={() => handleToggleStatus(st.id, 'UNEXCUSED_ABSENCE')}
                             title={titleUnexcused}
                             className={cn(
                               'w-9 h-7 shrink-0 text-[11.5px] font-medium transition-colors rounded-none whitespace-nowrap flex items-center justify-center',
-                              readOnly || st.isTransferred ? 'cursor-default' : 'cursor-pointer',
+                              effectiveReadOnly || st.isTransferred ? 'cursor-default' : 'cursor-pointer',
                               isUnexcused
                                 ? 'bg-rose-600 text-white shadow-2xs font-semibold'
                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -525,7 +536,7 @@ export function AttendanceCheckInPanel({
                     <td className="py-1 pl-3 min-w-[140px]">
                       <input
                         type="text"
-                        disabled={readOnly || st.isTransferred}
+                        disabled={effectiveReadOnly || st.isTransferred}
                         value={st.isTransferred ? 'Đã chuyển sang lớp khác (chỉ xem)' : (st.note || '')}
                         onChange={(e) => handleNoteChange(st.id, e.target.value)}
                         placeholder={
@@ -535,7 +546,7 @@ export function AttendanceCheckInPanel({
                         }
                         className={cn(
                           "w-full h-7 px-2.5 text-[11.5px] border border-border bg-background text-foreground rounded-none focus:outline-hidden focus:border-[#1447e6]",
-                          (readOnly || st.isTransferred) && "opacity-70 cursor-default bg-muted/30 italic text-muted-foreground"
+                          (effectiveReadOnly || st.isTransferred) && "opacity-70 cursor-default bg-muted/30 italic text-muted-foreground"
                         )}
                       />
                     </td>
@@ -563,7 +574,7 @@ export function AttendanceCheckInPanel({
         </div>
 
         <div className="flex items-center gap-2">
-          {readOnly ? (
+          {effectiveReadOnly ? (
             <>
               <Button
                 type="button"

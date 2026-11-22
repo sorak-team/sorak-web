@@ -38,7 +38,7 @@ export function AttendanceStudentDrawer({
         reason: '',
       })),
     );
-    toast.success('Đã đánh dấu tất cả học sinh có mặt');
+    toast.success(t('attendance.markedAllPresent', 'Đã đánh dấu tất cả học sinh có mặt'));
   };
 
   const handleStatusChange = (studentId, nextStatus) => {
@@ -59,7 +59,12 @@ export function AttendanceStudentDrawer({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (onSave) onSave(students);
-    toast.success(`Đã lưu điểm danh: ${presentCount}/${students.length} có mặt`);
+    toast.success(
+      t('attendance.savedAttendanceCount', 'Đã lưu điểm danh: {{present}}/{{total}} có mặt', {
+        present: presentCount,
+        total: students.length,
+      })
+    );
     onClose();
   };
 
@@ -77,7 +82,7 @@ export function AttendanceStudentDrawer({
         <div className="flex items-center justify-between p-5 border-b border-border bg-card">
           <div className="flex flex-col gap-0.5">
             <h2 className="text-[17px] font-semibold text-foreground tracking-tight">
-              Điểm danh học sinh
+              {t('attendance.studentAttendanceDrawerTitle', 'Điểm danh học sinh')}
             </h2>
             <p className="text-[12px] text-muted-foreground">
               {slot?.title || 'Đón trẻ & thể dục sáng'} · {slot?.dayLabel || 'Thứ 2, 05/10/2026'}
@@ -96,15 +101,15 @@ export function AttendanceStudentDrawer({
         <div className="px-5 py-3 border-b border-border bg-muted/20 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 text-[12.5px]">
             <span className="font-medium text-foreground">
-              Sĩ số: <strong>{students.length}</strong>
+              {t('attendance.classSize', 'Sĩ số')}: <strong>{students.length}</strong>
             </span>
             <span className="text-border">·</span>
             <span className="font-medium text-emerald-600 dark:text-emerald-400">
-              Có mặt: <strong>{presentCount}</strong>
+              {t('attendance.present', 'Có mặt')}: <strong>{presentCount}</strong>
             </span>
             <span className="text-border">·</span>
             <span className="font-medium text-amber-600 dark:text-amber-400">
-              Vắng: <strong>{absentCount}</strong>
+              {t('attendance.absent', 'Vắng')}: <strong>{absentCount}</strong>
             </span>
           </div>
 
@@ -115,7 +120,7 @@ export function AttendanceStudentDrawer({
             className="h-7 px-2.5 border border-border text-[12px] rounded-none hover:bg-muted shadow-none flex items-center gap-1 cursor-pointer"
           >
             <HugeiconsIcon icon={UserCheck01Icon} size={13} />
-            <span>Tất cả có mặt</span>
+            <span>{t('attendance.allPresent', 'Tất cả có mặt')}</span>
           </Button>
         </div>
 
@@ -200,7 +205,10 @@ export function AttendanceStudentDrawer({
                       type="text"
                       value={st.reason || ''}
                       onChange={(e) => handleReasonChange(st.id, e.target.value)}
-                      placeholder="Nhập lý do vắng (sốt nhẹ, việc gia đình...)"
+                      placeholder={t(
+                        'attendance.absenceReasonPlaceholder',
+                        'Nhập lý do vắng (sốt nhẹ, việc gia đình...)'
+                      )}
                       className="w-full h-7 px-2.5 bg-background border border-border text-[12px] text-foreground rounded-none outline-none focus:border-primary"
                     />
                   </div>
@@ -218,7 +226,7 @@ export function AttendanceStudentDrawer({
             onClick={onClose}
             className="h-8 px-4 border border-border text-[13px] rounded-none hover:bg-muted shadow-none"
           >
-            Huỷ
+            {t('common.cancel', 'Huỷ')}
           </Button>
           <Button
             type="button"
@@ -226,7 +234,7 @@ export function AttendanceStudentDrawer({
             className="h-8 px-5 bg-[#1447e6] hover:bg-[#1447e6]/90 text-white text-[13px] font-medium rounded-none shadow-none cursor-pointer flex items-center gap-1.5"
           >
             <HugeiconsIcon icon={CheckmarkCircle01Icon} size={14} />
-            <span>Lưu điểm danh</span>
+            <span>{t('attendance.saveAttendance', 'Lưu điểm danh')}</span>
           </Button>
         </div>
       </div>

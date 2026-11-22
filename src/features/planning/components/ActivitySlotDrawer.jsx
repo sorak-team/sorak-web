@@ -141,12 +141,12 @@ export function ActivitySlotDrawer({
       const clean = themeName.replace(/^Chủ đề\s*\d+\s*[:–—\-]?\s*/i, '').trim();
       const num = code ? parseInt(code, 10) : null;
       if (num) {
-        return `Chủ đề ${num}: ${clean}`;
+        return t('planning.themeNumPrefix', { num, name: clean, defaultValue: `Chủ đề ${num}: ${clean}` });
       }
       return clean;
     }
-    return 'Chủ đề theo kế hoạch năm';
-  }, [initialSlot?.themeName, initialSlot?.themeCode, initialSlot?.themeId, initialSlot?.theme_id, selectedThemeId, availableThemesList, activeContentThemes]);
+    return t('planning.themeAnnualPlan', 'Chủ đề theo kế hoạch năm');
+  }, [initialSlot?.themeName, initialSlot?.themeCode, initialSlot?.themeId, initialSlot?.theme_id, selectedThemeId, availableThemesList, activeContentThemes, t]);
 
   const getThemeInfo = React.useCallback(
     (slot) => {
@@ -173,11 +173,11 @@ export function ActivitySlotDrawer({
 
       return {
         themeNum: num,
-        badgeLabel: num ? `Chủ đề ${num}` : (cleanName || rawThemeName),
+        badgeLabel: num ? t('planning.themePrefix', { index: num, defaultValue: `Chủ đề ${num}` }) : (cleanName || rawThemeName),
         cleanThemeName: cleanName || rawThemeName,
       };
     },
-    [availableThemesList, initialSlot?.themeName, initialSlot?.themeId, initialSlot?.theme_id]
+    [availableThemesList, initialSlot?.themeName, initialSlot?.themeId, initialSlot?.theme_id, t]
   );
 
   const cleanSubTheme = React.useCallback((subName, cleanTheme) => {
@@ -298,7 +298,7 @@ export function ActivitySlotDrawer({
   // AI Generation trigger
   const handleGenerateAi = async () => {
     if (!title.trim()) {
-      toast.error('Vui lòng nhập tên hoạt động trước khi tạo bằng AI');
+      toast.error(t('planning.enterActivityNameAi', 'Vui lòng nhập tên hoạt động trước khi tạo bằng AI'));
       return;
     }
     setIsGeneratingAi(true);
@@ -311,22 +311,28 @@ export function ActivitySlotDrawer({
       setPreparation(generated.preparation || '');
       setProcedure(generated.procedure || '');
       setEvaluationCriteria(generated.evaluation || generated.evaluation_criteria || '');
-      toast.success('Đã tạo nhanh nội dung hoạt động bằng Sorak AI!');
+      toast.success(t('planning.aiGenerateActivitySuccess', 'Đã tạo nhanh nội dung hoạt động bằng Sorak AI!'));
     } catch {
       // Fallback template
       setObjective(
-        `Trẻ nhận biết, ghi nhớ và thực hiện tốt các yêu cầu của hoạt động "${title.trim()}". Rèn luyện sự tự tin, chú ý và kỹ năng tương tác nhóm.`,
+        t('planning.defaultObjectiveFallback', {
+          title: title.trim(),
+          defaultValue: `Trẻ nhận biết, ghi nhớ và thực hiện tốt các yêu cầu của hoạt động "${title.trim()}". Rèn luyện sự tự tin, chú ý và kỹ năng tương tác nhóm.`,
+        })
       );
       setPreparation(
-        `Đồ dùng học liệu, tranh ảnh minh họa, bài hát và mô hình trực quan về "${title.trim()}". Không gian lớp học sạch sẽ, an toàn.`,
+        t('planning.defaultPrepFallback', {
+          title: title.trim(),
+          defaultValue: `Đồ dùng học liệu, tranh ảnh minh họa, bài hát và mô hình trực quan về "${title.trim()}". Không gian lớp học sạch sẽ, an toàn.`,
+        })
       );
       setProcedure(
-        `1. Ổn định và gây hứng thú: Cho trẻ hát bài hát hoặc đố vui liên quan đến bài học.\n2. Nội dung trọng tâm: Hướng dẫn trẻ quan sát, thảo luận và thực hành hoạt động.\n3. Trò chơi củng cố: Tổ chức trò chơi rèn luyện phản xạ.\n4. Kết thúc và nhận xét: Tuyên dương trẻ chăm ngoan và chuyển hoạt động.`,
+        t('planning.defaultProcedureFallback', '1. Ổn định và gây hứng thú: Cho trẻ hát bài hát hoặc đố vui liên quan đến bài học.\n2. Nội dung trọng tâm: Hướng dẫn trẻ quan sát, thảo luận và thực hành hoạt động.\n3. Trò chơi củng cố: Tổ chức trò chơi rèn luyện phản xạ.\n4. Kết thúc và nhận xét: Tuyên dương trẻ chăm ngoan và chuyển hoạt động.')
       );
       setEvaluationCriteria(
-        `Đa số trẻ tham gia hào hứng, hiểu nội dung và đạt các yêu cầu cơ bản đề ra.`,
+        t('planning.defaultEvalFallback', 'Đa số trẻ tham gia hào hứng, hiểu nội dung và đạt các yêu cầu cơ bản đề ra.')
       );
-      toast.success('Đã gợi ý nhanh nội dung hoạt động!');
+      toast.success(t('planning.suggestActivitySuccess', 'Đã gợi ý nhanh nội dung hoạt động!'));
     } finally {
       setIsGeneratingAi(false);
     }
@@ -335,12 +341,12 @@ export function ActivitySlotDrawer({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim()) {
-      toast.error('Vui lòng nhập tên hoạt động');
+      toast.error(t('planning.enterActivityNameRequired', 'Vui lòng nhập tên hoạt động'));
       return;
     }
 
     if (availableThemesList.length > 0 && !selectedThemeId) {
-      toast.error('Vui lòng chọn chủ đề giáo dục cho hoạt động');
+      toast.error(t('planning.selectThemeForActivityRequired', 'Vui lòng chọn chủ đề giáo dục cho hoạt động'));
       return;
     }
 
@@ -394,17 +400,17 @@ export function ActivitySlotDrawer({
               {initialSlot?.creatorName && (
                 <span className="flex items-center gap-1">
                   <HugeiconsIcon icon={UserIcon} size={12} className="text-muted-foreground/80 shrink-0" />
-                  <span>Người soạn: <strong className="text-foreground font-medium">{initialSlot.creatorName}</strong></span>
+                  <span>{t('planning.creatorLabelColon', 'Người soạn:')} <strong className="text-foreground font-medium">{initialSlot.creatorName}</strong></span>
                 </span>
               )}
               {initialSlot?.creatorName && initialSlot?.updaterName && (
                 <span className="text-muted-foreground/40">·</span>
               )}
               {initialSlot?.updaterName && (
-                <span>Cập nhật bởi: <strong className="text-foreground font-medium">{initialSlot.updaterName}</strong></span>
+                <span>{t('planning.updaterLabelColon', 'Cập nhật bởi:')} <strong className="text-foreground font-medium">{initialSlot.updaterName}</strong></span>
               )}
               {!initialSlot?.creatorName && !initialSlot?.updaterName && (
-                <span>{readOnly ? 'Kế hoạch hoạt động giáo dục' : 'Thiết lập hoạt động giáo dục theo mục tiêu'}</span>
+                <span>{readOnly ? t('planning.educationalActivityPlan', 'Kế hoạch hoạt động giáo dục') : t('planning.setupActivityByGoal', 'Thiết lập hoạt động giáo dục theo mục tiêu')}</span>
               )}
             </div>
           </div>
@@ -432,12 +438,12 @@ export function ActivitySlotDrawer({
                   <div className="flex items-center gap-2 min-w-0">
                     <HugeiconsIcon icon={Calendar03Icon} size={14} className="text-muted-foreground shrink-0" />
                     <span className="text-[12.5px] font-medium text-foreground truncate">
-                      Đã xếp lịch trong <strong className="font-semibold text-foreground">{scheduledSlotsList.length} buổi</strong>
-                      <span className="text-muted-foreground text-[11.5px] font-normal"> (Kế hoạch tuần)</span>
+                      {t('planning.scheduledSessionsCount', { count: scheduledSlotsList.length, defaultValue: `Đã xếp lịch trong ${scheduledSlotsList.length} buổi` })}
+                      <span className="text-muted-foreground text-[11.5px] font-normal">{t('planning.weeklyPlanParenthesis', ' (Kế hoạch tuần)')}</span>
                     </span>
                   </div>
                   <div className="flex items-center gap-1 text-[11.5px] font-medium text-muted-foreground hover:text-foreground shrink-0">
-                    <span>{isScheduleExpanded ? 'Thu gọn' : 'Xem chi tiết'}</span>
+                    <span>{isScheduleExpanded ? t('common.collapse', 'Thu gọn') : t('common.viewDetails', 'Xem chi tiết')}</span>
                     <HugeiconsIcon
                       icon={ArrowDown01Icon}
                       size={14}
@@ -488,7 +494,7 @@ export function ActivitySlotDrawer({
               <div className="border border-border/80 bg-muted/20 px-3 py-2 text-[12px] flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
                   <HugeiconsIcon icon={Calendar03Icon} size={14} className="text-muted-foreground shrink-0" />
-                  <span className="font-semibold text-foreground shrink-0">Đã xếp lịch:</span>
+                  <span className="font-semibold text-foreground shrink-0">{t('planning.scheduledLabelColon', 'Đã xếp lịch:')}</span>
                   <span className="text-muted-foreground truncate">
                     {formatDayVi(scheduledSlotsList[0].day || scheduledSlotsList[0].dayOfWeek)}
                     {scheduledSlotsList[0].date ? ` · ${formatDateVi(scheduledSlotsList[0].date)}` : ''}
@@ -502,7 +508,7 @@ export function ActivitySlotDrawer({
             ) : (
               <div className="border border-border/80 bg-muted/20 px-3 py-2 text-[12px] text-muted-foreground italic flex items-center gap-2">
                 <HugeiconsIcon icon={Calendar03Icon} size={14} className="shrink-0 text-muted-foreground" />
-                <span>Hoạt động đang được sử dụng trong Kế hoạch tuần của lớp.</span>
+                <span>{t('planning.activityInWeeklyTimetable', 'Hoạt động đang được sử dụng trong Kế hoạch tuần của lớp.')}</span>
               </div>
             )
           )}
@@ -518,7 +524,7 @@ export function ActivitySlotDrawer({
               readOnly={readOnly}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ví dụ: Khám phá các phương tiện giao thông đường bộ"
+              placeholder={t('planning.activityTitlePlaceholder', 'Ví dụ: Khám phá các phương tiện giao thông đường bộ')}
               className={cn(
                 "w-full h-9 px-3 bg-background border border-border text-[13px] text-foreground rounded-none outline-none focus:border-primary transition-colors",
                 readOnly && "cursor-default focus:border-border"
@@ -534,7 +540,7 @@ export function ActivitySlotDrawer({
               </label>
               {(lockRoutineSlot || isActivityScheduled) && (
                 <span className="text-[11px] text-muted-foreground italic">
-                  Cố định khi đã gán TKB
+                  {t('planning.lockedWhenScheduled', 'Cố định khi đã gán TKB')}
                 </span>
               )}
             </div>
@@ -575,7 +581,7 @@ export function ActivitySlotDrawer({
               readOnly={readOnly}
               value={objective}
               onChange={(e) => setObjective(e.target.value)}
-              placeholder="Mục đích yêu cầu đối với trẻ (kiến thức, kỹ năng, thái độ)..."
+              placeholder={t('planning.objectivePlaceholder', 'Mục đích yêu cầu đối với trẻ (kiến thức, kỹ năng, thái độ)...')}
               className={cn(
                 "w-full p-2.5 bg-background border border-border text-[13px] text-foreground rounded-none outline-none focus:border-primary resize-none placeholder:text-muted-foreground/60",
                 readOnly && "cursor-default focus:border-border"
@@ -593,7 +599,7 @@ export function ActivitySlotDrawer({
               readOnly={readOnly}
               value={preparation}
               onChange={(e) => setPreparation(e.target.value)}
-              placeholder="Học liệu, đồ dùng trực quan, tranh ảnh, không gian lớp học..."
+              placeholder={t('planning.preparationPlaceholder', 'Học liệu, đồ dùng trực quan, tranh ảnh, không gian lớp học...')}
               className={cn(
                 "w-full p-2.5 bg-background border border-border text-[13px] text-foreground rounded-none outline-none focus:border-primary resize-none placeholder:text-muted-foreground/60",
                 readOnly && "cursor-default focus:border-border"
@@ -611,7 +617,7 @@ export function ActivitySlotDrawer({
               readOnly={readOnly}
               value={procedure}
               onChange={(e) => setProcedure(e.target.value)}
-              placeholder="1. Ổn định và gây hứng thú&#10;2. Nội dung trọng tâm&#10;3. Trò chơi củng cố&#10;4. Kết thúc và nhận xét"
+              placeholder={t('planning.procedurePlaceholder', '1. Ổn định và gây hứng thú\n2. Nội dung trọng tâm\n3. Trò chơi củng cố\n4. Kết thúc và nhận xét')}
               className={cn(
                 "w-full p-2.5 bg-background border border-border text-[13px] text-foreground rounded-none outline-none focus:border-primary resize-none placeholder:text-muted-foreground/60 font-sans",
                 readOnly && "cursor-default focus:border-border"
@@ -629,7 +635,7 @@ export function ActivitySlotDrawer({
               readOnly={readOnly}
               value={evaluationCriteria}
               onChange={(e) => setEvaluationCriteria(e.target.value)}
-              placeholder="Tiêu chí đánh giá mức độ tiếp thu và sự tham gia của trẻ..."
+              placeholder={t('planning.evaluationPlaceholder', 'Tiêu chí đánh giá mức độ tiếp thu và sự tham gia của trẻ...')}
               className={cn(
                 "w-full p-2.5 bg-background border border-border text-[13px] text-foreground rounded-none outline-none focus:border-primary resize-none placeholder:text-muted-foreground/60",
                 readOnly && "cursor-default focus:border-border"
@@ -664,8 +670,11 @@ export function ActivitySlotDrawer({
                   }}
                   title={
                     isActivityScheduled || lockRoutineSlot
-                      ? `Không thể xóa: Hoạt động đã được xếp lịch trong Kế hoạch tuần (${scheduledSlotsList.length || 1} buổi). Vui lòng gỡ hoạt động khỏi Kế hoạch tuần trước khi xóa.`
-                      : 'Xóa hoạt động này'
+                      ? t('planning.cannotDeleteScheduledAct', {
+                          count: scheduledSlotsList.length || 1,
+                          defaultValue: `Không thể xóa: Hoạt động đã được xếp lịch trong Kế hoạch tuần (${scheduledSlotsList.length || 1} buổi). Vui lòng gỡ hoạt động khỏi Kế hoạch tuần trước khi xóa.`
+                        })
+                      : t('planning.deleteActTooltip', 'Xóa hoạt động này')
                   }
                   className={cn(
                     "h-8 px-3.5 border rounded-none shadow-none text-[12.5px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer",
@@ -675,7 +684,7 @@ export function ActivitySlotDrawer({
                   )}
                 >
                   <HugeiconsIcon icon={Delete02Icon} size={14} className="text-muted-foreground" />
-                  <span>{t('common.delete', 'Xóa hoạt động')}</span>
+                  <span>{t('planning.deleteActBtn', 'Xóa hoạt động')}</span>
                 </Button>
               )}
               <div className="flex items-center gap-2.5 ml-auto">
@@ -705,37 +714,37 @@ export function ActivitySlotDrawer({
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent
           overlayClassName="z-[999] bg-black/60 backdrop-blur-xs"
-          className="z-[1000] w-[92vw] max-w-[440px] sm:max-w-[440px] p-6 rounded-none border border-border bg-card shadow-2xl text-foreground select-none space-y-4"
+          className="z-[1000] w-[calc(100vw-32px)] max-w-[440px] p-5 sm:p-6 rounded-none border border-border bg-card shadow-2xl text-foreground select-none space-y-4 overflow-hidden box-border"
         >
           <DialogHeader className="space-y-1.5 pb-0 text-left">
             <DialogTitle className="text-[16px] font-semibold text-foreground tracking-tight">
-              Xác nhận xóa hoạt động giáo dục
+              {t('planning.confirmDeleteActTitle', 'Xác nhận xóa hoạt động giáo dục')}
             </DialogTitle>
-            <DialogDescription className="text-[13px] text-muted-foreground leading-relaxed pt-1">
-              Hoạt động sẽ bị xóa khỏi danh sách của chủ đề. Thao tác này không thể hoàn tác.
+            <DialogDescription className="text-[13px] text-muted-foreground leading-relaxed pt-1 break-words">
+              {t('planning.confirmDeleteActDesc', 'Hoạt động sẽ bị xóa khỏi danh sách của chủ đề. Thao tác này không thể hoàn tác.')}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="p-3 bg-muted/20 border border-border/70 rounded-none space-y-1">
-            <div className="font-semibold text-foreground text-[13px] leading-snug">
+          <div className="p-3 bg-muted/20 border border-border/70 rounded-none space-y-1.5 overflow-hidden">
+            <div className="font-semibold text-foreground text-[13px] leading-snug break-words whitespace-normal">
               {title || initialSlot?.title}
             </div>
             {initialSlot?.contentTitle && (
-              <div className="text-muted-foreground text-[12px] truncate pt-0.5">
-                Nội dung: {initialSlot.contentTitle}
+              <div className="text-muted-foreground text-[12px] leading-relaxed break-words whitespace-normal pt-0.5">
+                <span className="font-medium text-foreground/80">{t('planning.contentLabelColon', 'Nội dung:')}</span> {initialSlot.contentTitle}
               </div>
             )}
           </div>
 
-          <DialogFooter className="flex items-center justify-end gap-2.5 pt-3 border-t border-border/60 sm:space-x-0">
+          <DialogFooter className="flex items-center justify-end gap-2.5 pt-3 border-t border-border/60 sm:space-x-0 shrink-0">
             <Button
               type="button"
               variant="outline"
               disabled={isDeleting}
               onClick={() => setIsDeleteDialogOpen(false)}
-              className="h-8 px-3.5 text-[12.5px] rounded-none border border-border cursor-pointer shadow-none"
+              className="h-8 px-3.5 text-[12.5px] rounded-none border border-border cursor-pointer shadow-none shrink-0"
             >
-              Hủy
+              {t('common.cancel', 'Hủy')}
             </Button>
             <Button
               type="button"
@@ -754,9 +763,9 @@ export function ActivitySlotDrawer({
                   }
                 }
               }}
-              className="h-8 px-4 text-[12.5px] font-medium rounded-none bg-destructive hover:bg-destructive/90 text-white cursor-pointer shadow-none"
+              className="h-8 px-4 text-[12.5px] font-medium rounded-none bg-destructive hover:bg-destructive/90 text-white cursor-pointer shadow-none shrink-0"
             >
-              {isDeleting ? 'Đang xóa...' : 'Xóa hoạt động'}
+              {isDeleting ? t('common.deleting', 'Đang xóa...') : t('planning.deleteActBtn', 'Xóa hoạt động')}
             </Button>
           </DialogFooter>
         </DialogContent>
