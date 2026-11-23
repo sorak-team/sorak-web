@@ -1191,8 +1191,67 @@ export function TargetAllocationTab({
     [month2Year, month2],
   );
 
-  const isPrevDisabled = calendarYear < 2026 || (calendarYear === 2026 && calendarMonth <= 8);
-  const isNextDisabled = month2Year > 2027 || (month2Year === 2027 && month2 >= 4);
+  // Khung thời gian năm học (để phân biệt ngày trong năm học vs ngoài năm học)
+  const academicYearBounds = useMemo(() => {
+    // 1. Từ classInfo backend
+    if (allocationData?.classInfo?.startDate && allocationData?.classInfo?.endDate) {
+      return {
+        start: allocationData.classInfo.startDate,
+        end: allocationData.classInfo.endDate,
+      };
+    }
+
+    // 2. Từ tên năm học (vd: "Năm học 2025–2026" -> 2025-09-01 đến 2026-05-31)
+    const yearStr = allocationData?.classInfo?.yearName || '';
+    const match = yearStr.match(/\d{4}/g);
+    if (match && match.length >= 2) {
+      return {
+        start: `${match[0]}-09-01`,
+        end: `${match[1]}-05-31`,
+      };
+    } else if (match && match.length === 1) {
+      const y = parseInt(match[0], 10);
+      return {
+        start: `${y}-09-01`,
+        end: `${y + 1}-05-31`,
+      };
+    }
+
+    // 3. Từ danh sách chủ đề nếu có
+    if (Array.isArray(themes) && themes.length > 0) {
+      const allStarts = themes.map((t) => (t.startDate || '').slice(0, 10)).filter(Boolean).sort();
+      const allEnds = themes.map((t) => (t.endDate || '').slice(0, 10)).filter(Boolean).sort();
+      if (allStarts.length > 0 && allEnds.length > 0) {
+        const startY = allStarts[0].slice(0, 4);
+        const endY = allEnds[allEnds.length - 1].slice(0, 4);
+        return {
+          start: allStarts[0] < `${startY}-09-01` ? allStarts[0] : `${startY}-09-01`,
+          end: allEnds[allEnds.length - 1] > `${endY}-05-31` ? allEnds[allEnds.length - 1] : `${endY}-05-31`,
+        };
+      }
+    }
+
+    return {
+      start: '2025-09-01',
+      end: '2027-05-31',
+    };
+  }, [allocationData?.classInfo, themes]);
+
+  const isPrevDisabled = useMemo(() => {
+    if (!academicYearBounds.start) return false;
+    const startParts = academicYearBounds.start.split('-').map(Number);
+    const startYear = startParts[0];
+    const startMonth = startParts[1] - 1;
+    return calendarYear < startYear || (calendarYear === startYear && calendarMonth <= startMonth);
+  }, [academicYearBounds.start, calendarYear, calendarMonth]);
+
+  const isNextDisabled = useMemo(() => {
+    if (!academicYearBounds.end) return false;
+    const endParts = academicYearBounds.end.split('-').map(Number);
+    const endYear = endParts[0];
+    const endMonth = endParts[1] - 1;
+    return month2Year > endYear || (month2Year === endYear && month2 >= endMonth);
+  }, [academicYearBounds.end, month2Year, month2]);
 
   const handlePrevMonth = () => {
     if (isPrevDisabled) return;
@@ -1212,12 +1271,6 @@ export function TargetAllocationTab({
     } else {
       setCalendarMonth(calendarMonth + 1);
     }
-  };
-
-  // Academic year boundary (2026-09-01 to 2027-05-31)
-  const academicYearBounds = {
-    start: '2026-09-01',
-    end: '2027-05-31',
   };
 
   // Helper tìm chủ đề chứa ngày bất kỳ
@@ -2155,14 +2208,16 @@ export function TargetAllocationTab({
                         normStart && normEnd && d.dateStr >= normStart && d.dateStr <= normEnd,
                       );
 
+                      const otherTheme = !isSelectedDate ? getThemeForDate(d.dateStr) : null;
+                      const isInOtherTheme = Boolean(otherTheme);
+
                       const isOutsideAcademicYear = Boolean(
                         academicYearBounds.start &&
                         academicYearBounds.end &&
+                        !isSelectedDate &&
+                        !isInOtherTheme &&
                         (d.dateStr < academicYearBounds.start || d.dateStr > academicYearBounds.end),
                       );
-
-                      const otherTheme = !isSelectedDate ? getThemeForDate(d.dateStr) : null;
-                      const isInOtherTheme = Boolean(otherTheme);
 
                       const isUnassignedInAcademicYear = Boolean(
                         !isOutsideAcademicYear && !isSelectedDate && !isInOtherTheme,
@@ -2236,13 +2291,15 @@ export function TargetAllocationTab({
                           key={i}
                           className={cn(
                             'h-8 flex items-center justify-center relative select-none transition-all rounded-none',
-                            isOutsideAcademicYear
-                              ? 'opacity-20 pointer-events-none select-none bg-transparent cursor-not-allowed'
-                              : isSelectedDate
-                                ? 'cursor-pointer group/day'
-                                : isHolidayDay
-                                  ? 'cursor-default opacity-100'
-                                  : 'cursor-not-allowed opacity-40 pointer-events-none',
+                            isSelectedDate
+                              ? 'cursor-pointer group/day'
+                              : isHolidayDay
+                                ? 'cursor-default opacity-100'
+                                : isInOtherTheme
+                                  ? 'cursor-default opacity-90'
+                                  : isOutsideAcademicYear
+                                    ? 'opacity-20 pointer-events-none select-none bg-transparent cursor-not-allowed'
+                                    : 'cursor-default opacity-75',
                           )}
                           title={
                             isOutsideAcademicYear
@@ -2347,9 +2404,9 @@ export function TargetAllocationTab({
                               isAssignedSubTheme && 'text-white font-semibold',
                               isUnassignedInTheme && !isHolidayDay && 'text-[#1447e6] font-bold',
                               isHolidayDay && !isSelectedDate && 'text-amber-800 dark:text-amber-200 font-semibold',
-                              isInOtherTheme && !isHolidayDay && 'text-muted-foreground/80 dark:text-muted-foreground font-normal',
+                              isInOtherTheme && !isHolidayDay && 'text-muted-foreground/90 dark:text-muted-foreground font-normal',
                               isUnassignedInAcademicYear && !isHolidayDay && 'text-foreground/80 font-normal',
-                              isOutsideAcademicYear && 'text-muted-foreground/30 font-light',
+                              isOutsideAcademicYear && !isSelectedDate && !isInOtherTheme && 'text-muted-foreground/30 font-light',
                               !isSelectedDate && !isInOtherTheme && !isUnassignedInAcademicYear && !isOutsideAcademicYear && !isHolidayDay && 'text-foreground/75',
                             )}
                           >
