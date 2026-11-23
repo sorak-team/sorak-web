@@ -42,6 +42,7 @@ import { cn } from '@/shared/lib/utils';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/features/auth';
 import { planningApi } from '../planning.api';
+import { academicYearsApi } from '@/features/academic-years/academic-years.api';
 
 // Days of week
 const WEEKDAYS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
@@ -364,6 +365,7 @@ export function TargetAllocationTab({
   // Calendar year & month state
   const [calendarYear, setCalendarYear] = useState(2026);
   const [calendarMonth, setCalendarMonth] = useState(8); // Month index 8 = September 2026
+  const [holidays, setHolidays] = useState([]);
 
   // Load target allocation data from PostgreSQL
   useEffect(() => {
@@ -372,6 +374,15 @@ export function TargetAllocationTab({
       try {
         const data = await planningApi.getTargetAllocation(classId);
         setAllocationData(data);
+        if (Array.isArray(data.holidays) && data.holidays.length > 0) {
+          setHolidays(data.holidays);
+        } else if (data.classInfo?.schoolYearId || data.classInfo?.school_year_id) {
+          const syId = data.classInfo?.schoolYearId || data.classInfo?.school_year_id;
+          academicYearsApi.listHolidays(syId).then((res) => {
+            const hList = Array.isArray(res) ? res : res?.items || res?.holidays || [];
+            setHolidays(hList);
+          }).catch((e) => console.warn('Failed to load holidays:', e));
+        }
         const fetchedThemes = data.publishedThemes || [];
         setThemes(fetchedThemes);
         if (fetchedThemes.length > 0) {
@@ -1240,6 +1251,21 @@ export function TargetAllocationTab({
       );
     },
     [currentTheme?.subThemes],
+  );
+
+  // Helper tìm thông tin ngày nghỉ lễ / Tết / Sự kiện
+  const getHolidayForDate = useCallback(
+    (dateStr) => {
+      if (!dateStr || !Array.isArray(holidays) || holidays.length === 0) return null;
+      return (
+        holidays.find((h) => {
+          const s = (h.startDate || h.start_date || '').slice(0, 10);
+          const e = (h.endDate || h.end_date || '').slice(0, 10);
+          return s && e && dateStr >= s && dateStr <= e;
+        }) || null
+      );
+    },
+    [holidays],
   );
 
   if (isLoading) {
@@ -2142,10 +2168,33 @@ export function TargetAllocationTab({
                         !isOutsideAcademicYear && !isSelectedDate && !isInOtherTheme,
                       );
 
+                      // Thông tin ngày nghỉ lễ / Tết / Sự kiện
+                      const matchedHoliday = getHolidayForDate(d.dateStr);
+                      const isHolidayDay = Boolean(matchedHoliday && !matchedHoliday.isTeachingAllowed && matchedHoliday.is_teaching_allowed !== true);
+                      const isSchoolEventDay = Boolean(matchedHoliday && (matchedHoliday.isTeachingAllowed || matchedHoliday.is_teaching_allowed === true));
+
                       const prevObj = col > 0 ? mObj.days[i - 1] : null;
                       const nextObj = col < 6 ? mObj.days[i + 1] : null;
                       const prevDate = prevObj?.isCurrentMonth ? prevObj.dateStr : null;
                       const nextDate = nextObj?.isCurrentMonth ? nextObj.dateStr : null;
+
+                      // Holiday connectivity
+                      const prevHoliday = prevDate ? getHolidayForDate(prevDate) : null;
+                      const nextHoliday = nextDate ? getHolidayForDate(nextDate) : null;
+                      const prevSameHoliday = Boolean(
+                        isHolidayDay &&
+                          prevHoliday &&
+                          !prevHoliday.isTeachingAllowed &&
+                          prevHoliday.is_teaching_allowed !== true &&
+                          (prevHoliday.id === matchedHoliday?.id || prevHoliday.name === matchedHoliday?.name),
+                      );
+                      const nextSameHoliday = Boolean(
+                        isHolidayDay &&
+                          nextHoliday &&
+                          !nextHoliday.isTeachingAllowed &&
+                          nextHoliday.is_teaching_allowed !== true &&
+                          (nextHoliday.id === matchedHoliday?.id || nextHoliday.name === matchedHoliday?.name),
+                      );
 
                       const prevTheme = prevDate ? getThemeForDate(prevDate) : null;
                       const nextTheme = nextDate ? getThemeForDate(nextDate) : null;
@@ -2191,24 +2240,41 @@ export function TargetAllocationTab({
                               ? 'opacity-20 pointer-events-none select-none bg-transparent cursor-not-allowed'
                               : isSelectedDate
                                 ? 'cursor-pointer group/day'
-                                : 'cursor-not-allowed opacity-40 pointer-events-none',
+                                : isHolidayDay
+                                  ? 'cursor-default opacity-100'
+                                  : 'cursor-not-allowed opacity-40 pointer-events-none',
                           )}
                           title={
                             isOutsideAcademicYear
                               ? t('planning.dateOutsideAcademicYear', 'Ngày {{date}} · Ngoài khung năm học', { date: formatDateVn(d.dateStr) })
-                              : isUnassignedInAcademicYear
-                                ? t('planning.dateUnassignedAcademicYear', 'Ngày {{date}} · Trong năm học (Chưa xếp chủ đề)', { date: formatDateVn(d.dateStr) })
-                                : isAssignedSubTheme
-                                  ? t('planning.dateAssignedSubTheme', 'Ngày {{date}} · Chủ đề: {{theme}} · Nhánh: {{subTheme}}', { date: formatDateVn(d.dateStr), theme: currentTheme?.name, subTheme: matchedSubTheme?.name })
-                                  : isUnassignedInTheme
-                                    ? t('planning.dateUnassignedInTheme', 'Ngày {{date}} · Chủ đề: {{theme}} (Chưa xếp nhánh)', { date: formatDateVn(d.dateStr), theme: currentTheme?.name })
-                                    : isInOtherTheme
-                                      ? t('planning.dateInOtherTheme', 'Ngày {{date}} · Chủ đề: {{theme}} (Khác chủ đề)', { date: formatDateVn(d.dateStr), theme: otherTheme?.name })
-                                      : `${t('common.date', 'Ngày')} ${formatDateVn(d.dateStr)}`
+                              : isHolidayDay
+                                ? `Ngày ${formatDateVn(d.dateStr)} · ${matchedHoliday.name} (Nghỉ lễ)`
+                                : isSchoolEventDay
+                                  ? `Ngày ${formatDateVn(d.dateStr)} · ${matchedHoliday.name} (Sự kiện)`
+                                  : isUnassignedInAcademicYear
+                                    ? t('planning.dateUnassignedAcademicYear', 'Ngày {{date}} · Trong năm học (Chưa xếp chủ đề)', { date: formatDateVn(d.dateStr) })
+                                    : isAssignedSubTheme
+                                      ? t('planning.dateAssignedSubTheme', 'Ngày {{date}} · Chủ đề: {{theme}} · Nhánh: {{subTheme}}', { date: formatDateVn(d.dateStr), theme: currentTheme?.name, subTheme: matchedSubTheme?.name })
+                                      : isUnassignedInTheme
+                                        ? t('planning.dateUnassignedInTheme', 'Ngày {{date}} · Chủ đề: {{theme}} (Chưa xếp nhánh)', { date: formatDateVn(d.dateStr), theme: currentTheme?.name })
+                                        : isInOtherTheme
+                                          ? t('planning.dateInOtherTheme', 'Ngày {{date}} · Chủ đề: {{theme}} (Khác chủ đề)', { date: formatDateVn(d.dateStr), theme: otherTheme?.name })
+                                          : `${t('common.date', 'Ngày')} ${formatDateVn(d.dateStr)}`
                           }
                         >
-                          {/* Ngày trong năm học nhưng chưa có chủ đề: Viền nét đứt nhẹ */}
-                          {isUnassignedInAcademicYear && (
+                          {/* Nền ngày nghỉ lễ: Dải màu vàng nhạt tinh tế, đồng nhất và phẳng như các dải chủ đề */}
+                          {isHolidayDay && !isSelectedDate && (
+                            <div
+                              className={cn(
+                                'absolute inset-y-0.5 bg-amber-100/75 dark:bg-amber-950/40 transition-colors rounded-none',
+                                prevSameHoliday ? 'left-0' : 'left-0.5',
+                                nextSameHoliday ? 'right-0' : 'right-0.5',
+                              )}
+                            />
+                          )}
+
+                          {/* Ngày trong năm học nhưng chưa có chủ đề (không phải ngày nghỉ): Viền nét đứt nhẹ */}
+                          {isUnassignedInAcademicYear && !isHolidayDay && (
                             <div className="absolute inset-0.5 border border-dashed border-border/80 bg-muted/15 pointer-events-none rounded-none" />
                           )}
 
@@ -2223,8 +2289,23 @@ export function TargetAllocationTab({
                             />
                           )}
 
+                          {/* Cảnh báo ngày trong chủ đề đang chọn trùng với ngày nghỉ lễ */}
+                          {isHolidayDay && isSelectedDate && (
+                            <div
+                              className={cn(
+                                'absolute inset-y-0.5 border-y border-amber-400 z-15 pointer-events-none rounded-none',
+                                prevSameHoliday ? 'left-0' : 'left-0.5 border-l',
+                                nextSameHoliday ? 'right-0' : 'right-0.5 border-r',
+                              )}
+                              style={{
+                                background:
+                                  'repeating-linear-gradient(45deg, rgba(245, 158, 11, 0.4), rgba(245, 158, 11, 0.4) 3px, rgba(20, 71, 230, 0.75) 3px, rgba(20, 71, 230, 0.75) 7px)',
+                              }}
+                            />
+                          )}
+
                           {/* Ngày trong chủ đề CHƯA XẾP NHÁNH (Dải sọc chéo #1447e6 mờ) */}
-                          {isUnassignedInTheme && (
+                          {isUnassignedInTheme && !isHolidayDay && (
                             <div
                               className={cn(
                                 'absolute inset-y-0.5 border-y border-[#1447e6]/35 z-10 pointer-events-none rounded-none',
@@ -2239,7 +2320,7 @@ export function TargetAllocationTab({
                           )}
 
                           {/* Chủ đề khác - Dải màu xám nhạt nhẹ nhàng */}
-                          {isInOtherTheme && (
+                          {isInOtherTheme && !isHolidayDay && (
                             <div
                               className={cn(
                                 'absolute inset-y-0.5 bg-slate-100/90 dark:bg-slate-800/40 transition-colors rounded-none',
@@ -2264,11 +2345,12 @@ export function TargetAllocationTab({
                             className={cn(
                               'relative z-20 w-full h-full flex items-center justify-center text-[12px] transition-colors rounded-none',
                               isAssignedSubTheme && 'text-white font-semibold',
-                              isUnassignedInTheme && 'text-[#1447e6] font-bold',
-                              isInOtherTheme && 'text-muted-foreground/80 dark:text-muted-foreground font-normal',
-                              isUnassignedInAcademicYear && 'text-foreground/80 font-normal',
+                              isUnassignedInTheme && !isHolidayDay && 'text-[#1447e6] font-bold',
+                              isHolidayDay && !isSelectedDate && 'text-amber-800 dark:text-amber-200 font-semibold',
+                              isInOtherTheme && !isHolidayDay && 'text-muted-foreground/80 dark:text-muted-foreground font-normal',
+                              isUnassignedInAcademicYear && !isHolidayDay && 'text-foreground/80 font-normal',
                               isOutsideAcademicYear && 'text-muted-foreground/30 font-light',
-                              !isSelectedDate && !isInOtherTheme && !isUnassignedInAcademicYear && !isOutsideAcademicYear && 'text-foreground/75',
+                              !isSelectedDate && !isInOtherTheme && !isUnassignedInAcademicYear && !isOutsideAcademicYear && !isHolidayDay && 'text-foreground/75',
                             )}
                           >
                             {d.day}
@@ -2312,9 +2394,9 @@ export function TargetAllocationTab({
               </div>
             )}
 
-            {/* Thanh chú thích tinh gọn & Popover quy ước */}
-            <div className="pt-2.5 border-t border-border/70 flex items-center justify-between text-[11px] text-muted-foreground select-none">
-              <div className="flex items-center gap-3">
+            {/* Thanh chú thích 2x2 cân đối & Popover quy ước */}
+            <div className="pt-2.5 border-t border-border/70 text-[11px] text-muted-foreground select-none">
+              <div className="grid grid-cols-2 gap-x-2 gap-y-2 items-center">
                 <div className="flex items-center gap-1.5" title={t('planning.conventionsSelectedTheme', 'Chủ đề đang chọn')}>
                   <span className="size-2.5 bg-[#1447e6] shrink-0 rounded-none" />
                   <span className="font-medium text-foreground/85 text-[11px]">{t('planning.thisThemeLegend', 'Chủ đề này')}</span>
@@ -2329,69 +2411,76 @@ export function TargetAllocationTab({
                   />
                   <span className="text-[11px]">{t('planning.unassignedSubThemeLegend', 'Chưa xếp nhánh')}</span>
                 </div>
+                <div className="flex items-center gap-1.5" title="Ngày nghỉ lễ">
+                  <span className="size-2.5 bg-amber-100/80 dark:bg-amber-950/50 border border-amber-300/40 dark:border-amber-700/40 shrink-0 rounded-none" />
+                  <span className="text-[11px] text-amber-800 dark:text-amber-300 font-medium truncate">Nghỉ lễ</span>
+                </div>
+                <div className="flex items-center">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer shrink-0 whitespace-nowrap rounded-none"
+                        title={t('planning.viewCalendarConventions', 'Xem quy ước hiển thị lịch')}
+                      >
+                        <HugeiconsIcon icon={InformationCircleIcon} size={12} className="shrink-0" />
+                        <span>{t('planning.conventions', 'Quy ước')}</span>
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      side="top"
+                      align="end"
+                      sideOffset={8}
+                      className="w-72 p-3 bg-card border border-border shadow-md rounded-none text-[11.5px] space-y-2.5 z-50"
+                    >
+                      <div className="flex items-center justify-between pb-1 border-b border-border/60">
+                        <span className="font-semibold text-foreground text-[12px]">
+                          {t('planning.calendarConventionsTitle', 'Quy ước hiển thị lịch')}
+                        </span>
+                      </div>
+
+                      <div className="space-y-1.5 text-[11px]">
+                        <div className="flex items-center gap-2">
+                          <span className="size-3 bg-[#1447e6] shrink-0 rounded-none" />
+                          <span className="text-foreground">{t('planning.conventionsSelectedTheme', 'Chủ đề đang chọn')}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="size-3 border border-[#1447e6]/40 shrink-0 rounded-none"
+                            style={{
+                              background:
+                                'repeating-linear-gradient(45deg, rgba(20, 71, 230, 0.2), rgba(20, 71, 230, 0.2) 2px, rgba(20, 71, 230, 0.4) 2px, rgba(20, 71, 230, 0.4) 4px)',
+                            }}
+                          />
+                          <span className="text-foreground">{t('planning.conventionsUnassignedSubTheme', 'Chưa xếp nhánh')}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="size-3 bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-600 shrink-0 rounded-none" />
+                          <span className="text-foreground">Ngày nghỉ lễ</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="size-3 bg-slate-100 dark:bg-slate-800/60 border border-border/60 shrink-0 rounded-none" />
+                          <span className="text-muted-foreground">{t('planning.conventionsOtherTheme', 'Chủ đề khác')}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="size-3 border border-dashed border-border/80 bg-muted/20 shrink-0 rounded-none" />
+                          <span className="text-muted-foreground">{t('planning.conventionsNoTheme', 'Chưa có chủ đề')}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="size-3 opacity-25 bg-muted/40 shrink-0 rounded-none" />
+                          <span className="text-muted-foreground/70">{t('planning.conventionsOutsideAcademicYear', 'Ngoài năm học')}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono font-bold px-1 py-0.2 bg-slate-900 text-white shrink-0 rounded-none">
+                            N1
+                          </span>
+                          <span className="text-foreground">{t('planning.conventionsStartSubTheme', 'Mốc bắt đầu chủ đề nhánh')}</span>
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
-
-              {/* Popover Hướng dẫn quy ước */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer shrink-0 whitespace-nowrap rounded-none"
-                    title={t('planning.viewCalendarConventions', 'Xem quy ước hiển thị lịch')}
-                  >
-                    <HugeiconsIcon icon={InformationCircleIcon} size={12} className="shrink-0" />
-                    <span>{t('planning.conventions', 'Quy ước')}</span>
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent
-                  side="bottom"
-                  avoidCollisions={false}
-                  align="end"
-                  sideOffset={6}
-                  className="w-72 p-3 bg-card border border-border shadow-md rounded-none text-[11.5px] space-y-2.5 z-50"
-                >
-                  <div className="flex items-center justify-between pb-1 border-b border-border/60">
-                    <span className="font-semibold text-foreground text-[12px]">
-                      {t('planning.calendarConventionsTitle', 'Quy ước hiển thị lịch')}
-                    </span>
-                  </div>
-
-                  <div className="space-y-1.5 text-[11px]">
-                    <div className="flex items-center gap-2">
-                      <span className="size-3 bg-[#1447e6] shrink-0 rounded-none" />
-                      <span className="text-foreground">{t('planning.conventionsSelectedTheme', 'Chủ đề đang chọn')}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="size-3 border border-[#1447e6]/40 shrink-0 rounded-none"
-                        style={{
-                          background:
-                            'repeating-linear-gradient(45deg, rgba(20, 71, 230, 0.2), rgba(20, 71, 230, 0.2) 2px, rgba(20, 71, 230, 0.4) 2px, rgba(20, 71, 230, 0.4) 4px)',
-                        }}
-                      />
-                      <span className="text-foreground">{t('planning.conventionsUnassignedSubTheme', 'Chưa xếp nhánh')}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="size-3 bg-slate-100 dark:bg-slate-800/60 border border-border/60 shrink-0 rounded-none" />
-                      <span className="text-muted-foreground">{t('planning.conventionsOtherTheme', 'Chủ đề khác')}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="size-3 border border-dashed border-border/80 bg-muted/20 shrink-0 rounded-none" />
-                      <span className="text-muted-foreground">{t('planning.conventionsNoTheme', 'Chưa có chủ đề')}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="size-3 opacity-25 bg-muted/40 shrink-0 rounded-none" />
-                      <span className="text-muted-foreground/70">{t('planning.conventionsOutsideAcademicYear', 'Ngoài năm học')}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono font-bold px-1 py-0.2 bg-slate-900 text-white shrink-0 rounded-none">
-                        N1
-                      </span>
-                      <span className="text-foreground">{t('planning.conventionsStartSubTheme', 'Mốc bắt đầu chủ đề nhánh')}</span>
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
             </div>
           </div>
         </div>

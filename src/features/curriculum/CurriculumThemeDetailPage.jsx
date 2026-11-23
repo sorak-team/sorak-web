@@ -33,6 +33,7 @@ import { cn } from '@/shared/lib/utils';
 import { toast } from 'sonner';
 import { useAuthStore, isTeacherRole } from '@/features/auth';
 import { useAcademicYearStore } from '@/features/academic-years';
+import { academicYearsApi } from '@/features/academic-years/academic-years.api';
 import { curriculumApi } from './curriculum.api';
 
 // Days of the week in VN matching WeekPickerCalendar
@@ -593,6 +594,7 @@ export function CurriculumThemeDetailPage() {
   const [note, setNote] = useState('');
   const [status, setStatus] = useState('DRAFT');
   const [updatedAt, setUpdatedAt] = useState(() => new Date());
+  const [holidays, setHolidays] = useState([]);
   const topicNameInputRef = React.useRef(null);
 
   // Interactive calendar scheduling state for sub-themes (Two-Click Range Selection)
@@ -643,6 +645,16 @@ export function CurriculumThemeDetailPage() {
         if (data.info?.updatedAt) {
           setUpdatedAt(data.info.updatedAt);
         }
+        if (data.holidays && Array.isArray(data.holidays) && data.holidays.length > 0) {
+          setHolidays(data.holidays);
+        } else if (data.info?.schoolYearId) {
+          academicYearsApi
+            .listHolidays(data.info.schoolYearId)
+            .then((res) => {
+              setHolidays(res.items || res || []);
+            })
+            .catch(() => {});
+        }
         let themeList = data.themes || [];
         const localStatus = localStorage.getItem(`sorak_curriculum_${yearId}_${ageGroup}_status`);
         if (localStatus) {
@@ -665,6 +677,21 @@ export function CurriculumThemeDetailPage() {
     }
     fetchDetail();
   }, [yearId, ageGroup]);
+
+  // Lấy thông tin ngày nghỉ lễ / sự kiện theo ngày
+  const getHolidayForDate = useCallback(
+    (dateStr) => {
+      if (!dateStr || !Array.isArray(holidays) || holidays.length === 0) return null;
+      return (
+        holidays.find((h) => {
+          const s = (h.startDate || '').slice(0, 10);
+          const e = (h.endDate || '').slice(0, 10);
+          return s && e && dateStr >= s && dateStr <= e;
+        }) || null
+      );
+    },
+    [holidays],
+  );
 
   const loadTopicIntoForm = (topic) => {
     if (!topic) {
@@ -1805,6 +1832,27 @@ export function CurriculumThemeDetailPage() {
       return;
     }
     if (!isAllPublished) {
+      // Kiểm tra tính liên tục hoặc khoảng cách tròn tuần giữa các chủ đề
+      for (let i = 1; i < themes.length; i++) {
+        const prev = themes[i - 1];
+        const cur = themes[i];
+        if (cur.startDate && prev.endDate && cur.startDate <= prev.endDate) {
+          toast.error(
+            `Không thể công bố: Chủ đề "${cur.name || cur.code}" (${formatDateVn(cur.startDate)}) bị trùng hoặc đi trước ngày kết thúc của chủ đề trước "${prev.name || prev.code}" (${formatDateVn(prev.endDate)}).`,
+          );
+          return;
+        }
+        if (cur.startDate && prev.endDate) {
+          const gapDays = Math.round((new Date(cur.startDate) - new Date(prev.endDate)) / 86400000);
+          if ((gapDays - 1) % 7 !== 0) {
+            toast.error(
+              `Không thể công bố: Khoảng cách giữa chủ đề "${prev.name || prev.code}" và "${cur.name || cur.code}" không hợp lệ. Khoảng cách phải là các tuần trọn vẹn (bắt đầu vào Thứ Hai và kết thúc vào Chủ Nhật).`,
+            );
+            return;
+          }
+        }
+      }
+
       // Kiểm tra tất cả chủ đề: thời lượng 2–6 tuần, từ 2 đến 6 nhánh, và nhánh bao phủ trọn thời gian
       for (const th of themes) {
         if (!th.startDate || !th.endDate) {
@@ -3192,11 +3240,32 @@ export function CurriculumThemeDetailPage() {
                           !isOutsideAcademicYear && !isSelectedDate && !isInOtherTheme,
                         );
 
+                        // Thông tin ngày nghỉ lễ / Tết / Sự kiện
+                        const matchedHoliday = getHolidayForDate(d.dateStr);
+                        const isHolidayDay = Boolean(matchedHoliday && !matchedHoliday.isTeachingAllowed);
+                        const isSchoolEventDay = Boolean(matchedHoliday && matchedHoliday.isTeachingAllowed);
+
                         // Consecutive connectivity in the same week row
                         const prevObj = col > 0 ? mObj.days[i - 1] : null;
                         const nextObj = col < 6 ? mObj.days[i + 1] : null;
                         const prevDate = prevObj?.isCurrentMonth ? prevObj.dateStr : null;
                         const nextDate = nextObj?.isCurrentMonth ? nextObj.dateStr : null;
+
+                        // Holiday connectivity
+                        const prevHoliday = prevDate ? getHolidayForDate(prevDate) : null;
+                        const nextHoliday = nextDate ? getHolidayForDate(nextDate) : null;
+                        const prevSameHoliday = Boolean(
+                          isHolidayDay &&
+                            prevHoliday &&
+                            !prevHoliday.isTeachingAllowed &&
+                            (prevHoliday.id === matchedHoliday?.id || prevHoliday.name === matchedHoliday?.name),
+                        );
+                        const nextSameHoliday = Boolean(
+                          isHolidayDay &&
+                            nextHoliday &&
+                            !nextHoliday.isTeachingAllowed &&
+                            (nextHoliday.id === matchedHoliday?.id || nextHoliday.name === matchedHoliday?.name),
+                        );
 
                         // Other theme connectivity
                         const prevTheme = prevDate ? getThemeForDate(prevDate) : null;
@@ -3281,6 +3350,10 @@ export function CurriculumThemeDetailPage() {
                             title={
                               isOutsideAcademicYear
                                 ? `Ngày ${formatDateVn(d.dateStr)} · Ngoài khung năm học`
+                                : isHolidayDay
+                                ? `Ngày ${formatDateVn(d.dateStr)} · ${matchedHoliday.name} (Nghỉ lễ)`
+                                : isSchoolEventDay
+                                ? `Ngày ${formatDateVn(d.dateStr)} · ${matchedHoliday.name} (Sự kiện)`
                                 : !hasSelectedTopic
                                 ? `Ngày ${formatDateVn(d.dateStr)} · Chưa tạo/chọn chủ đề`
                                 : isUnassignedInAcademicYear
@@ -3294,8 +3367,19 @@ export function CurriculumThemeDetailPage() {
                                         : `Ngày ${formatDateVn(d.dateStr)} · Ngoài thời gian chủ đề này (Khoá)`
                             }
                           >
-                            {/* Ngày trong năm học nhưng chưa có chủ đề: Viền nét đứt nhẹ */}
-                            {isUnassignedInAcademicYear && (
+                            {/* Nền ngày nghỉ lễ: Dải màu vàng nhạt tinh tế, đồng nhất và phẳng như các dải chủ đề */}
+                            {isHolidayDay && !isSelectedDate && (
+                              <div
+                                className={cn(
+                                  'absolute inset-y-0.5 bg-amber-100/75 dark:bg-amber-950/40 transition-colors',
+                                  prevSameHoliday ? 'left-0' : 'left-0.5',
+                                  nextSameHoliday ? 'right-0' : 'right-0.5',
+                                )}
+                              />
+                            )}
+
+                            {/* Ngày trong năm học nhưng chưa có chủ đề (không phải ngày nghỉ): Viền nét đứt nhẹ */}
+                            {isUnassignedInAcademicYear && !isHolidayDay && (
                               <div className="absolute inset-0.5 border border-dashed border-border/80 bg-muted/15 pointer-events-none" />
                             )}
 
@@ -3310,8 +3394,23 @@ export function CurriculumThemeDetailPage() {
                               />
                             )}
 
+                            {/* Cảnh báo ngày trong chủ đề đang chọn trùng với ngày nghỉ lễ */}
+                            {isHolidayDay && isSelectedDate && (
+                              <div
+                                className={cn(
+                                  'absolute inset-y-0.5 border-y border-amber-400 z-15 pointer-events-none',
+                                  prevSameHoliday ? 'left-0' : 'left-0.5 border-l',
+                                  nextSameHoliday ? 'right-0' : 'right-0.5 border-r',
+                                )}
+                                style={{
+                                  background:
+                                    'repeating-linear-gradient(45deg, rgba(245, 158, 11, 0.4), rgba(245, 158, 11, 0.4) 3px, rgba(20, 71, 230, 0.75) 3px, rgba(20, 71, 230, 0.75) 7px)',
+                                }}
+                              />
+                            )}
+
                             {/* Ngày trong chủ đề CHƯA XẾP NHÁNH (Dải sọc chéo mờ) */}
-                            {isUnassignedInTheme && (
+                            {isUnassignedInTheme && !isHolidayDay && (
                               <div
                                 className={cn(
                                   'absolute inset-y-0.5 border-y border-[#1447e6]/35 z-10 pointer-events-none',
@@ -3325,8 +3424,8 @@ export function CurriculumThemeDetailPage() {
                               />
                             )}
 
-                            {/* Chủ đề khác - Dải màu xám nhạt nhẹ nhàng, không lấn át */}
-                            {isInOtherTheme && (
+                            {/* Chủ đề khác - Dải màu xám nhạt nhẹ nhàng (nếu không phải ngày nghỉ lễ) */}
+                            {isInOtherTheme && !isHolidayDay && (
                               <div
                                 className={cn(
                                   'absolute inset-y-0.5 bg-slate-100/90 dark:bg-slate-800/40 transition-colors group-hover/day:bg-slate-200/70 dark:group-hover/day:bg-slate-700/50',
@@ -3367,11 +3466,12 @@ export function CurriculumThemeDetailPage() {
                               className={cn(
                                 'relative z-20 w-full h-full flex items-center justify-center text-[12px] transition-colors',
                                 isAssignedSubTheme && 'text-white font-semibold',
-                                isUnassignedInTheme && 'text-[#1447e6] dark:text-blue-400 font-bold',
-                                isInOtherTheme && 'text-muted-foreground/80 dark:text-muted-foreground font-normal',
-                                isUnassignedInAcademicYear && 'text-foreground/80 font-normal',
+                                isUnassignedInTheme && !isHolidayDay && 'text-[#1447e6] dark:text-blue-400 font-bold',
+                                isHolidayDay && !isSelectedDate && 'text-amber-800 dark:text-amber-200 font-semibold',
+                                isInOtherTheme && !isHolidayDay && 'text-muted-foreground/80 dark:text-muted-foreground font-normal',
+                                isUnassignedInAcademicYear && !isHolidayDay && 'text-foreground/80 font-normal',
                                 isOutsideAcademicYear && 'text-muted-foreground/30 font-light',
-                                !isSelectedDate && !isInOtherTheme && !isUnassignedInAcademicYear && !isOutsideAcademicYear && 'text-foreground/75',
+                                !isSelectedDate && !isInOtherTheme && !isUnassignedInAcademicYear && !isOutsideAcademicYear && !isHolidayDay && 'text-foreground/75',
                               )}
                             >
                               {d.day}
@@ -3384,86 +3484,93 @@ export function CurriculumThemeDetailPage() {
                 ))}
               </div>
 
-              {/* Thanh chú thích tinh gọn & sạch sẽ */}
-              <div className="pt-2.5 border-t border-border/60 flex items-center justify-between text-[11px] text-muted-foreground">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1.5 shrink-0" title="Chủ đề đang xem">
-                    <span className="size-2.5 bg-[#1447e6] shrink-0" />
-                    <span className="font-medium text-foreground/85">{t('curriculum.thisTheme', 'Chủ đề này')}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0" title="Chưa xếp nhánh">
-                    <span
-                      className="size-2.5 border border-[#1447e6]/40 shrink-0"
-                      style={{
-                        background:
-                          'repeating-linear-gradient(45deg, rgba(20, 71, 230, 0.2), rgba(20, 71, 230, 0.2) 2px, rgba(20, 71, 230, 0.4) 2px, rgba(20, 71, 230, 0.4) 4px)',
-                      }}
-                    />
-                    <span>{t('curriculum.unallocatedSubTheme', 'Chưa xếp nhánh')}</span>
-                  </div>
+              {/* Thanh chú thích tinh gọn & cân đối (Lưới 2 cột đều nhau) */}
+              <div className="pt-2.5 border-t border-border/60 grid grid-cols-2 gap-x-2 gap-y-2 text-[11px] text-muted-foreground select-none">
+                <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap" title="Chủ đề đang xem">
+                  <span className="size-2.5 bg-[#1447e6] shrink-0" />
+                  <span className="font-medium text-foreground/85">{t('curriculum.thisTheme', 'Chủ đề này')}</span>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap" title="Chưa xếp nhánh">
+                  <span
+                    className="size-2.5 border border-[#1447e6]/40 shrink-0"
+                    style={{
+                      background:
+                        'repeating-linear-gradient(45deg, rgba(20, 71, 230, 0.2), rgba(20, 71, 230, 0.2) 2px, rgba(20, 71, 230, 0.4) 2px, rgba(20, 71, 230, 0.4) 4px)',
+                    }}
+                  />
+                  <span>{t('curriculum.unallocatedSubTheme', 'Chưa xếp nhánh')}</span>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap" title="Ngày nghỉ lễ">
+                  <span className="size-2.5 bg-amber-100/80 border border-amber-300/40 dark:bg-amber-950/50 dark:border-amber-700/40 shrink-0" />
+                  <span>Nghỉ lễ</span>
                 </div>
 
                 {/* Popover Hướng dẫn quy ước màu sắc chuẩn UX */}
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button
-                      type="button"
-                      className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                      title="Xem quy ước hiển thị lịch"
+                <div className="flex items-center">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer shrink-0 whitespace-nowrap"
+                        title="Xem quy ước hiển thị lịch"
+                      >
+                        <HugeiconsIcon icon={InformationCircleIcon} size={12} className="shrink-0" />
+                        <span>Quy ước</span>
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      side="top"
+                      align="end"
+                      sideOffset={8}
+                      className="w-72 p-3 bg-card border border-border shadow-md rounded-none text-[11.5px] space-y-2.5 z-50"
                     >
-                      <HugeiconsIcon icon={InformationCircleIcon} size={12} className="shrink-0" />
-                      <span>Quy ước</span>
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    side="bottom"
-                    avoidCollisions={false}
-                    align="end"
-                    sideOffset={6}
-                    className="w-72 p-3 bg-card border border-border shadow-md rounded-none text-[11.5px] space-y-2.5 z-50"
-                  >
-                    <div className="flex items-center justify-between pb-1 border-b border-border/60">
-                      <span className="font-semibold text-foreground text-[12px]">
-                        Quy ước hiển thị lịch
-                      </span>
-                    </div>
-
-                    <div className="space-y-1.5 text-[11px]">
-                      <div className="flex items-center gap-2">
-                        <span className="size-3 bg-[#1447e6] shrink-0" />
-                        <span className="text-foreground">{t('curriculum.selectedTheme', 'Chủ đề đang chọn')}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="size-3 border border-[#1447e6]/40 shrink-0"
-                          style={{
-                            background:
-                              'repeating-linear-gradient(45deg, rgba(20, 71, 230, 0.2), rgba(20, 71, 230, 0.2) 2px, rgba(20, 71, 230, 0.4) 2px, rgba(20, 71, 230, 0.4) 4px)',
-                          }}
-                        />
-                        <span className="text-foreground">{t('curriculum.unallocatedSubTheme', 'Chưa xếp nhánh')}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="size-3 bg-slate-100 dark:bg-slate-800/60 border border-border/60 shrink-0" />
-                        <span className="text-muted-foreground">{t('curriculum.otherTheme', 'Chủ đề khác')}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="size-3 border border-dashed border-border/80 bg-muted/20 shrink-0" />
-                        <span className="text-muted-foreground">{t('curriculum.noThemeYet', 'Chưa có chủ đề')}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="size-3 opacity-25 bg-muted/40 shrink-0" />
-                        <span className="text-muted-foreground/70">{t('curriculum.outOfSchoolYear', 'Ngoài năm học')}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-mono font-bold px-1 py-0.2 bg-slate-900 text-white shrink-0">
-                          N1
+                      <div className="flex items-center justify-between pb-1 border-b border-border/60">
+                        <span className="font-semibold text-foreground text-[12px]">
+                          Quy ước hiển thị lịch
                         </span>
-                        <span className="text-foreground">{t('curriculum.branchStartMilestone', 'Mốc bắt đầu chủ đề nhánh')}</span>
                       </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
+
+                      <div className="space-y-1.5 text-[11px]">
+                        <div className="flex items-center gap-2">
+                          <span className="size-3 bg-[#1447e6] shrink-0" />
+                          <span className="text-foreground">{t('curriculum.selectedTheme', 'Chủ đề đang chọn')}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="size-3 border border-[#1447e6]/40 shrink-0"
+                            style={{
+                              background:
+                                'repeating-linear-gradient(45deg, rgba(20, 71, 230, 0.2), rgba(20, 71, 230, 0.2) 2px, rgba(20, 71, 230, 0.4) 2px, rgba(20, 71, 230, 0.4) 4px)',
+                            }}
+                          />
+                          <span className="text-foreground">{t('curriculum.unallocatedSubTheme', 'Chưa xếp nhánh')}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="size-3 bg-amber-100/80 border border-amber-300/40 dark:bg-amber-950/50 dark:border-amber-700/40 shrink-0" />
+                          <span className="text-foreground">Ngày nghỉ lễ</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="size-3 bg-slate-100 dark:bg-slate-800/60 border border-border/60 shrink-0" />
+                          <span className="text-muted-foreground">{t('curriculum.otherTheme', 'Chủ đề khác')}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="size-3 border border-dashed border-border/80 bg-muted/20 shrink-0" />
+                          <span className="text-muted-foreground">{t('curriculum.noThemeYet', 'Chưa có chủ đề')}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="size-3 opacity-25 bg-muted/40 shrink-0" />
+                          <span className="text-muted-foreground/70">{t('curriculum.outOfSchoolYear', 'Ngoài năm học')}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono font-bold px-1 py-0.2 bg-slate-900 text-white shrink-0">
+                            N1
+                          </span>
+                          <span className="text-foreground">{t('curriculum.branchStartMilestone', 'Mốc bắt đầu chủ đề nhánh')}</span>
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
 
               {/* Thanh thao tác: Công bố bộ chủ đề */}
